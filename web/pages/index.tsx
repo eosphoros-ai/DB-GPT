@@ -47,6 +47,24 @@ import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCa
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
+import { getLatestReport } from '@/new-components/financial-analysis/api';
+import {
+  financialStepSubtitle,
+  financialStepTitle,
+  recentFinancialObservations,
+} from '@/new-components/financial-analysis/execution-display';
+import { recoverFinancialHistory } from '@/new-components/financial-analysis/recover-history';
+import {
+  findFinancialCitationArtifact,
+  type FinancialCitation,
+  type FinancialCitationTarget,
+} from '@/new-components/financial-analysis/report-citations';
+import {
+  FinancialReportDelivery,
+  artifactIdentity,
+  mergeArtifacts,
+} from '@/new-components/financial-analysis/report-delivery';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
@@ -109,6 +127,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { financialText, useFinancialLocale } from '../new-components/financial-analysis/i18n';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -435,8 +454,8 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: friendlySubtitle || undefined,
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle: financialStepSubtitle(step, execution.outputs[step.id] || []) || friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
@@ -463,8 +482,9 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle:
+          financialStepSubtitle(step, execution.outputs[step.id] || []) || cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
         action: step.action,
@@ -484,7 +504,7 @@ const convertToManusFormat = (
 
   const stepThoughts = { ...(execution.stepThoughts || {}) };
   execution.steps.forEach(step => {
-    if (step.action === 'dispatch_parallel_tasks') {
+    if (step.action === 'dispatch_parallel_tasks' || financialStepTitle(step)) {
       delete stepThoughts[step.id];
     }
   });
@@ -563,6 +583,7 @@ const EXAMPLE_CARDS = [
 ];
 
 const Playground: NextPage = () => {
+  useFinancialLocale();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { model, modelList, setModel } = useContext(ChatContext);
@@ -624,6 +645,7 @@ const Playground: NextPage = () => {
   const openSessionFilePreview = useCallback(async (item: RailItem) => {
     const convId = conversationIdRef.current;
     if (!convId || !item.fileId) return;
+    panelNavigationVersion.current += 1;
     const requestVersion = ++sessionFilePreviewRequestRef.current;
     // Desktop previews render inside the right panel: make sure it is visible.
     setRightPanelCollapsed(false);
@@ -743,6 +765,7 @@ const Playground: NextPage = () => {
   // through the same preview surfaces (Drawer/desktop right panel).
   const openLegacyFilePreview = useCallback(
     async (file: { name: string; size: number; media_type: string; file_path: string }) => {
+      panelNavigationVersion.current += 1;
       const requestVersion = ++sessionFilePreviewRequestRef.current;
       setRightPanelCollapsed(false);
       setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
@@ -882,6 +905,10 @@ const Playground: NextPage = () => {
   const summaryPresentationResponseIdRef = useRef<string | null>(null);
   const summaryPresentationFullTextRef = useRef('');
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+  const [financialCitationTarget, setFinancialCitationTarget] = useState<FinancialCitationTarget | null>(null);
+  const financialCitationRequest = useRef(0);
+  const financialDelivery = useRef(new FinancialReportDelivery());
+  const panelNavigationVersion = useRef(0);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -900,6 +927,7 @@ const Playground: NextPage = () => {
 
   const handleUserPanelViewChange = useCallback(
     (view: PanelView) => {
+      panelNavigationVersion.current += 1;
       cancelSummaryPresentation();
       setRightPanelView(view);
     },
@@ -917,6 +945,25 @@ const Playground: NextPage = () => {
     messageId: string;
     agentId: string;
   } | null>(null);
+
+  const openFinancialCitation = (citation: FinancialCitation, messageId?: string) => {
+    const artifact = findFinancialCitationArtifact(
+      artifacts.filter(item => !messageId || item.messageId === messageId),
+      citation,
+    );
+    if (!artifact) {
+      message.info(financialText('financial.the_referenced_report_is_unavailable_open_the_report_from_this_turn_'));
+      return;
+    }
+    panelNavigationVersion.current += 1;
+    cancelSummaryPresentation();
+    setActiveViewMsgId(artifact.messageId || messageId || null);
+    setActiveSubAgent(null);
+    setPreviewArtifact(artifact);
+    setFinancialCitationTarget({ ...citation, requestId: ++financialCitationRequest.current });
+    setRightPanelView('html-preview');
+    setRightPanelCollapsed(false);
+  };
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -985,6 +1032,7 @@ const Playground: NextPage = () => {
     closeSessionFilePreview();
     fileDragDepthRef.current = 0;
     terminatedStepIdsRef.current.clear();
+    financialDelivery.current = new FinancialReportDelivery();
     lastSentPayloadRef.current = null;
 
     setMessages([]);
@@ -1008,6 +1056,7 @@ const Playground: NextPage = () => {
     setTaskPlan([]);
     setSelectedStepId(null);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setSummaryPresentationResponseId(null);
@@ -1193,6 +1242,7 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
@@ -1210,7 +1260,7 @@ const Playground: NextPage = () => {
       // ref before removing ?id, so its route completion remains idempotent.
       resetTaskSession();
     }
-  }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
+  }, [rehydrateSessionFiles, resetTaskSession, router.isReady, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1256,6 +1306,15 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
+  const mobileFinancialPanel =
+    !isDesktopWidth &&
+    !rightPanelCollapsed &&
+    artifacts.some(
+      artifact =>
+        artifact.messageId === selectedViewMsgId &&
+        isFinancialReportReference(artifact.content) &&
+        artifact.content.published === true,
+    );
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -1424,6 +1483,17 @@ const Playground: NextPage = () => {
         break;
       }
       case 'html': {
+        if (isFinancialReportReference(artifact.content)) {
+          try {
+            const { downloadFinancialReport } = await import(
+              '@/new-components/financial-analysis/FinancialReportArtifact'
+            );
+            await downloadFinancialReport(artifact.content);
+          } catch {
+            message.error(financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'));
+          }
+          break;
+        }
         const htmlContent =
           typeof artifact.content === 'string'
             ? artifact.content
@@ -1574,10 +1644,7 @@ const Playground: NextPage = () => {
                 size: output.content?.size,
               });
             } else if (output.output_type === 'html') {
-              const htmlContent =
-                typeof output.content === 'string'
-                  ? output.content
-                  : output.content?.content || output.content?.html || String(output.content);
+              const htmlContent = reportArtifactContent(output.content);
               const htmlTitle = output.content?.title || 'Report';
               finalArtifacts.push({
                 id: `${messageId}-html-${step.id}-${oIdx}`,
@@ -1766,18 +1833,7 @@ const Playground: NextPage = () => {
         }
       }
 
-      // Deduplicate: for artifacts with the same name+type, keep only the last one
-      const deduped: Artifact[] = [];
-      const seen = new Map<string, number>();
-      for (let i = finalArtifacts.length - 1; i >= 0; i--) {
-        const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
-        if (!seen.has(key)) {
-          seen.set(key, i);
-          deduped.unshift(finalArtifacts[i]);
-        }
-      }
-
-      return deduped;
+      return mergeArtifacts(finalArtifacts);
     },
     [],
   );
@@ -1796,8 +1852,18 @@ const Playground: NextPage = () => {
 
     setArtifacts(prevArtifacts => {
       const filtered = prevArtifacts.filter(artifact => artifact.messageId !== responseId);
-      return [...filtered, ...deduped];
+      const delivered = prevArtifacts.filter(
+        artifact => artifact.messageId === responseId && isFinancialReportReference(artifact.content),
+      );
+      return [...filtered, ...mergeArtifacts([...deduped, ...delivered])];
     });
+
+    // Financial reports arrive before the final answer. Finalization only fills
+    // the artifact list; it must not replace the report/evidence the user is reading.
+    if (financialDelivery.current.hasReport(responseId)) {
+      setPendingFinalization(null);
+      return;
+    }
 
     const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
     const imageArtifact = deduped.find(artifact => artifact.type === 'image');
@@ -2015,6 +2081,7 @@ const Playground: NextPage = () => {
     const currentOrder = Math.floor(messages.length / 2) + 1;
 
     const responseId = generateUUID();
+    const navigationVersionAtSend = panelNavigationVersion.current;
 
     const humanId = generateUUID();
 
@@ -2053,11 +2120,13 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    let receivedFinal = false;
     chatAbortControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
@@ -2354,24 +2423,39 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          setRightPanelCollapsed(false);
-        } else if (payload.type === 'step.meta') {
-          if (payload.action && payload.action.toLowerCase() === 'terminate') {
+          if (panelNavigationVersion.current === navigationVersionAtSend) setRightPanelCollapsed(false);
+        } else if (payload.type === 'step.meta' || payload.type === 'step.remove') {
+          if (payload.type === 'step.remove' || payload.action?.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
+            setSelectedStepId(selected => (selected === payload.id ? null : selected));
             setExecutionMap(prev => {
               const current = prev[responseId];
               if (!current) return prev;
               const nextSteps = current.steps.filter(item => item.id !== payload.id);
-              const nextActiveStepId = current.activeStepId === payload.id ? null : current.activeStepId;
+              const nextActiveStepId =
+                current.activeStepId === payload.id
+                  ? nextSteps[nextSteps.length - 1]?.id || null
+                  : current.activeStepId;
+              const nextOutputs = { ...current.outputs };
+              const nextThoughts = { ...current.stepThoughts };
+              delete nextOutputs[payload.id];
+              delete nextThoughts[payload.id];
               return {
                 ...prev,
-                [responseId]: { ...current, steps: nextSteps, activeStepId: nextActiveStepId },
+                [responseId]: {
+                  ...current,
+                  steps: nextSteps,
+                  outputs: nextOutputs,
+                  stepThoughts: nextThoughts,
+                  activeStepId: nextActiveStepId,
+                },
               };
             });
             return;
           }
+          if (terminatedStepIdsRef.current.has(payload.id)) return;
           // Clear manual step selection so the right panel auto-tracks this step
-          if (payload.action) {
+          if (payload.action && panelNavigationVersion.current === navigationVersionAtSend) {
             setSelectedStepId(null);
           }
           setExecutionMap(prev => {
@@ -2423,7 +2507,9 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 stepThoughts: nextThoughts,
                 // Focus right panel on this step when it receives action content
-                ...(payload.action ? { activeStepId: payload.id } : {}),
+                ...(payload.action && panelNavigationVersion.current === navigationVersionAtSend
+                  ? { activeStepId: payload.id }
+                  : {}),
               },
             };
           });
@@ -2460,8 +2546,33 @@ const Playground: NextPage = () => {
             };
           });
 
-          // Artifacts are now generated at task completion (final event),
-          // not during streaming — to avoid showing intermediate outputs as artifacts
+          if (payload.output_type === 'html') {
+            const delivery = financialDelivery.current.receive(
+              payload.content,
+              currentConvId,
+              responseId,
+              panelNavigationVersion.current === navigationVersionAtSend,
+              id,
+            );
+            if (delivery) {
+              setArtifacts(previous => mergeArtifacts([...previous, delivery.artifact]));
+              if (delivery.open) {
+                cancelSummaryPresentation();
+                setPreviewArtifact(delivery.artifact);
+                setFinancialCitationTarget(null);
+                setActiveSubAgent(null);
+                setSelectedStepId(null);
+                setRightPanelView('html-preview');
+                setRightPanelCollapsed(false);
+              } else {
+                setPreviewArtifact(previous =>
+                  previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
+                    ? delivery.artifact
+                    : previous,
+                );
+              }
+            }
+          }
         } else if (payload.type === 'step.done') {
           const id = payload.id;
           if (terminatedStepIdsRef.current.has(id || '')) return;
@@ -2481,6 +2592,7 @@ const Playground: NextPage = () => {
           // action_reason, which are constrained to concise, readable text.
           return;
         } else if (payload.type === 'final') {
+          receivedFinal = true;
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
           cancelSummaryPresentation();
@@ -2509,7 +2621,10 @@ const Playground: NextPage = () => {
           setActiveMessageId(responseId);
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (summaryText) {
+          if (financialDelivery.current.hasReport(responseId)) {
+            setStreamingSummary(summaryText);
+            setSummaryComplete(true);
+          } else if (summaryText) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
@@ -2600,6 +2715,43 @@ const Playground: NextPage = () => {
       }
       if (taskEpochRef.current === taskEpoch) {
         setLoading(false);
+        if (!receivedFinal && financialDelivery.current.hasReport(responseId)) {
+          setExecutionMap(previous => {
+            const current = previous[responseId];
+            if (!current) return previous;
+            return {
+              ...previous,
+              [responseId]: {
+                ...current,
+                steps: current.steps.map(step => (step.status === 'running' ? { ...step, status: 'failed' } : step)),
+              },
+            };
+          });
+          setMessages(previous =>
+            previous.map(item =>
+              item.id !== responseId
+                ? item
+                : {
+                    ...item,
+                    thinking: false,
+                    context:
+                      item.context ||
+                      (financialDelivery.current.hasPublished(responseId)
+                        ? financialText('financial.the_report_is_ready_with_source_evidence_this_reply_is_incomplete')
+                        : financialText('financial.execution_ended_saved_analysis_remains_available')),
+                    taskPlan: item.taskPlan?.map(task =>
+                      task.status === 'in_progress'
+                        ? {
+                            ...task,
+                            status: 'error' as const,
+                            detail: financialText('financial.execution_ended_saved_content_remains_available'),
+                          }
+                        : task,
+                    ),
+                  },
+            ),
+          );
+        }
       }
     }
   };
@@ -2765,6 +2917,7 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
@@ -2791,7 +2944,7 @@ const Playground: NextPage = () => {
             step: idx + 1,
             title: s.title || s.action || `Step ${idx + 1}`,
             detail: s.detail || '',
-            status: (s.status === 'failed' ? 'failed' : 'done') as 'done' | 'failed',
+            status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
@@ -2851,7 +3004,12 @@ const Playground: NextPage = () => {
           };
 
           const historyAnswer = decodeHistoryAnswer(payload);
-          const finalContent = cleanFinalContent(historyAnswer.content);
+          const finalContent = cleanFinalContent(
+            historyAnswer.content ||
+              (payload.execution_status
+                ? financialText('financial.task_restored_saved_progress_and_results_are_available')
+                : ''),
+          );
 
           // History payload v2: the turn's input_files snapshot attaches to
           // the human message of this round. v1 stays on the legacy one-item
@@ -2873,6 +3031,17 @@ const Playground: NextPage = () => {
             null,
           );
           allArtifacts.push(...restoredArtifacts);
+          if (isFinancialReportReference(payload.financial_report)) {
+            allArtifacts.push({
+              id: `${viewId}-financial-report`,
+              type: 'html',
+              name: `${payload.financial_report.title}.html`,
+              content: payload.financial_report,
+              createdAt: Date.now(),
+              messageId: viewId,
+              downloadable: true,
+            });
+          }
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
@@ -2899,6 +3068,11 @@ const Playground: NextPage = () => {
             }
           }
 
+          const savedTasks = Array.isArray(payload.task_plan)
+            ? payload.task_plan
+            : Array.isArray(payload.tasks)
+              ? payload.tasks
+              : undefined;
           newMessages.push({
             id: viewId,
             role: 'view',
@@ -2908,11 +3082,15 @@ const Playground: NextPage = () => {
             reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
-            taskPlan: Array.isArray(payload.task_plan)
-              ? payload.task_plan
-              : Array.isArray(payload.tasks)
-                ? payload.tasks
-                : undefined,
+            taskPlan: savedTasks?.map((task: TaskItem) =>
+              payload.execution_status && task.status === 'in_progress'
+                ? {
+                    ...task,
+                    status: 'cancelled' as const,
+                    detail: financialText('financial.saved_progress_restored_you_can_continue_the_task'),
+                  }
+                : task,
+            ),
           });
         } else {
           const historyAnswer = decodeHistoryAnswer(msg.context || '');
@@ -2932,7 +3110,7 @@ const Playground: NextPage = () => {
 
     setMessages(newMessages);
     setExecutionMap(newExecutionMap);
-    setArtifacts(allArtifacts);
+    setArtifacts(mergeArtifacts(allArtifacts));
     if (Object.keys(restoredSkillNames).length > 0) {
       setCreatedSkillNames(prev => ({ ...prev, ...restoredSkillNames }));
     }
@@ -2968,6 +3146,20 @@ const Playground: NextPage = () => {
       } else if (Array.isArray(res)) {
         msgList = res;
       }
+      if (msgList?.length === 0) {
+        // Older interrupted turns have a saved financial run but no messages.
+        // Recovery is scoped by the authenticated owner and this conversation.
+        try {
+          const report = await getLatestReport(convUid, controller.signal);
+          if (controller.signal.aborted) return;
+          if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
+          if (report) msgList = [recoverFinancialHistory(report, convUid)];
+        } catch (recoveryError) {
+          if (controller.signal.aborted) return;
+          console.warn('Financial report recovery failed', recoveryError);
+        }
+      }
+      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       if (msgList) {
         conversationIdRef.current = convUid;
         setConversationId(convUid);
@@ -2983,7 +3175,7 @@ const Playground: NextPage = () => {
     } catch (e) {
       if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(financialText('financial.failed_to_load_conversation_history'));
     } finally {
       if (historyAbortControllerRef.current === controller) {
         historyAbortControllerRef.current = null;
@@ -3125,15 +3317,15 @@ const Playground: NextPage = () => {
           {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
 
           {/* Chat Messages or Hero Section */}
-          {/* When from_task mode and loading history, show loading spinner instead of Hero */}
-          {router.query.from_task && historyLoading && messages.length === 0 ? (
+          {/* Keep conversation recovery visible instead of flashing the new-task hero. */}
+          {historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
               <Spin size='large' tip='加载对话历史...' />
             </div>
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 ${mobileFinancialPanel ? 'hidden' : 'flex'} flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   {rounds.map((round, roundIndex) => {
@@ -3178,7 +3370,7 @@ const Playground: NextPage = () => {
                                   setActiveViewMsgId(round.viewMsg.id);
                                   setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
                                 }
-                                setRightPanelView('execution');
+                                handleUserPanelViewChange('execution');
                                 setRightPanelCollapsed(false);
                               }}
                             />
@@ -3192,7 +3384,7 @@ const Playground: NextPage = () => {
                             // Clicking a main-agent step exits the sub-agent
                             // process view, so the right panel shows this step.
                             setActiveSubAgent(null);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             setRightPanelCollapsed(false);
                             setExecutionMap(prev => ({
                               ...prev,
@@ -3210,8 +3402,12 @@ const Playground: NextPage = () => {
                         attachedSkill={round.humanMsg?.attachedSkill}
                         attachedDb={round.humanMsg?.attachedDb}
                         taskPlan={round.viewMsg?.taskPlan}
+                        financialUpdates={
+                          execution ? recentFinancialObservations(execution.steps, execution.outputs) : []
+                        }
                         attachedConnectors={round.humanMsg?.attachedConnectors}
                         assistantText={roundAssistantText}
+                        onFinancialCitationClick={citation => openFinancialCitation(citation, round.viewMsg?.id)}
                         isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
                         citationIndexes={roundCitations.map(citation => citation.index)}
                         reportId={round.viewMsg?.reportId}
@@ -3219,7 +3415,7 @@ const Playground: NextPage = () => {
                         onReportClick={() => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setActiveSubAgent(null);
-                          setRightPanelView('report');
+                          handleUserPanelViewChange('report');
                           setRightPanelCollapsed(false);
                         }}
                         onReferencesClick={
@@ -3227,7 +3423,7 @@ const Playground: NextPage = () => {
                             ? () => {
                                 if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                                 setSelectedCitationIndex(roundCitations[0].index);
-                                setRightPanelView('references');
+                                handleUserPanelViewChange('references');
                                 setRightPanelCollapsed(false);
                               }
                             : undefined
@@ -3236,14 +3432,15 @@ const Playground: NextPage = () => {
                         stepThoughts={stepThoughts}
                         artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
                         onArtifactClick={artifact => {
+                          setFinancialCitationTarget(null);
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
+                            handleUserPanelViewChange('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             if (round.viewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -3257,30 +3454,31 @@ const Playground: NextPage = () => {
                             // Image file artifacts: preview instead of download
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
+                              handleUserPanelViewChange('image-preview');
                             } else {
                               downloadArtifact(artifact as Artifact);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
+                            handleUserPanelViewChange('image-preview');
                           }
                         }}
                         onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
                         onViewAllFiles={() => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
-                          setRightPanelView('files');
+                          handleUserPanelViewChange('files');
                         }}
                         isCollapsed={isCurrentRoundCollapsed}
                         onExpand={() => {
+                          panelNavigationVersion.current += 1;
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                         }}
                         createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
                         onSkillCardClick={_skillName => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
-                          setRightPanelView('skill-preview');
+                          handleUserPanelViewChange('skill-preview');
                           // Find the package_skill step and select it so right panel shows SkillCardRenderer
                           if (execution) {
                             const skillStep = execution.steps.find((s: ExecutionStep) => {
@@ -3410,7 +3608,7 @@ const Playground: NextPage = () => {
                             onClosePreview={closeSessionFilePreview}
                             className='mb-2'
                           />
-                          {taskPlan.length > 0 && (
+                          {taskPlan.length > 0 && !taskPlan.some(task => task.kind === 'financial-stage') && (
                             <div className='mb-3'>
                               <TaskPlanCard tasks={taskPlan} embedded />
                             </div>
@@ -3900,7 +4098,10 @@ const Playground: NextPage = () => {
               <div className='relative z-20 flex-shrink-0'>
                 <Tooltip title={rightPanelCollapsed ? t('expand_panel') : t('collapse_panel')} placement='left'>
                   <button
-                    onClick={() => setRightPanelCollapsed(prev => !prev)}
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(prev => !prev);
+                    }}
                     className='absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-8 flex items-center justify-center bg-white dark:bg-[#1a1b1e] border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:w-5 hover:shadow-md transition-all duration-200 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                   >
                     {rightPanelCollapsed ? (
@@ -3914,6 +4115,18 @@ const Playground: NextPage = () => {
               <div
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
+                {mobileFinancialPanel && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(true);
+                    }}
+                    className='shrink-0 border-b border-slate-200 bg-white px-4 py-3 text-left text-sm text-sky-700 dark:border-slate-800 dark:bg-[#111217] dark:text-sky-300'
+                  >
+                    <LeftOutlined className='mr-2' /> {financialText('financial.back_to_chat')}
+                  </button>
+                )}
                 {showInlineAttachmentPreview ? (
                   <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
                     <div className='flex h-12 flex-shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 dark:border-white/10 dark:bg-[#1a1b1e]/95'>
@@ -3981,6 +4194,14 @@ const Playground: NextPage = () => {
 
                     return (
                       <ManusRightPanel
+                        financialCitationTarget={financialCitationTarget}
+                        onFinancialCitationClick={citation => openFinancialCitation(citation, activeViewMsg?.id)}
+                        onFinancialTopicRetry={(reference, topicId) => {
+                          if (loading || reference.sessionId !== conversationId) return;
+                          void handleStart(
+                            `请继续报告 ${reference.runId}，只重新分析专题 ${topicId}，保留其他专题。先读取报告，再使用 get_financial_topic(retry=true)，修订后复核并发布，不重新解析 PDF。`,
+                          );
+                        }}
                         activeStep={activeStep}
                         outputs={outputs}
                         conversationId={conversationId}
@@ -3998,12 +4219,13 @@ const Playground: NextPage = () => {
                         artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
                         inputFiles={rounds.find(r => r.viewMsg?.id === activeViewMsg?.id)?.humanMsg?.attachedFiles}
                         onArtifactClick={artifact => {
+                          setFinancialCitationTarget(null);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
+                            handleUserPanelViewChange('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             if (activeViewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -4016,12 +4238,12 @@ const Playground: NextPage = () => {
                           } else if (artifact.type === 'file') {
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
+                              handleUserPanelViewChange('image-preview');
                               setRightPanelCollapsed(false);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
+                            handleUserPanelViewChange('image-preview');
                             setRightPanelCollapsed(false);
                           }
                         }}
@@ -4055,13 +4277,13 @@ const Playground: NextPage = () => {
                               activeStepId: stepId,
                             },
                           }));
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;
                           setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}

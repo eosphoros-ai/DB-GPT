@@ -155,7 +155,7 @@ function SideBar() {
       {
         key: 'explore',
         name: t('explore'),
-        isActive: pathname === '/',
+        isActive: pathname === '/' || pathname.startsWith('/financial-analysis'),
         iconSrc: '/pictures/explore.png',
         activeIconSrc: '/pictures/explore_active.png',
         path: '/',
