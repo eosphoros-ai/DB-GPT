@@ -6,6 +6,20 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '../../node_modules/.cache/financial-comparison');
 const open = (page, name) => page.goto(pathToFileURL(path.join(root, name + '.html')).href);
 
+test('English export keeps its selected language without changing report data', async ({ page }) => {
+  await open(page, 'published-en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByPlaceholder('Ask DB-GPT about this report')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Overview', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Comparison baseline', { exact: true })).toBeVisible();
+  await page.getByPlaceholder('Ask DB-GPT about this report').fill('What does this report show?');
+  await page.getByLabel('Send question', { exact: true }).click();
+  await expect(page.getByText(/Offline snapshots cannot answer online questions/)).toBeVisible();
+  const snapshot = JSON.parse(fs.readFileSync(path.join(root, 'published-en.json'), 'utf8'));
+  expect(await page.locator('#financial-report-data').textContent()).toBeTruthy();
+  expect(JSON.parse(await page.locator('#financial-report-data').textContent())).toEqual(snapshot);
+});
+
 test('comparison controls, table headers and conflicts follow the dark theme', async ({ page }) => {
   await open(page, 'conflict');
   const baseline = page.getByLabel('比较基准', { exact: true });

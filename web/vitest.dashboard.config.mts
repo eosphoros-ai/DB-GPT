@@ -26,7 +26,6 @@ export default defineConfig({
       './hooks/use-chat.failure.test.tsx',
       './utils/question-session.test.ts',
       './lib/model-runtime.test.ts',
-      './new-components/financial-analysis/recover-history.test.ts',
     ],
     restoreMocks: true,
     clearMocks: true,

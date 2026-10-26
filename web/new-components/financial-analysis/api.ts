@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/client/api';
 import { GET, POST } from '@/client/api';
+import i18next from 'i18next';
 import { financialText } from './i18n';
 import type {
   ComparisonConfig,
@@ -58,6 +59,7 @@ export async function createExport(sessionId: string, runId: string, revision: s
       session_id: sessionId,
       revision,
       format,
+      language: i18next.language?.toLowerCase().startsWith('en') ? 'en' : 'zh',
     }),
   );
 }

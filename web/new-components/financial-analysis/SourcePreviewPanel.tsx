@@ -39,7 +39,10 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
       <h2>{document.fileName}</h2>
       <p className={styles.sectionDescription}>
         {document.fiscalPeriod} ·{' '}
-        {sourceAccess ? financialText('financial.metric_reference_pdf_physical_page') : 'PDF Page'} {evidence.page}
+        {sourceAccess
+          ? financialText('financial.metric_reference_pdf_physical_page')
+          : financialText('financial.pdf_page')}{' '}
+        {evidence.page}
         {sourceAccess ? financialText('financial.page') : ''}
       </p>
       {!sourceAccess && (

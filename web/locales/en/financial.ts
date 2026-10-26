@@ -1,4 +1,15 @@
 const financial = {
+  'financial.offline_question_unavailable':
+    'Offline snapshots cannot answer online questions. Open this report in the application.',
+  'financial.overview': 'Overview',
+  'financial.pdf_page': 'PDF page',
+  'financial.select_comparison_baseline': 'Select a baseline report',
+  'financial.run_pending': 'Pending',
+  'financial.run_running': 'Running',
+  'financial.run_completed': 'Completed',
+  'financial.run_failed': 'Failed',
+  'financial.retry_topic_prompt':
+    'Continue report {{runId}} and reanalyze only topic {{topicId}}, preserving other topics. Read the report first, then use get_financial_topic(retry=true), review and publish the revision without parsing the PDF again.',
   'financial.': '):',
   'financial.about_source_previews': 'About source previews',
   'financial.about_this_workspace': 'About this workspace',

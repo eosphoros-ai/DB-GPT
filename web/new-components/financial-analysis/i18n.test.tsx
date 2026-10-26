@@ -11,6 +11,7 @@ import ComparisonHeader from './comparison/ComparisonHeader';
 import { comparisonReason } from './comparison/comparison-data';
 import { syntheticComparison } from './comparison/synthetic-fixture';
 import { financialText } from './i18n';
+import { runStatusLabels } from './report-data';
 
 it('keeps financial locale keys and interpolation parameters identical', () => {
   expect(Object.keys(en).sort()).toEqual(Object.keys(zh).sort());
@@ -58,9 +59,14 @@ it('updates progress, version controls and comparison labels when language chang
   expect(supportLabels.supported).toBe('Supported by evidence');
   expect(comparisonReason('missing_input')).toBe('No usable data');
   expect(financialText('financial.request_failed_please_retry')).toBe('Request failed. Please retry.');
+  expect(runStatusLabels.pending).toBe('Pending');
+  expect(runStatusLabels.running).toBe('Running');
+  expect(runStatusLabels.failed).toBe('Failed');
   await act(async () => {
     await i18next.changeLanguage('zh');
   });
   expect(screen.getByRole('heading', { name: zh['financial.stage_read'] })).toBeTruthy();
   expect(supportLabels.supported).toBe(zh['financial.supported_by_evidence']);
+  expect(runStatusLabels.pending).toBe(zh['financial.run_pending']);
+  expect(runStatusLabels.failed).toBe(zh['financial.run_failed']);
 });

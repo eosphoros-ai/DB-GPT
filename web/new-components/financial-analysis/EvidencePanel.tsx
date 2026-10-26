@@ -92,7 +92,6 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
               ))}
             </div>
             <strong className={styles.calculationResult}>{calculation.displayResult}</strong>
-            {data.mode === 'report' && calculation.steps.map((step, index) => <p key={index}>{step}</p>)}
           </div>
         ))}
       </section>

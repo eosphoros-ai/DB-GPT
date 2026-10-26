@@ -1,4 +1,14 @@
 const financial = {
+  'financial.offline_question_unavailable': '离线快照不能在线追问，请回到应用打开此报告。',
+  'financial.overview': '概览',
+  'financial.pdf_page': 'PDF 页码',
+  'financial.select_comparison_baseline': '请选择基准报告',
+  'financial.run_pending': '等待中',
+  'financial.run_running': '运行中',
+  'financial.run_completed': '已完成',
+  'financial.run_failed': '失败',
+  'financial.retry_topic_prompt':
+    '请继续报告 {{runId}}，只重新分析专题 {{topicId}}，保留其他专题。先读取报告，再使用 get_financial_topic(retry=true)，修订后复核并发布，不重新解析 PDF。',
   'financial.': '页）：',
   'financial.about_source_previews': '来源预览说明',
   'financial.about_this_workspace': '关于此工作区',

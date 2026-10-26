@@ -42,12 +42,17 @@ const ComparisonHeader: React.FC<{ data: ComparisonReportData; access?: Comparis
               void run(() => access!.configure({ ...data.comparison.config, baseline_file_id: fileId }, data.revision));
             }}
           >
-            {data.documents.map(document => (
-              <option key={document.id} value={document.fileId}>
-                {data.comparison.entities.find(entity => entity.id === document.entityId)?.name} ·{' '}
-                {document.fiscalPeriod}
-              </option>
-            ))}
+            <option value='' disabled>
+              {financialText('financial.select_comparison_baseline')}
+            </option>
+            {data.documents
+              .filter(document => document.fileId)
+              .map(document => (
+                <option key={document.id} value={document.fileId}>
+                  {data.comparison.entities.find(entity => entity.id === document.entityId)?.name} ·{' '}
+                  {document.fiscalPeriod}
+                </option>
+              ))}
           </select>
         </label>
         {access && data.members.some(member => ['failed', 'interrupted'].includes(member.status)) && (

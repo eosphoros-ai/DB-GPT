@@ -67,7 +67,7 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
         onPressEnter={event => {
           if (!event.nativeEvent.isComposing) submit();
         }}
-        placeholder='Ask DB-GPT about this report…'
+        placeholder={financialText('financial.ask_db_gpt_about_this_report')}
         aria-label={financialText('financial.ask_db_gpt_about_this_report')}
         className={styles.composerInput}
         suffix={

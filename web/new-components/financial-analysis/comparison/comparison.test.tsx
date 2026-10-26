@@ -44,6 +44,18 @@ describe('financial comparison protocol and evidence', () => {
 });
 
 describe('comparison workspace', () => {
+  it('starts with an empty baseline and excludes documents without a file id', async () => {
+    const data = syntheticComparison();
+    data.comparison.config.baseline_file_id = null;
+    data.documents.push({ ...data.documents[0], id: 'unavailable', fileId: undefined });
+    const configure = vi.fn().mockResolvedValue(undefined);
+    render(<ComparisonHeader data={data} access={{ configure, resume: vi.fn() }} />);
+    const select = screen.getByLabelText('比较基准') as HTMLSelectElement;
+    expect(select.value).toBe('');
+    expect([...select.options].map(option => option.value)).toEqual(['', 'a', 'b']);
+    fireEvent.change(select, { target: { value: 'a' } });
+    await waitFor(() => expect(configure).toHaveBeenCalledWith({ kind: 'peer', baseline_file_id: 'a' }, data.revision));
+  });
   it('explains a saved timeout without claiming the source data is missing', () => {
     const data = syntheticComparison();
     data.workflow = {

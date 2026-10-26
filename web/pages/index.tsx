@@ -128,6 +128,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { financialText, useFinancialLocale } from '../new-components/financial-analysis/i18n';
+import { financialTopicRetryPrompt } from '../new-components/financial-analysis/topic-retry';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -4198,9 +4199,8 @@ const Playground: NextPage = () => {
                         onFinancialCitationClick={citation => openFinancialCitation(citation, activeViewMsg?.id)}
                         onFinancialTopicRetry={(reference, topicId) => {
                           if (loading || reference.sessionId !== conversationId) return;
-                          void handleStart(
-                            `请继续报告 ${reference.runId}，只重新分析专题 ${topicId}，保留其他专题。先读取报告，再使用 get_financial_topic(retry=true)，修订后复核并发布，不重新解析 PDF。`,
-                          );
+                          const prompt = financialTopicRetryPrompt(reference.runId, topicId);
+                          if (prompt) void handleStart(prompt);
                         }}
                         activeStep={activeStep}
                         outputs={outputs}

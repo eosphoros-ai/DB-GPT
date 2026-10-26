@@ -255,7 +255,7 @@ const FinancialAnalysisWorkspace: React.FC<{
       ? [
           {
             key: 'overview',
-            label: 'Overview',
+            label: financialText('financial.overview'),
             content: <ComparisonSections data={data} section='overview' onOpenEvidence={openEvidence} />,
           },
           {
@@ -275,7 +275,11 @@ const FinancialAnalysisWorkspace: React.FC<{
           },
         ]
       : [
-          { key: 'overview', label: 'Overview', content: <OverviewTab onOpenEvidence={openEvidence} /> },
+          {
+            key: 'overview',
+            label: financialText('financial.overview'),
+            content: <OverviewTab onOpenEvidence={openEvidence} />,
+          },
           {
             key: 'profitability',
             label: financialText('financial.earnings_quality'),

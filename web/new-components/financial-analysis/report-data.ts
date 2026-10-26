@@ -53,7 +53,20 @@ export function periodRange(points: Array<{ year: string }>) {
     : periods[0] || financialText('financial.period_unavailable');
 }
 
-export const runStatusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
+export const runStatusLabels = {
+  get pending() {
+    return financialText('financial.run_pending');
+  },
+  get running() {
+    return financialText('financial.run_running');
+  },
+  get completed() {
+    return financialText('financial.run_completed');
+  },
+  get failed() {
+    return financialText('financial.run_failed');
+  },
+};
 
 export function reportRunState(data: FinancialReportData) {
   if (data.mode === 'comparison') {
@@ -77,6 +90,9 @@ export function reportRunState(data: FinancialReportData) {
   if (data.workflow) {
     // Publication is independent of how much analysis the source supports.
     const complete = data.workflow.status === 'published';
+    if (!complete && data.analysis?.status === 'failed') {
+      return { label: financialText('financial.data_available_analysis_incomplete'), working: false, complete: false };
+    }
     return {
       label: complete ? financialText('financial.report_generated') : financialText('financial.analyzing'),
       working: !complete,
