@@ -7,6 +7,9 @@ const path = require("path");
 const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
 
 const nextConfig = {
+  agentRules: false,
+  // Local development is also opened through the loopback IP.
+  allowedDevOrigins: ['127.0.0.1'],
   // Chart extensions require G2 from CommonJS. Bundle page dependencies so
   // they share Webpack module loading instead of racing native ESM imports.
   bundlePagesRouterDependencies: true,
@@ -19,6 +22,8 @@ const nextConfig = {
   // `next-transpile-modules` is unmaintained and does not support Next.js 16.
   // Next has had the same capability built in since 13.1.
   transpilePackages: [
+    "@ant-design/plots",
+    "@antv/ava",
     "@berryv/g2-react",
     "@antv/g2",
     "react-syntax-highlighter",
@@ -62,6 +67,12 @@ const nextConfig = {
     };
     config.resolve.fallback = { fs: false };
     if (!isServer) {
+      // Fast Refresh injects import.meta into Babel's nested CommonJS runtime.
+      // Allow both module syntaxes for these client-side runtime modules.
+      config.module.rules.push({
+        test: /[\\/]@babel[\\/]runtime[\\/].*\.js$/,
+        type: 'javascript/auto',
+      });
       config.plugins.push(
         new CopyPlugin({
           patterns: [
