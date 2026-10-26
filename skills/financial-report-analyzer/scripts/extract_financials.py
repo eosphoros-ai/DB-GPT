@@ -8,6 +8,7 @@ from financial_document import extract_document
 
 
 def extract_financials(file_path):
+    """Extract annual-report facts or return a JSON-serializable error."""
     try:
         return extract_document(Path(file_path))
     except Exception as exc:

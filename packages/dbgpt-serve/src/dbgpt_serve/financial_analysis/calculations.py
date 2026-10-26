@@ -26,10 +26,12 @@ EXPENSE_RATIOS = {
 
 
 def calculate(facts, year):
+    """Calculate exact ratios for compatible facts and retain auditable inputs."""
     index = {(f["metricCode"], f["fiscalPeriod"]): f for f in facts}
     traces = []
 
     def add(code, name, terms, formula, operation, unit, *, growth=False, period=None):
+        """Append a formula result or an explicit unavailable-input explanation."""
         result_period = period or year
         inputs = [index.get(term) for term in terms]
         reason = None
@@ -75,7 +77,8 @@ def calculate(facts, year):
             except (ZeroDivisionError, InvalidOperation):
                 reason = "zero_denominator"
         steps = [
-            f"{f['fiscalPeriod']} {f['metricName']} = {f['normalizedValue']} 元"
+            f"{f['fiscalPeriod']} {f['metricName']} = {f['normalizedValue']} "
+            f"{f.get('unit') or '未知单位'} ({f.get('currency') or '未知币种'})"
             for f in inputs
             if f and f.get("normalizedValue") is not None
         ]

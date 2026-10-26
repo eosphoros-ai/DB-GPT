@@ -55,6 +55,7 @@ MAJOR_HEADING = re.compile(r"^[一二三四五六七八九十]+[、.．]")
 
 
 def compact(value):
+    """Remove whitespace from a PDF label or cell, treating None as empty."""
     return re.sub(r"\s+", "", value or "")
 
 
@@ -77,6 +78,7 @@ def amount(raw, unit):
 
 
 def period_header(raw):
+    """Return the year of a recognized annual or year-end column header."""
     value = compact(raw)
     match = re.fullmatch(r"(20\d{2})(?:年(?:度|末)?|年12月31日|-12-31)", value)
     return match.group(1) if match else None
@@ -101,6 +103,7 @@ def source_period(raw):
 
 
 def row_metric(label):
+    """Match a cleaned row label to an exact supported metric alias."""
     value = compact(label).replace("（", "(").replace("）", ")")
     value = re.sub(r"^(?:[一二三四五六七八九十]+[、.]|\d+[.、])", "", value)
     value = re.sub(r"^(?:其中[:：])", "", value)
@@ -112,6 +115,7 @@ def row_metric(label):
 
 
 def unit_in(text):
+    """Read a supported yuan scale from an explicit unit label."""
     match = re.search(
         r"(?:单位[:：]|[（(])(?:人民币)?(百万元|千元|万元|亿元|元)"
         r"(?:[）)]|币种|$)",
@@ -121,6 +125,7 @@ def unit_in(text):
 
 
 def currency_in(text):
+    """Return a recognized currency code from an explicit name or code."""
     for pattern, currency in [
         (r"美元|USD", "USD"),
         (r"港币|港元|HKD", "HKD"),
@@ -325,6 +330,7 @@ def join_label_continuations(pages):
 
 
 def table_candidates(pages, document_id):
+    """Collect period-qualified table observations with cell-level evidence."""
     for page in pages:
         for table in page["tables"]:
             table.pop("parseIssues", None)
@@ -523,6 +529,7 @@ def table_candidates(pages, document_id):
 
 
 def build_result(pages, document_id, file_name):
+    """Build exact facts, evidence, extraction status, and legacy numeric fields."""
     cover = "\n".join(page["text"] for page in pages[:5])
     year_match = re.search(r"(20\d{2})\s*年\s*(?:年度|度)?\s*报告", cover)
     company_match = re.search(
@@ -687,6 +694,7 @@ def build_result(pages, document_id, file_name):
 
 
 def extract_document(path, *, artifact_dir=None):
+    """Extract a text PDF and optionally save raw page and cell audit artifacts."""
     path = Path(path)
     if path.suffix.lower() != ".pdf":
         raise ValueError(

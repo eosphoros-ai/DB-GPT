@@ -9,10 +9,12 @@ import re
 
 
 def compact(value):
+    """Remove whitespace from a PDF cell, treating None as empty."""
     return re.sub(r"\s+", "", value or "")
 
 
 def _number(value):
+    """Recognize numeric cells and missing-amount dashes for column recovery."""
     value = compact(value).replace("，", ",").replace("−", "-").replace("－", "-")
     return value in {"-", "--", "—", "–"} or bool(
         re.fullmatch(r"[（(]?[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?[%）)]?", value)
@@ -20,6 +22,7 @@ def _number(value):
 
 
 def _overlap(a, b):
+    """Return the width shared by two horizontal intervals."""
     return max(0, min(a[1], b[1]) - max(a[0], b[0]))
 
 
@@ -108,6 +111,7 @@ def aligned_columns(previous, current):
 
 
 def relative_columns(table):
+    """Normalize logical column bounds relative to the table's horizontal span."""
     bounds = table["bbox"]
     width = bounds[2] - bounds[0]
     return [
