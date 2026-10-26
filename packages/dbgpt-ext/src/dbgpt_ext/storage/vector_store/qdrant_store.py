@@ -261,12 +261,15 @@ class QdrantStore(VectorStoreBase):
             self._client = _get_local_client(vector_store_config.path)
         else:
             if vector_store_config.url:
-                location = {"url": vector_store_config.url}
+                # The client applies `port` to a portless URL, so use the default.
+                location = {"url": vector_store_config.url, "port": 6333}
             else:
-                location = {"host": vector_store_config.host}
+                location = {
+                    "host": vector_store_config.host,
+                    "port": vector_store_config.port,
+                }
             self._client = QdrantClient(
                 **location,
-                port=vector_store_config.port,
                 grpc_port=vector_store_config.grpc_port,
                 api_key=vector_store_config.api_key,
                 https=vector_store_config.https,
