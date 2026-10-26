@@ -49,6 +49,11 @@ this integration branch.
 
 ## Current validation
 
+The subsequent 15-item review-fix verification is recorded in
+[review fixes](financial-analysis-review-fixes.md). Counts in the table below
+describe the earlier preparation snapshot; use that record for the repaired
+branch's current results.
+
 The checks below were run on Windows with Python 3.11.9, Node 24.19.0,
 Ruff 0.17.2, mypy 1.15.0, and the existing installed workspace dependencies.
 No live model was called and no application database was migrated or reset.
@@ -94,6 +99,8 @@ Install the project's dependencies using `CONTRIBUTING.md`. The recorded
 uv run --no-sync pytest \
   packages/dbgpt-serve/src/dbgpt_serve/financial_analysis/tests \
   packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_comparison_tools.py \
+  packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_workflow_tools.py \
+  packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_turn_scope.py \
   packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_execution_progress.py \
   packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_history_recovery.py \
   packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_react_history.py \
@@ -118,7 +125,7 @@ uv run --no-sync python scripts/verify_financial_comparison.py \
   --output-dir web/node_modules/.cache/financial-comparison \
   --runtime web/node_modules/.cache/financial-comparison/pr-runtime.html
 cd web
-npx playwright test --config playwright.financial.config.ts offline-comparison.spec.cjs
+npm run test:e2e:financial
 npx playwright test --config playwright.recovery.config.ts
 ```
 
@@ -129,7 +136,7 @@ separate terminal, set `FINANCIAL_LIVE_BASE_URL` to its URL, and run:
 
 ```bash
 cd web
-npx playwright test --config playwright.financial.config.ts live-report-delivery.spec.cjs
+npm run test:e2e:financial:live
 ```
 
 Use a free port and stop the server after testing. The recorded run combined

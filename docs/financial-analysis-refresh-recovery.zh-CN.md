@@ -20,7 +20,7 @@ ReAct 对话现在会在执行开始时保存用户消息和当前轮次，并�
 验证命令：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_react_history.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_history_recovery.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_report_persistence_publication.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_react_final.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_share_privacy.py -q
+uv run --no-sync python -m pytest packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_react_history.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_history_recovery.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_report_persistence_publication.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_react_final.py packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_share_privacy.py -q
 cd web
 npx vitest run --config vitest.dashboard.config.mts new-components/financial-analysis/recover-history.test.ts
 npx playwright test --config playwright.recovery.config.ts
