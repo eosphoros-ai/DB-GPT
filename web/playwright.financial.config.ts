@@ -12,7 +12,7 @@ export default defineConfig({
   expect: { timeout: 15000 },
   use: {
     ...devices['Desktop Chrome'],
-    channel: process.env.FINANCIAL_E2E_BROWSER_CHANNEL || 'chrome',
+    channel: process.env.FINANCIAL_E2E_BROWSER_CHANNEL || undefined,
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

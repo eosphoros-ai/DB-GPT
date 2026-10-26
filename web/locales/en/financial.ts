@@ -2,7 +2,7 @@ const financial = {
   'financial.offline_question_unavailable':
     'Offline snapshots cannot answer online questions. Open this report in the application.',
   'financial.overview': 'Overview',
-  'financial.pdf_page': 'PDF page',
+  'financial.pdf_page_number': 'PDF page {{page}}',
   'financial.select_comparison_baseline': 'Select a baseline report',
   'financial.run_pending': 'Pending',
   'financial.run_running': 'Running',
@@ -10,7 +10,6 @@ const financial = {
   'financial.run_failed': 'Failed',
   'financial.retry_topic_prompt':
     'Continue report {{runId}} and reanalyze only topic {{topicId}}, preserving other topics. Read the report first, then use get_financial_topic(retry=true), review and publish the revision without parsing the PDF again.',
-  'financial.': '):',
   'financial.about_source_previews': 'About source previews',
   'financial.about_this_workspace': 'About this workspace',
   'financial.additional_findings': 'Additional findings',
@@ -60,7 +59,7 @@ const financial = {
   'financial.comparison_subjects_or_periods_need_confirmation': 'Comparison subjects or periods need confirmation',
   'financial.completed': 'Completed',
   'financial.computer_workspace': 'Computer workspace',
-  'financial.confirm': 'Confirm ',
+  'financial.confirm_company_and_reporting_year': 'Confirm the company and reporting year for {{fileName}}.',
   'financial.confirm_and_continue': 'Confirm and continue',
   'financial.confirm_company_name': 'Confirm company name',
   'financial.confirm_comparison_subjects_and_reporting_basis': 'Confirm comparison subjects and reporting basis',
@@ -87,7 +86,7 @@ const financial = {
   'financial.download_failed': 'Download failed',
   'financial.download_original_pdf': 'Download original PDF',
   'financial.earnings_quality': 'Earnings quality',
-  'financial.elapsed': 'Elapsed',
+  'financial.elapsed_seconds': 'Elapsed {{seconds}} seconds',
   'financial.evidence': 'Evidence',
   'financial.evidence_for_the_selected_metric_or_source_appears_here':
     'Evidence for the selected metric or source appears here.',
@@ -109,7 +108,8 @@ const financial = {
   'financial.extract_metrics': 'Extract metrics',
   'financial.extractable_data_has_been_saved_but_subjects_or_periods_do_not_yet_s':
     'Extractable data has been saved, but subjects or periods do not yet support a valid comparison.',
-  'financial.extracted': 'Extracted',
+  'financial.extracted_summary':
+    'Extracted {{available}} usable values; {{unavailable}} items cannot be calculated. These counts describe extracted data, not coverage of the entire report.',
   'financial.extracted_and_saved': 'Extracted and saved',
   'financial.extracted_value': 'Extracted value',
   'financial.extracted_value_value': 'Extracted value: {{value1}}',
@@ -141,7 +141,7 @@ const financial = {
   'financial.generate_report': 'Generate report',
   'financial.gross_margin_and_expense_ratios': 'Gross margin and expense ratios',
   'financial.header_page': 'Header page',
-  'financial.header_physical_page': 'Header (physical page ',
+  'financial.header_excerpt': 'Header (physical page {{page}}): {{text}}',
   'financial.incomparable': 'Incomparable: ',
   'financial.incomparable_currency_basis_or_attribution': 'Incomparable currency, basis or attribution',
   'financial.inputs_and_analysis_outputs_for_this_task': 'Inputs and analysis outputs for this task',
@@ -152,8 +152,6 @@ const financial = {
   'financial.invalid_file_response': 'Invalid file response',
   'financial.invalid_saved_financial_report_reference': 'Invalid saved financial report reference',
   'financial.item': 'Item',
-  'financial.items_cannot_be_calculated_these_counts_describe_extracted_data_not_':
-    ' items cannot be calculated. These counts describe extracted data, not coverage of the entire report.',
   'financial.keep_your_question_within_1_000_characters': 'Keep your question within 1,000 characters.',
   'financial.key_financial_statement_items': 'Key financial statement items',
   'financial.key_findings': 'Key findings',
@@ -167,7 +165,7 @@ const financial = {
   'financial.metric': 'Metric',
   'financial.metric_and_source_evidence': 'Metric and source evidence',
   'financial.metric_page': 'Metric page',
-  'financial.metric_reference_pdf_physical_page': 'Metric reference: PDF physical page ',
+  'financial.metric_reference_page': 'Metric reference: PDF physical page {{page}}',
   'financial.missing': 'Missing',
   'financial.missing_conflicting_and_incomparable_values_are_omitted_unconfirmed_':
     'Missing, conflicting and incomparable values are omitted. Unconfirmed common reporting bases remain gaps in cross-year trends.',
@@ -260,7 +258,6 @@ const financial = {
   'financial.review_incomplete_data_and_validated_findings_are_retained':
     'Review incomplete; data and validated findings are retained',
   'financial.reviewed_awaiting_human_verification': 'Reviewed; awaiting human verification',
-  'financial.s_company_and_reporting_year': "'s company and reporting year.",
   'financial.save_analysis_results': 'Save analysis results',
   'financial.save_attempts': ' save attempts ·',
   'financial.saved_financial_analysis_restored_view_the_results_or_continue_the_a':
@@ -344,14 +341,13 @@ const financial = {
   'financial.unit_normalization_does_not_convert_currencies_metric_differences_do':
     'Unit normalization does not convert currencies. Metric differences do not rank companies; consider business structure and notes.',
   'financial.unit_page': 'Unit page',
-  'financial.unit_statement_physical_page': 'Unit statement (physical page ',
+  'financial.unit_statement_excerpt': 'Unit statement (physical page {{page}}): {{text}}',
   'financial.unknown': 'Unknown',
   'financial.unresolved': 'Unresolved',
   'financial.upload_text_based_chinese_annual_report_pdfs_choose_single_report_an':
     'Upload text-based Chinese annual-report PDFs. Choose single-report analysis or an explicit comparison to inspect calculations and sources. Verify automatically extracted results.',
   'financial.uploaded_file_pdfvalue': 'Uploaded file · PDF{{value1}}',
   'financial.uploading_and_creating_task': 'Uploading and creating task',
-  'financial.usable_values': ' usable values; ',
   'financial.validated': 'Validated',
   'financial.validation_errors': 'Validation errors',
   'financial.validation_failures': ' validation failures',

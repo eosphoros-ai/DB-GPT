@@ -115,16 +115,15 @@ const ExecutionProcessPanel: React.FC<{
         )}
         {activeStep.id === 'quality' && data.workflow?.dataQuality && (
           <p>
-            {financialText('financial.extracted')}
-            {data.workflow.dataQuality.availableFacts} {financialText('financial.usable_values')}
-            {data.workflow.dataQuality.unavailableCalculations.length}{' '}
-            {financialText('financial.items_cannot_be_calculated_these_counts_describe_extracted_data_not_')}
+            {financialText('financial.extracted_summary', {
+              available: data.workflow.dataQuality.availableFacts,
+              unavailable: data.workflow.dataQuality.unavailableCalculations.length,
+            })}
           </p>
         )}
         {activeStep.elapsedMs !== undefined && (
           <p className={styles.meta}>
-            {financialText('financial.elapsed')}
-            {(activeStep.elapsedMs / 1000).toFixed(2)} {financialText('financial.seconds')}
+            {financialText('financial.elapsed_seconds', { seconds: (activeStep.elapsedMs / 1000).toFixed(2) })}
           </p>
         )}
         {analysis && analysisActions && (

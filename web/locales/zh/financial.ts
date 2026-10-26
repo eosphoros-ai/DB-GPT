@@ -1,7 +1,7 @@
 const financial = {
   'financial.offline_question_unavailable': '离线快照不能在线追问，请回到应用打开此报告。',
   'financial.overview': '概览',
-  'financial.pdf_page': 'PDF 页码',
+  'financial.pdf_page_number': 'PDF 页码 {{page}}',
   'financial.select_comparison_baseline': '请选择基准报告',
   'financial.run_pending': '等待中',
   'financial.run_running': '运行中',
@@ -9,7 +9,6 @@ const financial = {
   'financial.run_failed': '失败',
   'financial.retry_topic_prompt':
     '请继续报告 {{runId}}，只重新分析专题 {{topicId}}，保留其他专题。先读取报告，再使用 get_financial_topic(retry=true)，修订后复核并发布，不重新解析 PDF。',
-  'financial.': '页）：',
   'financial.about_source_previews': '来源预览说明',
   'financial.about_this_workspace': '关于此工作区',
   'financial.additional_findings': '其他研究发现',
@@ -58,7 +57,7 @@ const financial = {
   'financial.comparison_subjects_or_periods_need_confirmation': '比较对象或期间尚待确认',
   'financial.completed': '已完成',
   'financial.computer_workspace': 'Computer 工作区',
-  'financial.confirm': '请确认',
+  'financial.confirm_company_and_reporting_year': '请确认 {{fileName}} 的公司和报告年度。',
   'financial.confirm_and_continue': '确认并继续',
   'financial.confirm_company_name': '确认公司名称',
   'financial.confirm_comparison_subjects_and_reporting_basis': '确认比较对象与数据口径',
@@ -85,7 +84,7 @@ const financial = {
   'financial.download_failed': '下载失败',
   'financial.download_original_pdf': '下载原 PDF',
   'financial.earnings_quality': '盈利质量',
-  'financial.elapsed': '耗时',
+  'financial.elapsed_seconds': '耗时 {{seconds}} 秒',
   'financial.evidence': '证据',
   'financial.evidence_for_the_selected_metric_or_source_appears_here': '此处展示所选指标或来源的依据。',
   'financial.evidence_trail': '证据链',
@@ -106,7 +105,8 @@ const financial = {
   'financial.extract_metrics': '提取指标',
   'financial.extractable_data_has_been_saved_but_subjects_or_periods_do_not_yet_s':
     '当前已保存可提取资料，比较对象或期间尚不足以构成有效对比。',
-  'financial.extracted': '已提取',
+  'financial.extracted_summary':
+    '已提取 {{available}} 个可用值，{{unavailable}} 项不可计算。这表示当前提取范围，不代表整份年报覆盖率。',
   'financial.extracted_and_saved': '已提取并保存',
   'financial.extracted_value': '提取值',
   'financial.extracted_value_value': '提取值：{{value1}}',
@@ -138,7 +138,7 @@ const financial = {
   'financial.generate_report': '生成分析报告',
   'financial.gross_margin_and_expense_ratios': '毛利率与费用率',
   'financial.header_page': '表头所在页',
-  'financial.header_physical_page': '表头（物理第',
+  'financial.header_excerpt': '表头（物理第 {{page}} 页）：{{text}}',
   'financial.incomparable': '不可比：',
   'financial.incomparable_currency_basis_or_attribution': '币种、口径或归属不可比',
   'financial.inputs_and_analysis_outputs_for_this_task': '本轮输入资料与分析交付物',
@@ -148,8 +148,6 @@ const financial = {
   'financial.invalid_file_response': '文件响应格式错误',
   'financial.invalid_saved_financial_report_reference': '保存的财报引用无效',
   'financial.item': '项目',
-  'financial.items_cannot_be_calculated_these_counts_describe_extracted_data_not_':
-    '项不可计算。 这表示当前提取范围，不代表整份年报覆盖率。',
   'financial.keep_your_question_within_1_000_characters': '问题请控制在 1000 字以内。',
   'financial.key_financial_statement_items': '关键报表项目',
   'financial.key_findings': '核心研究发现',
@@ -163,7 +161,7 @@ const financial = {
   'financial.metric': '指标',
   'financial.metric_and_source_evidence': '指标与来源依据',
   'financial.metric_page': '指标所在页',
-  'financial.metric_reference_pdf_physical_page': '指标引用：PDF 物理第',
+  'financial.metric_reference_page': '指标引用：PDF 物理第 {{page}} 页',
   'financial.missing': '缺失',
   'financial.missing_conflicting_and_incomparable_values_are_omitted_unconfirmed_':
     '缺失、冲突与不可比项不绘制；跨年未确认的共同披露基础保留为断点。',
@@ -252,7 +250,6 @@ const financial = {
   'financial.review_findings_against_source_evidence': '核对结论与原文依据',
   'financial.review_incomplete_data_and_validated_findings_are_retained': '复核未完成，数据与已校验发现已保留',
   'financial.reviewed_awaiting_human_verification': '已复核，待人工核对',
-  'financial.s_company_and_reporting_year': '的公司和报告年度。',
   'financial.save_analysis_results': '保存本次分析结果',
   'financial.save_attempts': '次保存尝试 ·',
   'financial.saved_financial_analysis_restored_view_the_results_or_continue_the_a':
@@ -332,14 +329,13 @@ const financial = {
   'financial.unit_normalization_does_not_convert_currencies_metric_differences_do':
     '单位统一不涉及汇率换算。指标差异不等于企业优劣，解释仍需结合业务结构与附注。',
   'financial.unit_page': '单位所在页',
-  'financial.unit_statement_physical_page': '单位声明（物理第',
+  'financial.unit_statement_excerpt': '单位声明（物理第 {{page}} 页）：{{text}}',
   'financial.unknown': '未知',
   'financial.unresolved': '尚未解决',
   'financial.upload_text_based_chinese_annual_report_pdfs_choose_single_report_an':
     '上传中文文本型年度报告 PDF，选择单报告或明确的对比任务，查看计算过程与来源。自动提取结果需要核对。',
   'financial.uploaded_file_pdfvalue': '上传资料 · PDF{{value1}}',
   'financial.uploading_and_creating_task': '正在上传并创建任务',
-  'financial.usable_values': '个可用值，',
   'financial.validated': '已核验',
   'financial.validation_errors': '校验错误',
   'financial.validation_failures': '次校验失败',

@@ -225,32 +225,43 @@ const FinancialAnalysisRoute: React.FC = () => {
   const activeRun = run?.id === runId && run.session_id === sessionId ? run : null;
   if (data && loadedScope === reportScope && data.report.run.id === runId)
     return (
-      <FinancialReportView
-        data={data}
-        onNewReport={startNew}
-        sourceAccess={sourceAccess}
-        questionAccess={questionAccess}
-        exportAccess={exportAccess}
-        revisionAccess={revisionAccess}
-        comparisonAccess={data.mode === 'comparison' && !revision ? comparisonAccess : undefined}
-        onTopicRetry={
-          data.mode === 'comparison' && !revision
-            ? topicId => {
-                void retryComparisonTopic(sessionId, runId, data.revision, topicId)
-                  .then(() => setRetry(value => value + 1))
-                  .catch(cause => setError(requestError(cause)));
-              }
-            : undefined
-        }
-        analysisActions={{
-          retry: () => {
-            if (activeRun) void submit(activeRun);
-          },
-          refresh: () => setRetry(value => value + 1),
-          busy,
-          error,
-        }}
-      />
+      <>
+        {error && data.mode === 'comparison' && (
+          <Alert
+            type='error'
+            message={error}
+            closable
+            onClose={() => setError('')}
+            action={<Button onClick={() => setRetry(value => value + 1)}>{financialText('financial.reload')}</Button>}
+          />
+        )}
+        <FinancialReportView
+          data={data}
+          onNewReport={startNew}
+          sourceAccess={sourceAccess}
+          questionAccess={questionAccess}
+          exportAccess={exportAccess}
+          revisionAccess={revisionAccess}
+          comparisonAccess={data.mode === 'comparison' && !revision ? comparisonAccess : undefined}
+          onTopicRetry={
+            data.mode === 'comparison' && !revision
+              ? topicId => {
+                  void retryComparisonTopic(sessionId, runId, data.revision, topicId)
+                    .then(() => setRetry(value => value + 1))
+                    .catch(cause => setError(requestError(cause)));
+                }
+              : undefined
+          }
+          analysisActions={{
+            retry: () => {
+              if (activeRun) void submit(activeRun);
+            },
+            refresh: () => setRetry(value => value + 1),
+            busy,
+            error,
+          }}
+        />
+      </>
     );
   const invalidLink = !!runId !== !!sessionId;
   return (

@@ -78,9 +78,9 @@ const ComparisonHeader: React.FC<{ data: ComparisonReportData; access?: Comparis
           ) : (
             <>
               <p>
-                {financialText('financial.confirm')}
-                {data.members.find(member => member.file_id === clarification.fileId)?.file_name}{' '}
-                {financialText('financial.s_company_and_reporting_year')}
+                {financialText('financial.confirm_company_and_reporting_year', {
+                  fileName: data.members.find(member => member.file_id === clarification.fileId)?.file_name,
+                })}
               </p>
               {access &&
                 clarification.fileId &&

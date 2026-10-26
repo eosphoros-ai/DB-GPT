@@ -5,8 +5,12 @@ workspace following `CONTRIBUTING.md`, including the companion financial-analysi
 backend. Run:
 
 ```sh
+npm --prefix web exec -- playwright install chromium
 npm --prefix web run test:e2e:financial -- --grep-invert "saved real"
 ```
+
+Tests use Playwright's bundled Chromium by default. To use an installed Chrome
+instead, set `FINANCIAL_E2E_BROWSER_CHANNEL=chrome`.
 
 The npm prerequisite builds the offline runtime and regenerates all synthetic
 JSON/HTML fixtures before Playwright starts. It does not invoke a model or read

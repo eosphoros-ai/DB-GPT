@@ -40,10 +40,8 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
       <p className={styles.sectionDescription}>
         {document.fiscalPeriod} ·{' '}
         {sourceAccess
-          ? financialText('financial.metric_reference_pdf_physical_page')
-          : financialText('financial.pdf_page')}{' '}
-        {evidence.page}
-        {sourceAccess ? financialText('financial.page') : ''}
+          ? financialText('financial.metric_reference_page', { page: evidence.page })
+          : financialText('financial.pdf_page_number', { page: evidence.page })}
       </p>
       {!sourceAccess && (
         <p className={styles.researchNote}>
@@ -66,16 +64,12 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
       </blockquote>
       {sourceAccess && evidence.headerSnippet && (
         <p className={styles.meta}>
-          {financialText('financial.header_physical_page')}
-          {evidence.headerPage} {financialText('financial.')}
-          {evidence.headerSnippet}
+          {financialText('financial.header_excerpt', { page: evidence.headerPage, text: evidence.headerSnippet })}
         </p>
       )}
       {sourceAccess && evidence.unitText && (
         <p className={styles.meta}>
-          {financialText('financial.unit_statement_physical_page')}
-          {evidence.unitPage} {financialText('financial.')}
-          {evidence.unitText}
+          {financialText('financial.unit_statement_excerpt', { page: evidence.unitPage, text: evidence.unitText })}
         </p>
       )}
       {evidence.extractedValue && (
