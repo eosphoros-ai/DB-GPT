@@ -96,3 +96,13 @@ test('a running checkpoint restores progress without pretending the step complet
   await expect(page.getByText('检查正在分析的年报', { exact: true })).toBeVisible();
   expect(page.url()).toContain(`id=${sessionId}`);
 });
+
+test('optional report recovery failure leaves an empty conversation usable', async ({ page }) => {
+  await mockApi(page, []);
+  await page.route('**/financial-analysis/runs/latest?*', route => route.abort('failed'));
+  await page.goto(`/?id=${sessionId}`);
+  await expect(page.locator('textarea:visible').first()).toBeEnabled();
+  await expect(page.getByText('加载历史对话失败', { exact: true })).toHaveCount(0);
+  await page.locator('textarea:visible').first().fill('新的普通问题');
+  expect(page.url()).toContain(`id=${sessionId}`);
+});

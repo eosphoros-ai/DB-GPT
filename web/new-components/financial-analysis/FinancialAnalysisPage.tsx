@@ -28,6 +28,7 @@ import SourcePreviewPanel from './SourcePreviewPanel';
 import ComparisonHeader from './comparison/ComparisonHeader';
 import ComparisonSections from './comparison/ComparisonSections';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import { resolveFinancialCitation, type FinancialCitationTarget } from './report-citations';
 import { reportRunState } from './report-data';
 import {
@@ -43,18 +44,44 @@ import {
 
 type WorkspaceTab = 'report' | 'execution' | 'files' | 'skill' | 'evidence';
 const workspaceTabs: Array<{ key: WorkspaceTab; label: string; icon: React.ReactNode }> = [
-  { key: 'report', label: '分析报告', icon: <FileTextOutlined /> },
-  { key: 'execution', label: '执行过程', icon: <DesktopOutlined /> },
-  { key: 'files', label: '文件', icon: <FolderOpenOutlined /> },
+  {
+    key: 'report',
+    get label() {
+      return financialText('financial.report');
+    },
+    icon: <FileTextOutlined />,
+  },
+  {
+    key: 'execution',
+    get label() {
+      return financialText('financial.execution');
+    },
+    icon: <DesktopOutlined />,
+  },
+  {
+    key: 'files',
+    get label() {
+      return financialText('financial.files');
+    },
+    icon: <FolderOpenOutlined />,
+  },
   { key: 'skill', label: 'financial-report-analyzer', icon: <AppstoreOutlined /> },
-  { key: 'evidence', label: '证据', icon: <FileSearchOutlined /> },
+  {
+    key: 'evidence',
+    get label() {
+      return financialText('financial.evidence');
+    },
+    icon: <FileSearchOutlined />,
+  },
 ];
-const capabilityNote = '当前页面展示所选报告数据。追问仅依据当前报告，缺少的指标与来源会明确标记。';
+const capabilityNote = () =>
+  financialText('financial.this_workspace_shows_the_selected_report_questions_use_that_report_w');
 
 const ArtifactContext: React.FC<{
   comparisonAccess?: ComparisonAccess;
   revisionAccess?: ReportRevisionAccess;
 }> = ({ comparisonAccess, revisionAccess }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const { report, documents } = data;
   return (
@@ -65,7 +92,7 @@ const ArtifactContext: React.FC<{
       <h1>{data.mode === 'comparison' ? data.comparison.title : data.report.companyName}</h1>
       <div className={styles.meta}>
         {report.title} · {report.statementScope} · {report.currency} ·{' '}
-        {documents.map(item => item.fileName).join(' / ') || '来源文件未提供'}
+        {documents.map(item => item.fileName).join(' / ') || financialText('financial.source_file_unavailable')}
       </div>
       <ReportVersions access={revisionAccess} revision={data.revision} />
       {data.mode === 'comparison' && <ComparisonHeader data={data} access={comparisonAccess} />}
@@ -78,13 +105,16 @@ const FilesPanel: React.FC<{
   onOpenArtifact: () => void;
   exportAccess?: ReportExportAccess;
 }> = ({ onOpenSource, onOpenArtifact, exportAccess }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const files = [
     ...data.documents.map(document => {
       const evidence = data.evidence.find(item => item.sourceDocumentId === document.id);
       return {
         name: document.fileName,
-        detail: `上传资料 · PDF${document.sizeBytes === undefined ? '' : ` · ${(document.sizeBytes / 1024 / 1024).toFixed(1)} MB`}`,
+        detail: financialText('financial.uploaded_file_pdfvalue', {
+          value1: document.sizeBytes === undefined ? '' : ` · ${(document.sizeBytes / 1024 / 1024).toFixed(1)} MB`,
+        }),
         icon: <FilePdfOutlined />,
         action: evidence ? () => onOpenSource(evidence) : undefined,
       };
@@ -98,10 +128,12 @@ const FilesPanel: React.FC<{
   ];
   return (
     <div className={styles.utilityPanel}>
-      <h2>任务文件</h2>
-      <p className={styles.sectionDescription}>本轮输入资料与分析交付物</p>
+      <h2>{financialText('financial.task_files')}</h2>
+      <p className={styles.sectionDescription}>
+        {financialText('financial.inputs_and_analysis_outputs_for_this_task')}
+      </p>
       {exportAccess && <ReportExports access={exportAccess} />}
-      {!files.length && <p className={styles.meta}>暂无文件</p>}
+      {!files.length && <p className={styles.meta}>{financialText('financial.no_files')}</p>}
       {files.map(file => (
         <div className={styles.fileRow} key={file.name}>
           {file.icon}
@@ -111,7 +143,7 @@ const FilesPanel: React.FC<{
           </div>
           {file.action && (
             <button type='button' className={styles.textLink} onClick={file.action}>
-              查看 →
+              {financialText('financial.view')}
             </button>
           )}
         </div>
@@ -120,29 +152,32 @@ const FilesPanel: React.FC<{
   );
 };
 const SkillPanel: React.FC = () => {
+  useFinancialLocale();
   const { data } = useReportData();
   return (
     <div className={styles.utilityPanel}>
       <div className={styles.meta}>DB-GPT Skill</div>
       <h2>financial-report-analyzer</h2>
-      <p className={styles.sectionDescription}>提取财务指标、执行比率计算、生成图表并形成财务分析报告。</p>
+      <p className={styles.sectionDescription}>
+        {financialText('financial.extract_financial_metrics_calculate_ratios_create_charts_and_assembl')}
+      </p>
       <dl className={styles.driverTable}>
         <div>
-          <dt>提取指标</dt>
+          <dt>{financialText('financial.extract_metrics')}</dt>
           <dd>extract_financials.py</dd>
         </div>
         <div>
-          <dt>比率计算</dt>
+          <dt>{financialText('financial.calculate_ratios')}</dt>
           <dd>calculate_ratios.py</dd>
         </div>
         <div>
-          <dt>生成图表</dt>
+          <dt>{financialText('financial.create_charts')}</dt>
           <dd>generate_charts.py</dd>
         </div>
       </dl>
       <details className={styles.developerNote}>
-        <summary>关于此工作区</summary>
-        <p>{capabilityNote}</p>
+        <summary>{financialText('financial.about_this_workspace')}</summary>
+        <p>{capabilityNote()}</p>
         <p>Run #{data.report.run.id}</p>
       </details>
     </div>
@@ -174,6 +209,7 @@ const FinancialAnalysisWorkspace: React.FC<{
   onTopicRetry,
   busy,
 }) => {
+  useFinancialLocale();
   const { data, sourceDocumentMap } = useReportData();
   const runState = reportRunState(data);
   const router = useRouter();
@@ -224,26 +260,42 @@ const FinancialAnalysisWorkspace: React.FC<{
           },
           {
             key: 'profitability',
-            label: '盈利质量',
+            label: financialText('financial.earnings_quality'),
             content: <ComparisonSections data={data} section='profitability' onOpenEvidence={openEvidence} />,
           },
           {
             key: 'cashflow',
-            label: '现金流',
+            label: financialText('financial.cash_flow'),
             content: <ComparisonSections data={data} section='cashflow' onOpenEvidence={openEvidence} />,
           },
           {
             key: 'balance',
-            label: '资产负债',
+            label: financialText('financial.assets_and_liabilities'),
             content: <ComparisonSections data={data} section='balance' onOpenEvidence={openEvidence} />,
           },
         ]
       : [
           { key: 'overview', label: 'Overview', content: <OverviewTab onOpenEvidence={openEvidence} /> },
-          { key: 'profitability', label: '盈利质量', content: <ProfitabilityTab onOpenEvidence={openEvidence} /> },
-          { key: 'cashflow', label: '现金流', content: <CashFlowTab onOpenEvidence={openEvidence} /> },
-          { key: 'balance', label: '资产负债', content: <BalanceTab onOpenEvidence={openEvidence} /> },
-          { key: 'statements', label: '关键报表', content: <StatementsTab onOpenEvidence={openEvidence} /> },
+          {
+            key: 'profitability',
+            label: financialText('financial.earnings_quality'),
+            content: <ProfitabilityTab onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'cashflow',
+            label: financialText('financial.cash_flow'),
+            content: <CashFlowTab onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'balance',
+            label: financialText('financial.assets_and_liabilities'),
+            content: <BalanceTab onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'statements',
+            label: financialText('financial.key_statements'),
+            content: <StatementsTab onOpenEvidence={openEvidence} />,
+          },
         ];
   const previewDocument = previewEvidence ? sourceDocumentMap[previewEvidence.sourceDocumentId] : null;
 
@@ -259,17 +311,21 @@ const FinancialAnalysisWorkspace: React.FC<{
           </button>
           {onNewReport && (
             <button type='button' className={styles.textLink} onClick={onNewReport}>
-              分析另一份报告
+              {financialText('financial.analyze_another_report')}
             </button>
           )}
-          <span className={styles.completed} aria-label='报告状态'>
+          <span className={styles.completed} aria-label={financialText('financial.report_status')}>
             {runState.complete && <CheckCircleFilled />} {runState.label}
           </span>
         </header>
       )}
       <div className={styles.columns} data-agent-collapsed={embedded || agentCollapsed}>
         {!embedded && (
-          <section className={styles.agentRail} aria-label='DB-GPT Agent 任务' hidden={agentCollapsed}>
+          <section
+            className={styles.agentRail}
+            aria-label={financialText('financial.db_gpt_agent_task')}
+            hidden={agentCollapsed}
+          >
             <div className={styles.agentScroll}>
               <AgentRunPanel
                 onFinancialCitationClick={citation => {
@@ -295,7 +351,11 @@ const FinancialAnalysisWorkspace: React.FC<{
                 <button
                   type='button'
                   onClick={() => setAgentCollapsed(value => !value)}
-                  aria-label={agentCollapsed ? '展开 Agent 面板' : '折叠 Agent 面板'}
+                  aria-label={
+                    agentCollapsed
+                      ? financialText('financial.expand_agent_panel')
+                      : financialText('financial.collapse_agent_panel')
+                  }
                   aria-expanded={!agentCollapsed}
                 >
                   {agentCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -304,15 +364,15 @@ const FinancialAnalysisWorkspace: React.FC<{
                 <span>DB-GPT Computer</span>
               </div>
               <Tooltip title={capabilityNote}>
-                <button type='button' aria-label='关于此工作区'>
+                <button type='button' aria-label={financialText('financial.about_this_workspace')}>
                   <InfoCircleOutlined />
                 </button>
               </Tooltip>
             </div>
           )}
-          <nav className={styles.workspaceNav} aria-label='Computer 工作区'>
+          <nav className={styles.workspaceNav} aria-label={financialText('financial.computer_workspace')}>
             {embedded && (
-              <span className={styles.completed} aria-label='报告状态'>
+              <span className={styles.completed} aria-label={financialText('financial.report_status')}>
                 {runState.label}
               </span>
             )}
@@ -334,7 +394,7 @@ const FinancialAnalysisWorkspace: React.FC<{
             {workspaceTab === 'report' && (
               <>
                 <ArtifactContext comparisonAccess={comparisonAccess} revisionAccess={revisionAccess} />
-                <nav className={styles.reportNav} aria-label='财务分析章节'>
+                <nav className={styles.reportNav} aria-label={financialText('financial.financial_report_sections')}>
                   {financialTabs.map(tab => (
                     <button
                       type='button'
@@ -374,9 +434,9 @@ const FinancialAnalysisWorkspace: React.FC<{
               <>
                 <div className={styles.evidenceToolbar}>
                   <button type='button' className={styles.textLink} onClick={() => switchWorkspace('report')}>
-                    <ArrowLeftOutlined /> 返回分析报告
+                    <ArrowLeftOutlined /> {financialText('financial.back_to_report')}
                   </button>
-                  <span className={styles.meta}>证据链</span>
+                  <span className={styles.meta}>{financialText('financial.evidence_trail')}</span>
                 </div>
                 {previewEvidence && previewDocument ? (
                   <SourcePreviewPanel

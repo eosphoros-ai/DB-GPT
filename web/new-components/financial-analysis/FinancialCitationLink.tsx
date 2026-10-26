@@ -1,4 +1,5 @@
 import React from 'react';
+import { financialText, useFinancialLocale } from './i18n';
 import { parseFinancialCitation, type FinancialCitation } from './report-citations';
 
 interface FinancialCitationLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
@@ -13,6 +14,7 @@ export default function FinancialCitationLink({
   onCitationClick,
   ...props
 }: FinancialCitationLinkProps) {
+  useFinancialLocale();
   const citation = parseFinancialCitation(href);
   if (citation) {
     return (
@@ -20,8 +22,8 @@ export default function FinancialCitationLink({
         <button
           type='button'
           className='rounded px-0.5 font-normal text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600 focus-visible:outline focus-visible:outline-blue-500 dark:text-slate-400 dark:hover:text-blue-400'
-          title={props.title || '查看报告中的精确数值与原文依据'}
-          aria-label={`查看报告引用 ${children}`}
+          title={props.title || financialText('financial.view_exact_values_and_source_evidence_in_the_report')}
+          aria-label={financialText('financial.view_report_reference_value', { value1: String(children) })}
           data-financial-reference={citation.refId}
           data-report-run={citation.runId}
           disabled={!onCitationClick}

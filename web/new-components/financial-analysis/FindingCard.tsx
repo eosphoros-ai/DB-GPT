@@ -2,12 +2,19 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 import React from 'react';
 import { useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import { AnalysisFinding, OpenEvidence, SupportStatus } from './types';
 
 export const supportLabels: Record<SupportStatus, string> = {
-  supported: '证据支持',
-  partial: '部分支持',
-  unresolved: '尚未解决',
+  get supported() {
+    return financialText('financial.supported_by_evidence');
+  },
+  get partial() {
+    return financialText('financial.partially_supported');
+  },
+  get unresolved() {
+    return financialText('financial.unresolved');
+  },
 };
 interface FindingCardProps {
   finding: AnalysisFinding;
@@ -15,13 +22,16 @@ interface FindingCardProps {
   compact?: boolean;
 }
 const FindingCard: React.FC<FindingCardProps> = ({ finding, onOpenEvidence, compact = false }) => {
+  useFinancialLocale();
   const { calculationTraceMap, evidenceExcerptMap, financialFactMap } = useReportData();
   const facts = finding.inlineTrace.filter(node => node.kind === 'fact');
   const calculations = finding.inlineTrace.filter(node => node.kind === 'calculation');
   const evidence = finding.inlineTrace.filter(node => node.kind === 'evidence');
   return (
     <article className={compact ? styles.findingRow : styles.finding}>
-      <div className={styles.meta}>{finding.section} · Agent 分析</div>
+      <div className={styles.meta}>
+        {finding.section} {financialText('financial.agent_analysis_2')}
+      </div>
       <h3>{finding.title}</h3>
       <p className={styles.findingSummary}>{finding.summary}</p>
       <span className={styles.support} data-status={finding.supportStatus}>
@@ -30,7 +40,7 @@ const FindingCard: React.FC<FindingCardProps> = ({ finding, onOpenEvidence, comp
       {!compact && (
         <div className={styles.inlineTrace}>
           <div className={styles.traceStage}>
-            <div className={styles.meta}>披露事实</div>
+            <div className={styles.meta}>{financialText('financial.disclosed_facts')}</div>
             <dl className={styles.factLines}>
               {facts.map(node => {
                 const fact = financialFactMap[node.refId];
@@ -45,7 +55,7 @@ const FindingCard: React.FC<FindingCardProps> = ({ finding, onOpenEvidence, comp
             </dl>
           </div>
           <div className={styles.traceStage}>
-            <div className={styles.meta}>↓ 确定性计算</div>
+            <div className={styles.meta}>{financialText('financial.deterministic_calculation_2')}</div>
             {calculations.map(node => {
               const calculation = calculationTraceMap[node.refId];
               if (!calculation) return null;
@@ -76,7 +86,8 @@ const FindingCard: React.FC<FindingCardProps> = ({ finding, onOpenEvidence, comp
           })}
         </div>
         <button className={styles.textLink} type='button' onClick={() => onOpenEvidence({ findingId: finding.id })}>
-          查看完整证据链 <ArrowRightOutlined />
+          {financialText('financial.view_full_evidence_trail')}
+          <ArrowRightOutlined />
         </button>
       </div>
     </article>

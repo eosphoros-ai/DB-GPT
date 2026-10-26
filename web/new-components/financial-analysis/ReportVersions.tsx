@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import type { ReportRevision, ReportRevisionAccess } from './types';
 
 const ReportVersions: React.FC<{ access?: ReportRevisionAccess; revision: string }> = ({ access, revision }) => {
+  useFinancialLocale();
   const [versions, setVersions] = useState<ReportRevision[]>([]);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -14,23 +16,26 @@ const ReportVersions: React.FC<{ access?: ReportRevisionAccess; revision: string
         if (!controller.signal.aborted) setVersions(items);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setError('历史版本暂不可用');
+        if (!controller.signal.aborted) setError(financialText('financial.report_history_is_unavailable'));
       });
     return () => controller.abort();
   }, [access, revision]);
   if (!access) return null;
   return (
     <label className={styles.meta}>
-      报告版本{' '}
+      {financialText('financial.report_version')}{' '}
       <select
-        aria-label='报告版本'
+        aria-label={financialText('financial.report_version')}
         value={access.selectedRevision || ''}
         onChange={event => access.select(event.target.value || undefined)}
       >
-        <option value=''>当前任务</option>
+        <option value=''>{financialText('financial.current_task')}</option>
         {versions.map(item => (
           <option key={item.revision} value={item.revision}>
-            {item.publicationStatus === 'published' ? '报告已生成' : '数据快照'} · {item.createdAt}
+            {item.publicationStatus === 'published'
+              ? financialText('financial.report_generated')
+              : financialText('financial.data_snapshot')}{' '}
+            · {item.createdAt}
           </option>
         ))}
       </select>

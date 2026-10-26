@@ -3,12 +3,14 @@ import { Button, Input, Tooltip } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import { EvidenceSelection, OpenEvidence, ReportQuestionAccess, ReportQuestionAnswer } from './types';
 interface AskDbGPTDockProps {
   onOpenEvidence: OpenEvidence;
   questionAccess?: ReportQuestionAccess;
 }
 const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAccess }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const [query, setQuery] = useState('');
   const [answer, setAnswer] = useState<
@@ -24,26 +26,30 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
     if (value.length > 1000 || !questionAccess) {
       setAnswer({
         question: value,
-        answer: value.length > 1000 ? '问题请控制在 1000 字以内。' : '追问服务尚未就绪，请刷新后重试。',
+        answer:
+          value.length > 1000
+            ? financialText('financial.keep_your_question_within_1_000_characters')
+            : financialText('financial.report_questions_are_not_ready_refresh_and_retry'),
       });
       return;
     }
     const controller = new AbortController();
     request.current = controller;
     setPending(true);
-    setAnswer({ question: value, answer: '正在根据当前报告查找依据…' });
+    setAnswer({ question: value, answer: financialText('financial.finding_evidence_in_the_current_report') });
     try {
       const result = await questionAccess.ask(value, data.revision, controller.signal);
       if (controller.signal.aborted) return;
       if (result.runId !== data.report.run.id || result.revision !== data.revision) {
-        throw new Error('报告已更新，请重新发送问题。');
+        throw new Error(financialText('financial.the_report_has_changed_please_resend_your_question'));
       }
       setAnswer({ question: value, answer: result.answer, citations: result.citations });
     } catch (cause) {
       if (!controller.signal.aborted) {
         setAnswer({
           question: value,
-          answer: cause instanceof Error ? cause.message : '追问失败，请重新发送问题。',
+          answer:
+            cause instanceof Error ? cause.message : financialText('financial.the_question_failed_please_resend_it'),
         });
       }
     } finally {
@@ -62,7 +68,7 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
           if (!event.nativeEvent.isComposing) submit();
         }}
         placeholder='Ask DB-GPT about this report…'
-        aria-label='向 DB-GPT 追问报告'
+        aria-label={financialText('financial.ask_db_gpt_about_this_report')}
         className={styles.composerInput}
         suffix={
           <Button
@@ -72,7 +78,7 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
             onClick={() => submit()}
             disabled={!query.trim() || pending}
             loading={pending}
-            aria-label='发送问题'
+            aria-label={financialText('financial.send_question')}
           />
         }
       />
@@ -81,13 +87,15 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
           <div className={styles.answerHeading}>
             <span>
               DB-GPT{' '}
-              <Tooltip title='基于当前报告回答，数字与引用可核对。'>
+              <Tooltip
+                title={financialText('financial.answers_use_this_report_with_verifiable_figures_and_references')}
+              >
                 <InfoCircleOutlined />
               </Tooltip>
             </span>
             <button
               type='button'
-              aria-label='收起回答'
+              aria-label={financialText('financial.collapse_answer')}
               onClick={() => {
                 request.current?.abort();
                 request.current = null;
@@ -106,7 +114,10 @@ const AskDbGPTDock: React.FC<AskDbGPTDockProps> = ({ onOpenEvidence, questionAcc
               className={styles.textLink}
               onClick={() => onOpenEvidence(selection)}
             >
-              {index === 0 ? '查看回答依据' : `查看依据 ${index + 1}`} <ArrowRightOutlined />
+              {index === 0
+                ? financialText('financial.view_answer_evidence')
+                : financialText('financial.view_evidence_value', { value1: index + 1 })}{' '}
+              <ArrowRightOutlined />
             </button>
           ))}
         </div>

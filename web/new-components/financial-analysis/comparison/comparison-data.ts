@@ -1,17 +1,40 @@
+import { financialText } from '../i18n';
 import type { ComparisonCell, ComparisonReportData } from '../types';
 
 export const comparisonReasons: Record<string, string> = {
-  missing_input: '缺少可用数据',
-  conflicting_basis: '来源口径冲突',
-  unexplained_conflicting_values: '披露值冲突，待核对',
-  incompatible_basis: '币种、口径或归属不可比',
-  unsupported_basis: '当前范围不支持此口径',
-  comparison_objects_unresolved: '比较对象或期间尚待确认',
-  trend_basis_gap: '共同披露基础不足，保留趋势断点',
-  nonconsecutive_periods: '非连续年度，不计算同比',
-  zero_denominator: '分母为零',
-  peer_requires_same_report_year: '横向对比要求同年度报告',
-  trend_requires_same_company: '跨年对比要求同一家公司',
+  get missing_input() {
+    return financialText('financial.no_usable_data');
+  },
+  get conflicting_basis() {
+    return financialText('financial.conflicting_reporting_bases');
+  },
+  get unexplained_conflicting_values() {
+    return financialText('financial.conflicting_disclosed_values_verification_required');
+  },
+  get incompatible_basis() {
+    return financialText('financial.incomparable_currency_basis_or_attribution');
+  },
+  get unsupported_basis() {
+    return financialText('financial.reporting_basis_unsupported_in_this_scope');
+  },
+  get comparison_objects_unresolved() {
+    return financialText('financial.comparison_subjects_or_periods_need_confirmation');
+  },
+  get trend_basis_gap() {
+    return financialText('financial.insufficient_common_reporting_basis_retain_a_gap_in_the_trend');
+  },
+  get nonconsecutive_periods() {
+    return financialText('financial.nonconsecutive_years_year_over_year_change_not_calculated');
+  },
+  get zero_denominator() {
+    return financialText('financial.zero_denominator');
+  },
+  get peer_requires_same_report_year() {
+    return financialText('financial.peer_comparison_requires_the_same_reporting_year');
+  },
+  get trend_requires_same_company() {
+    return financialText('financial.trend_comparison_requires_the_same_company');
+  },
 };
 
 export function comparisonReason(reason: string) {
@@ -22,12 +45,16 @@ export function comparisonReason(reason: string) {
 }
 
 export function cellValue(data: ComparisonReportData, cell: ComparisonCell) {
-  if (cell.factId) return data.facts.find(fact => fact.id === cell.factId)?.displayValue || '缺失';
+  if (cell.factId)
+    return data.facts.find(fact => fact.id === cell.factId)?.displayValue || financialText('financial.missing');
   if (cell.calculationId)
-    return data.calculations.find(calc => calc.id === cell.calculationId)?.displayResult || '不可计算';
+    return (
+      data.calculations.find(calc => calc.id === cell.calculationId)?.displayResult ||
+      financialText('financial.not_calculable')
+    );
   return cell.dataStatus === 'conflict'
-    ? '冲突 · 待核对'
+    ? financialText('financial.conflict_verify')
     : cell.dataStatus === 'extraction_failed'
-      ? '提取失败'
-      : '缺失';
+      ? financialText('financial.extraction_failed')
+      : financialText('financial.missing');
 }

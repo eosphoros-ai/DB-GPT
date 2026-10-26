@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from '../financial-analysis.module.css';
+import { financialText, useFinancialLocale } from '../i18n';
 import type { ComparisonReportData, OpenEvidence } from '../types';
 import { cellValue, comparisonReason } from './comparison-data';
 
@@ -8,24 +9,29 @@ const ComparisonMatrix: React.FC<{
   codes: string[];
   onOpenEvidence: OpenEvidence;
 }> = ({ data, codes, onOpenEvidence }) => {
+  useFinancialLocale();
   const objects = data.comparison.objects;
   const rows = codes.map(code => data.comparison.cells.find(cell => cell.metricCode === code)).filter(cell => !!cell);
   return (
-    <div className={styles.comparisonTableScroll} tabIndex={0} aria-label='财务对比矩阵，可横向滚动'>
+    <div
+      className={styles.comparisonTableScroll}
+      tabIndex={0}
+      aria-label={financialText('financial.financial_comparison_matrix_scroll_horizontally')}
+    >
       <table className={styles.comparisonTable}>
         <thead>
           <tr>
-            <th scope='col'>指标</th>
+            <th scope='col'>{financialText('financial.metric')}</th>
             {objects.map(object => (
               <th scope='col' key={`${object.entityId}:${object.period}`}>
                 {data.comparison.entities.find(entity => entity.id === object.entityId)?.name}
                 <br />
                 <span className={styles.meta}>
-                  {object.period} 年
+                  {object.period} {financialText('financial.year_2')}
                   {object.entityId === data.comparison.baselineEntityId &&
                     (data.comparison.kind === 'peer'
-                      ? ' · 基准公司'
-                      : object.period === data.comparison.baselinePeriod && ' · 基准期')}
+                      ? financialText('financial.baseline_company')
+                      : object.period === data.comparison.baselinePeriod && financialText('financial.baseline_period'))}
                 </span>
               </th>
             ))}
@@ -68,7 +74,8 @@ const ComparisonMatrix: React.FC<{
                         </button>
                         {cell.comparability.status === 'incomparable' && cell.dataStatus === 'available' && (
                           <div className={styles.comparisonGap}>
-                            不可比：{cell.comparability.reasons.map(comparisonReason).join('；')}
+                            {financialText('financial.incomparable')}
+                            {cell.comparability.reasons.map(comparisonReason).join('；')}
                           </div>
                         )}
                         {cell.dataStatus !== 'available' && (
@@ -76,22 +83,24 @@ const ComparisonMatrix: React.FC<{
                         )}
                         {cell.candidateFactIds.length > 1 && (
                           <details className={styles.comparisonCandidates}>
-                            <summary>{cell.candidateFactIds.length} 个来源候选</summary>
+                            <summary>
+                              {cell.candidateFactIds.length} {financialText('financial.source_candidates')}
+                            </summary>
                             {cell.candidateFactIds.map(id => (
                               <button type='button' key={id} onClick={() => onOpenEvidence({ factId: id })}>
-                                查看披露来源
+                                {financialText('financial.view_disclosure_source')}
                               </button>
                             ))}
                             <span className={styles.meta}>
                               {cell.selectionReason === 'explicit_paired_restatement'
-                                ? '按明确调整前后关系选值'
-                                : '保留全部披露，按版本化政策选值'}
+                                ? financialText('financial.select_by_an_explicit_before_after_adjustment_relationship')
+                                : financialText('financial.retain_all_disclosures_select_by_versioned_policy')}
                             </span>
                           </details>
                         )}
                       </>
                     ) : (
-                      '缺失'
+                      financialText('financial.missing')
                     )}
                     {differences.map(calc => (
                       <div key={calc.id} className={styles.comparisonDifference}>
@@ -101,10 +110,10 @@ const ComparisonMatrix: React.FC<{
                           onClick={() => onOpenEvidence({ calculationId: calc.id })}
                         >
                           {calc.comparisonType === 'growth'
-                            ? '同比'
+                            ? financialText('financial.year_over_year')
                             : data.comparison.kind === 'trend'
-                              ? '较基准期'
-                              : '较基准'}
+                              ? financialText('financial.versus_baseline_period')
+                              : financialText('financial.versus_baseline')}
                           ：{calc.displayResult}
                         </button>
                         {calc.reason && <div className={styles.comparisonGap}>{comparisonReason(calc.reason)}</div>}
@@ -117,7 +126,11 @@ const ComparisonMatrix: React.FC<{
           ))}
         </tbody>
       </table>
-      {!objects.length && <p className={styles.meta}>等待确认公司和期间；已完成的提取结果会保留。</p>}
+      {!objects.length && (
+        <p className={styles.meta}>
+          {financialText('financial.awaiting_company_and_period_confirmation_completed_extraction_result')}
+        </p>
+      )}
     </div>
   );
 };

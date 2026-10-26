@@ -23,6 +23,8 @@ import {
   resumeComparison,
   retryComparisonTopic,
 } from './api';
+import { financialText, useFinancialLocale } from './i18n';
+import { createRequestId } from './request-id';
 import type {
   ComparisonAccess,
   FinancialReportData,
@@ -33,15 +35,28 @@ import type {
 } from './types';
 
 const stageLabels: Record<string, string> = {
-  queued: '等待分析',
-  extract: '正在读取 PDF 并提取财务事实',
-  calculate: '正在计算财务指标',
-  save: '正在保存报告',
-  analyze: '财务数据已就绪，正在生成模型分析',
-  completed: '分析完成',
+  get queued() {
+    return financialText('financial.awaiting_analysis');
+  },
+  get extract() {
+    return financialText('financial.reading_pdf_and_extracting_financial_facts');
+  },
+  get calculate() {
+    return financialText('financial.calculating_financial_metrics');
+  },
+  get save() {
+    return financialText('financial.saving_report');
+  },
+  get analyze() {
+    return financialText('financial.financial_data_is_ready_generating_model_analysis');
+  },
+  get completed() {
+    return financialText('financial.analysis_complete');
+  },
 };
 
 const FinancialAnalysisRoute: React.FC = () => {
+  useFinancialLocale();
   const router = useRouter();
   const runId = typeof router.query.run_id === 'string' ? router.query.run_id : '';
   const sessionId = typeof router.query.session_id === 'string' ? router.query.session_id : '';
@@ -168,19 +183,21 @@ const FinancialAnalysisRoute: React.FC = () => {
         attempt.current = {
           sessionId: previous.session_id,
           fileIds: [previous.file_id],
-          requestId: crypto.randomUUID(),
+          requestId: createRequestId(),
           retryOf: previous.id,
         };
       } else if (!attempt.current) {
-        const nextSession = `financial-${crypto.randomUUID()}`;
+        const nextSession = `financial-${createRequestId()}`;
         if ((mode === 'report' && files.length !== 1) || (mode !== 'report' && (files.length < 2 || files.length > 5)))
-          throw new Error('单报告需一份 PDF，对比需两到五份 PDF。');
+          throw new Error(
+            financialText('financial.single_report_analysis_requires_one_pdf_comparison_requires_two_to_f'),
+          );
         const uploaded = await uploadFiles({ sessionId: nextSession, files });
-        if (uploaded.length !== files.length) throw new Error('文件未全部上传成功');
+        if (uploaded.length !== files.length) throw new Error(financialText('financial.some_files_failed_to_upload'));
         attempt.current = {
           sessionId: nextSession,
           fileIds: uploaded.map(item => item.file_id),
-          requestId: crypto.randomUUID(),
+          requestId: createRequestId(),
         };
       }
       const next = attempt.current!;
@@ -240,48 +257,57 @@ const FinancialAnalysisRoute: React.FC = () => {
     <main className='mx-auto max-w-3xl p-8'>
       <Card>
         <Space direction='vertical' size='large' className='w-full'>
-          <Typography.Title level={2}>财报分析</Typography.Title>
+          <Typography.Title level={2}>{financialText('financial.financial_report_analysis')}</Typography.Title>
           {!router.isReady ? (
             <Spin />
           ) : runId || sessionId ? (
             <>
               {invalidLink ? (
-                <Alert type='error' message='报告链接不完整，请重新上传或使用完整链接。' />
+                <Alert
+                  type='error'
+                  message={financialText('financial.the_report_link_is_incomplete_upload_again_or_use_a_complete_link')}
+                />
               ) : (
                 <>
                   {activeRun?.status === 'failed' ? (
-                    <Alert type='error' message='分析未完成' description={activeRun.error || '请重新分析'} />
+                    <Alert
+                      type='error'
+                      message={financialText('financial.analysis_incomplete')}
+                      description={activeRun.error || financialText('financial.please_retry_the_analysis')}
+                    />
                   ) : (
                     !error && (
                       <Space>
                         <Spin />
-                        <span>{stageLabels[activeRun?.stage || 'queued'] || '正在读取任务'}</span>
+                        <span>
+                          {stageLabels[activeRun?.stage || 'queued'] || financialText('financial.loading_task')}
+                        </span>
                       </Space>
                     )
                   )}
                   <Typography.Paragraph type='secondary'>
-                    任务会在后台处理；保留此页面链接，刷新后可继续查看。
+                    {financialText('financial.the_task_runs_in_the_background_keep_this_link_to_return_after_refre')}
                   </Typography.Paragraph>
                   {activeRun?.status === 'failed' && (
                     <Button loading={busy} onClick={() => void submit(activeRun)}>
-                      重新分析
+                      {financialText('financial.reanalyze')}
                     </Button>
                   )}
                 </>
               )}
               <Button onClick={startNew} disabled={busy}>
-                分析另一份报告
+                {financialText('financial.analyze_another_report')}
               </Button>
             </>
           ) : (
             <>
               <Typography.Paragraph>
-                上传中文文本型年度报告 PDF，选择单报告或明确的对比任务，查看计算过程与来源。自动提取结果需要核对。
+                {financialText('financial.upload_text_based_chinese_annual_report_pdfs_choose_single_report_an')}
               </Typography.Paragraph>
               <label>
-                分析方式{' '}
+                {financialText('financial.analysis_mode')}{' '}
                 <Select
-                  aria-label='分析方式'
+                  aria-label={financialText('financial.analysis_mode')}
                   value={mode}
                   disabled={busy}
                   onChange={value => {
@@ -289,14 +315,14 @@ const FinancialAnalysisRoute: React.FC = () => {
                     attempt.current = null;
                   }}
                   options={[
-                    { value: 'report', label: '单报告分析' },
-                    { value: 'peer', label: '同年度多公司对比' },
-                    { value: 'trend', label: '同公司跨年对比' },
+                    { value: 'report', label: financialText('financial.single_report') },
+                    { value: 'peer', label: financialText('financial.compare_companies_in_the_same_year') },
+                    { value: 'trend', label: financialText('financial.compare_years_for_one_company') },
                   ]}
                 />
               </label>
               <label>
-                选择年度报告 PDF
+                {financialText('financial.select_annual_report_pdfs')}
                 <input
                   className='block mt-3'
                   type='file'
@@ -313,9 +339,9 @@ const FinancialAnalysisRoute: React.FC = () => {
               </label>
               {mode !== 'report' && files.length > 0 && (
                 <label>
-                  基准报告{' '}
+                  {financialText('financial.baseline_report')}{' '}
                   <Select
-                    aria-label='基准报告'
+                    aria-label={financialText('financial.baseline_report')}
                     value={baselineIndex}
                     disabled={busy}
                     onChange={value => {
@@ -327,7 +353,9 @@ const FinancialAnalysisRoute: React.FC = () => {
                 </label>
               )}
               <Button type='primary' loading={busy} disabled={!files.length} onClick={() => void submit()}>
-                {busy ? '正在上传并创建任务' : '开始分析'}
+                {busy
+                  ? financialText('financial.uploading_and_creating_task')
+                  : financialText('financial.start_analysis')}
               </Button>
               <ReportHistory
                 load={listRuns}
@@ -346,7 +374,9 @@ const FinancialAnalysisRoute: React.FC = () => {
               type='error'
               message={error}
               action={
-                runId && sessionId ? <Button onClick={() => setRetry(value => value + 1)}>重新读取</Button> : undefined
+                runId && sessionId ? (
+                  <Button onClick={() => setRetry(value => value + 1)}>{financialText('financial.reload')}</Button>
+                ) : undefined
               }
             />
           )}

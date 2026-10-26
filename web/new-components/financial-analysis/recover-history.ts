@@ -1,4 +1,5 @@
 import { isFinancialReportReference } from './agent-artifact';
+import { financialText } from './i18n';
 import { financialReportTitle } from './report-data';
 import type { FinancialReportData } from './types';
 
@@ -19,14 +20,15 @@ export function recoverFinancialHistory(data: FinancialReportData, sessionId: st
           ? true
           : undefined,
   };
-  if (!isFinancialReportReference(reference)) throw new Error('保存的财报引用无效');
+  if (!isFinancialReportReference(reference))
+    throw new Error(financialText('financial.invalid_saved_financial_report_reference'));
   return {
     role: 'view',
     context: JSON.stringify({
       version: 2,
       protocol_version: 2,
       type: 'react-agent',
-      final_content: '已恢复上次保存的财报分析，可查看结果或继续分析。',
+      final_content: financialText('financial.saved_financial_analysis_restored_view_the_results_or_continue_the_a'),
       steps: [],
       financial_report: reference,
     }),

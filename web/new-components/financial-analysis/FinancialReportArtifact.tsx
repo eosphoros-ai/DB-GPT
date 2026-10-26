@@ -16,6 +16,7 @@ import {
   requestError,
   resumeComparison,
 } from './api';
+import { financialText, useFinancialLocale } from './i18n';
 import type { FinancialCitationTarget } from './report-citations';
 import type {
   ComparisonAccess,
@@ -44,15 +45,25 @@ const FinancialReportArtifact: React.FC<{
   busy?: boolean;
   onTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
 }> = ({ reference, citationTarget, busy, onTopicRetry }) => {
+  useFinancialLocale();
   const { sessionId, runId, revision } = reference;
   const [loaded, setLoaded] = useState<{ scope: string; data: FinancialReportData } | null>(null);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [awaitingAction, setAwaitingAction] = useState(false);
-  const [selection, setSelection] = useState<{ runId: string; revision?: string }>();
-  const pinnedRevision =
-    citationTarget?.revision ||
-    (selection?.runId === runId ? selection.revision : reference.published === false ? undefined : revision);
+  const [selection, setSelection] = useState<{ scope: string; revision?: string; citationRequest?: number }>();
+  const reportScope = `${sessionId}:${runId}`;
+  const userSelected = selection?.scope === reportScope;
+  const currentCitation = citationTarget?.runId === runId ? citationTarget : undefined;
+  const citationWins =
+    currentCitation?.revision && (!userSelected || selection?.citationRequest !== currentCitation.requestId);
+  const pinnedRevision = citationWins
+    ? currentCitation.revision
+    : userSelected
+      ? selection.revision
+      : reference.published === false
+        ? undefined
+        : revision;
   const scope = `${sessionId}:${runId}:${pinnedRevision || 'draft'}`;
   useEffect(() => {
     const controller = new AbortController();
@@ -109,9 +120,10 @@ const FinancialReportArtifact: React.FC<{
     () => ({
       selectedRevision: pinnedRevision,
       list: signal => listRevisions(sessionId, runId, signal),
-      select: selected => setSelection({ runId, revision: selected }),
+      select: selected =>
+        setSelection({ scope: reportScope, revision: selected, citationRequest: currentCitation?.requestId }),
     }),
-    [sessionId, runId, pinnedRevision],
+    [sessionId, runId, pinnedRevision, reportScope, currentCitation?.requestId],
   );
   const comparisonAccess = useMemo<ComparisonAccess>(
     () => ({
@@ -130,12 +142,16 @@ const FinancialReportArtifact: React.FC<{
   );
   if (error)
     return (
-      <Alert type='error' message={error} action={<Button onClick={() => setRetry(v => v + 1)}>重新读取报告</Button>} />
+      <Alert
+        type='error'
+        message={error}
+        action={<Button onClick={() => setRetry(v => v + 1)}>{financialText('financial.reload_report')}</Button>}
+      />
     );
   if (!loaded || loaded.scope !== scope)
     return (
       <div className='p-6'>
-        <Spin /> 正在读取智能体财报结果
+        <Spin /> {financialText('financial.loading_agent_financial_report')}
       </div>
     );
   return (

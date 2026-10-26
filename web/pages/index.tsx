@@ -127,6 +127,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { financialText, useFinancialLocale } from '../new-components/financial-analysis/i18n';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -582,6 +583,7 @@ const EXAMPLE_CARDS = [
 ];
 
 const Playground: NextPage = () => {
+  useFinancialLocale();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { model, modelList, setModel } = useContext(ChatContext);
@@ -950,7 +952,7 @@ const Playground: NextPage = () => {
       citation,
     );
     if (!artifact) {
-      message.info('对应的报告暂不可用，请先打开本轮财报报告。');
+      message.info(financialText('financial.the_referenced_report_is_unavailable_open_the_report_from_this_turn_'));
       return;
     }
     panelNavigationVersion.current += 1;
@@ -1488,7 +1490,7 @@ const Playground: NextPage = () => {
             );
             await downloadFinancialReport(artifact.content);
           } catch {
-            message.error('财报下载失败，请在报告的文件页重试');
+            message.error(financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'));
           }
           break;
         }
@@ -2735,11 +2737,15 @@ const Playground: NextPage = () => {
                     context:
                       item.context ||
                       (financialDelivery.current.hasPublished(responseId)
-                        ? '报告已生成，可查看报告与原文依据；本次回复未完成。'
-                        : '本次执行已结束，已保存的分析内容可继续查看。'),
+                        ? financialText('financial.the_report_is_ready_with_source_evidence_this_reply_is_incomplete')
+                        : financialText('financial.execution_ended_saved_analysis_remains_available')),
                     taskPlan: item.taskPlan?.map(task =>
                       task.status === 'in_progress'
-                        ? { ...task, status: 'error' as const, detail: '本次执行已结束，已保存的内容仍可查看。' }
+                        ? {
+                            ...task,
+                            status: 'error' as const,
+                            detail: financialText('financial.execution_ended_saved_content_remains_available'),
+                          }
                         : task,
                     ),
                   },
@@ -2999,7 +3005,10 @@ const Playground: NextPage = () => {
 
           const historyAnswer = decodeHistoryAnswer(payload);
           const finalContent = cleanFinalContent(
-            historyAnswer.content || (payload.execution_status ? '已恢复任务记录，可查看已保存的执行进度和结果。' : ''),
+            historyAnswer.content ||
+              (payload.execution_status
+                ? financialText('financial.task_restored_saved_progress_and_results_are_available')
+                : ''),
           );
 
           // History payload v2: the turn's input_files snapshot attaches to
@@ -3075,7 +3084,11 @@ const Playground: NextPage = () => {
             thinking: false,
             taskPlan: savedTasks?.map((task: TaskItem) =>
               payload.execution_status && task.status === 'in_progress'
-                ? { ...task, status: 'cancelled' as const, detail: '已恢复保存的进度，可继续任务。' }
+                ? {
+                    ...task,
+                    status: 'cancelled' as const,
+                    detail: financialText('financial.saved_progress_restored_you_can_continue_the_task'),
+                  }
                 : task,
             ),
           });
@@ -3136,10 +3149,17 @@ const Playground: NextPage = () => {
       if (msgList?.length === 0) {
         // Older interrupted turns have a saved financial run but no messages.
         // Recovery is scoped by the authenticated owner and this conversation.
-        const report = await getLatestReport(convUid, controller.signal);
-        if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
-        if (report) msgList = [recoverFinancialHistory(report, convUid)];
+        try {
+          const report = await getLatestReport(convUid, controller.signal);
+          if (controller.signal.aborted) return;
+          if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
+          if (report) msgList = [recoverFinancialHistory(report, convUid)];
+        } catch (recoveryError) {
+          if (controller.signal.aborted) return;
+          console.warn('Financial report recovery failed', recoveryError);
+        }
       }
+      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       if (msgList) {
         conversationIdRef.current = convUid;
         setConversationId(convUid);
@@ -3155,7 +3175,7 @@ const Playground: NextPage = () => {
     } catch (e) {
       if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(financialText('financial.failed_to_load_conversation_history'));
     } finally {
       if (historyAbortControllerRef.current === controller) {
         historyAbortControllerRef.current = null;
@@ -4104,7 +4124,7 @@ const Playground: NextPage = () => {
                     }}
                     className='shrink-0 border-b border-slate-200 bg-white px-4 py-3 text-left text-sm text-sky-700 dark:border-slate-800 dark:bg-[#111217] dark:text-sky-300'
                   >
-                    <LeftOutlined className='mr-2' /> 返回对话
+                    <LeftOutlined className='mr-2' /> {financialText('financial.back_to_chat')}
                   </button>
                 )}
                 {showInlineAttachmentPreview ? (

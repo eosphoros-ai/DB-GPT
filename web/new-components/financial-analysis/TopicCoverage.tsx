@@ -1,15 +1,30 @@
 import React from 'react';
 import { useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 
 const labels = {
-  pending: '待分析',
-  running: '分析中',
-  ready: '待复核',
-  reviewed: '已复核，待人工核对',
-  insufficient: '数据或依据不足',
-  failed: '分析失败',
-  needs_revision: '待修订',
+  get pending() {
+    return financialText('financial.awaiting_analysis_2');
+  },
+  get running() {
+    return financialText('financial.analyzing');
+  },
+  get ready() {
+    return financialText('financial.awaiting_review');
+  },
+  get reviewed() {
+    return financialText('financial.reviewed_awaiting_human_verification');
+  },
+  get insufficient() {
+    return financialText('financial.insufficient_data_or_evidence');
+  },
+  get failed() {
+    return financialText('financial.analysis_failed');
+  },
+  get needs_revision() {
+    return financialText('financial.awaiting_revision');
+  },
 };
 
 /** Detail of the selected execution step; never a second report card grid. */
@@ -18,25 +33,36 @@ const TopicCoverage: React.FC<{
   onRetry?: (topicId: string) => void;
   busy?: boolean;
 }> = ({ topicId, onRetry, busy }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const topic = data.workflow?.topics.find(item => item.id === topicId);
   if (!topic) return null;
   return (
-    <div aria-label='专题执行详情'>
+    <div aria-label={financialText('financial.topic_execution_details')}>
       <p>
-        {labels[topic.status]} · {topic.findingIds.length} 条发现 ·{' '}
-        {topic.saveAttempts ?? topic.history.length + topic.failures} 次保存尝试 · {topic.failures} 次校验失败
+        {labels[topic.status]} · {topic.findingIds.length} {financialText('financial.findings_2')}{' '}
+        {topic.saveAttempts ?? topic.history.length + topic.failures} {financialText('financial.save_attempts')}
+        {topic.failures} {financialText('financial.validation_failures')}
       </p>
-      {topic.errorCode && <p>后端状态：{topic.errorCode}</p>}
+      {topic.errorCode && (
+        <p>
+          {financialText('financial.backend_status')}
+          {topic.errorCode}
+        </p>
+      )}
       {!!topic.issues?.length && (
-        <ul className={styles.topicIssues} aria-label='校验错误'>
+        <ul className={styles.topicIssues} aria-label={financialText('financial.validation_errors')}>
           {topic.issues.map((issue, index) => (
             <li key={index}>
-              {issue.finding_index !== undefined ? `发现 ${issue.finding_index + 1} · ` : ''}
+              {issue.finding_index !== undefined
+                ? financialText('financial.findings_value', { value1: issue.finding_index + 1 })
+                : ''}
               {issue.field ? `${issue.field}：` : ''}
               {issue.code}
               {issue.invalid_tokens?.length ? `（${issue.invalid_tokens.join('、')}）` : ''}
-              {issue.missing_metrics?.length ? `；未覆盖科目：${issue.missing_metrics.join('、')}` : ''}
+              {issue.missing_metrics?.length
+                ? financialText('financial.uncovered_items_value', { value1: issue.missing_metrics.join('、') })
+                : ''}
               {issue.hint && <div>{issue.hint}</div>}
             </li>
           ))}
@@ -44,7 +70,7 @@ const TopicCoverage: React.FC<{
       )}
       {!!topic.validationHistory?.length && (
         <details>
-          <summary>历史校验记录</summary>
+          <summary>{financialText('financial.validation_history')}</summary>
           {topic.validationHistory.map((entry, index) => (
             <div key={index}>
               <p>
@@ -53,7 +79,9 @@ const TopicCoverage: React.FC<{
               <ul className={styles.topicIssues}>
                 {entry.issues.map((issue, pos) => (
                   <li key={pos}>
-                    {issue.finding_index !== undefined ? `发现 ${issue.finding_index + 1} · ` : ''}
+                    {issue.finding_index !== undefined
+                      ? financialText('financial.findings_value', { value1: issue.finding_index + 1 })
+                      : ''}
                     {issue.field}：{issue.code}
                   </li>
                 ))}
@@ -62,10 +90,17 @@ const TopicCoverage: React.FC<{
           ))}
         </details>
       )}
-      {topic.review && <p>智能体复核意见：{topic.review.note}</p>}
+      {topic.review && (
+        <p>
+          {financialText('financial.agent_review')}
+          {topic.review.note}
+        </p>
+      )}
       {onRetry && (
         <button type='button' className={styles.textLink} disabled={busy} onClick={() => onRetry(topic.id)}>
-          {topic.status === 'pending' ? '分析此专题' : '重新分析此专题'}
+          {topic.status === 'pending'
+            ? financialText('financial.analyze_this_topic')
+            : financialText('financial.reanalyze_this_topic')}
         </button>
       )}
     </div>

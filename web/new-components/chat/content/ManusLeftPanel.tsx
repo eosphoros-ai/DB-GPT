@@ -40,6 +40,7 @@ import { Button, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { financialText, useFinancialLocale } from '../../financial-analysis/i18n';
 import FinancialProgressPanel, { FinancialProgressUpdates, financialTasksForStep } from './FinancialProgressPanel';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
@@ -1078,6 +1079,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   reportRunId,
   onReportClick,
 }) => {
+  useFinancialLocale();
   const { t } = useTranslation();
   const financialTasks = financialTasksForStep(taskPlan || []);
   const financialArtifact = artifacts?.find(artifact => isFinancialReportReference(artifact.content));
@@ -1211,7 +1213,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             />
             {sections.length > 0 && (
               <details className='mt-3 text-sm text-slate-500'>
-                <summary className='cursor-pointer px-2 py-1'>工具调用详情</summary>
+                <summary className='cursor-pointer px-2 py-1'>{financialText('financial.tool_call_details')}</summary>
                 {sections.map(section => (
                   <SectionBlock
                     key={section.id}

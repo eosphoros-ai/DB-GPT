@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import type { FinancialExport, ReportExportAccess } from './types';
 
 const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const [files, setFiles] = useState<FinancialExport[]>([]);
   const [busy, setBusy] = useState(false);
@@ -20,7 +22,7 @@ const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => 
           setFiles(previous => [...previous, ...value.filter(item => !previous.some(saved => saved.id === item.id))]);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setError('导出文件列表读取失败。');
+        if (!controller.signal.aborted) setError(financialText('financial.failed_to_load_exported_files'));
       });
     return () => {
       mounted.current = false;
@@ -38,7 +40,8 @@ const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => 
       setFiles(previous => [generated, ...previous.filter(item => item.id !== generated.id)]);
       await access.download(generated);
     } catch (cause) {
-      if (mounted.current) setError(cause instanceof Error ? cause.message : '导出失败，请重试。');
+      if (mounted.current)
+        setError(cause instanceof Error ? cause.message : financialText('financial.export_failed_please_retry'));
     } finally {
       gate.current = false;
       if (mounted.current) setBusy(false);
@@ -53,7 +56,7 @@ const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => 
           disabled={busy || data.analysis?.status === 'running'}
           onClick={() => void download('json')}
         >
-          导出 JSON
+          {financialText('financial.export_json')}
         </button>
         {' · '}
         <button
@@ -62,10 +65,10 @@ const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => 
           disabled={busy || data.analysis?.status === 'running'}
           onClick={() => void download('html')}
         >
-          导出 HTML
+          {financialText('financial.export_html')}
         </button>
-        {busy && ' · 正在准备文件…'}
-        {data.analysis?.status === 'running' && ' · 分析结束后可导出'}
+        {busy && financialText('financial.preparing_file')}
+        {data.analysis?.status === 'running' && financialText('financial.export_available_after_analysis')}
       </p>
       {error && (
         <p role='status' className={styles.meta}>
@@ -86,7 +89,7 @@ const ReportExports: React.FC<{ access: ReportExportAccess }> = ({ access }) => 
             disabled={busy}
             onClick={() => void download(undefined, file)}
           >
-            下载 →
+            {financialText('financial.download')}
           </button>
         </div>
       ))}

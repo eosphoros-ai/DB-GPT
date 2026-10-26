@@ -1,5 +1,6 @@
 import { Alert, Button, InputNumber, Space, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { financialText, useFinancialLocale } from './i18n';
 import type { EvidenceExcerpt, SourceDocument, SourcePreviewAccess } from './types';
 
 export const evidencePages = (evidence: EvidenceExcerpt) =>
@@ -12,6 +13,7 @@ const PdfPagePreview: React.FC<{
   document: SourceDocument;
   access: SourcePreviewAccess;
 }> = ({ evidence, document, access }) => {
+  useFinancialLocale();
   const [page, setPage] = useState(evidence.page);
   const [image, setImage] = useState<{ page: number; url: string } | null>(null);
   const [error, setError] = useState('');
@@ -31,7 +33,8 @@ const PdfPagePreview: React.FC<{
         setImage({ page, url });
       })
       .catch(cause => {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : '页面加载失败');
+        if (!controller.signal.aborted)
+          setError(cause instanceof Error ? cause.message : financialText('financial.page_failed_to_load'));
       });
     return () => {
       controller.abort();
@@ -45,21 +48,21 @@ const PdfPagePreview: React.FC<{
     try {
       await access.download(document);
     } catch (cause) {
-      setDownloadError(cause instanceof Error ? cause.message : '下载失败');
+      setDownloadError(cause instanceof Error ? cause.message : financialText('financial.download_failed'));
     } finally {
       setDownloading(false);
     }
   };
   return (
-    <section aria-label='原始 PDF 页面'>
+    <section aria-label={financialText('financial.original_pdf_page')}>
       <Space wrap className='mb-3'>
         <Button disabled={page <= 1} onClick={() => setPage(value => value - 1)}>
-          上一页
+          {financialText('financial.previous_page')}
         </Button>
         <label>
-          物理页码{' '}
+          {financialText('financial.physical_page')}{' '}
           <InputNumber
-            aria-label='PDF 物理页码'
+            aria-label={financialText('financial.pdf_physical_page_number')}
             min={1}
             max={document.pageCount}
             precision={0}
@@ -75,22 +78,28 @@ const PdfPagePreview: React.FC<{
             }}
           />
         </label>
-        <span>/ {document.pageCount ?? '未知'} 页</span>
+        <span>
+          / {document.pageCount ?? financialText('financial.unknown')} {financialText('financial.page')}
+        </span>
         <Button
           disabled={!document.pageCount || page >= document.pageCount}
           onClick={() => setPage(value => value + 1)}
         >
-          下一页
+          {financialText('financial.next_page')}
         </Button>
         <Button loading={downloading} onClick={() => void download()}>
-          下载原 PDF
+          {financialText('financial.download_original_pdf')}
         </Button>
       </Space>
-      <p>原 PDF 页面图像 · 从第 1 页开始计数，可能与报告印刷页码不同。</p>
+      <p>{financialText('financial.original_pdf_image_counted_from_page_1_numbering_may_differ_from_pri')}</p>
       <Space wrap className='mb-3'>
         {evidencePages(evidence).map(target => (
           <Button key={target} size='small' onClick={() => setPage(target)}>
-            {target === evidence.page ? '指标所在页' : target === evidence.headerPage ? '表头所在页' : '单位所在页'}{' '}
+            {target === evidence.page
+              ? financialText('financial.metric_page')
+              : target === evidence.headerPage
+                ? financialText('financial.header_page')
+                : financialText('financial.unit_page')}{' '}
             {target}
           </Button>
         ))}
@@ -100,20 +109,26 @@ const PdfPagePreview: React.FC<{
         <Alert
           type='warning'
           message={error}
-          description={`来源：${document.fileName}，物理第 ${page} 页。下方摘录仍可核对。`}
-          action={<Button onClick={() => setRetry(value => value + 1)}>重试</Button>}
+          description={financialText('financial.source_value_physical_page_value_excerpts_below_remain_available_for', {
+            value1: document.fileName,
+            value2: page,
+          })}
+          action={<Button onClick={() => setRetry(value => value + 1)}>{financialText('financial.retry')}</Button>}
         />
       ) : image?.page === page ? (
         // Original PDF raster, not an optimized remote web image.
         <img
           src={image.url}
-          alt={`${document.fileName} · PDF 物理第 ${page} 页`}
+          alt={financialText('financial.value_pdf_physical_page_value', { value1: document.fileName, value2: page })}
           style={{ width: '100%', height: 'auto' }}
-          onError={() => setError('页面图像加载失败，请重试或下载原 PDF。')}
+          onError={() =>
+            setError(financialText('financial.the_page_image_failed_to_load_retry_or_download_the_original_pdf'))
+          }
         />
       ) : (
         <div role='status' className='p-8'>
-          <Spin /> 正在加载物理第 {page} 页
+          <Spin /> {financialText('financial.loading_physical_page')}
+          {page} {financialText('financial.page')}
         </div>
       )}
     </section>

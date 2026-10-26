@@ -3,6 +3,7 @@ import React from 'react';
 import { useReportData } from './ReportDataContext';
 import TopicCoverage from './TopicCoverage';
 import styles from './financial-analysis.module.css';
+import { financialText, useFinancialLocale } from './i18n';
 import { runStatusLabels, topicStatusNote } from './report-data';
 export interface AnalysisActions {
   retry: () => void;
@@ -12,10 +13,18 @@ export interface AnalysisActions {
 }
 
 const analysisStatusLabels = {
-  running: '分析中',
-  completed: '分析完成',
-  partial: '部分分析',
-  failed: '分析未完成',
+  get running() {
+    return financialText('financial.analyzing');
+  },
+  get completed() {
+    return financialText('financial.analysis_complete');
+  },
+  get partial() {
+    return financialText('financial.partial_analysis');
+  },
+  get failed() {
+    return financialText('financial.analysis_incomplete');
+  },
 };
 
 const ExecutionProcessPanel: React.FC<{
@@ -25,15 +34,17 @@ const ExecutionProcessPanel: React.FC<{
   onTopicRetry?: (topicId: string) => void;
   busy?: boolean;
 }> = ({ activeStepId, onStepSelect, analysisActions, onTopicRetry, busy }) => {
+  useFinancialLocale();
   const { data } = useReportData();
   const agentExecutionSteps = data.steps;
   const activeStep = agentExecutionSteps.find(step => step.id === activeStepId) || agentExecutionSteps[0];
-  if (!activeStep) return <div className={styles.executionPanel}>暂无执行记录</div>;
+  if (!activeStep)
+    return <div className={styles.executionPanel}>{financialText('financial.no_execution_records')}</div>;
   const activeTopic = data.workflow?.topics.find(topic => activeStep.id === `topic-${topic.id}`);
   const analysis = data.mode === 'report' && activeStep.id === 'analyze' ? data.analysis : undefined;
   return (
     <div className={styles.executionPanel}>
-      <nav aria-label='执行步骤' className={styles.executionSteps}>
+      <nav aria-label={financialText('financial.execution_steps')} className={styles.executionSteps}>
         {agentExecutionSteps.map(step => (
           <button
             type='button'
@@ -54,17 +65,17 @@ const ExecutionProcessPanel: React.FC<{
         <h2>{activeStep.title}</h2>
         <p>{activeTopic ? topicStatusNote(activeTopic) : activeStep.detail}</p>
         {data.mode === 'comparison' && (
-          <section aria-label='文档执行状态'>
+          <section aria-label={financialText('financial.document_status')}>
             {data.members.map(member => (
               <p key={member.file_id}>
                 {member.file_name}：
                 {member.status === 'completed'
-                  ? '已提取并保存'
+                  ? financialText('financial.extracted_and_saved')
                   : member.status === 'failed'
-                    ? '提取失败'
+                    ? financialText('financial.extraction_failed')
                     : member.status === 'interrupted'
-                      ? '提取中断'
-                      : '等待提取'}
+                      ? financialText('financial.extraction_interrupted')
+                      : financialText('financial.awaiting_extraction')}
                 {member.error && ` · ${member.error}`}
               </p>
             ))}
@@ -75,7 +86,7 @@ const ExecutionProcessPanel: React.FC<{
                 disabled={analysisActions.busy}
                 onClick={analysisActions.retry}
               >
-                显式继续或重试未完成文件
+                {financialText('financial.resume_or_retry_incomplete_files')}
               </button>
             )}
           </section>
@@ -94,7 +105,7 @@ const ExecutionProcessPanel: React.FC<{
         )}
         {activeStep.id === 'review' && !!data.analysis?.reviewIssues?.length && (
           <details>
-            <summary>复核未完成，数据与已校验发现已保留</summary>
+            <summary>{financialText('financial.review_incomplete_data_and_validated_findings_are_retained')}</summary>
             <ul>
               {data.analysis.reviewIssues.map((issue, index) => (
                 <li key={index}>{issue}</li>
@@ -104,13 +115,17 @@ const ExecutionProcessPanel: React.FC<{
         )}
         {activeStep.id === 'quality' && data.workflow?.dataQuality && (
           <p>
-            已提取 {data.workflow.dataQuality.availableFacts} 个可用值，
-            {data.workflow.dataQuality.unavailableCalculations.length} 项不可计算。
-            这表示当前提取范围，不代表整份年报覆盖率。
+            {financialText('financial.extracted')}
+            {data.workflow.dataQuality.availableFacts} {financialText('financial.usable_values')}
+            {data.workflow.dataQuality.unavailableCalculations.length}{' '}
+            {financialText('financial.items_cannot_be_calculated_these_counts_describe_extracted_data_not_')}
           </p>
         )}
         {activeStep.elapsedMs !== undefined && (
-          <p className={styles.meta}>耗时 {(activeStep.elapsedMs / 1000).toFixed(2)} 秒</p>
+          <p className={styles.meta}>
+            {financialText('financial.elapsed')}
+            {(activeStep.elapsedMs / 1000).toFixed(2)} {financialText('financial.seconds')}
+          </p>
         )}
         {analysis && analysisActions && (
           <>
@@ -118,7 +133,7 @@ const ExecutionProcessPanel: React.FC<{
               <p>
                 {analysisActions.error}{' '}
                 <button type='button' className={styles.textLink} onClick={analysisActions.refresh}>
-                  重新读取进度
+                  {financialText('financial.reload_progress')}
                 </button>
               </p>
             )}
@@ -130,10 +145,10 @@ const ExecutionProcessPanel: React.FC<{
                 onClick={analysisActions.retry}
               >
                 {analysisActions.busy
-                  ? '正在处理…'
+                  ? financialText('financial.processing')
                   : data.mode === 'comparison'
-                    ? '继续未完成的对比任务'
-                    : '重新分析此文件'}
+                    ? financialText('financial.resume_comparison')
+                    : financialText('financial.reanalyze_this_file')}
               </button>
             )}
           </>
@@ -141,13 +156,13 @@ const ExecutionProcessPanel: React.FC<{
         <dl className={styles.driverTable}>
           {activeStep.tool && (
             <div>
-              <dt>工具</dt>
+              <dt>{financialText('financial.tool')}</dt>
               <dd>{activeStep.tool}</dd>
             </div>
           )}
           {activeStep.script && (
             <div>
-              <dt>脚本</dt>
+              <dt>{financialText('financial.script')}</dt>
               <dd>{activeStep.script}</dd>
             </div>
           )}

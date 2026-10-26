@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { financialStageTitle, financialText, useFinancialLocale } from '../../financial-analysis/i18n';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
 /** Public execution facts only: never model reasoning or tool arguments. */
@@ -17,6 +18,7 @@ export default function FinancialProgressPanel({
   onOpenReport?: () => void;
   reportPublished?: boolean;
 }) {
+  useFinancialLocale();
   const [now, setNow] = useState(Date.now);
   const current = tasks.find(task => task.status === 'in_progress' || task.status === 'error');
   const finished = tasks.length > 0 && tasks.every(task => task.status === 'completed');
@@ -31,7 +33,11 @@ export default function FinancialProgressPanel({
   const elapsed = Number.isFinite(start) ? Math.max(0, Math.floor((now - start) / 1000)) : 0;
   const updated = Date.parse(current?.updatedAt || '');
   const waiting = running && Number.isFinite(updated) && now - updated >= 30000;
-  const title = finished ? '报告已生成' : running ? current?.content : '本次执行已结束';
+  const title = finished
+    ? financialText('financial.report_generated')
+    : running && current
+      ? financialStageTitle(current)
+      : financialText('financial.execution_ended');
   return (
     <section
       data-testid='financial-progress'
@@ -39,19 +45,26 @@ export default function FinancialProgressPanel({
     >
       <div className='mb-5 flex items-center justify-between gap-4'>
         <h3 className='text-base font-semibold text-gray-900 dark:text-gray-100'>{title}</h3>
-        {running && <span className='text-sm tabular-nums text-slate-500'>本阶段已用 {elapsed} 秒</span>}
+        {running && (
+          <span className='text-sm tabular-nums text-slate-500'>
+            {financialText('financial.stage_elapsed')}
+            {elapsed} {financialText('financial.seconds')}
+          </span>
+        )}
       </div>
       <p role='status' className='mb-4 text-sm leading-6 text-slate-600 dark:text-slate-300'>
         {finished
           ? isRunning
-            ? '报告已生成，正在整理回复。可以先查看报告和原文依据。'
+            ? financialText('financial.the_report_is_ready_while_the_reply_is_being_prepared_you_can_inspec')
             : tasks[tasks.length - 1]?.detail
           : running || current?.status === 'error'
             ? current?.detail
-            : '以下为最后保存的进度，可查看已有内容或继续分析。'}
+            : financialText('financial.the_last_saved_progress_is_shown_below_inspect_existing_results_or_c')}
       </p>
       {waiting && (
-        <p className='mb-4 text-xs text-slate-500'>尚未收到新的分析结果，仍在等待处理；进展更新后会自动显示。</p>
+        <p className='mb-4 text-xs text-slate-500'>
+          {financialText('financial.waiting_for_new_analysis_results_progress_will_appear_automatically')}
+        </p>
       )}
       {onOpenReport && (
         <button
@@ -59,7 +72,9 @@ export default function FinancialProgressPanel({
           onClick={onOpenReport}
           className='mb-4 rounded-lg bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-300'
         >
-          {reportPublished ? '查看报告与原文依据' : '查看已有分析内容'}
+          {reportPublished
+            ? financialText('financial.view_report_and_source_evidence')
+            : financialText('financial.view_existing_analysis')}
         </button>
       )}
       <TaskPlanCard tasks={tasks} defaultCollapsed={false} embedded showDetails={false} />
@@ -69,6 +84,7 @@ export default function FinancialProgressPanel({
 }
 
 export function FinancialProgressUpdates({ updates, published = false }: { updates: string[]; published?: boolean }) {
+  useFinancialLocale();
   const visible = (
     published ? updates.filter(update => !update.startsWith('已校验的分析发现（待最终复核）：')) : updates
   ).slice(-3);
@@ -76,12 +92,14 @@ export function FinancialProgressUpdates({ updates, published = false }: { updat
   return (
     <div
       role='log'
-      aria-label='财报分析进展'
+      aria-label={financialText('financial.financial_analysis_progress')}
       aria-live='polite'
       aria-relevant='additions text'
       className='mt-4 space-y-2'
     >
-      <p className='text-xs font-medium text-slate-500'>{published ? '执行记录' : '最新进展'}</p>
+      <p className='text-xs font-medium text-slate-500'>
+        {published ? financialText('financial.execution_log') : financialText('financial.latest_progress')}
+      </p>
       {visible.map(update => (
         <p key={update} className='border-l-2 border-sky-200 pl-3 text-sm leading-6 text-slate-600 dark:text-slate-300'>
           {update}

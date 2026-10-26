@@ -1,3 +1,4 @@
+import { financialStageTitle, financialText, useFinancialLocale } from '../../financial-analysis/i18n';
 /**
  * TaskPlanCard — Collapsible todo/task-plan card.
  *
@@ -55,6 +56,7 @@ const TaskPlanCard: React.FC<TaskPlanCardProps> = ({
   embedded = false,
   showDetails = true,
 }) => {
+  useFinancialLocale();
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -94,15 +96,17 @@ const TaskPlanCard: React.FC<TaskPlanCardProps> = ({
             <div className='font-semibold leading-5 tracking-tight'>
               {tasks[0]?.kind === 'financial-stage'
                 ? allDone
-                  ? '报告已生成'
-                  : `共 ${total} 个阶段，已完成 ${done} 个`
+                  ? financialText('financial.report_generated')
+                  : financialText('financial.value_of_value_stages_completed', { value1: total, value2: done })
                 : allDone
                   ? t('task_plan_all_done', { total })
                   : t('task_plan_progress_summary', { total, done })}
             </div>
             {collapsed && currentTask && !allDone && (
               <div className='truncate text-[11px] leading-4 text-slate-400 dark:text-slate-500'>
-                {t('task_plan_current', { task: currentTask.content })}
+                {t('task_plan_current', {
+                  task: currentTask.kind === 'financial-stage' ? financialStageTitle(currentTask) : currentTask.content,
+                })}
               </div>
             )}
           </div>
@@ -140,7 +144,7 @@ const TaskPlanCard: React.FC<TaskPlanCardProps> = ({
               >
                 <span className='mt-1 flex-shrink-0'>{statusIcon(task.status)}</span>
                 <span className={task.kind !== 'financial-stage' && task.status === 'completed' ? 'line-through' : ''}>
-                  {i + 1}. {task.content}
+                  {i + 1}. {task.kind === 'financial-stage' ? financialStageTitle(task) : task.content}
                   {showDetails && task.kind === 'financial-stage' && task.status === 'in_progress' && task.detail && (
                     <span className='mt-1 block text-xs font-normal text-slate-500'>{task.detail}</span>
                   )}

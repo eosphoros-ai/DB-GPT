@@ -1,6 +1,7 @@
 import React from 'react';
 import FindingCard from '../FindingCard';
 import styles from '../financial-analysis.module.css';
+import { financialText } from '../i18n';
 import { reportRunState, topicStatusNote } from '../report-data';
 import type { ComparisonReportData, OpenEvidence } from '../types';
 import ComparisonChart from './ComparisonChart';
@@ -41,8 +42,8 @@ const ComparisonSections: React.FC<{
       ) && (
         <p className={styles.sectionDescription}>
           {reportRunState(data).complete
-            ? '当前章节暂无通过核验的分析结论；可先查看上方财务数据、指标计算和原文依据。'
-            : '正在形成本章节的分析结论；可先查看上方财务数据、指标计算和原文依据。'}
+            ? financialText('financial.no_validated_findings_for_this_section_yet_inspect_financial_data_ca')
+            : financialText('financial.findings_for_this_section_are_being_prepared_inspect_financial_data_')}
         </p>
       )}
     {data.workflow?.topics

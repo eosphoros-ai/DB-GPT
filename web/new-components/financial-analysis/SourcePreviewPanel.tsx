@@ -3,6 +3,7 @@ import { Tooltip } from 'antd';
 import React from 'react';
 import PdfPagePreview from './PdfPagePreview';
 import styles from './financial-analysis.module.css';
+import { financialText } from './i18n';
 import { EvidenceExcerpt, SourceDocument, SourcePreviewAccess } from './types';
 interface SourcePreviewPanelProps {
   evidence: EvidenceExcerpt;
@@ -14,31 +15,37 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
   <div className={styles.sourcePanel}>
     <div className={styles.sourceToolbar}>
       <button type='button' className={styles.textLink} onClick={onBack}>
-        <ArrowLeftOutlined /> 返回证据链
+        <ArrowLeftOutlined /> {financialText('financial.back_to_evidence')}
       </button>
       <Tooltip
         title={
           sourceAccess
-            ? '上方显示原 PDF 页面图像，下方保留提取摘录；未做区域高亮。'
-            : '此视图按已提取片段排版，并非原始 PDF 页面图像。'
+            ? financialText('financial.the_original_pdf_page_appears_above_with_extracted_excerpts_below_no')
+            : financialText('financial.this_view_arranges_extracted_excerpts_it_is_not_an_original_pdf_imag')
         }
       >
-        <button type='button' aria-label='来源预览说明'>
+        <button type='button' aria-label={financialText('financial.about_source_previews')}>
           <InfoCircleOutlined />
         </button>
       </Tooltip>
     </div>
     <div className={styles.sourceDocument}>
       <div className={styles.meta}>
-        {sourceAccess ? '原 PDF 与来源摘录' : '来源摘录'} · {document.version}
+        {sourceAccess
+          ? financialText('financial.original_pdf_and_excerpts')
+          : financialText('financial.source_excerpts')}{' '}
+        · {document.version}
       </div>
       <h2>{document.fileName}</h2>
       <p className={styles.sectionDescription}>
-        {document.fiscalPeriod} · {sourceAccess ? '指标引用：PDF 物理第' : 'PDF Page'} {evidence.page}
-        {sourceAccess ? ' 页' : ''}
+        {document.fiscalPeriod} ·{' '}
+        {sourceAccess ? financialText('financial.metric_reference_pdf_physical_page') : 'PDF Page'} {evidence.page}
+        {sourceAccess ? financialText('financial.page') : ''}
       </p>
       {!sourceAccess && (
-        <p className={styles.researchNote}>离线快照保留摘录与公式；原 PDF 预览和下载需要回到应用授权访问。</p>
+        <p className={styles.researchNote}>
+          {financialText('financial.offline_snapshots_retain_excerpts_and_formulas_return_to_the_applica')}
+        </p>
       )}
       {sourceAccess && (
         <PdfPagePreview
@@ -48,7 +55,7 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
           access={sourceAccess}
         />
       )}
-      <div className={styles.sourceSection}>{evidence.section || '来源片段'}</div>
+      <div className={styles.sourceSection}>{evidence.section || financialText('financial.source_excerpt')}</div>
       <p className={styles.meta}>{[evidence.table, evidence.row, evidence.column].filter(Boolean).join(' / ')}</p>
       <blockquote className={styles.sourceHighlight}>
         <span className={styles.meta}>{evidence.id}</span>
@@ -56,24 +63,30 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
       </blockquote>
       {sourceAccess && evidence.headerSnippet && (
         <p className={styles.meta}>
-          表头（物理第 {evidence.headerPage} 页）：{evidence.headerSnippet}
+          {financialText('financial.header_physical_page')}
+          {evidence.headerPage} {financialText('financial.')}
+          {evidence.headerSnippet}
         </p>
       )}
       {sourceAccess && evidence.unitText && (
         <p className={styles.meta}>
-          单位声明（物理第 {evidence.unitPage} 页）：{evidence.unitText}
+          {financialText('financial.unit_statement_physical_page')}
+          {evidence.unitPage} {financialText('financial.')}
+          {evidence.unitText}
         </p>
       )}
       {evidence.extractedValue && (
         <dl className={styles.driverTable}>
           <div>
-            <dt>提取值</dt>
+            <dt>{financialText('financial.extracted_value')}</dt>
             <dd>{evidence.extractedValue}</dd>
           </div>
         </dl>
       )}
       <div className={styles.sourcePage}>
-        {sourceAccess ? `摘录来源：物理第 ${evidence.page} 页` : `— ${evidence.page} —`}
+        {sourceAccess
+          ? financialText('financial.excerpt_source_physical_page_value', { value1: evidence.page })
+          : `— ${evidence.page} —`}
       </div>
     </div>
   </div>

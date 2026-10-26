@@ -1,12 +1,29 @@
+import { financialText } from './i18n';
 const FINANCIAL_ACTIONS: Record<string, string> = {
-  prepare_financial_report: '读取财报并分析财务数据',
-  prepare_financial_comparison: '读取财报并比较财务数据',
-  resolve_financial_comparison: '确认比较对象与数据口径',
-  get_financial_topic: '读取专题分析依据',
-  save_financial_topic: '保存本次分析结果',
-  review_financial_report: '核对结论与原文依据',
-  publish_financial_report: '生成分析报告',
-  read_financial_report: '读取已保存的报告',
+  get prepare_financial_report() {
+    return financialText('financial.read_report_and_analyze_financial_data');
+  },
+  get prepare_financial_comparison() {
+    return financialText('financial.read_reports_and_compare_financial_data');
+  },
+  get resolve_financial_comparison() {
+    return financialText('financial.confirm_comparison_subjects_and_reporting_basis');
+  },
+  get get_financial_topic() {
+    return financialText('financial.read_topic_evidence');
+  },
+  get save_financial_topic() {
+    return financialText('financial.save_analysis_results');
+  },
+  get review_financial_report() {
+    return financialText('financial.review_findings_against_source_evidence');
+  },
+  get publish_financial_report() {
+    return financialText('financial.generate_report');
+  },
+  get read_financial_report() {
+    return financialText('financial.read_saved_report');
+  },
 };
 
 interface StepOutput {
@@ -55,7 +72,8 @@ export function financialStepSubtitle(step: FinancialStep, outputs: StepOutput[]
   if (!financialStepTitle(step)) return undefined;
   const latest = financialObservations(outputs).at(-1);
   if (latest) return latest;
-  if (step.status === 'failed' || step.status === 'error') return '本步骤未完成，可展开查看已保存的进展和原因。';
-  if (step.status === 'running') return '正在处理，新的进展会显示在这里。';
-  return '本次调用已结束，可展开查看结果。';
+  if (step.status === 'failed' || step.status === 'error')
+    return financialText('financial.this_step_is_incomplete_expand_it_to_inspect_saved_progress_and_reas');
+  if (step.status === 'running') return financialText('financial.processing_new_progress_will_appear_here');
+  return financialText('financial.this_call_has_ended_expand_it_to_inspect_the_result');
 }

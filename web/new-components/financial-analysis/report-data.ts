@@ -1,3 +1,4 @@
+import { financialText } from './i18n';
 import type { EvidenceSelection, FinancialReportData, ReportData } from './types';
 
 export const isDefined = <T>(value: T | undefined | null): value is T => value != null;
@@ -47,7 +48,9 @@ export function resolveEvidence(data: FinancialReportData, selection: EvidenceSe
 
 export function periodRange(points: Array<{ year: string }>) {
   const periods = [...new Set(points.map(item => item.year))].sort();
-  return periods.length > 1 ? `${periods[0]}–${periods[periods.length - 1]}` : periods[0] || '期间未提供';
+  return periods.length > 1
+    ? `${periods[0]}–${periods[periods.length - 1]}`
+    : periods[0] || financialText('financial.period_unavailable');
 }
 
 export const runStatusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
@@ -57,16 +60,16 @@ export function reportRunState(data: FinancialReportData) {
     const complete = (data.workflow?.status || data.lifecycle.publicationStatus) === 'published';
     return {
       label: complete
-        ? '报告已生成'
+        ? financialText('financial.report_generated')
         : data.lifecycle.stage === 'interrupted'
-          ? '已中断 · 数据已保留'
+          ? financialText('financial.interrupted_data_retained')
           : data.lifecycle.stage === 'awaiting_analysis'
-            ? '数据已就绪 · 待分析'
+            ? financialText('financial.data_ready_awaiting_analysis')
             : data.lifecycle.stage === 'awaiting_revision'
-              ? '待修订 · 数据已保留'
+              ? financialText('financial.awaiting_revision_data_retained')
               : data.lifecycle.dataStatus === 'incomplete'
-                ? '资料已保存 · 待确认'
-                : '分析中',
+                ? financialText('financial.files_saved_awaiting_confirmation')
+                : financialText('financial.analyzing'),
       working: !complete && !['interrupted', 'awaiting_revision', 'awaiting_analysis'].includes(data.lifecycle.stage),
       complete,
     };
@@ -74,26 +77,42 @@ export function reportRunState(data: FinancialReportData) {
   if (data.workflow) {
     // Publication is independent of how much analysis the source supports.
     const complete = data.workflow.status === 'published';
-    return { label: complete ? '报告已生成' : '分析中', working: !complete, complete };
+    return {
+      label: complete ? financialText('financial.report_generated') : financialText('financial.analyzing'),
+      working: !complete,
+      complete,
+    };
   }
   if (data.analysis) {
-    if (data.analysis.status === 'running') return { label: '分析中', working: true, complete: false };
-    if (data.analysis.status === 'completed') return { label: '报告已生成', working: false, complete: true };
+    if (data.analysis.status === 'running')
+      return { label: financialText('financial.analyzing'), working: true, complete: false };
+    if (data.analysis.status === 'completed')
+      return { label: financialText('financial.report_generated'), working: false, complete: true };
     if (data.analysis.status === 'partial') {
       const complete = !!data.analysis.completedAt;
-      return { label: complete ? '报告已生成' : '分析中', working: !complete, complete };
+      return {
+        label: complete ? financialText('financial.report_generated') : financialText('financial.analyzing'),
+        working: !complete,
+        complete,
+      };
     }
-    if (data.analysis.status === 'failed') return { label: '数据可用 · 分析未完成', working: false, complete: false };
+    if (data.analysis.status === 'failed')
+      return { label: financialText('financial.data_available_analysis_incomplete'), working: false, complete: false };
   }
   return {
-    label: data.report.run.status === 'completed' ? '报告已生成' : runStatusLabels[data.report.run.status],
+    label:
+      data.report.run.status === 'completed'
+        ? financialText('financial.report_generated')
+        : runStatusLabels[data.report.run.status],
     working: data.report.run.status === 'running',
     complete: data.report.run.status === 'completed',
   };
 }
 
 export function financialReportTitle(data: FinancialReportData) {
-  return data.mode === 'comparison' ? data.comparison.title : `${data.report.companyName}财报分析`;
+  return data.mode === 'comparison'
+    ? data.comparison.title
+    : financialText('financial.value_financial_analysis', { value1: data.report.companyName });
 }
 
 export function supportedFinancialProtocol(data: { schemaVersion: number; mode: string }) {
@@ -105,16 +124,16 @@ export function supportedFinancialProtocol(data: { schemaVersion: number; mode: 
 /** Old snapshots may have a model note that contradicts their validator errors. */
 export function topicStatusNote(topic: NonNullable<ReportData['workflow']>['topics'][number]): string {
   if (topic.status === 'failed' && topic.errorCode === 'MODEL_TIMEOUT') {
-    return '本项分析在限定时间内未完成，财务数据与指标计算已保留。可在“执行过程”中单独重试。';
+    return financialText('financial.this_analysis_exceeded_its_time_limit_financial_data_and_calculation');
   }
   if (['failed', 'needs_revision'].includes(topic.status) && topic.errorCode === 'EXPLANATION_BOUNDARY_FAILED') {
-    return '本专题结论超出当前证据的解释边界，需修订相关判断。详情及重试请查看执行过程。';
+    return financialText('financial.this_topic_s_conclusions_exceed_the_evidence_and_need_revision_see_e');
   }
   if (
     ['failed', 'needs_revision'].includes(topic.status) &&
     (topic.errorCode === 'FINDING_VALIDATION_FAILED' || (!topic.errorCode && topic.issues?.length))
   ) {
-    return '本专题结论格式或引用校验失败；不代表历史数据缺失。错误详情及重试请查看执行过程。';
+    return financialText('financial.this_topic_failed_format_or_reference_validation_historical_data_is_');
   }
   return topic.note;
 }

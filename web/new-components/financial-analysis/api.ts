@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/client/api';
 import { GET, POST } from '@/client/api';
+import { financialText } from './i18n';
 import type {
   ComparisonConfig,
   ComparisonMember,
@@ -69,7 +70,8 @@ export async function downloadExport(sessionId: string, runId: string, file: Fin
   saveBlob(blob, file.file_name);
 }
 function unwrap<T>(response: ApiResponse<T>): T {
-  if (!response.data.success) throw new Error(response.data.err_msg || '财报请求失败');
+  if (!response.data.success)
+    throw new Error(response.data.err_msg || financialText('financial.financial_report_request_failed'));
   return response.data.data;
 }
 export async function createRun(sessionId: string, fileId: string, requestId: string) {
@@ -168,7 +170,7 @@ export async function getLatestReport(sessionId: string, signal?: AbortSignal) {
 }
 export function requestError(error: unknown): string {
   const value = error as { response?: { data?: { err_msg?: string } }; message?: string };
-  return value?.response?.data?.err_msg || value?.message || '请求失败，请重试';
+  return value?.response?.data?.err_msg || value?.message || financialText('financial.request_failed_please_retry');
 }
 
 export async function askQuestion(
@@ -195,7 +197,8 @@ async function sourceBlob(sessionId: string, path: string, type: string, signal?
   try {
     const response = await GET(path, { session_id: sessionId }, { responseType: 'blob', signal });
     const blob = response.data as unknown as Blob;
-    if (!(blob instanceof Blob) || blob.type.split(';')[0] !== type) throw new Error('文件响应格式错误');
+    if (!(blob instanceof Blob) || blob.type.split(';')[0] !== type)
+      throw new Error(financialText('financial.invalid_file_response'));
     return blob;
   } catch (cause) {
     const data = (cause as { response?: { data?: unknown } })?.response?.data;
