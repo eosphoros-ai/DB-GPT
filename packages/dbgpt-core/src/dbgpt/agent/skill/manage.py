@@ -268,7 +268,11 @@ class SkillManager(BaseComponent):
         if skill.prompt_template:
             # prompt_template might be a string or a Template object
             if hasattr(skill.prompt_template, "template"):
-                return skill.prompt_template.template
+                # 渲染模板，让被转义过的技能指令还原成原始文本
+                try:
+                    return skill.prompt_template.format()
+                except (KeyError, IndexError, ValueError):
+                    return skill.prompt_template.template
             return str(skill.prompt_template)
 
         return "No content available for this skill."

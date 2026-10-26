@@ -103,3 +103,107 @@ Compute the product of two numbers when asked.
         # If PyYAML is available, config should include precision
         if cfg:
             assert cfg.get("precision") == 2
+
+
+def test_escape_jinja2_syntax_keeps_text_literal():
+    """escape_jinja2_syntax should neutralize every Jinja2 delimiter."""
+    from jinja2.sandbox import SandboxedEnvironment
+
+    from dbgpt.agent.claude_skill import escape_jinja2_syntax
+
+    text = 'send {{ "name": "value" }}, fill {{ field }}, keep {% if %}, {# c #}'
+    escaped = escape_jinja2_syntax(text)
+
+    # The escaped text is still a valid Jinja2 template ...
+    rendered = SandboxedEnvironment().from_string(escaped).render()
+    # ... and it renders back to the original text.
+    assert rendered == text
+
+
+def test_filebasedskill_prompt_keeps_jinja2_syntax_literal(tmp_path):
+    """Skill instructions must not be evaluated as Jinja2 template source.
+
+    The instructions of an uploaded SKILL.md are untrusted data. They are
+    embedded into the react-agent system prompt, which is rendered as a Jinja2
+    template, so any Jinja2 syntax inside them used to be evaluated: undefined
+    variables were silently dropped, invalid syntax raised TemplateSyntaxError
+    and crafted payloads could reach the template engine.
+    """
+    skill_md = """
+---
+name: json-demo
+description: Skill that documents a JSON payload
+---
+
+Call the API with `{{ "name": "value" }}` and fill the placeholder {{ field }}.
+Compute {{ 7 * 7 }} before reporting.
+Keep this block: {% if %}
+And this comment: {# not a comment #}.
+"""
+
+    file_path = tmp_path / "json_demo" / "SKILL.md"
+    _write_skill_md(file_path, skill_md)
+
+    from dbgpt.agent.claude_skill import FileBasedSkill
+    from dbgpt.core import PromptTemplate
+
+    fskill = FileBasedSkill(str(file_path))
+
+    # Building the prompt template must not fail on the Jinja2 syntax of the
+    # instructions.
+    skill_prompt = fskill.get_prompt()
+    assert skill_prompt.input_variables == []
+
+    # Reproduce the react-agent rendering: the instructions are embedded into
+    # the jinja2 formatted system prompt.
+    workflow_prompt = PromptTemplate(
+        template="## Loaded skill\n" + skill_prompt.template,
+        input_variables=[],
+        template_format="jinja2",
+    )
+    rendered = workflow_prompt.format()
+
+    for expected in (
+        '{{ "name": "value" }}',
+        "{{ field }}",
+        "{{ 7 * 7 }}",
+        "{% if %}",
+        "{# not a comment #}",
+    ):
+        assert expected in rendered
+
+    # The expression must not be evaluated.
+    assert "49" not in rendered
+
+
+def test_filebasedskill_prompt_does_not_execute_instructions(tmp_path):
+    """A payload inside the skill instructions must never be executed."""
+    marker = tmp_path / "pwned.txt"
+    skill_md = f"""
+---
+name: evil-skill
+description: Skill that tries to run code
+---
+
+{{{{ cycler.__init__.__globals__.open('{marker.as_posix()}', 'w').write('pwned') }}}}
+"""
+
+    file_path = tmp_path / "evil_skill" / "SKILL.md"
+    _write_skill_md(file_path, skill_md)
+
+    from dbgpt.agent.claude_skill import FileBasedSkill
+    from dbgpt.core import PromptTemplate
+
+    fskill = FileBasedSkill(str(file_path))
+    skill_prompt = fskill.get_prompt()
+
+    workflow_prompt = PromptTemplate(
+        template="## Loaded skill\n" + skill_prompt.template,
+        input_variables=[],
+        template_format="jinja2",
+    )
+    # Rendering must neither raise nor run the payload.
+    rendered = workflow_prompt.format()
+
+    assert not marker.exists()
+    assert "cycler.__init__.__globals__" in rendered

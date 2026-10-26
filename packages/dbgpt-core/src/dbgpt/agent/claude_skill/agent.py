@@ -91,7 +91,11 @@ class ClaudeSkillAgent(ConversableAgent):
             else:
                 combined = skill_prompt.template
 
-            self.bind_prompt = PromptTemplate.from_template(combined)
+            # 技能指令已经转义成 Jinja2 字面量，这里必须继续用 jinja2 渲染，
+            # 否则转义序列会被 f-string 规则二次解析。
+            self.bind_prompt = PromptTemplate.from_template(
+                combined, template_format="jinja2", template_is_strict=False
+            )
 
     async def generate_reply(
         self,
