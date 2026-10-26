@@ -648,7 +648,12 @@ class ToolCallingReActAgent(ReActAgent):
             raise
 
     def _build_native_tools(self) -> List[Dict[str, Any]]:
-        """Return the OpenAI tools array for native function calling."""
+        """Return the OpenAI tools array, including the initialized completion tool.
+
+        ``build()`` calls the inherited ``preload_resource()``, which registers
+        ``Terminate`` in the resource pack. Native calls can therefore finish via
+        that tool even when protocol repair requires a tool call.
+        """
         return _build_openai_tools(self.resource)
 
     def _native_tool_choice(self) -> str:

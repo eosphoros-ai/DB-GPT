@@ -1,19 +1,18 @@
 """Integration tests for ToolCallingReActAgent action dispatch.
 
-These drive the agent's ``act()`` through the real ``ConversableAgent.act``
-dispatch loop (the same loop ``generate_reply`` — and thus the
-``/api/v1/chat/react-agent`` endpoint — uses) but with a stubbed resource, so
-no LLM/network is required.
+These exercise real tool dispatch without an external model. Focused tests
+bind tools directly; lifecycle coverage also runs ``build()`` and
+``generate_reply()`` with real memory and a mocked model transport.
 """
 
 import json
 from datetime import datetime
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from dbgpt.agent import AgentContext, AgentMessage
+from dbgpt.agent import AgentContext, AgentMemory, AgentMessage, LLMConfig
 from dbgpt.agent.expand.actions.react_action import Terminate
 from dbgpt.agent.expand.actions.tool_action import (
     ToolCallSpec,
@@ -23,6 +22,7 @@ from dbgpt.agent.expand.actions.tool_action import (
 from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
 from dbgpt.agent.resource.tool.base import FunctionTool, tool
 from dbgpt.agent.resource.tool.pack import ToolPack
+from dbgpt.core import LLMClient, ModelMetadata, ModelOutput
 
 
 @pytest.mark.asyncio
@@ -296,8 +296,6 @@ async def test_malformed_native_arguments_never_execute_parameterless_tool(argum
 @pytest.mark.asyncio
 async def test_protocol_repair_requests_native_function_and_keeps_arguments():
     """Require a native call during protocol repair and retain its arguments."""
-    from dbgpt.core import ModelOutput
-
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True
     await agent.act(
@@ -325,6 +323,117 @@ async def test_protocol_repair_requests_native_function_and_keeps_arguments():
     kwargs = agent.prepare_act_param(None, agent)
     output = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
     assert output.is_exe_success and output.content == "5"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("placeholder_first", [False, True])
+async def test_built_agent_can_terminate_during_native_protocol_repair(
+    tmp_path, placeholder_first
+):
+    """Finish through the real build/run lifecycle without business side effects.
+
+    Directly assigning resources skips preload registration of ``Terminate``.
+    Mock only the external model so registration, required tool selection,
+    action dispatch, verification, and retry handling all use production code.
+    """
+    invoked = []
+
+    @tool(description="Record a value")
+    def record(value: str) -> str:
+        """Capture an ordinary tool's observable side effect."""
+        invoked.append(value)
+        return value
+
+    final_answer = "No changes were needed."
+    model_calls = [("record", {})]
+    if placeholder_first:
+        model_calls.append(("terminate", {"output": "..."}))
+    model_calls.append(("terminate", {"output": final_answer}))
+    responses = iter(model_calls)
+    requests = []
+
+    async def generate_stream(request):
+        """Return scripted native calls at the model transport boundary."""
+        requests.append(request)
+        name, arguments = next(responses)
+        yield ModelOutput.build(
+            "",
+            tool_calls=[
+                {
+                    "id": f"call-{len(requests)}",
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "arguments": json.dumps(arguments),
+                    },
+                }
+            ],
+        )
+
+    llm_client = MagicMock(spec=LLMClient)
+    llm_client.models = AsyncMock(
+        return_value=[ModelMetadata(model="synthetic", function_calling=True)]
+    )
+    llm_client.generate_stream = MagicMock(side_effect=generate_stream)
+    agent = (
+        ToolCallingReActAgent(max_retry_count=4, stream_out=False)
+        .bind(
+            AgentContext(
+                conv_id="native-termination-repair",
+                enable_native_function_calling=True,
+                output_dir=str(tmp_path),
+            )
+        )
+        .bind(LLMConfig(llm_client=llm_client))
+        .bind(AgentMemory())
+        .bind(ToolPack([record._tool]))
+    )
+    assert [t["function"]["name"] for t in agent._build_native_tools()] == ["record"]
+    await agent.build()
+    assert not agent.is_human
+    assert isinstance(agent.memory, AgentMemory)
+    assert [t["function"]["name"] for t in agent._build_native_tools()].count(
+        "terminate"
+    ) == 1
+    await agent.preload_resource()
+    assert [t["function"]["name"] for t in agent._build_native_tools()].count(
+        "terminate"
+    ) == 1
+
+    events = AsyncMock()
+    reply = await agent.generate_reply(
+        AgentMessage(content="Finish without recording any values."),
+        sender=agent,
+        stream_callback=events,
+    )
+
+    assert reply.success, reply.content
+    assert reply.action_report.is_exe_success
+    assert reply.action_report.action == "terminate"
+    assert reply.action_report.terminate is True
+    assert reply.action_report.content == final_answer
+    assert invoked == []
+    assert len(requests) == len(model_calls)
+    assert requests[0].tool_choice == "auto"
+    assert requests[1].tool_choice == "required"
+    for request in requests:
+        names = [t["function"]["name"] for t in request.tools]
+        assert sorted(names) == ["record", "terminate"]
+
+    actions = [
+        call.args[1]["action_output"]
+        for call in events.await_args_list
+        if call.args[0] == "act"
+    ]
+    assert len(actions) == len(model_calls)
+    assert actions[0]["is_exe_success"] is False
+    assert actions[0]["have_retry"] is True
+    assert "TOOL_ARGUMENT_INVALID" in actions[0]["content"]
+    if placeholder_first:
+        assert actions[1]["is_exe_success"] is False
+        assert actions[1]["terminate"] is not True
+        assert actions[1]["have_retry"] is True
+        assert "non-empty final answer" in actions[1]["content"]
 
 
 @pytest.mark.asyncio
