@@ -215,6 +215,9 @@ openspec/
 docs/superpowers/
 .gstack/
 
+# Uploaded files and generated runtime assets
+/.work/
+/python_uploads/
 # Generated Dashboard demo data and local share-token encryption key
 /examples/dashboard/generated/
 /pilot/meta_data/dashboard-share.key

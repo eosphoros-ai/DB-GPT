@@ -6078,7 +6078,7 @@ requires-dist = [
     { name = "onnxruntime", marker = "extra == 'storage-chromadb'", specifier = ">=1.14.1,<=1.18.1" },
     { name = "oracledb", marker = "extra == 'datasource-oracle'", specifier = "==3.1.0" },
     { name = "oss2", marker = "extra == 'file-oss'" },
-    { name = "pdfplumber", marker = "extra == 'rag'" },
+    { name = "pdfplumber", marker = "extra == 'rag'", specifier = ">=0.10.4" },
     { name = "psycopg2-binary", marker = "extra == 'datasource-postgres'" },
     { name = "pyhive", marker = "extra == 'datasource-hive'" },
     { name = "pymilvus", marker = "extra == 'storage-milvus'" },
