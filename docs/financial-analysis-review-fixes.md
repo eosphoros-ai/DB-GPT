@@ -30,8 +30,8 @@ and generated fixtures under ignored cache directories. The temporary Next
 server used port 5688 and was managed/stopped by Playwright. No daily database
 was changed and no live model was called.
 
-- Selected full backend regression: **414 passed, 1 skipped, 3 failed**.
-- Additional data-foundation regressions: **11 passed**. These cover exact
+- Final selected full backend regression: **425 passed, 1 skipped, 3 failed**.
+- The full result includes **11 data-foundation regressions**. These cover exact
   decimal arithmetic, missing/zero inputs, incompatible currency, negative
   prior-period growth and rejection of narrative-only extraction.
 - Financial Vitest: **24 passed**.
@@ -91,4 +91,5 @@ For mocked browser delivery tests, start a development server on a free port,
 set `FINANCIAL_LIVE_BASE_URL` and run `npm run test:e2e:financial:live --prefix web`.
 An optional `FINANCIAL_HTTP_LAN_BASE_URL` exercises a real insecure HTTP origin;
 without it the create-run test explicitly removes `randomUUID` on loopback.
-Run `npm run test:e2e:recovery --prefix web` for the managed-server history tests.
+From `web/`, run `npx playwright test --config playwright.recovery.config.ts`
+for the managed-server history tests.
