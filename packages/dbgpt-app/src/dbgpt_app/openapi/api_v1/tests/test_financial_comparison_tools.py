@@ -9,8 +9,12 @@ from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     has_comparison_intent,
     make_financial_tools,
 )
+from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.financial_analysis.tests.conftest import (
     isolated_service as isolated_service,
+)
+from dbgpt_serve.financial_analysis.tests.test_comparison_recovery import (
+    RecordingAnalyzer,
 )
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
@@ -116,3 +120,48 @@ def test_comparison_artifact_has_explicit_mode_and_no_single_company_identity():
     assert artifact["title"] == report["comparison"]["title"]
     assert artifact["mode"] == "comparison" and artifact["published"] is True
     assert "companyName" not in json.dumps(artifact)
+
+
+@pytest.mark.asyncio
+async def test_chat_comparison_prepare_topics_review_and_pinned_read(isolated_service):
+    service, _, calls, _ = isolated_service
+    state = {
+        "owner_id": "alice",
+        "conv_id": "scope",
+        "model_name": "synthetic",
+        "financial_user_query": "请横向对比这两家公司年度报告。",
+        "session_files": [
+            SimpleNamespace(file_id=i, name=i + ".pdf") for i in ["a", "b"]
+        ],
+    }
+    tools = {
+        tool.__name__: tool for tool in make_financial_tools(state, service=service)
+    }
+    await tools["prepare_financial_comparison"](["a", "b"], "peer")
+    run_id = state["financial_report_context"]["report"]["run"]["id"]
+    adapter = RecordingAnalyzer()
+    for topic_id in workflow.TOPICS:
+        await tools["get_financial_topic"](run_id, topic_id)
+        report = service.get("alice", "scope", run_id, report=True)
+        findings = json.loads(
+            adapter(dict(report, _activeTopic=topic_id), "alice", "scope")
+        )["findings"]
+        await tools["save_financial_topic"](
+            run_id=run_id,
+            revision=report["revision"],
+            topic_id=topic_id,
+            findings=findings,
+        )
+    report = service.get("alice", "scope", run_id, report=True)
+    await tools["review_financial_report"](
+        run_id, report["revision"], adapter.review(report, "alice", "scope")
+    )
+    published = state["financial_report_context"]
+    assert published["workflow"]["status"] == "published"
+    assert calls == ["a", "b"]
+    reply = json.loads(
+        await tools["read_financial_report"](run_id, revision=published["revision"])
+    )
+    assert (
+        reply and state["financial_report_context"]["revision"] == published["revision"]
+    )
