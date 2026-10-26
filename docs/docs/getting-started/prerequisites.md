@@ -86,8 +86,8 @@ uv --version
 
 | Requirement | Version | Check command |
 |---|---|---|
-| **Node.js** | 18 or newer | `node --version` |
-| **npm** | 8 or newer | `npm --version` |
+| **Node.js** | 20.19 or newer (frontend development) | `node --version` |
+| **Yarn Classic** | 1.x (validated with 1.22.22) | `yarn --version` |
 
 ### For local model deployment
 

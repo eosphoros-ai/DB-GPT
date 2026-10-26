@@ -9,9 +9,8 @@ so it can access the full content on demand.
 It also reads operation snapshot files written by ``Role._write_op_snapshot``,
 which previously had no corresponding read action.
 
-Security: only files under the ``persisted_results/`` or ``op_snapshots/``
-directories (within the configured ``output_dir`` or ``DBGPT_HOME/workspace``)
-may be read, preventing path traversal.
+Access is limited to persisted results, operation snapshots, and the current
+conversation's recorded report repair files.
 """
 
 import json
@@ -19,6 +18,8 @@ import os
 from typing import Annotated, Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
+
+MAX_READ_CHARS = 20_000
 
 
 def _resolve_allowed_dirs(react_state: Dict[str, Any]) -> list:
@@ -57,6 +58,28 @@ def _is_within_allowed(file_path: str, allowed_dirs: list) -> bool:
     return False
 
 
+def _is_report_repair_file(file_path, react_state):
+    """Allow exact repair files only after this conversation records a checkpoint."""
+    from .report_repair import _checkpoint_path
+
+    recorded = react_state.get("_report_checkpoint_path")
+    conv_uid = react_state.get("conv_id")
+    if not recorded or not conv_uid:
+        return False
+    canonical = _checkpoint_path(conv_uid)
+
+    def normalize(path):
+        return os.path.normcase(os.path.realpath(path))
+
+    if normalize(recorded) != normalize(canonical):
+        return False
+    return normalize(file_path) in {
+        normalize(canonical),
+        normalize(canonical.with_name("pending.html")),
+        normalize(canonical.with_name("last-attempt.html")),
+    }
+
+
 def make_read_file(react_state: Dict[str, Any]):
     """Create a read_file tool bound to the given react_state.
 
@@ -71,7 +94,13 @@ def make_read_file(react_state: Dict[str, Any]):
             "Read a file from disk with pagination. Use this when you see a "
             "<persisted-output> block with a file path and need to access the "
             "full content, or when you need to read an operation snapshot. "
-            "Supports offset/limit for reading specific sections of large files. "
+            "Also read the current report's saved pending.html, last-attempt.html or "
+            "checkpoint.json using the paths returned by html_interpreter. "
+            "For a repair target use offset=html_line-1; copy file text "
+            "without line prefixes. "
+            "Supports offset/limit and char_offset for bounded reading. "
+            "Each response is limited to 20000 content characters, even for "
+            "one-line JSON. When truncated, use next_read arguments to continue. "
             'Parameters: {"file_path": "absolute path from <persisted-output> block", '
             '"offset": "start line number, 0-based (optional, default 0)", '
             '"limit": "max lines to read (optional, default 100)"}'
@@ -81,10 +110,14 @@ def make_read_file(react_state: Dict[str, Any]):
         file_path: Annotated[str, "Absolute path to the file to read"],
         offset: Annotated[int, "Start line number (0-based)"] = 0,
         limit: Annotated[int, "Max lines to read"] = 100,
+        char_offset: Annotated[int, "Character offset within the selected lines"] = 0,
     ) -> str:
         """Read a file from disk with pagination."""
         allowed_dirs = _resolve_allowed_dirs(react_state)
-        if not _is_within_allowed(file_path, allowed_dirs):
+        if not (
+            _is_within_allowed(file_path, allowed_dirs)
+            or _is_report_repair_file(file_path, react_state)
+        ):
             return json.dumps(
                 {
                     "chunks": [
@@ -92,7 +125,10 @@ def make_read_file(react_state: Dict[str, Any]):
                             "output_type": "text",
                             "content": (
                                 "Access denied: file path must be within the "
-                                "persisted_results or op_snapshots directories."
+                                "persisted_results, op_snapshots or the current "
+                                "conversation's "
+                                "recorded report repair "
+                                "files."
                             ),
                         }
                     ]
@@ -132,22 +168,43 @@ def make_read_file(react_state: Dict[str, Any]):
         total_lines = len(lines)
         start = max(0, int(offset))
         end = min(start + max(1, int(limit)), total_lines)
-        selected = lines[start:end]
+        selected_text = "".join(lines[start:end])
+        char_start = max(0, int(char_offset))
+        snippet = selected_text[char_start : char_start + MAX_READ_CHARS]
+        truncated = char_start + len(snippet) < len(selected_text)
+        selected = snippet.splitlines()
 
         result_lines = [
             f"File: {file_path} ({total_lines} lines, showing {start + 1}-{end})"
         ]
+        first_line = start + selected_text[:char_start].count("\n")
         for i, line in enumerate(selected):
-            result_lines.append(f"  {start + i + 1:>4} | {line.rstrip()}")
+            result_lines.append(f"  {first_line + i + 1:>4} | {line.rstrip()}")
 
-        if end < total_lines:
+        next_read = None
+        if truncated:
+            next_read = {
+                "file_path": file_path,
+                "offset": start,
+                "limit": max(1, int(limit)),
+                "char_offset": char_start + len(snippet),
+            }
+            result_lines.append(
+                "  ... (character limit reached; use next_read to continue "
+                "within the same lines)"
+            )
+        elif end < total_lines:
             result_lines.append(
                 f"  ... ({total_lines - end} more lines, use offset={end} to continue)"
             )
 
         content = "\n".join(result_lines)
         return json.dumps(
-            {"chunks": [{"output_type": "text", "content": content}]},
+            {
+                "chunks": [{"output_type": "text", "content": content}],
+                "truncated": truncated,
+                **({"next_read": next_read} if next_read else {}),
+            },
             ensure_ascii=False,
         )
 

@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import io
 import json
 import logging
@@ -8,8 +9,24 @@ import shutil
 import tempfile
 import uuid
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
+from threading import BoundedSemaphore
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 from urllib.parse import urlparse
 
 from fastapi import (
@@ -30,11 +47,24 @@ from dbgpt._private.pydantic import BaseModel as _BaseModel
 from dbgpt.agent.core.context import ContextBudgetConfig
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.skill.manage import get_skill_manager
+from dbgpt.agent.util.react_parser import extract_terminate_output
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
+from dbgpt.core.interface.report import (
+    MAX_REPORT_TITLE_LENGTH,
+    ArtifactContent,
+    SQLArtifact,
+)
+from dbgpt.core.interface.report_capture import (
+    ArtifactCaptureContext,
+    ArtifactSink,
+    InMemoryArtifactSink,
+    bind_artifact_sink,
+    sha256_json,
+    sha256_text,
+)
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.util.json_utils import parse_or_raise_error
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -60,6 +90,41 @@ from .subagent.history import (
     update_subagent_history,
 )
 
+_CHINESE_RECOMMENDATION_COUNTS = {
+    "一": 1,
+    "二": 2,
+    "两": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+    "十": 10,
+}
+
+
+def _requested_recommendation_count(user_input: str) -> Optional[int]:
+    """Return a fixed recommendation count explicitly requested by the user."""
+    match = re.search(
+        r"(?:最后|并|再)?\s*(?:给我|给出|提供|提出|输出)\s*"
+        r"(?P<count>\d+|[一二两三四五六七八九十])\s*(?:条|个)[^。；，]{0,24}?"
+        r"(?:经营|可执行|行动)?[^。；，]{0,12}?(?:建议|recommendations?)",
+        user_input,
+        re.IGNORECASE,
+    )
+    if not match:
+        return None
+    raw_count = match.group("count")
+    count = (
+        int(raw_count)
+        if raw_count.isdigit()
+        else _CHINESE_RECOMMENDATION_COUNTS[raw_count]
+    )
+    return count if 1 <= count <= 20 else None
+
+
 router = APIRouter()
 CFG = Config()
 logger = logging.getLogger(__name__)
@@ -70,11 +135,107 @@ if TYPE_CHECKING:
     from dbgpt.agent.resource.tool.base import BaseTool
 
 REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
+_CaptureResult = TypeVar("_CaptureResult")
+# Large traceable reports (100+ artifacts, multi-hundred-KB HTML) can take
+# longer than five seconds to assemble and commit. Publishing `unconfirmed`
+# without coordinates drops the report tab and every evidence link from the
+# saved conversation, so allow the save enough time to finish.
+_REPORT_PERSIST_TIMEOUT_SECONDS = 30.0
+_REPORT_PERSIST_MAX_IN_FLIGHT = 2
+_REPORT_PERSIST_EXECUTOR = ThreadPoolExecutor(
+    max_workers=_REPORT_PERSIST_MAX_IN_FLIGHT,
+    thread_name_prefix="dbgpt-report-persist",
+)
+_REPORT_PERSIST_SLOTS = BoundedSemaphore(_REPORT_PERSIST_MAX_IN_FLIGHT)
+_REPORT_PERSIST_TASKS: set["asyncio.Task[Any]"] = set()
 
 DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
+DASHBOARD_BUILDER_SKILL_NAME = "dashboard-builder"
+DASHBOARD_AGENT_MARKERS = (
+    "[[confirm-dashboard:",
+    "[[revise-dashboard-plan:",
+    "[[modify-dashboard:",
+    "[[dashboard-annotation:",
+)
+DASHBOARD_AGENT_KEYWORDS = (
+    "dashboard",
+    "看板",
+    "数据看板",
+    "经营看板",
+    "分析看板",
+    "仪表盘",
+)
+
+
+def _is_dashboard_workflow_request(
+    user_input: str, creation_mode: Optional[str] = None
+) -> bool:
+    """Return whether a message belongs to the bounded Dashboard workflow."""
+
+    # The composer explicitly offers Dashboard creation. Its selection must
+    # work for requests such as "show annual revenue", without forcing users
+    # to repeat the word "dashboard" in every prompt.
+    if creation_mode == "dashboard":
+        return True
+    normalized = (user_input or "").casefold()
+    if any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS):
+        return True
+    # Mentioning a dashboard in an ordinary question does not select a creation
+    # workflow. Keep normal chat and delegated analysis tools available.
+    return any(keyword in normalized for keyword in DASHBOARD_AGENT_KEYWORDS) and bool(
+        re.search(
+            r"\b(?:create|build|generate|design)\b|生成|创建|搭建|制作|新增|做一",
+            normalized,
+        )
+    )
+
+
+def _is_read_only_dashboard_annotation_request(user_input: str) -> bool:
+    """Return whether an annotation turn must not receive mutation tools.
+
+    The editor can batch metric explanations and deterministic anomaly
+    explanations in one turn. Those intents are deliberately read-only: the
+    model may explain persisted schema/results/evidence, but it must not query
+    again, propose a patch, or mutate the Dashboard. Check both the structured
+    intent labels and the explicit batch guard so replayed UI prompts remain
+    safe if their prose is localized independently.
+    """
+
+    normalized = (user_input or "").casefold()
+    if "[[dashboard-annotation:" not in normalized:
+        return False
+    if "[修改组件]" in normalized:
+        return False
+    return any(
+        marker in normalized
+        for marker in (
+            "[指标解释]",
+            "[异常分析]",
+            "本批次没有修改类批注",
+            "不得调用任何看板修改工具",
+        )
+    )
+
+
+def _dashboard_id_from_workflow_marker(user_input: str) -> Optional[str]:
+    """Return the owned Dashboard id carried by a continuation marker.
+
+    Dashboard confirmations and annotation requests are commonly replayed from
+    task history.  The browser may not have restored its transient data-source
+    chip yet, but the persisted Dashboard remains the authoritative source of
+    that binding.
+    """
+
+    match = re.search(
+        r"\[\[(?:confirm-dashboard|revise-dashboard-plan|modify-dashboard|"
+        r"dashboard-annotation):([A-Za-z0-9_-]{1,64})(?::[^\]]+)?\]\]",
+        user_input or "",
+        re.IGNORECASE,
+    )
+    return match.group(1) if match else None
 
 
 def _validate_upload_filename(filename: str) -> str:
@@ -86,6 +247,8 @@ def _validate_upload_filename(filename: str) -> str:
     if (
         posix_path.is_absolute()
         or windows_path.is_absolute()
+        or "/" in filename
+        or "\\" in filename
         or len(posix_path.parts) != 1
         or len(windows_path.parts) != 1
         or filename in {"", ".", ".."}
@@ -226,6 +389,82 @@ def _parse_connector_ids(ext_info: Optional[Dict[str, Any]]) -> List[str]:
     return []
 
 
+def _parse_uploaded_file_paths(ext_info: Optional[Dict[str, Any]]) -> List[str]:
+    """Extract a bounded, deduplicated upload group from ``ext_info``.
+
+    ``file_paths`` is the preferred shape. ``file_path`` remains supported so
+    old conversations, scheduled-task snapshots, and single-file clients keep
+    working unchanged.
+    """
+
+    if not ext_info or not isinstance(ext_info, dict):
+        return []
+
+    raw_paths = ext_info.get("file_paths")
+    candidates: List[Any]
+    if isinstance(raw_paths, list):
+        candidates = raw_paths
+    else:
+        legacy = ext_info.get("file_path")
+        candidates = [legacy] if isinstance(legacy, str) else []
+
+    paths: List[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        normalized = candidate.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        paths.append(normalized)
+        if len(paths) >= 16:
+            break
+    return paths
+
+
+def _parse_uploaded_dataset_id(ext_info: Optional[Dict[str, Any]]) -> Optional[str]:
+    """Return one bounded opaque dataset id from the request context."""
+
+    if not ext_info or not isinstance(ext_info, dict):
+        return None
+    value = ext_info.get("dataset_id")
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value or len(value) > 64:
+        return None
+    return value
+
+
+def _parse_dataset_replay_task_id(
+    ext_info: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    if not ext_info or not isinstance(ext_info, dict):
+        return None
+    value = ext_info.get("dataset_replay_task_id")
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if value and len(value) <= 64 else None
+
+
+def _require_database_access(
+    connector_manager: Any, database_name: str, owner_id: Optional[str]
+) -> Any:
+    """Authorize a datasource before its cached connector can be retrieved."""
+
+    database_record = connector_manager.storage.get_by_names(database_name)
+    if database_record is None:
+        raise ValueError("Selected database does not exist")
+    # Match the upstream data-source listing: an empty user_id is shared.
+    # A display name is not a stable ownership identifier.
+    database_owner = getattr(database_record, "user_id", None)
+    if database_owner and database_owner != owner_id:
+        raise PermissionError("Selected database is not available")
+    return database_record
+
+
 def _select_connector_tools(
     connector_ids: List[str],
     connector_manager: Optional["ConnectorManager"],
@@ -270,8 +509,50 @@ async def _execute_skill_script_impl(
     skill_name: str, script_name: str, args: dict
 ) -> str:
     """Execute a script from a skill (implementation)."""
+    import time
+
+    from dbgpt.core.interface.report_capture import (
+        capture_python_execution,
+        get_current_artifact_sink,
+        resolve_argument_dependencies,
+    )
+
     skill_manager = get_skill_manager(CFG.SYSTEM_APP)
+    sink = get_current_artifact_sink()
+    inputs = resolve_argument_dependencies(args, sink)
+    started_at = time.perf_counter()
     result = await skill_manager.execute_script(skill_name, script_name, args)
+    payload = json.loads(result)
+    if payload.get("source_code"):
+        artifact_id = capture_python_execution(
+            code=payload["source_code"],
+            language=payload.get("language", "python"),
+            action="execute_skill_script",
+            duration_ms=max(0, int((time.perf_counter() - started_at) * 1000)),
+            status="succeeded" if payload.get("success") else "failed",
+            exit_code=payload.get("exit_code"),
+            stdout=payload.get("stdout", ""),
+            stderr=payload.get("stderr", ""),
+            error=None
+            if payload.get("success")
+            else payload.get("error")
+            or payload.get("stderr")
+            or "Script execution failed",
+            input_artifact_ids=inputs,
+            artifact_sink=sink,
+            metadata={
+                "arguments": payload.get("script_arguments", args),
+                "execution_backend": "code_server",
+            },
+        )
+        return json.dumps(
+            {
+                "chunks": payload.get("chunks", []),
+                "success": payload.get("success", False),
+                "artifact_id": artifact_id,
+            },
+            ensure_ascii=False,
+        )
     return result
 
 
@@ -291,7 +572,7 @@ async def execute_skill_script(skill_name: str, script_name: str, args: dict) ->
     "\\n示例:"
     '\\n- 读取参考文档: {"skill_name": "my-skill", '
     '"resource_path": "references/analysis_framework.md"}'
-    "\n注意: 执行脚本请使用 shell_interpreter 工具"
+    "\n注意: 执行技能脚本请使用 execute_skill_script_file 工具"
 )
 async def get_skill_resource(
     skill_name: str, resource_path: str, args: Optional[dict] = None
@@ -300,13 +581,18 @@ async def get_skill_resource(
 
     try:
         sm = get_skill_manager(CFG.SYSTEM_APP)
-        result = await sm.get_skill_resource(skill_name, resource_path, args or {})
-        return result
+        # This public tool is read-only, including scripts the agent inspects
+        # before execution. Execution belongs to execute_skill_script_file.
+        result = await sm.get_skill_resource(
+            skill_name, resource_path, args or {}, execute_scripts=False
+        )
+        payload = json.loads(result)
+        if payload.get("error"):
+            payload.update(success=False, error_code="SKILL_RESOURCE_READ_FAILED")
+        return json.dumps(payload, ensure_ascii=False)
     except Exception as e:
-        import json
-
         return json.dumps(
-            {"error": True, "message": f"Error: {str(e)}"},
+            {"success": False, "error": True, "message": f"Error: {str(e)}"},
             ensure_ascii=False,
         )
 
@@ -572,7 +858,7 @@ def _install_skill_from_dir(src_dir: Path, skill_name: str, user_dir: Path) -> s
         shutil.rmtree(dest)
     shutil.copytree(src_dir, dest)
     # Return path relative to skills_dir (parent of user_dir)
-    return str(dest.relative_to(user_dir.parent))
+    return dest.relative_to(user_dir.parent).as_posix()
 
 
 @router.post("/v1/skills/upload", response_model=Result)
@@ -646,7 +932,7 @@ async def skill_upload(
 
             target_file.write_bytes(content_bytes)
 
-            rel_path = str(dest.relative_to(skills_dir))
+            rel_path = dest.relative_to(skills_dir).as_posix()
 
         return Result.succ(
             {
@@ -1044,6 +1330,11 @@ def _build_react_history_payload(
     sub_agents: Any,
     input_files: List[Dict[str, Any]],
     citations: Optional[List[Dict[str, Any]]] = None,
+    report_id: Optional[str] = None,
+    report_run_id: Optional[str] = None,
+    report_status: Optional[str] = None,
+    dashboard_refs: Optional[List[Dict[str, Any]]] = None,
+    dashboard_generation_failure: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1053,21 +1344,213 @@ def _build_react_history_payload(
     storage URIs, owner ids, hashes or inspection bodies. ``citations`` comes
     from the final-answer assembler and remains display-safe metadata.
     """
-    return json.dumps(
-        {
-            "version": 2,
-            "protocol_version": 2,
-            "type": "react-agent",
-            "final_content": final_content,
-            "citations": citations or [],
-            "steps": steps,
-            "task_plan": task_plan,
-            "generated_images": generated_images,
-            "sub_agents": sub_agents,
-            "input_files": input_files,
-        },
-        ensure_ascii=False,
+    value = {
+        "version": 2,
+        "protocol_version": 2,
+        "type": "react-agent",
+        "final_content": final_content,
+        "citations": citations or [],
+        "steps": steps,
+        "task_plan": task_plan,
+        "generated_images": generated_images,
+        "sub_agents": sub_agents,
+        "input_files": input_files,
+        "dashboard_refs": dashboard_refs or [],
+        "dashboard_generation_failure": dashboard_generation_failure,
+    }
+    if report_id and report_run_id:
+        value["report_id"] = report_id
+        value["report_run_id"] = report_run_id
+    if report_status:
+        value["report_status"] = report_status
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _turn_report_coordinates(
+    dialogue: ConversationVo,
+    conv_id: str,
+    final_answer: AgentFinalAnswer,
+    artifact_sink: Optional[InMemoryArtifactSink],
+    presentation: Optional[Dict[str, Any]] = None,
+) -> Optional[Tuple[str, str]]:
+    """Return immutable report coordinates only when this turn can produce one."""
+    if (
+        artifact_sink is None
+        or artifact_sink.artifact_count == 0
+        or not (dialogue.user_name or "").strip()
+        or not final_answer.content.strip()
+    ):
+        return None
+    report_token = hashlib.sha256(conv_id.encode("utf-8")).hexdigest()[:40]
+    run_id = artifact_sink.context.run_id
+    if _has_rendered_html_presentation(presentation):
+        # Reusing an analysis run must not reuse an immutable, older HTML run.
+        # Identical output remains idempotent; a changed report gets a revision.
+        digest = hashlib.sha256(
+            (run_id + "\n" + presentation["content"]).encode("utf-8")
+        ).hexdigest()[:40]
+        run_id = f"report-run-{digest}"
+    return f"report-{report_token}", run_id
+
+
+def _has_rendered_html_presentation(presentation: Any) -> bool:
+    """Return whether this turn has a complete HTML report to expose."""
+    return (
+        isinstance(presentation, dict)
+        and presentation.get("format") == "html"
+        and isinstance(presentation.get("content"), str)
+        and bool(presentation["content"].strip())
     )
+
+
+_MARKDOWN_TABLE_SEPARATOR = re.compile(r"^:?-{3,}:?$")
+_MARKDOWN_INTEGER = re.compile(r"^-?(?:0|[1-9]\d*)$")
+_MARKDOWN_FLOAT = re.compile(r"^-?(?:0|[1-9]\d*)\.\d+$")
+
+
+def _parse_markdown_table(markdown: str) -> Optional[Tuple[List[str], List[List[Any]]]]:
+    """Return the first well-formed pipe table emitted by a tool result."""
+    lines = [line.strip() for line in markdown.splitlines() if line.strip()]
+    for index in range(len(lines) - 1):
+        header, separator = lines[index : index + 2]
+        if not (header.startswith("|") and header.endswith("|")):
+            continue
+        if not (separator.startswith("|") and separator.endswith("|")):
+            continue
+        columns = [cell.strip() for cell in header[1:-1].split("|")]
+        separators = [cell.strip() for cell in separator[1:-1].split("|")]
+        if not columns or len(columns) != len(separators):
+            continue
+        if not all(_MARKDOWN_TABLE_SEPARATOR.fullmatch(cell) for cell in separators):
+            continue
+
+        rows: List[List[Any]] = []
+        for line in lines[index + 2 :]:
+            if not (line.startswith("|") and line.endswith("|")):
+                break
+            cells = [cell.strip() for cell in line[1:-1].split("|")]
+            if len(cells) != len(columns):
+                break
+            row: List[Any] = []
+            for cell in cells:
+                if _MARKDOWN_INTEGER.fullmatch(cell):
+                    row.append(int(cell))
+                elif _MARKDOWN_FLOAT.fullmatch(cell):
+                    row.append(float(cell))
+                else:
+                    row.append(cell)
+            rows.append(row)
+        return columns, rows
+    return None
+
+
+def _capture_subagent_step_artifact(
+    artifact_sink: Optional[InMemoryArtifactSink], event: Dict[str, Any]
+) -> None:
+    """Capture confirmed parallel SQL steps at their shared event boundary."""
+    if artifact_sink is None or event.get("type") != "agent.step":
+        return
+    if str(event.get("action") or "").lower() != "sql_query":
+        return
+    sql = event.get("sql")
+    agent_id = event.get("agent_id")
+    if not isinstance(sql, str) or not sql.strip() or not isinstance(agent_id, str):
+        return
+
+    parsed_table = None
+    for chunk in event.get("chunks") or []:
+        if not isinstance(chunk, dict) or chunk.get("output_type") != "markdown":
+            continue
+        content = chunk.get("content")
+        if isinstance(content, str):
+            parsed_table = _parse_markdown_table(content)
+            if parsed_table is not None:
+                break
+    if parsed_table is None:
+        return
+
+    columns, rows = parsed_table
+    round_value = event.get("round")
+    try:
+        step_suffix = str(int(round_value))
+    except (TypeError, ValueError):
+        step_suffix = "0"
+    result = {"columns": columns, "rows": rows}
+    # Only persist lineage explicitly emitted by the execution event.  Do not infer
+    # table names from SQL text: inferred names look convincing in a graph but are
+    # not a durable, replayable lineage assertion.
+    event_metadata = event.get("metadata")
+    event_metadata = event_metadata if isinstance(event_metadata, dict) else {}
+    source_id = event.get("source_id") or event_metadata.get("source_id")
+    source_name = (
+        event.get("source_name")
+        or event.get("datasource_name")
+        or event.get("database")
+        or event_metadata.get("source_name")
+        or event_metadata.get("datasource_name")
+    )
+    raw_tables = (
+        event.get("source_tables")
+        or event.get("tables")
+        or event_metadata.get("source_tables")
+        or event_metadata.get("tables")
+        or []
+    )
+    tables = (
+        [
+            table.strip()
+            for table in raw_tables
+            if isinstance(table, str) and table.strip()
+        ]
+        if isinstance(raw_tables, list)
+        else []
+    )
+    lineage = {
+        key: value
+        for key, value in {
+            "source_id": source_id if isinstance(source_id, str) else None,
+            "source_name": source_name if isinstance(source_name, str) else None,
+            "tables": tables or None,
+        }.items()
+        if value is not None
+    }
+    try:
+        artifact_sink.record(
+            SQLArtifact(
+                artifact_id=artifact_sink.context.new_artifact_id("sql"),
+                name=str(event.get("intention") or "Sub-agent SQL result"),
+                execution=artifact_sink.context.execution_reference(
+                    action="sql_query", step_id=f"{agent_id}:{step_suffix}"
+                ),
+                created_at=datetime.now(timezone.utc),
+                status="succeeded",
+                duration_ms=0,
+                sql=sql,
+                database=source_name if isinstance(source_name, str) else None,
+                columns=columns,
+                row_count=len(rows),
+                result=ArtifactContent(
+                    inline=result,
+                    media_type="application/json",
+                    sha256=sha256_json(result),
+                    size=len(json.dumps(result, ensure_ascii=False).encode("utf-8")),
+                ),
+                metadata={
+                    "capture_source": "subagent_stream",
+                    "agent_id": agent_id,
+                    "batch_id": event.get("batch_id"),
+                    "round": round_value,
+                    "input_summary": {
+                        "sql_chars": len(sql),
+                        "sql_sha256": sha256_text(sql),
+                    },
+                    "output_summary": {"row_count": len(rows)},
+                    **({"lineage": lineage} if lineage else {}),
+                },
+            )
+        )
+    except Exception:
+        logger.warning("Unable to capture sub-agent SQL artifact", exc_info=True)
 
 
 def _sse_event_type(event: Any) -> Optional[str]:
@@ -1118,6 +1601,231 @@ async def _cancel_and_await_agent_task(task: "asyncio.Task[Any]") -> None:
             logger.exception("ReAct agent task failed during stream cleanup")
 
 
+async def _run_with_artifact_capture(
+    sink: ArtifactSink,
+    operation: Callable[[], Awaitable[_CaptureResult]],
+) -> _CaptureResult:
+    """Run one agent operation with task-local artifact capture enabled."""
+    with bind_artifact_sink(sink):
+        return await operation()
+
+
+def _record_visible_artifact_step_ids(
+    artifact_sink: Optional[InMemoryArtifactSink],
+    react_state: Dict[str, Any],
+    *,
+    action: str,
+    visible_step_id: str,
+) -> None:
+    """Correlate newly captured tool artifacts with the visible execution step."""
+    if artifact_sink is None:
+        return
+    step_map = react_state.setdefault("_report_execution_step_map", {})
+    try:
+        for artifact in artifact_sink.snapshot():
+            if artifact.metadata.get("agent_id"):
+                continue
+            captured_step_id = artifact.execution.step_id
+            captured_action = artifact.execution.action or ""
+            if captured_step_id in step_map:
+                continue
+            if captured_action == action or captured_action.startswith(f"{action}."):
+                step_map[captured_step_id] = visible_step_id
+    except Exception:
+        logger.exception("Failed to correlate report artifacts with visible step")
+
+
+async def _assemble_and_persist_turn_report(
+    *,
+    dialogue: ConversationVo,
+    conv_id: str,
+    user_input: str,
+    final_answer: AgentFinalAnswer,
+    artifact_sink: Optional[InMemoryArtifactSink],
+    presentation_bindings: Sequence[Dict[str, Any]] = (),
+    presentation: Optional[Dict[str, Any]] = None,
+    execution_step_map: Optional[Dict[str, str]] = None,
+) -> Optional[Any]:
+    """Persist one captured ReAct turn without changing legacy response behavior."""
+    if artifact_sink is None:
+        return None
+    owner_id = (dialogue.user_name or "").strip()
+    if not owner_id or not final_answer.content.strip():
+        return None
+    if not _has_rendered_html_presentation(presentation):
+        # Executed artifacts remain visible in the trace, but without a
+        # rendered presentation this is not a completed report.
+        return None
+
+    try:
+        from dbgpt_serve.report.serve import ReportServe
+
+        serve = ReportServe.get_current_serve(CFG.SYSTEM_APP)
+        service = serve.service if serve is not None else None
+        if service is None:
+            logger.warning("Report persistence service is unavailable")
+            return None
+
+        title = next(
+            (line.strip() for line in user_input.splitlines() if line.strip()),
+            "Analysis report",
+        )[:MAX_REPORT_TITLE_LENGTH]
+        if isinstance(presentation, dict):
+            presentation_title = presentation.get("title")
+            if isinstance(presentation_title, str) and presentation_title.strip():
+                title = presentation_title.strip()[:MAX_REPORT_TITLE_LENGTH]
+        coordinates = _turn_report_coordinates(
+            dialogue, conv_id, final_answer, artifact_sink, presentation
+        )
+        if coordinates is None:
+            return None
+        report_id, report_run_id = coordinates
+        if final_answer.report_id and final_answer.report_run_id:
+            report_id = final_answer.report_id
+            report_run_id = final_answer.report_run_id
+
+        def assemble_and_save():
+            artifacts = artifact_sink.snapshot()
+            if execution_step_map:
+                artifacts = [
+                    artifact.model_copy(
+                        update={
+                            "execution": artifact.execution.model_copy(
+                                update={
+                                    "step_id": execution_step_map.get(
+                                        artifact.execution.step_id,
+                                        artifact.execution.step_id,
+                                    )
+                                }
+                            )
+                        }
+                    )
+                    for artifact in artifacts
+                ]
+            if not artifacts:
+                return None
+            assemble_kwargs: Dict[str, Any] = dict(
+                owner_id=owner_id,
+                report_id=report_id,
+                title=title,
+                conv_uid=conv_id,
+                final_content=final_answer.content,
+                artifacts=artifacts,
+                include_chart_blocks=True,
+                metadata={
+                    "source": "react_agent",
+                    "capture_run_id": artifact_sink.context.run_id,
+                    # A captured artifact run is useful for audit, but is not
+                    # interchangeable with a rendered analysis report.  Persist
+                    # this distinction so consumers can state the accurate
+                    # condition instead of treating every captured run as a
+                    # completed HTML presentation.
+                    "presentation_status": "rendered",
+                },
+                run_id=report_run_id,
+            )
+            if presentation_bindings:
+                assemble_kwargs["presentation_bindings"] = presentation_bindings
+                assemble_kwargs["presentation"] = presentation
+            return service.assemble_and_save(**assemble_kwargs)
+
+        # Wait cooperatively within the caller's persistence deadline instead of
+        # silently dropping turns while both database workers are occupied.
+        while not _REPORT_PERSIST_SLOTS.acquire(blocking=False):
+            await asyncio.sleep(0.05)
+        try:
+            future = _REPORT_PERSIST_EXECUTOR.submit(assemble_and_save)
+        except Exception:
+            _REPORT_PERSIST_SLOTS.release()
+            raise
+        future.add_done_callback(lambda _future: _REPORT_PERSIST_SLOTS.release())
+        return await asyncio.wrap_future(future)
+    except Exception:
+        logger.exception("Failed to assemble or persist report")
+        return None
+
+
+def _schedule_turn_report_persistence(
+    *,
+    dialogue: ConversationVo,
+    conv_id: str,
+    user_input: str,
+    final_answer: AgentFinalAnswer,
+    artifact_sink: Optional[InMemoryArtifactSink],
+    react_state: Dict[str, Any],
+) -> "asyncio.Task[None]":
+    """Track bounded persistence; publication must await its confirmed result."""
+
+    async def persist() -> None:
+        try:
+            report_run = await asyncio.wait_for(
+                _assemble_and_persist_turn_report(
+                    dialogue=dialogue,
+                    conv_id=conv_id,
+                    user_input=user_input,
+                    final_answer=final_answer,
+                    artifact_sink=artifact_sink,
+                    presentation_bindings=react_state.get(
+                        "_report_presentation_bindings", ()
+                    ),
+                    presentation=react_state.get("_report_presentation"),
+                    execution_step_map=react_state.get(
+                        "_report_execution_step_map", {}
+                    ),
+                ),
+                timeout=_REPORT_PERSIST_TIMEOUT_SECONDS,
+            )
+            if report_run is not None:
+                react_state["_report_run"] = report_run
+        except asyncio.TimeoutError:
+            logger.warning("Report persistence timed out")
+
+    task = asyncio.create_task(persist())
+    _REPORT_PERSIST_TASKS.add(task)
+    task.add_done_callback(_REPORT_PERSIST_TASKS.discard)
+    return task
+
+
+async def _finalize_turn_report_persistence(
+    *,
+    dialogue: ConversationVo,
+    conv_id: str,
+    user_input: str,
+    final_answer: AgentFinalAnswer,
+    artifact_sink: Optional[InMemoryArtifactSink],
+    react_state: Dict[str, Any],
+) -> AgentFinalAnswer:
+    """Publish immutable coordinates only after the save transaction commits.
+
+    A timeout cannot stop an already-running database thread: its transaction
+    may commit later. In that case unconfirmed means no readable run has been
+    confirmed for this response, not a claim that the save was rolled back.
+    """
+    answer = replace(
+        final_answer, report_id=None, report_run_id=None, report_status=None
+    )
+    react_state.pop("_report_run", None)
+    if not _has_rendered_html_presentation(react_state.get("_report_presentation")):
+        return answer
+    await _schedule_turn_report_persistence(
+        dialogue=dialogue,
+        conv_id=conv_id,
+        user_input=user_input,
+        final_answer=answer,
+        artifact_sink=artifact_sink,
+        react_state=react_state,
+    )
+    report_run = react_state.get("_report_run")
+    if report_run is None:
+        return replace(answer, report_status="unconfirmed")
+    return replace(
+        answer,
+        report_id=report_run.report_id,
+        report_run_id=report_run.run_id,
+        report_status="ready",
+    )
+
+
 async def _react_agent_stream(
     dialogue: ConversationVo,
     tool_mode: str = "full",
@@ -1135,19 +1843,21 @@ async def _react_agent_stream(
         attachment_ctx: Pre-resolved attachment context for this turn (or
             ``None`` for pure-text / legacy ``file_path`` requests).
     """
+    inner_stream = _react_agent_stream_inner(dialogue, tool_mode, attachment_ctx)
     try:
-        async for event in _react_agent_stream_inner(
-            dialogue, tool_mode, attachment_ctx
-        ):
+        async for event in inner_stream:
             yield event
     finally:
-        if attachment_ctx is not None:
-            try:
-                attachment_ctx.close()
-            except Exception:
-                logger.warning(
-                    "Failed to close session attachment context", exc_info=True
-                )
+        try:
+            await inner_stream.aclose()
+        finally:
+            if attachment_ctx is not None:
+                try:
+                    attachment_ctx.close()
+                except Exception:
+                    logger.warning(
+                        "Failed to close session attachment context", exc_info=True
+                    )
 
 
 def _legacy_upload_base_dir() -> str:
@@ -1167,6 +1877,14 @@ async def _open_turn_attachments(
     always surface before the SSE stream (and the agent) is constructed.
     """
     owner_id = (user_token.user_id if user_token else None) or dialogue.user_name
+    ext_info = dialogue.ext_info or {}
+    if ext_info.get("file_ids") and (
+        ext_info.get("dataset_id") or ext_info.get("file_paths")
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Session files and uploaded datasets cannot be combined.",
+        )
     try:
         attachment_ctx = await prepare_react_attachments(dialogue, owner_id=owner_id)
         if attachment_ctx is None:
@@ -1253,7 +1971,10 @@ class _AgentStreamingResponse(StreamingResponse):
             close = getattr(self.body_iterator, "aclose", None)
             if callable(close):
                 try:
-                    await close()
+                    import anyio
+
+                    with anyio.CancelScope(shield=True):
+                        await close()
                 except asyncio.CancelledError:
                     raise
                 except Exception:
@@ -1297,13 +2018,20 @@ async def _react_agent_stream_impl(
     if not isinstance(user_input, str):
         user_input = str(user_input or "")
 
+    file_paths: List[str] = []
     file_path = None
+    uploaded_files: List[Dict[str, Any]] = []
     knowledge_space = None
     skill_name = None
+    creation_mode = None
     database_name = None
+    dataset_id = None
+    dataset_replay_task_id = None
     if dialogue.ext_info and isinstance(dialogue.ext_info, dict):
-        file_path = dialogue.ext_info.get("file_path")
+        dataset_id = _parse_uploaded_dataset_id(dialogue.ext_info)
+        dataset_replay_task_id = _parse_dataset_replay_task_id(dialogue.ext_info)
         skill_name = dialogue.ext_info.get("skill_name")
+        creation_mode = dialogue.ext_info.get("creation_mode")
         # Support multiple field names for knowledge space
         knowledge_space = (
             dialogue.ext_info.get("knowledge_space")
@@ -1311,6 +2039,59 @@ async def _react_agent_stream_impl(
             or dialogue.ext_info.get("knowledge_space_id")
         )
         database_name = dialogue.ext_info.get("database_name")
+
+    if dataset_id:
+        from .uploaded_dataset_registry import UploadedDatasetService
+
+        dataset = UploadedDatasetService().resolve_owned(
+            dataset_id,
+            dialogue.user_name or "",
+            dialogue.conv_uid,
+            replay_task_id=dataset_replay_task_id,
+        )
+        file_paths = dataset.file_paths
+        uploaded_files = dataset.public_dict()["files"]
+        database_name = dataset.database_name
+    else:
+        raw_file_paths = _parse_uploaded_file_paths(dialogue.ext_info)
+        if raw_file_paths:
+            from .uploaded_dataset_registry import validate_legacy_user_paths
+
+            file_paths = validate_legacy_user_paths(
+                raw_file_paths, dialogue.user_name or ""
+            )
+    file_path = file_paths[0] if file_paths else None
+
+    # A confirmation/revision/annotation may be resumed from task history after
+    # a page reload.  In that case the UI's transient data-source selection can
+    # be empty even though the authoritative Dashboard already records it.  Use
+    # only that owned record to restore the binding; never guess or switch to a
+    # different source.
+    normalized_user_input = user_input.casefold()
+    dashboard_continuation_turn = any(
+        marker in normalized_user_input for marker in DASHBOARD_AGENT_MARKERS
+    )
+    marker_dashboard_id = _dashboard_id_from_workflow_marker(user_input)
+    if marker_dashboard_id and not database_name:
+        try:
+            from .dashboard.service import DashboardService
+
+            marker_dashboard = DashboardService().get_dashboard(
+                marker_dashboard_id, dialogue.user_name
+            )
+            database_name = marker_dashboard.schema_payload.dashboard.data_source_id
+            logger.info(
+                "Restored dashboard data source '%s' from workflow marker '%s'",
+                database_name,
+                marker_dashboard_id,
+            )
+        except Exception:
+            # Keep ownership and existence private.  The bounded Dashboard tool
+            # will return the normal permission/not-found response if invoked.
+            logger.info(
+                "Could not restore a dashboard data source from workflow marker",
+                exc_info=True,
+            )
 
     # Connector selection (Task C): only inject user-selected connectors.
     connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
@@ -1602,15 +2383,36 @@ async def _react_agent_stream_impl(
     if database_name:
         try:
             local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
-            database_connector = local_db_manager.get_connector(database_name)
-            table_names = list(database_connector.get_table_names())
-            table_info = database_connector.get_table_info_no_throw()
+            _require_database_access(
+                local_db_manager, database_name, dialogue.user_name
+            )
+            database_connector = await asyncio.to_thread(
+                local_db_manager.get_connector, database_name
+            )
+            table_names = list(
+                await asyncio.to_thread(database_connector.get_table_names)
+            )
+            table_info = await asyncio.to_thread(
+                database_connector.get_table_info_no_throw
+            )
+            index_info = []
+            for table_name in table_names:
+                try:
+                    indexes = await asyncio.to_thread(
+                        database_connector.get_indexes, table_name
+                    )
+                    index_info.append(f"{table_name}: {indexes}")
+                except Exception:
+                    index_info.append(f"{table_name}: index metadata unavailable")
             database_context = f"""
 ## 数据库信息
 - 数据库名: {database_name}
+- SQL 方言: {database_connector.dialect}
 - 可用表: {", ".join(table_names)}
 - 表结构:
 {table_info}
+- 现有索引:
+{chr(10).join(index_info)}
 - 使用 'sql_query' 工具执行 SQL 查询
 - **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**
 """
@@ -1618,6 +2420,14 @@ async def _react_agent_stream_impl(
                 f"Loaded database connector: {database_name} "
                 f"(tables: {', '.join(table_names)})"
             )
+        except PermissionError:
+            yield _sse_event(
+                AgentFinalAnswer(
+                    content="所选数据源不可用，请选择你有权限访问的数据源。"
+                ).to_sse_payload()
+            )
+            yield _sse_event({"type": "done"})
+            return
         except Exception as e:
             logger.warning(f"Failed to load database connector: {e}", exc_info=e)
             database_context = f"""
@@ -1625,16 +2435,71 @@ async def _react_agent_stream_impl(
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
 
+    if database_connector is not None:
+        database_context += """
+
+## Dashboard generation tools
+- The checked-in `dashboard-builder` Skill owns workflow order and stopping rules.
+- Registered Dashboard tools own persistence, validation, trial execution, and
+  revision safety. Their observations are authoritative.
+- The server injects the user-selected data source; tools cannot replace it.
+"""
+
+    requested_locale = (
+        str(dialogue.ext_info.get("locale", "")).lower()
+        if isinstance(dialogue.ext_info, dict)
+        else ""
+    )
+    if requested_locale.startswith("en"):
+        report_language = "en"
+    elif requested_locale.startswith("zh"):
+        report_language = "zh"
+    else:
+        report_language = "zh" if re.search(r"[\u3400-\u9fff]", user_input) else "en"
     react_state: Dict[str, Any] = {
+        "_report_original_request": user_input,
+        "_report_language": report_language,
         "skills_loaded": True,  # Skills are pre-loaded now
         "matched": None,
         "skill_prompt": None,
         "file_path": file_path,
+        "_report_knowledge_space": knowledge_space,
+        "_report_knowledge_requested": bool(knowledge_space)
+        or bool(
+            re.search(r"知识库|knowledge\s+base|\bKB\b", user_input, re.IGNORECASE)
+        ),
+        "file_paths": file_paths,
+        "uploaded_files": uploaded_files,
+        "dataset_id": dataset_id,
     }
+    required_recommendation_count = _requested_recommendation_count(user_input)
+    if required_recommendation_count is not None:
+        react_state["_report_required_recommendation_count"] = (
+            required_recommendation_count
+        )
 
-    # Pre-select skill if skill_name provided in ext_info
+    # An authoritative Dashboard continuation marker always wins over a stale
+    # skill selection restored from task history.  Otherwise an annotation for
+    # a Walmart dashboard can be misrouted into a one-off Walmart report skill
+    # instead of loading and modifying the persisted Dashboard.
     pre_matched_skill = None
-    if skill_name:
+    if dashboard_continuation_turn or (
+        database_connector is not None and creation_mode == "dashboard"
+    ):
+        pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
+        if pre_matched_skill:
+            react_state["matched"] = pre_matched_skill
+            react_state["skill_prompt"] = pre_matched_skill.get_prompt()
+            logger.info(
+                "Selected Dashboard orchestration skill for explicit workflow: %s",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+        else:
+            logger.error(
+                "Dashboard workflow selected but skill '%s' is unavailable",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+    elif skill_name:
         pre_matched_skill = registry.get_skill(skill_name)
         if not pre_matched_skill:
             # Try case-insensitive match
@@ -1646,6 +2511,22 @@ async def _react_agent_stream_impl(
             react_state["matched"] = pre_matched_skill
             react_state["skill_prompt"] = pre_matched_skill.get_prompt()
             logger.info(f"Pre-selected skill from ext_info: {skill_name}")
+    elif database_connector is not None and _is_dashboard_workflow_request(
+        user_input, creation_mode
+    ):
+        pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
+        if pre_matched_skill:
+            react_state["matched"] = pre_matched_skill
+            react_state["skill_prompt"] = pre_matched_skill.get_prompt()
+            logger.info(
+                "Auto-selected Dashboard orchestration skill: %s",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+        else:
+            logger.error(
+                "Dashboard request detected but skill '%s' is unavailable",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
 
     # Build skills_context based on whether skill is pre-selected
     if pre_matched_skill:
@@ -1692,13 +2573,13 @@ async def _react_agent_stream_impl(
     )
     def select_skill(query: str) -> str:
         match_input = query or ""
-        if react_state.get("file_path"):
+        if react_state.get("file_paths"):
             match_input = f"{match_input} excel xlsx spreadsheet file"
         matched = registry.match_skill(match_input)
         if (
             matched
             and _is_excel_skill(matched.metadata)
-            and not (_mentions_excel(query) or react_state.get("file_path"))
+            and not (_mentions_excel(query) or react_state.get("file_paths"))
         ):
             matched = None
         react_state["matched"] = matched
@@ -1788,119 +2669,6 @@ async def _react_agent_stream_impl(
             )
             chunks.append({"output_type": "markdown", "content": prompt_text})
 
-        return json.dumps({"chunks": chunks}, ensure_ascii=False)
-
-    @tool(description="Load uploaded file info if provided.")
-    def load_file() -> str:
-        if not react_state.get("file_path"):
-            return json.dumps(
-                {"chunks": [{"output_type": "text", "content": "No file uploaded"}]},
-                ensure_ascii=False,
-            )
-        return json.dumps(
-            {
-                "chunks": [
-                    {"output_type": "text", "content": react_state["file_path"]},
-                    {
-                        "output_type": "text",
-                        "content": "File path provided by user upload",
-                    },
-                ]
-            },
-            ensure_ascii=False,
-        )
-
-    @tool(description="Execute quick analysis on uploaded Excel/CSV file.")
-    async def execute_analysis() -> str:
-        from dbgpt.util.code.server import get_code_server
-
-        matched = react_state.get("matched")
-        if not react_state.get("file_path"):
-            return json.dumps(
-                {"chunks": [{"output_type": "text", "content": "No file to analyze"}]},
-                ensure_ascii=False,
-            )
-        if matched and not _is_excel_skill(matched.metadata):
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": "Selected skill is not for Excel analysis",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-        code_server = await get_code_server(CFG.SYSTEM_APP)
-        analysis_code = """
-import json
-import pandas as pd
-
-file_path = r"{file_path}"
-if file_path.lower().endswith((".xls", ".xlsx")):
-    df = pd.read_excel(file_path)
-else:
-    df = pd.read_csv(file_path)
-summary = {{
-    "shape": list(df.shape),
-    "columns": list(df.columns),
-    "dtypes": {{col: str(dtype) for col, dtype in df.dtypes.items()}},
-    "head": df.head(5).to_dict(orient="records"),
-}}
-print(json.dumps(summary, ensure_ascii=False))
-""".format(file_path=react_state["file_path"])
-        result = await code_server.exec(analysis_code, "python")
-        output_text = (
-            result.output.decode("utf-8") if isinstance(result.output, bytes) else ""
-        )
-        chunks: List[Dict[str, Any]] = [
-            {"output_type": "code", "content": analysis_code.strip()}
-        ]
-        if output_text:
-            try:
-                summary = json.loads(output_text)
-                chunks.append({"output_type": "json", "content": summary})
-                head_rows = summary.get("head")
-                columns = summary.get("columns")
-                if isinstance(head_rows, list) and isinstance(columns, list):
-                    chunks.append(
-                        {
-                            "output_type": "table",
-                            "content": {
-                                "columns": [
-                                    {"title": col, "dataIndex": col, "key": col}
-                                    for col in columns
-                                ],
-                                "rows": head_rows,
-                            },
-                        }
-                    )
-                numeric_columns = [
-                    col
-                    for col, dtype in (summary.get("dtypes") or {}).items()
-                    if "int" in dtype or "float" in dtype
-                ]
-                if numeric_columns and isinstance(head_rows, list):
-                    series_col = numeric_columns[0]
-                    data = [
-                        {"x": idx + 1, "y": row.get(series_col)}
-                        for idx, row in enumerate(head_rows)
-                        if row.get(series_col) is not None
-                    ]
-                    if data:
-                        chunks.append(
-                            {
-                                "output_type": "chart",
-                                "content": {
-                                    "data": data,
-                                    "xField": "x",
-                                    "yField": "y",
-                                },
-                            }
-                        )
-            except Exception:
-                chunks.append({"output_type": "text", "content": output_text})
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
     @tool(description="Resolve required tools for the selected skill.")
@@ -2108,11 +2876,12 @@ print(json.dumps(summary, ensure_ascii=False))
 
     # ── Import built-in tools from tools/ directory ──
     from dbgpt_app.openapi.api_v1.tools import (
+        make_chart_query,
         make_code_interpreter,
+        make_dashboard_planner_tools,
         make_execute_analysis,
         make_execute_skill_script_file,
         make_execute_tool,
-        make_html_interpreter,
         make_kb_tools,
         make_knowledge_retrieve,
         make_load_file,
@@ -2120,9 +2889,9 @@ print(json.dumps(summary, ensure_ascii=False))
         make_load_tools,
         make_question,
         make_read_file,
-        make_shell_interpreter,
         make_sql_query,
         make_todowrite,
+        make_traceable_report_capability,
     )
     # ── Build tool instances via factory functions ──────────────────────────
     # (Inline @tool definitions have been moved to tools/ directory.)
@@ -2146,8 +2915,9 @@ print(json.dumps(summary, ensure_ascii=False))
     execute_tool_tool = make_execute_tool(react_state)
     # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
     # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    wiki_available = False
     if knowledge_space:
-        kb_tool_list = make_kb_tools(knowledge_space)
+        kb_tool_list = make_kb_tools(knowledge_space, react_state)
         # Filter out codegraph tools when the space has no built code graph,
         # so the agent never sees tools it cannot use successfully.
         # @tool decorator wraps the function; the tool name lives on `._tool.name`
@@ -2160,21 +2930,69 @@ print(json.dumps(summary, ensure_ascii=False))
                     "kb_codegraph"
                 )
             ]
-        # wiki visibility for prompt sections (tools are mounted inside
-        # make_kb_tools via _make_kb_wiki_tools, gated on index_methods)
-        wiki_available = any(
-            getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
-            for t in kb_tool_list
-        )
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
-    sql_query_tool = make_sql_query(react_state, database_connector)
+    wiki_available = any(
+        getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
+        for t in kb_tool_list
+    )
+    dashboard_skill_selected = bool(
+        pre_matched_skill
+        and pre_matched_skill.metadata.name == DASHBOARD_BUILDER_SKILL_NAME
+    )
+    dashboard_agent_mode = dashboard_continuation_turn or (
+        database_connector is not None
+        and (
+            dashboard_skill_selected
+            or _is_dashboard_workflow_request(user_input, creation_mode)
+        )
+    )
+    from .dashboard.temporal_discovery import dashboard_temporal_context
+
+    # Rehydrate source facts even when confirmation history was compressed.
+    # This is discovery evidence, not a new semantic SQL rejection condition.
+    database_context += await dashboard_temporal_context(
+        database_connector, enabled=dashboard_agent_mode, user_input=user_input
+    )
+    dashboard_non_discovery_turn = dashboard_continuation_turn
+    dashboard_sql_query_limit = (
+        (0 if dashboard_non_discovery_turn else 8) if dashboard_agent_mode else None
+    )
+    sql_query_tool = make_sql_query(
+        react_state,
+        database_connector,
+        max_calls=dashboard_sql_query_limit,
+    )
+    chart_query_tool = make_chart_query(react_state, database_connector)
     code_interpreter_tool = make_code_interpreter(react_state)
-    shell_interpreter_tool = make_shell_interpreter(react_state)
-    html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
+    # Report rendering/provenance is a small capability bundle.  The ReAct loop
+    # only composes it; deployments can replace its policy/tool factory without
+    # changing agent orchestration.
+    traceable_report_capability = make_traceable_report_capability(
+        react_state, DEFAULT_SKILLS_DIR
+    )
+    report_tools = traceable_report_capability.tools
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
+    dashboard_planner_tools = make_dashboard_planner_tools(
+        react_state=react_state,
+        database_connector=database_connector,
+        database_name=database_name,
+        owner_id=dialogue.user_name,
+        user_prompt=user_input,
+        model_name=dialogue.model_name,
+        stream_callback=stream_callback,
+    )
+    from .dashboard.confirmation import (
+        DashboardConfirmationAgent,
+        generation_failure,
+        generation_start_event,
+        run_bounded_generation,
+    )
+
+    if database_connector is not None or dashboard_continuation_turn:
+        business_tools.extend(dashboard_planner_tools)
     # read_file lets the agent read back persisted tool results / snapshots
     # from disk when a <persisted-output> block references a file path.
     read_file_tool = make_read_file(react_state)
@@ -2356,6 +3174,65 @@ print(json.dumps(summary, ensure_ascii=False))
 
     conv_id = dialogue.conv_uid or str(uuid.uuid4())
     react_state["conv_id"] = conv_id
+    artifact_sink: Optional[InMemoryArtifactSink] = None
+    try:
+        from .tools.report_repair import (
+            is_report_resume_request,
+            record_report_invocation_failure,
+            restore_report_checkpoint,
+        )
+
+        react_state["_report_invalid_call_handler"] = lambda raw_call, reason: (
+            record_report_invocation_failure(react_state, raw_call, reason)
+        )
+
+        if is_report_resume_request(user_input):
+            try:
+                artifact_sink = await asyncio.to_thread(
+                    restore_report_checkpoint,
+                    conv_id,
+                    react_state,
+                    include_completed=True,
+                )
+            except (OSError, ValueError, KeyError):
+                logger.exception("Unable to restore pending report checkpoint")
+                react_state["_report_checkpoint_restore_failed"] = True
+                raise ValueError(
+                    "REPORT_CHECKPOINT_INVALID: saved report recovery failed; keep completed artifacts and report this error"
+                )
+            if not requested_locale.startswith(("en", "zh")):
+                original_request = react_state.get("_report_original_request") or ""
+                react_state["_report_language"] = (
+                    "zh" if re.search(r"[\u3400-\u9fff]", original_request) else "en"
+                )
+        artifact_sink = artifact_sink or InMemoryArtifactSink(
+            ArtifactCaptureContext(
+                conv_uid=conv_id,
+                run_id=f"turn-{uuid.uuid4().hex}",
+            )
+        )
+        # Kept in per-turn state for PR5a assembly after the agent task completes.
+        # It is never included in prompts, SSE events, or conversation history.
+        react_state["_report_artifact_sink"] = artifact_sink
+    except ValueError:
+        if react_state.get("_report_checkpoint_restore_failed"):
+            raise
+        # Evidence capture is observational and must not break a legacy turn
+        # whose conversation identifier predates the persistence contract.
+        logger.warning("Report artifact capture disabled for this turn", exc_info=True)
+    # The report is owned by one dedicated sub-agent: the lead agent delegates
+    # through `generate_report` instead of rendering (and repairing) the
+    # template spec inside its own analysis loop.
+    from .subagent.report_agent import make_generate_report_tool
+
+    report_tools = [
+        make_generate_report_tool(
+            react_state=react_state,
+            skills_dir=DEFAULT_SKILLS_DIR,
+            llm_client=llm_client,
+            model_name=dialogue.model_name,
+        )
+    ]
     if attachment_ctx is not None:
         # Public manifests for runtime tools plus the internal primary
         # materialized path / files_json mapping (execution-only values —
@@ -2375,7 +3252,7 @@ print(json.dumps(summary, ensure_ascii=False))
             plans_memory=DefaultGptsPlansMemory(),
             message_memory=MetaDbGptsMessageMemory(),
         )
-        gpt_memory.init(conv_id, enable_vis_message=False)
+        gpt_memory.init(conv_id, enable_vis_message=False, publish_messages=False)
         REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
     agent_memory = AgentMemory(gpts_memory=gpt_memory)
 
@@ -2397,7 +3274,14 @@ print(json.dumps(summary, ensure_ascii=False))
     # so multi-turn follow-ups see the previous Q&A (mirrors hermes'
     # conversation_history passed into the loop).
     historical_dialogues: List[AgentMessage] = []
-    for _msg in storage_conv.get_history_message():
+    # A recovery checkpoint already carries the original objective and real
+    # artifacts. Old failed replies add stale errors and repeated reasoning.
+    history_messages = (
+        []
+        if react_state.get("_report_checkpoint_path")
+        else storage_conv.get_history_message()
+    )
+    for _msg in history_messages:
         if _msg.type == "human":
             historical_dialogues.append(AgentMessage(content=_msg.content))
         elif _msg.type == "ai":
@@ -2416,11 +3300,38 @@ print(json.dumps(summary, ensure_ascii=False))
             if _content:
                 historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
+    if react_state.get("dashboard_confirmation_error"):
+        confirmation_error = react_state["dashboard_confirmation_error"]
+        yield _sse_event(
+            {
+                "type": "dashboard.generation.failed",
+                "dashboard_id": marker_dashboard_id,
+                "message": confirmation_error,
+            }
+        )
+        for terminal_event in _react_terminal_events(
+            storage_conv,
+            json.dumps(
+                {
+                    "version": 1,
+                    "type": "react-agent",
+                    "steps": [],
+                    "final_content": confirmation_error,
+                },
+                ensure_ascii=False,
+            ),
+            AgentFinalAnswer(content=confirmation_error),
+        ):
+            yield terminal_event
+        return
+    generation_event = generation_start_event(react_state)
+    if generation_event:
+        yield _sse_event(generation_event)
     context = AgentContext(
         conv_id=conv_id,
         gpts_app_code="react_agent",
         gpts_app_name="ReAct",
-        language="zh",
+        language=react_state["_report_language"],
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
@@ -2429,6 +3340,21 @@ print(json.dumps(summary, ensure_ascii=False))
     # file_ids requests use the public manifest block; legacy file_path and
     # pure-text requests keep their existing wording byte-for-byte.
     file_context = build_file_context(attachment_ctx, file_path)
+    if file_paths and attachment_ctx is None:
+        uploaded_file_list = "\n".join(
+            f"  {index}. {path}" for index, path in enumerate(file_paths, start=1)
+        )
+        file_context = f"""
+## User Uploaded Tabular Dataset
+- Files in this upload group:
+{uploaded_file_list}
+- The server has registered the group as one SQLite data source when a
+  database name is present above. Prefer the SQL tools for repeatable analysis.
+- Treat `__dbgpt_relationship_candidates` only as relationship hints. Before
+  joining, verify grain, key uniqueness, distinct-key overlap, unmatched rows,
+  and one-to-many fan-out. Never concatenate unrelated tables merely because
+  their columns look similar.
+"""
 
     skill_prompt_context = ""
     execution_instruction = ""
@@ -2514,9 +3440,11 @@ print(json.dumps(summary, ensure_ascii=False))
 
     dispatch_parallel_tasks = make_dispatch_tool(
         parent_conv_id=conv_id,
+        language=react_state["_report_language"],
         llm_client=llm_client,
         sub_model_name=dialogue.model_name,
         database_connector=database_connector,
+        database_context=database_context,
         knowledge_resources=knowledge_resources,
         connector_tool_extras=connector_tool_extras,
         connector_manager=_connector_manager,
@@ -2524,28 +3452,41 @@ print(json.dumps(summary, ensure_ascii=False))
         max_parallel=_max_parallel_subagents,
     )
 
+    native_response_format = """## Native tool calls
+Use the supplied function definitions and complete JSON arguments for actions.
+Use intention/thought for a brief description of the next step.
+Execute the next needed function, then use its actual result to continue.
+For report repairs, each renderer result replaces the previous error list.
+Once a patch is accepted, do not submit it again. Fix the latest reported targets.
+When all requested deliverables are complete, call terminate with output.
+"""
+    if react_state["_report_language"] == "en":
+        language_instruction = (
+            "The user's interface and question are English. Write ALL user-visible "
+            "text in English: intention, thought, todo items, step titles, status "
+            "messages, and the final answer. Do not switch to Chinese because tool "
+            "outputs or knowledge-base text are Chinese. Keep SQL identifiers, field "
+            "names, and quoted source text unchanged."
+        )
+    else:
+        language_instruction = (
+            "Please always response in the same language as the user's input language."
+        )
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, executing the skill task selected by the user.
-Please always response in the same language as the user's input language.
+{language_instruction}
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
-2. For each step, output Thought -> Action Intention -> Action Reason -> Action
-   -> Action Input.
+2. For each step, call the supplied native function with JSON arguments.
 3. Wait for the system to return Observation before deciding on the next step.
-4. **[Mandatory Rule] If the task requires generating an analysis report, you MUST
-call `html_interpreter` for HTML rendering.** By default, generate complete HTML
-code yourself and pass it via the `html` parameter (include DOCTYPE, html, head,
-body, styles, and all content). Only use `template_path` mode if the skill
-explicitly provides HTML templates in its `templates/` directory and its
-documentation references them. When using template mode, provide ALL required
-placeholders in the `data` dictionary.
+4. {traceable_report_capability.prompt_fragment}
 5. If the task does not require generating a report, directly call terminate to
-return the final result. The Action Input format must be
-{{"result": "final answer"}}.
+return the final result with {{"output": "final answer"}}.
 
 {skill_prompt_context}
 {execution_instruction}
@@ -2556,18 +3497,28 @@ return the final result. The Action Input format must be
 parameters {{"skill_name": "skill name", "script_file_name": "script file name",
 "args": {{parameters}}}}. This tool will automatically handle image copying and
 data recording.
+For command-line scripts use `argv` instead of `args`, e.g.
+{{"skill_name": "skill-creator", "script_file_name": "init_skill.py",
+"argv": ["sql-data-analysis", "--path", "absolute destination directory"]}}.
+Pass each CLI argument separately. Never pass both args and argv.
 - **Need to understand indicator definitions/analysis framework** -> Use
 `get_skill_resource` and specify the `references/xxx.md` path to read the
 reference document.
 - **Encounter image file** -> If the model does not support image input, it will
 return an error prompt.
-- **Need to generate report** -> Call `html_interpreter`. **Default: directly pass
-complete HTML via the `html` parameter** — you generate the full HTML code
-yourself (including `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`, styles,
-content). The HTML can be as long as needed. **Only use `template_path` if the
-skill explicitly provides HTML templates in its `templates/` directory and its
-documentation tells you to use them.** Do not use `code_interpreter` to generate
-the report.
+- **Need to generate report** -> Call `generate_report` with the report title, the
+required sections and the requested recommendation count. A dedicated report agent
+owns the template, the evidence-bound spec and every repair; do not write report HTML
+yourself, do not call `code_interpreter` for the report and do not re-run analysis.
+- **Need to create or edit skill files** -> Use `code_interpreter` with Python
+pathlib to write UTF-8 files and inspect existing directories. Skill script tools
+only run existing scripts; never invent a script name or put comments in tool names.
+Keep new skills in the persistent user-skills directory:
+{json.dumps(str(Path(DEFAULT_SKILLS_DIR).resolve() / "user"), ensure_ascii=False)}.
+Pass this absolute directory to init_skill.py --path. If a directory exists, inspect
+and finish it; do not repeatedly initialize it in per-execution temporary folders.
+Use execute_skill_script_file with argv to test scripts and package the skill.
+Do not generate an analysis report for a skill-creation task.
 
 ## Available Tools Description
 1. **execute_skill_script_file** (recommended for executing skill scripts): Execute
@@ -2579,6 +3530,8 @@ name", "args": {{parameters}}}}
    - Example: {{"skill_name": "{_skill_name}",
 "script_file_name": "calculate_ratios.py",
 "args": {{"input_data": "..."}}}}
+   - For CLI scripts replace args with argv (a list of strings). init_skill.py
+requires positional skill name followed by --path and the destination directory.
    - **Must use this tool when executing skill scripts**, do not use
 shell_interpreter.
 2. **get_skill_resource**: Read reference documents, configurations, templates, and
@@ -2586,50 +3539,40 @@ other non-script resource files in the skill.
    Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
    - Read reference document: {{"skill_name": "{_skill_name}",
 "resource_path": "references/analysis_framework.md"}}
-   - Note: For generating reports, prefer using html_interpreter directly with the
-`html` parameter. Only use template_path if the skill explicitly provides
-templates.
+   - Note: For long reports reuse a suitable existing template with `data`.
+Use concise inline HTML when there is no applicable template.
 3. **execute_skill_script**: Execute the inline script defined in the skill
 (backup). Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{"parameter name": "parameter value"}}}}
-4. **shell_interpreter**: Execute shell/bash commands (only for non-skill script
-system commands, such as ls, cat, etc.).
-   Parameters: {{"code": "shell command"}}
-   - Each call is independent and does not retain state. If multi-step operations
-are needed, use `&&` or `;` to connect commands.
-   - **Note: Do not use this tool to execute skill scripts**, as it will not
-automatically handle images and data recording.
-5. **html_interpreter**: Render HTML as an interactive web report. This is the ONLY
-way to display reports on the right panel.
-   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>",
-"title": "report title"}}
-   - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
-content). No length limit.
-   - **Do not** use code_interpreter to write HTML. Directly pass the HTML string
-to this tool.
-   **Template mode (only when skill has templates/)**: {{"template_path":
-"skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
+4. **generate_report**: Hand the analysis report to the dedicated report agent (it
+owns `report_evidence_manifest`, the report template and every spec repair).
+Parameters: {{"instructions": "report title, required sections, recommendation count"}}
    - Only use this if the skill's documentation explicitly provides template paths.
-If template_path returns "Template not found", immediately switch to the default
-`html` parameter usage.
+If a template fails, fix the indicated input or select an existing suitable template.
+For a saved HTML candidate, use {{"retry_saved": true, "repair_patches":
+[{{"old": "exact text at the reported location", "new": "corrected text"}}]}}.
+For truncation, new must preserve the tail anchor and add the missing remainder.
+Never regenerate the entire document or rerun completed analysis after failure.
    {available_images_hint}
-6. **sql_query**: Execute a read-only SQL query against the selected database.
+5. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
-7. **todowrite**: Create and manage a structured task list. Use for complex tasks
+5.1. **chart_query**: Execute read-only SQL and return a DB-GPT native interactive chart.
+Parameters: {{"sql": "SELECT statement", "display_type": "response_line_chart", "thought": "chart purpose"}}
+6. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
 "priority": "high|medium|low"}}. Only ONE task in_progress at a time.
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-8. **question**: Ask the user a question and wait for their response. Use this tool
+7. **question**: Ask the user a question and wait for their response. Use this tool
    when you need user input, clarification, or a decision to proceed. The tool blocks
    until the user answers.
    Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
    {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
    multiple selections. The tool returns the user's selected answers.
-9. **terminate**: Return the final answer when the task is completed. Action Input
-must be {{"result": "your final answer content"}}.
+8. **terminate**: Return the final answer when the task is completed.
+Parameters: {{"output": "your final answer content"}}.
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
@@ -2653,22 +3596,7 @@ Example flow for 3 tasks:
 {file_context}
 {knowledge_context}
 {database_context}
-## ReAct Output Format
-Must output for each interaction round:
-Thought: Analyze current task status and think about what to do next
-Action Intention: What this step will do, plain text, MUST be concise and fit in
-<= 18 Chinese chars or <= 8 English words. If too long, rewrite shorter.
-Do not use ellipsis.
-Action Reason: Why this action is needed now, plain text, MUST be concise and fit in
-<= 30 Chinese chars or <= 12 English words. If too long, rewrite shorter.
-Do not use ellipsis.
-Action: The selected tool name (must be one of the tools listed above)
-Action Input: The JSON format of tool parameters
-
-IMPORTANT: Never emit native tool-call markup such as
-<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
-or any other <|...|> tokens. Tool calls are ONLY valid in the textual
-Thought/Action/Action Input format shown above.
+{native_response_format}
 """.strip()
 
         if tool_mode == "knowledge":
@@ -2685,9 +3613,11 @@ Thought/Action/Action Input format shown above.
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
-                    shell_interpreter_tool,
-                    html_interpreter_tool,
+                    code_interpreter_tool,
+                    read_file_tool,
+                    *report_tools,
                     sql_query_tool,
+                    chart_query_tool,
                     todowrite_tool,
                     question_tool,
                     Terminate(),
@@ -2729,23 +3659,24 @@ Thought/Action/Action Input format shown above.
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
-Please always response in the same language as the user's input language.
+{language_instruction}
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
 2. Autonomously select required tools based on requirements (do not follow a fixed
 order, select as needed).
-3. For each step, output Thought -> Action Intention -> Action Reason -> Action
-   -> Action Input.
+3. For each step, call the supplied native function with JSON arguments.
 4. Wait for the system to return Observation before deciding on the next step.
 5. When the task is completed, call the terminate tool to return the final result.
-The Action Input format must be {{"result": "final answer"}}.
-6. **[Mandatory Rule] If there is a requirement for an analysis report, you MUST call
-`html_interpreter` for HTML rendering. When the user requests generating a webpage,
-HTML report, or interactive report, the final presentation step must call
-`html_interpreter` to render it. It is forbidden to output HTML using only
-`code_interpreter` and then directly terminate. Correct process: code_interpreter
-writes to .html file -> html_interpreter(file_path=...) renders -> terminate.**
+Parameters: {{"output": "final answer"}}.
+6. {traceable_report_capability.prompt_fragment}
+
+7. **[Database-report execution rule]** Use the available tools that best fit the
+analysis. `chart_query` returns DB-GPT's native SQL chart when a database chart is
+useful; `code_interpreter` remains available for advanced calculations or custom
+visualizations. Do not use `shell_interpreter` to test an environment, create
+charts, or prepare an HTML report; the shell tool is intentionally unavailable in
+this workflow. Call the supplied functions directly with complete JSON arguments.
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
@@ -2793,6 +3724,7 @@ iterative optimization in subsequent steps.
 scripts in the skill's scripts directory (this tool automatically handles images
 and data recording). Parameters are {{"skill_name": "skill name",
 "script_file_name": "script.py", "args": {{parameters}}}}.
+For CLI scripts use argv (a list of separate strings) instead of args.
 - **Need to understand indicator definitions/analysis framework** -> Use
 `get_skill_resource` and specify the `references/xxx.md` path to read the
 reference document.
@@ -2805,7 +3737,7 @@ calls in the same step.
 
 ### 4. Special Scenarios
 - For report generation: Same as the principle above, must finally call
-`html_interpreter` to render.
+`generate_report` to hand the report to the dedicated report agent.
 
 ## Available Tools Description
 1. **load_skill**: Load skill content by skill name and file path.
@@ -2818,12 +3750,14 @@ Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
 4. **execute_skill_script**: Execute the inline script defined in the skill.
 Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{parameters}}}}
-5. **shell_interpreter**: Execute shell/bash commands.
-Parameters: {{"code": "shell command"}}
-6. **code_interpreter**: Execute arbitrary Python code.
+5. **code_interpreter**: Execute arbitrary Python code.
 Parameters: {{"code": "python code string"}}
-7. **load_file**: Load uploaded file info. Parameters: none.
-8. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
+For report analysis, assign computed metrics and tables to REPORT_RESULT, a
+JSON-compatible dict/list captured separately from printed output. Convert each
+DataFrame to {{"columns": list(frame.columns), "rows": frame.to_dict(orient="records")}}.
+Keep progress messages in print(); printed tables alone cannot be report bindings.
+6. **load_file**: Load uploaded file info. Parameters: none.
+7. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
 Parameters: none.
 9. **kb_ls**: List files and directories in the knowledge base.
 Parameters: {{"path": "directory path (optional)"}}
@@ -2837,15 +3771,19 @@ Parameters: {{"path": "file path like src/main.py", "start_line": "start line (o
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
 {codegraph_section}{wiki_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
+14.1. **chart_query**: Execute SQL and return a DB-GPT native interactive chart.
+Parameters: {{"sql": "SELECT statement", "display_type": "response_line_chart", "thought": "chart purpose"}}
 15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 16. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
-17. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
-to display reports on the right panel). Default usage:
-{{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
-{{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
-File mode: {{"file_path": "/path/to/report.html"}}
-14. **todowrite**: Create and manage a structured task list. Use for complex tasks
+17. **generate_report**: Hand the analysis report to the dedicated report agent, which
+reads the evidence manifest, renders the report template once and repairs only the
+spec from the latest error list. Parameters: {{"instructions": "report title, required
+sections, requested recommendation count"}}. Never write report HTML yourself, never
+patch rendered HTML and never re-run completed analysis for the report.
+18. **report_evidence_manifest** (internal): owned by the report agent. Pass what the
+report must contain to `generate_report` instead of binding values yourself.
+19. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
 "priority": "high|medium|low"}}. Only ONE task in_progress at a time.
@@ -2862,28 +3800,13 @@ Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
    Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
    {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
    multiple selections. The tool returns the user's selected answers.
-17. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+17. **terminate**: Finish the task. Parameters: {{"output": "final answer"}}
 
 {file_context}
 {knowledge_context}
 {database_context}
 
-## ReAct Output Format
-Must output for each interaction round:
-Thought: Analyze current task status and think about what to do next
-Action Intention: What this step will do, plain text, MUST be concise and fit in
-<= 18 Chinese chars or <= 8 English words. If too long, rewrite shorter.
-Do not use ellipsis.
-Action Reason: Why this action is needed now, plain text, MUST be concise and fit in
-<= 30 Chinese chars or <= 12 English words. If too long, rewrite shorter.
-Do not use ellipsis.
-Action: The selected tool name
-Action Input: The JSON format of tool parameters
-
-IMPORTANT: Never emit native tool-call markup such as
-<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
-or any other <|...|> tokens. Tool calls are ONLY valid in the textual
-Thought/Action/Action Input format shown above.
+{native_response_format}
 """.strip()
 
         workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
@@ -2913,9 +3836,9 @@ Thought/Action/Action Input format shown above.
                     code_interpreter_tool,
                     load_file_tool,
                     execute_analysis_tool,
-                    shell_interpreter_tool,
-                    html_interpreter_tool,
+                    *report_tools,
                     sql_query_tool,
+                    chart_query_tool,
                     read_file_tool,
                     todowrite_tool,
                     execute_tool_tool,
@@ -2926,6 +3849,121 @@ Thought/Action/Action Input format shown above.
                 + business_tools
                 + connector_tool_extras
             )
+
+    if dashboard_agent_mode:
+        # Dashboard generation is a bounded workflow.  Giving a text-only ReAct
+        # model the unrelated skill, file, shell, KB, connector, and report tools
+        # makes the prompt much larger and materially increases malformed tool
+        # calls.  Keep the task path focused while reusing the same registered
+        # dashboard tools and backend validation.
+        confirmation_contract = react_state.get("dashboard_confirmation_contract")
+        confirmation_contract_prompt = ""
+        if confirmation_contract:
+            confirmation_contract_prompt = f"""
+## Authoritative confirmed plan contract
+The following persisted contract is authoritative. Generate exactly one query for
+every listed widget_id across staged calls of at most two widgets each, use each id
+verbatim, and do not invent extra widgets. Pass the dashboard_id and
+expected_revision below unchanged.
+
+{json.dumps(confirmation_contract, ensure_ascii=False, indent=2)}
+"""
+
+        annotation_request = "[[dashboard-annotation:" in user_input.casefold()
+        read_only_annotation_request = _is_read_only_dashboard_annotation_request(
+            user_input
+        )
+        annotation_contract_prompt = ""
+        if read_only_annotation_request:
+            annotation_contract_prompt = """
+## Read-only annotation explanation mode
+This batch contains only metric explanations and/or deterministic anomaly
+explanations. The persisted Dashboard schema, query result, and supplied anomaly
+evidence are authoritative. You may load or resolve that persisted context, then
+explain it and call terminate. Do not run SQL, recalculate an anomaly, create a
+proposal, or change any Dashboard state. Preserve every program conclusion,
+including `indeterminate` / `无法判断` when evidence is insufficient.
+"""
+        elif annotation_request:
+            annotation_contract_prompt = """
+## Annotation proposal mode
+This message contains an authoritative `[[dashboard-annotation:ID]]` marker.
+Do not call load_skill, load_tools, plan_dashboard, create_dashboard_draft, or
+modify_dashboard_draft. Read the persisted annotation through the registered
+`propose_dashboard_change` tool. A message may contain multiple scoped markers
+`[[dashboard-annotation:dashboard_id:annotation_id]]`. Submit one minimal proposal
+for EACH modification annotation, using that marker's annotation_id; do not stop
+after the first proposal. Explanation and anomaly annotations remain read-only.
+Widget paths must use /widgets/by-id/{widget_id}/title (or another field), never
+array indexes or /widgets/{widget_id}. Filter paths use /filters/by-id/{filter_id}.
+The tool validates each proposal in memory; it must not apply it. Only after ALL
+modification proposals succeed, call terminate using the six-field ReAct format below
+and tell the user to review and apply or reject the proposal in the Dashboard UI.
+"""
+
+        from .tools.dashboard_contracts import (
+            describe_registered_tools,
+            make_dashboard_tool_pack,
+        )
+
+        tool_pack = make_dashboard_tool_pack(
+            [sql_query_tool, question_tool, Terminate()] + dashboard_planner_tools,
+            user_input,
+            read_only_annotation=read_only_annotation_request,
+        )
+        registered_tool_prompt = describe_registered_tools(tool_pack)
+
+        workflow_prompt = f"""
+You are the DB-GPT Dashboard Agent. Complete only the selected data source's
+Dashboard planning or generation workflow, in the user's language.
+
+## Output protocol
+Output exactly ONE action per response using these six plain-text fields:
+Thought: concise reasoning for the next step
+Phase: concise user-facing stage name
+Action Intention: <= 18 Chinese characters or <= 8 English words
+Action Reason: <= 30 Chinese characters or <= 12 English words
+Action: one registered tool name
+Action Input: one valid JSON object
+
+Never emit DSML, XML, `<tool_calls>`, `<invoke>`, native function-call markup,
+multiple actions, or a simulated Observation. Wait for the real Observation before
+choosing another action.
+
+## Available tools
+{registered_tool_prompt}
+
+## Workflow rules
+Respect the requested scope. If the user lists widgets or analytical topics,
+plan one widget per requested item; do not add unrequested KPI cards, duplicate
+charts or filters. Broad requests should start with 3-4 core widgets. Add global
+filters only when requested or necessary for the stated decision, with real
+distinct options discovered from data (a null/All-only option is not sufficient).
+For a requested period with no matching rows, preserve that exact period. A
+table explicitly expected to be empty must have expected_data_points: 0 in its
+plan; generate the genuine detail SELECT with its original predicate. Never
+remove the predicate, substitute another year, fabricate a NULL row, or aggregate
+the empty table merely to pass validation. Range filters use two separate start
+and end placeholders; multi-selects use IN (:items), never string matching.
+
+In a planning turn at most eight sql_query discovery calls are allowed. After
+the eighth result, submit the plan. Confirmation, revision and annotation turns
+allow zero discovery calls. Ask questions only for essential missing information;
+never request another confirmation when a confirmation marker is present.
+Follow the loaded Dashboard Builder skill below for phase selection and tool
+ordering. The registered tools and backend validation remain authoritative.
+
+{skill_prompt_context}
+
+{annotation_contract_prompt}
+{confirmation_contract_prompt}
+{database_context}
+""".strip()
+
+    if dashboard_agent_mode and annotation_request:
+        from .dashboard.assistant_skills import dashboard_collaboration_skill
+
+        workflow_prompt += "\n\n" + dashboard_collaboration_skill()
 
     # Debug: print all registered tools
     logger.info(f"ToolPack resources: {list(tool_pack._resources.keys())}")
@@ -2946,7 +3984,7 @@ Thought/Action/Action Input format shown above.
         _cm = CFG.SYSTEM_APP.get_component(
             "connector_manager", _ConnectorManager, default_component=None
         )
-        if _cm is not None and connector_ids:
+        if _cm is not None and connector_ids and not dashboard_agent_mode:
             _active = _cm.list_active()
             # Only describe connectors the user explicitly selected.
             # Iterate connector_ids (not _active) so prompt order matches
@@ -3017,6 +4055,19 @@ Thought/Action/Action Input format shown above.
         pass  # graceful degradation
     # --- End connector system prompt injection ---
 
+    workflow_prompt += """
+
+## Task scope and execution budget
+The user's requested deliverables and date window determine the plan. Apply
+skills and knowledge-base workflows only to those deliverables; they do not
+authorize extra payment analysis, a full-database audit, or unrelated sections.
+Add a validation query only when needed for a requested metric's key, denominator
+or missing values, or when an observed anomaly affects its conclusion. Reuse
+available artifacts and do not recalculate completed work. Keep sub-agent goals
+narrow and within the user's requested period. Query timeouts require inspecting
+the plan and indexes and changing the SQL; never repeat the unchanged query.
+After partial results, finish only missing requested deliverables, then report.
+"""
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(
@@ -3025,9 +4076,15 @@ Thought/Action/Action Input format shown above.
         template_format="jinja2",
     )
 
+    workflow_agent = (
+        DashboardConfirmationAgent(dashboard_state=react_state, max_retry_count=30)
+        if dashboard_agent_mode
+        else ToolCallingReActAgent(
+            report_repair_state=react_state, max_retry_count=60, max_timeout=900
+        )
+    )
     agent_builder = (
-        ToolCallingReActAgent(max_retry_count=30)
-        .bind(context)
+        workflow_agent.bind(context)
         .bind(agent_memory)
         .bind(llm_config)
         .bind(tool_pack)
@@ -3038,6 +4095,30 @@ Thought/Action/Action Input format shown above.
 
     parser = ReActOutputParser()
     received = AgentMessage(content=user_input)
+    if react_state.get("_report_pending_html"):
+        received.content += (
+            "\n已恢复待渲染 HTML 与原始产物。报告由专职报告子代理独占生成："
+            "调用 generate_report(instructions=[报告标题、必需章节、建议条数])，"
+            "它会读取证据清单、按模板 spec 渲染并按最新错误清单修正；"
+            "不要自己调用 html_interpreter，也不要手写 HTML。"
+            "保存的 HTML 可用 read_file 查看："
+            + react_state["_report_pending_path"]
+            + "。待修复的渲染错误："
+            + str(react_state.get("_report_last_render_error") or "未知")
+            + "\n原始报告要求："
+            + str(react_state.get("_report_original_request") or "")
+        )
+    elif react_state.get("_report_resume_analysis"):
+        received.content += (
+            "\n已恢复上轮真实执行产物。先用 report_evidence_manifest 查看现有结果，"
+            "只补充缺失的用户请求项，然后生成报告；不要重新执行完成的分析。"
+            "原始请求："
+            + str(react_state.get("_report_original_request") or "")
+            + "\n执行进度："
+            + json.dumps(
+                react_state.get("_report_execution_progress", {}), ensure_ascii=False
+            )
+        )
     # stream_queue and stream_callback were created earlier (before ToolPack)
     # so that the question tool can use them.
 
@@ -3055,14 +4136,19 @@ Thought/Action/Action Input format shown above.
     )
 
     async def run_agent():
-        return await agent.generate_reply(
-            received_message=received,
-            sender=agent,
-            stream_callback=stream_callback,
-            historical_dialogues=historical_dialogues,
-        )
+        async def generate_reply():
+            return await agent.generate_reply(
+                received_message=received,
+                sender=agent,
+                stream_callback=stream_callback,
+                historical_dialogues=historical_dialogues,
+            )
 
-    agent_task = asyncio.create_task(run_agent())
+        if artifact_sink is None:
+            return await generate_reply()
+        return await _run_with_artifact_capture(artifact_sink, generate_reply)
+
+    agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
     if agent_task_holder is not None:
         agent_task_holder.append(agent_task)
     round_step_map: Dict[int, str] = {}
@@ -3129,7 +4215,12 @@ Thought/Action/Action Input format shown above.
             continue
 
         event_type = event.get("type")
-        if event_type == "context.status":
+        if isinstance(event_type, str) and event_type.startswith("dashboard."):
+            # Dashboard planner events share the ordered ReAct SSE queue.  Forward
+            # them verbatim so the web client can render plan/widget progress and
+            # the final editor link without scraping tool text.
+            yield _sse_event(event)
+        elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
@@ -3143,6 +4234,11 @@ Thought/Action/Action Input format shown above.
         ):
             # Sub-agent progress uses a separate event channel so parallel
             # child rounds cannot collide with the lead agent's round map.
+            # Sub-agent SQL/Python/KB tools execute inside the parent task's
+            # artifact-capture context and record the real semantic artifact at
+            # the execution boundary.  Do not reconstruct another SQL artifact
+            # from the display SSE here: that old fallback loses Python/KB/chart
+            # lineage and creates duplicate nodes in the evidence graph.
             update_subagent_history(subagent_history, event)
             yield _sse_event(event)
         elif event_type == "thinking":
@@ -3203,7 +4299,9 @@ Thought/Action/Action Input format shown above.
                     pending_thoughts[round_num].append(clean_chunk)
                     if round_num not in round_step_map:
                         pending_step_id, pending_step_event = build_step(
-                            "思考中",
+                            "Thinking"
+                            if react_state.get("_report_language") == "en"
+                            else "思考中",
                             "Thought/Action/Observation",
                         )
                         round_step_map[round_num] = pending_step_id
@@ -3233,7 +4331,9 @@ Thought/Action/Action Input format shown above.
             # Note: TerminateAction.run() sets terminate=True but does NOT
             # set the action field, so we must check the terminate boolean.
             is_terminate = action_output.get("terminate") or (
-                action and action.lower() == "terminate"
+                action
+                and action.lower() == "terminate"
+                and action_output.get("is_exe_success", True)
             )
             if is_terminate:
                 pending_thoughts.pop(round_num, [])
@@ -3245,12 +4345,9 @@ Thought/Action/Action Input format shown above.
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
                     yield step_meta(_stale_id, None, "terminate", None, "terminate")
-                # ── Auto-complete all remaining todos on terminate ──
-                if _todo_list:
-                    for t in _todo_list:
-                        if t["status"] in ("pending", "in_progress"):
-                            t["status"] = "completed"
-                    yield _sse_event({"type": "plan.update", "tasks": list(_todo_list)})
+                # Do not fabricate plan completion.  Only an explicit
+                # todowrite update can mark a task complete; otherwise an
+                # early terminate must remain visibly incomplete.
                 continue
 
             # ── TodoWrite: emit plan.update SSE and show step card ──
@@ -3429,6 +4526,13 @@ Thought/Action/Action Input format shown above.
                 round_step_map[round_num] = react_step_id
                 yield react_step_event
 
+            _record_visible_artifact_step_ids(
+                artifact_sink,
+                react_state,
+                action=action,
+                visible_step_id=react_step_id,
+            )
+
             # --- History: create step record ---
             action_input_str = None
             if action_input is not None:
@@ -3522,12 +4626,13 @@ Thought/Action/Action Input format shown above.
 
                 # Citations are opt-in: the assembler accepts only explicitly
                 # supported knowledge tools and fails closed on malformed data.
-                final_answer_assembler.observe(
-                    action,
-                    action_input_data,
-                    observation_text,
-                    succeeded=status == "done",
-                )
+                if artifact_sink is None:
+                    final_answer_assembler.observe(
+                        action,
+                        action_input_data,
+                        observation_text,
+                        succeeded=status == "done",
+                    )
 
             # Mark step as done and track as last completed
             yield step_done(react_step_id, status)
@@ -3548,11 +4653,65 @@ Thought/Action/Action Input format shown above.
                 history_steps.append(current_history_step)
                 current_history_step = None
 
+    # A deadline can interrupt thinking or a tool before an act event arrives.
+    # Close those visible placeholders and retain their status for replay.
+    recorded_step_ids = {step["id"] for step in history_steps}
+    if current_history_step is not None:
+        current_history_step["status"] = "failed"
+        history_steps.append(current_history_step)
+        recorded_step_ids.add(current_history_step["id"])
+        yield step_done(current_history_step["id"], "failed")
+        current_history_step = None
+    for pending_id in round_step_map.values():
+        if pending_id not in recorded_step_ids:
+            history_steps.append(
+                {
+                    "id": pending_id,
+                    "title": "Thinking"
+                    if react_state.get("_report_language") == "en"
+                    else "思考中",
+                    "detail": "Execution ended before the tool reported a result"
+                    if react_state.get("_report_language") == "en"
+                    else "执行提前结束，未收到工具完成结果",
+                    "outputs": [],
+                    "status": "failed",
+                }
+            )
+            yield step_done(pending_id, "failed")
+
     try:
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        incomplete = generation_failure(react_state)
+        if incomplete:
+            yield _sse_event(incomplete)
+            err_msg = incomplete["message"]
+        elif react_state.get("dashboard_generation", {}).get("status") == "completed":
+            err_msg = "看板已校验并保存；后续模型说明未完成，可直接打开看板检查。"
+        if current_history_step is not None:
+            current_history_step["status"] = "failed"
+            history_steps.append(current_history_step)
+            yield step_done(current_history_step["id"], "failed")
+        if not dashboard_agent_mode:
+            from .tools.report_repair import render_saved_report
+
+            if await render_saved_report(
+                react_state, skills_dir, allow_unavailable_references=True
+            ):
+                err_msg = (
+                    "HTML 分析报告已复用现有产物生成。主流程执行中断：" + str(e)[:1000]
+                )
         fail_running_subagent_history(subagent_history)
+        error_answer = AgentFinalAnswer(content=err_msg)
+        error_answer = await _finalize_turn_report_persistence(
+            dialogue=dialogue,
+            conv_id=conv_id,
+            user_input=user_input,
+            final_answer=error_answer,
+            artifact_sink=artifact_sink,
+            react_state=react_state,
+        )
         error_payload = _build_react_history_payload(
             final_content=err_msg,
             steps=history_steps,
@@ -3561,84 +4720,155 @@ Thought/Action/Action Input format shown above.
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
             citations=[],
+            report_id=error_answer.report_id,
+            report_run_id=error_answer.report_run_id,
+            report_status=error_answer.report_status,
+            dashboard_refs=react_state.get("dashboard_refs", []),
+            dashboard_generation_failure=incomplete,
         )
-        for terminal_event in _react_terminal_events(
+        terminal_events = _react_terminal_events(
             storage_conv,
             error_payload,
-            AgentFinalAnswer(content=err_msg),
-        ):
+            error_answer,
+        )
+        for terminal_event in terminal_events:
             yield terminal_event
         return
 
-    if reply.action_report and reply.action_report.terminate:
-        raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content may be the raw ReAct text, e.g.:
-        # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
-        # We need to extract the "result" value from Action Input.
-        final_content = raw_content
-        try:
-            steps = parser.parse(raw_content)
-            if steps:
-                action_input = steps[0].action_input
-                if action_input:
-                    # action_input could be a string like '{"result": "..."}';
-                    # tolerate trailing artifacts after the JSON object (the
-                    # parser already strips known special tokens, this is the
-                    # second line of defense for unknown ones).
-                    if isinstance(action_input, str):
-                        parsed_input = parse_or_raise_error(action_input)
-                    else:
-                        parsed_input = action_input
-                    if isinstance(parsed_input, dict) and "result" in parsed_input:
-                        final_content = parsed_input["result"]
-        except Exception:
-            pass
-        # native function calling 路径：terminate content 可能是 {"result":...}
-        # (JSON) 或 {'result':...} (Python dict repr)，直接提取 result。
-        if final_content == raw_content:
-            try:
-                _parsed = json.loads(raw_content)
-                if isinstance(_parsed, dict) and "result" in _parsed:
-                    final_content = _parsed["result"]
-            except Exception:
-                try:
-                    import ast
+    execution_context = reply.get_dict_context()
+    stopped = not reply.success or (
+        reply.action_report and not reply.action_report.terminate
+    )
+    if stopped:
+        from .tools.report_repair import render_saved_report, save_execution_checkpoint
 
-                    _parsed = ast.literal_eval(raw_content)
-                    if isinstance(_parsed, dict) and "result" in _parsed:
-                        final_content = _parsed["result"]
-                except Exception:
-                    pass
-    elif reply.action_report:
-        # Loop ended without terminate (max retries or timeout).
-        # reply.content is raw LLM output containing ReAct prefixes.
-        # Try to extract a clean summary from the last step's thought.
-        raw = reply.content or reply.action_report.content or ""
-        final_content = raw
+        report_recovered = await render_saved_report(
+            react_state, skills_dir, allow_unavailable_references=True
+        )
+
+        execution_status = execution_context.get("execution_status", "incomplete")
+        report_error = react_state.get("_report_html_error")
+        if execution_status == "incomplete" and report_error:
+            execution_status = "report_failed"
+        execution_error = (
+            execution_context.get("execution_error")
+            or report_error
+            or (reply.content if not reply.action_report else "主流程未提交完整结果")
+        )
+        status_label = {
+            "timeout": "运行超时",
+            "step_limit": "达到执行步数上限",
+            "failed": "执行失败",
+            "report_failed": "报告渲染失败",
+            "incomplete": "任务未完成",
+        }.get(execution_status, "任务未完成")
+        completed = [t["content"] for t in _todo_list if t.get("status") == "completed"]
+        remaining = [
+            t["content"]
+            for t in _todo_list
+            if t.get("status") not in {"completed", "cancelled"}
+        ]
+        snapshots = build_subagent_history_snapshot(subagent_history)
+        react_state["_report_execution_progress"] = {
+            "task_plan": list(_todo_list),
+            "sub_agents": [
+                {
+                    "name": a.get("name"),
+                    "status": a.get("status"),
+                    "result_summary": str(a.get("result") or "")[:600],
+                    "artifact_ids": [
+                        v["artifact_id"]
+                        for v in a.get("artifacts", [])
+                        if v.get("artifact_id")
+                    ],
+                }
+                for a in snapshots
+            ],
+            "execution_status": execution_status,
+            "execution_error": execution_error,
+        }
+        final_content = (
+            "任务未完成。"
+            if execution_status == "incomplete"
+            else f"任务未完成：{status_label}。"
+        ) + "已有执行结果已保留。"
+        if completed:
+            final_content += "\n已完成：" + "；".join(completed)
+        if remaining:
+            final_content += "\n待完成：" + "；".join(remaining)
+        partial = [
+            a.get("name", a.get("agent_id", "子任务"))
+            for a in snapshots
+            if a.get("status") == "partial"
+        ]
+        if partial:
+            final_content += "\n部分完成的子任务：" + "；".join(partial)
+        if execution_status == "failed" and execution_error:
+            final_content += "\n原因：" + str(execution_error)[:1000]
+        if report_recovered:
+            final_content += "\nHTML 分析报告已复用现有产物生成。"
+        else:
+            try:
+                await asyncio.to_thread(
+                    save_execution_checkpoint, react_state, str(execution_error)
+                )
+            except Exception:
+                logger.exception(
+                    "Unable to save execution checkpoint; recorded history and artifacts remain available"
+                )
+            if is_skill_mode and _skill_name == "skill-creator":
+                final_content += (
+                    "\n继续时应复用已创建的技能目录，补齐文件、测试和打包。"
+                )
+            else:
+                final_content += "\n继续时应复用现有产物，只补充缺失分析和报告。"
+    elif reply.action_report and reply.action_report.terminate:
+        raw_content = reply.action_report.content or ""
         try:
-            steps = parser.parse(raw)
-            if steps:
-                last_step = steps[-1]
-                # Prefer observation (execution result) > thought
-                if last_step.observations:
-                    final_content = last_step.observations
-                elif last_step.thoughts:
-                    final_content = last_step.thoughts
-        except Exception:
-            pass
-        # Fallback: strip remaining ReAct prefixes via regex
-        final_content = re.sub(
-            r"^(Thought|Action|Action Input|Observation|Phase):\s*",
-            "",
-            final_content,
-            flags=re.MULTILINE,
-        ).strip()
-        if not final_content:
-            final_content = "任务执行已达到最大步数限制，请查看上方各步骤的执行结果。"
+            final_content = extract_terminate_output(raw_content)
+        except ValueError:
+            final_content = "任务未完成：模型未返回有效的最终结果，请查看执行步骤。"
     else:
         final_content = reply.content or ""
 
+    presentation = react_state.get("_report_presentation")
+    if (
+        react_state.get("_report_html_attempted")
+        or react_state.get("_report_generation_requested")
+    ) and not _has_rendered_html_presentation(presentation):
+        report_error = (
+            react_state.get("_report_agent_failure")
+            or react_state.get("_report_html_error")
+            or "报告渲染未完成"
+        )
+        final_content = (
+            final_content + f"\nHTML 分析报告未生成。原因：{report_error}"
+            if stopped
+            else f"HTML 分析报告未生成。原因：{report_error}"
+        )
+    if artifact_sink is not None:
+        final_answer_assembler.observe_artifacts(
+            artifact_sink.snapshot(),
+            preferred_ids=[
+                artifact_id
+                for binding in react_state.get("_report_presentation_bindings", [])
+                for artifact_id in binding.get("artifact_ids", [])
+            ],
+        )
+
+    incomplete = generation_failure(react_state)
+    if incomplete:
+        yield _sse_event(incomplete)
+        final_content = incomplete["message"]
     final_answer = final_answer_assembler.finalize(final_content)
+    final_answer = await _finalize_turn_report_persistence(
+        dialogue=dialogue,
+        conv_id=conv_id,
+        user_input=user_input,
+        final_answer=final_answer,
+        artifact_sink=artifact_sink,
+        react_state=react_state,
+    )
 
     # Persist AI reply with structured history payload
     history_payload = _build_react_history_payload(
@@ -3649,12 +4879,18 @@ Thought/Action/Action Input format shown above.
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,
         citations=[citation.to_dict() for citation in final_answer.citations],
+        report_id=final_answer.report_id,
+        report_run_id=final_answer.report_run_id,
+        report_status=final_answer.report_status,
+        dashboard_refs=react_state.get("dashboard_refs", []),
+        dashboard_generation_failure=incomplete,
     )
-    for terminal_event in _react_terminal_events(
+    terminal_events = _react_terminal_events(
         storage_conv,
         history_payload,
         final_answer,
-    ):
+    )
+    for terminal_event in terminal_events:
         yield terminal_event
 
 
@@ -3719,6 +4955,52 @@ def _conversation_owner_user_name(conv_uid: str) -> Optional[str]:
     return None if entity is None else (entity.user_name or "")
 
 
+def _require_owned_conversation(conv_uid: str, actor_id: str) -> None:
+    """Return a uniform 404 for absent and non-owned conversations."""
+
+    from dbgpt_serve.conversation.api.schemas import ServeRequest
+
+    conversation = _get_conversation_service().get(
+        ServeRequest(conv_uid=conv_uid, user_name=actor_id)
+    )
+    if conversation is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+
+_SHARED_UPLOAD_PATH_RE = re.compile(
+    r"(?i)(?:[A-Z]:[\\/]|/)[^\"'\r\n]*?python_uploads[\\/]"
+    r"[^\"'\r\n]*?\."
+    r"(?:csv|tsv|xls|xlsx|json|jsonl|parquet|pdf|txt|md|png|jpe?g|sqlite)\b"
+)
+_SHARED_UPLOAD_DATABASE_RE = re.compile(r"\bupload_[A-Za-z0-9_-]{8,}\b")
+
+
+def _redact_shared_content(value: Any) -> Any:
+    """Remove server paths and reusable upload identifiers from public history."""
+
+    if isinstance(value, str):
+        value = _SHARED_UPLOAD_PATH_RE.sub("[uploaded file]", value)
+        return _SHARED_UPLOAD_DATABASE_RE.sub("[uploaded dataset]", value)
+    if isinstance(value, list):
+        return [_redact_shared_content(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _redact_shared_content(item)
+            for key, item in value.items()
+            if key
+            not in {
+                "file_path",
+                "file_paths",
+                "database_path",
+                "dataset_id",
+                "dataset_replay_task_id",
+            }
+        }
+    return value
+
+
 @router.post("/v1/chat/share", response_model=Result)
 async def create_share_link(
     body: ShareCreateRequest = Body(),
@@ -3735,14 +5017,15 @@ async def create_share_link(
     """
     from fastapi import HTTPException
 
-    requester = user_token.user_id if user_token else None
-    owner = _conversation_owner_user_name(body.conv_uid)
-    if owner is None:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    if owner and owner != (requester or ""):
-        raise HTTPException(status_code=403, detail="Not the conversation owner")
     dao = _get_share_dao()
-    entity = dao.create_share(conv_uid=body.conv_uid, created_by=requester)
+    created_by = user_token.user_id if user_token else None
+    if not created_by:
+        raise HTTPException(status_code=401, detail="Authenticated user is required")
+    _require_owned_conversation(body.conv_uid, created_by)
+    existing = dao.get_by_conv_uid(body.conv_uid)
+    if existing is not None and existing.created_by not in {None, "", created_by}:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    entity = dao.create_share(conv_uid=body.conv_uid, created_by=created_by)
     if entity is None:
         return Result.failed(msg="Failed to create share link")
     return Result.succ(
@@ -3764,8 +5047,6 @@ async def get_share_conversation(token: str):
     dao = _get_share_dao()
     link = dao.get_by_token(token)
     if link is None:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Share link not found")
 
     service = _get_conversation_service()
@@ -3779,7 +5060,7 @@ async def get_share_conversation(token: str):
     messages = [
         {
             "role": m.role,
-            "context": scrub_react_history_for_share(m.context),
+            "context": _redact_shared_content(scrub_react_history_for_share(m.context)),
             "order": m.order,
         }
         for m in (history or [])
@@ -3798,21 +5079,21 @@ async def delete_share_link(
     token: str,
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    """Revoke a share link.
-
-    Only the recorded creator may delete a link; legacy anonymous shares
-    (no recorded creator) remain revocable by anyone. Foreign users get a
-    403 and unknown tokens a 404 — no share is silently dropped.
-    """
-    from fastapi import HTTPException
-
+    """Revoke a share link without revealing links owned by another user."""
     dao = _get_share_dao()
+    actor_id = user_token.user_id if user_token else None
+    if not actor_id:
+        raise HTTPException(status_code=401, detail="Authenticated user is required")
     link = dao.get_by_token(token)
     if link is None:
         raise HTTPException(status_code=404, detail="Share link not found")
-    requester = user_token.user_id if user_token else None
-    if link.created_by and link.created_by != (requester or ""):
-        raise HTTPException(status_code=403, detail="Not the share owner")
+    if not link.created_by:
+        # Older links have no creator stamp. The authenticated conversation
+        # owner can still manage them; possession of the public token is not
+        # sufficient authorization.
+        _require_owned_conversation(link.conv_uid, actor_id)
+    elif link.created_by != actor_id:
+        raise HTTPException(status_code=404, detail="Share link not found")
     deleted = dao.delete_by_token(token)
     if not deleted:
         raise HTTPException(status_code=404, detail="Share link not found")
@@ -3854,10 +5135,19 @@ async def download_agent_file(
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied: file is not in an allowed directory",
-        )
+        # Bundled examples are copied into the caller's upload root. Keep
+        # that owner-scoped download while retaining upstream's removal of
+        # unrestricted access to the repository and shared upload tree.
+        try:
+            resolved = resolve_legacy_chat_file_path(
+                file_path=file_path,
+                owner_id=user_token.user_id if user_token else None,
+                base_dir=_legacy_upload_base_dir(),
+            )
+        except AttachmentInputError as error:
+            raise HTTPException(
+                status_code=error.status_code, detail=error.message
+            ) from error
 
     if not os.path.isfile(resolved):
         raise HTTPException(status_code=404, detail="File not found")
@@ -4023,7 +5313,7 @@ async def question_reply(
     try:
         question_manager.reply(request_id, body.answers)
         return Result.succ({"success": True, "request_id": request_id})
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))
 
 
@@ -4038,5 +5328,5 @@ async def question_reject(
     try:
         question_manager.reject(request_id)
         return Result.succ({"success": True, "request_id": request_id})
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))

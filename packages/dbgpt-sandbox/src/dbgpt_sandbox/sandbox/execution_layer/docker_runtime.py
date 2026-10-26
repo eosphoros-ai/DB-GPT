@@ -5,12 +5,14 @@
 import asyncio
 import base64
 import io
+import json
 import os
 import shutil
 import tarfile
 import tempfile
 import time
-from pathlib import Path, PurePosixPath
+from dataclasses import replace
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional
 
 try:
@@ -34,10 +36,38 @@ class DockerSandboxSession(SandboxSession):
     """异步 Docker 沙箱会话实现"""
 
     def __init__(self, session_id: str, config: SessionConfig, docker_client):
+        # Linux containers cannot use Windows drive paths. Keep host paths for
+        # archive IO and translate only the container-facing paths/environment.
+        environment = {
+            key: self._container_path(value)
+            for key, value in config.environment_vars.items()
+        }
+        self._file_mapping = None
+        mapping_path = config.environment_vars.get("FILES_JSON")
+        if mapping_path and PureWindowsPath(mapping_path).drive:
+            mapping = json.loads(Path(mapping_path).read_text(encoding="utf-8"))
+            self._file_mapping = json.dumps(
+                {key: self._container_path(value) for key, value in mapping.items()}
+            ).encode("utf-8")
+            environment["FILES_JSON"] = "/tmp/dbgpt-inputs/files.json"
+        config = replace(
+            config,
+            working_dir=self._container_path(config.working_dir),
+            environment_vars=environment,
+        )
         super().__init__(session_id, config)
         self.docker_client = docker_client
         self.container = None
         self.image_name = config.image or self._get_image_name(config.language)
+
+    @staticmethod
+    def _container_path(path: str) -> str:
+        """Preserve POSIX paths; map Windows drive/UNC paths deterministically."""
+        windows = PureWindowsPath(path)
+        if not windows.drive or not windows.is_absolute():
+            return path
+        drive = windows.drive.rstrip(":").replace("\\", "/").strip("/")
+        return str(PurePosixPath("/workspace/host", drive, *windows.parts[1:]))
 
     def _get_image_name(self, language: str) -> str:
         return LANGUAGE_IMAGES.get(language, "python:3.11-slim")
@@ -82,6 +112,12 @@ class DockerSandboxSession(SandboxSession):
                     [self.config.host_working_dir, *self.config.input_files]
                 ):
                     await asyncio.to_thread(self._upload_path, path)
+            if self._file_mapping is not None:
+                await asyncio.to_thread(
+                    self._upload_bytes,
+                    self.config.environment_vars["FILES_JSON"],
+                    self._file_mapping,
+                )
             return True
         except Exception as e:
             print(f"启动 Docker 容器失败: {e}")
@@ -127,9 +163,8 @@ class DockerSandboxSession(SandboxSession):
             raise FileNotFoundError(source)
         if source.is_symlink():
             raise ValueError(f"Sandbox input must not be a symlink: {source}")
-        result = self.container.exec_run(
-            ["mkdir", "-p", "--", str(source.parent)], workdir="/"
-        )
+        parent = str(PurePosixPath(self._container_path(str(source))).parent)
+        result = self.container.exec_run(["mkdir", "-p", "--", parent], workdir="/")
         if result.exit_code:
             raise RuntimeError(f"Cannot prepare sandbox input dir: {source.parent}")
         with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as archive:
@@ -142,8 +177,24 @@ class DockerSandboxSession(SandboxSession):
                     ),
                 )
             archive.seek(0)
-            if not self.container.put_archive(str(source.parent), archive):
+            if not self.container.put_archive(parent, archive):
                 raise RuntimeError(f"Cannot upload sandbox input: {source}")
+
+    def _upload_bytes(self, path: str, data: bytes) -> None:
+        target = PurePosixPath(path)
+        result = self.container.exec_run(
+            ["mkdir", "-p", "--", str(target.parent)], workdir="/"
+        )
+        if result.exit_code:
+            raise RuntimeError(f"Cannot prepare sandbox manifest: {target}")
+        archive = io.BytesIO()
+        with tarfile.open(fileobj=archive, mode="w") as tar:
+            member = tarfile.TarInfo(target.name)
+            member.size = len(data)
+            tar.addfile(member, io.BytesIO(data))
+        archive.seek(0)
+        if not self.container.put_archive(str(target.parent), archive):
+            raise RuntimeError(f"Cannot upload sandbox manifest: {target}")
 
     async def collect_artifacts(self) -> None:
         """Copy workspace files back without extracting links or escaping cwd."""

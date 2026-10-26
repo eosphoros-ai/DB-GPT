@@ -15,6 +15,45 @@ def _decode_sse_event(event: str):
     return json.loads(event.removeprefix("data: ").strip())
 
 
+@pytest.mark.parametrize(
+    ("prompt", "expected"),
+    [
+        ("[[confirm-dashboard:dash_123]] confirm", "dash_123"),
+        ("[[revise-dashboard-plan:dash-456]] revise", "dash-456"),
+        ("[[modify-dashboard:dash789]] update", "dash789"),
+        (
+            "[[dashboard-annotation:dash_123:annotation_9]] propose",
+            "dash_123",
+        ),
+        ("please build a dashboard", None),
+    ],
+)
+def test_dashboard_workflow_marker_recovers_dashboard_id(prompt, expected) -> None:
+    assert agentic_data_api._dashboard_id_from_workflow_marker(prompt) == expected
+
+
+@pytest.mark.parametrize(
+    ("prompt", "creation_mode", "expected"),
+    [
+        ("只做一个年度收入表", "dashboard", True),
+        ("Show annual revenue", "dashboard", True),
+        ("Show annual revenue", "skill", False),
+        ("Show annual revenue", None, False),
+        ("Show annual revenue", "dashboards", False),
+        ("制作销售看板", None, True),
+        ("[[confirm-dashboard:dash_123]] confirm", "skill", True),
+        ("[[dashboard-annotation:dash_123:ann_9]] explain", None, True),
+    ],
+)
+def test_composer_mode_routes_implicit_dashboard_requests(
+    prompt, creation_mode, expected
+) -> None:
+    assert (
+        agentic_data_api._is_dashboard_workflow_request(prompt, creation_mode)
+        is expected
+    )
+
+
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
     class _FailingStorageConversation:
         def add_view_message(self, payload: str) -> None:
@@ -57,7 +96,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
@@ -87,7 +128,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
 async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
-    async def _failing_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _failing_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode, agent_task_holder
         if False:
             yield ""
@@ -119,7 +162,7 @@ async def test_runtime_failure_emits_structured_final_and_done(
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -157,7 +200,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)

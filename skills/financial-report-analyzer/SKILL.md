@@ -17,7 +17,7 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
    - 使用 `execute_skill_script_file` 执行 `scripts/calculate_ratios.py`，传入 Step 1 的 JSON 数据。
    - 自动计算毛利率、净利率、ROE、资产负债率等关键指标，输出 30 个模板占位符键值。
    - 参考 `references/financial_metrics.md` 确保指标定义的准确性。
-   - **系统会自动保存返回的 JSON 结果**（`react_state["ratio_data"]`），后续 html_interpreter 会自动合并。
+   - 系统将脚本的实际 JSON 结果捕获为 Python 产物，并通过通用 `auto_data` 传递模板字段，后续 `html_interpreter` 会自动合并。不使用专用 `ratio_data` 状态。
 
 3. **图表生成**：
    - 使用 `execute_skill_script_file` 执行 `scripts/generate_charts.py`，传入 Step 1 的 JSON 数据。
@@ -60,6 +60,7 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
      - Step 2 的 30 个数据指标（COMPANY_NAME、REVENUE、NET_PROFIT 等）
      - Step 3 的图表 URL（CHART_FINANCIAL_OVERVIEW、CHART_PROFITABILITY、CHART_ASSET_STRUCTURE）
    - **绝对不要**在 `data` 中包含数据指标或图表路径，否则 JSON 过大会导致截断。
+   - 分析正文中的业务数值必须引用产生它的 SQL/Python 产物；通过 `report_evidence_manifest` 查看实际字段和路径，不手填或猜测选择器。使用知识库口径时，将对应切片绑定到具体方法说明；来源绑定不代表已通过确定性核验。
 
 6. **完成**：
    - 调用 `terminate` 返回 1-2 句话的简短摘要。
@@ -72,7 +73,7 @@ Step 1: execute_skill_script_file(skill_name="financial-report-analyzer", script
   → 返回 JSON: {"revenue": 10500000000, "net_profit": 1200000000, ...}  （记为 raw_data）
 
 Step 2: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="calculate_ratios.py", args=<raw_data>)
-  → 返回 30 个模板键值，系统自动记录到 react_state["ratio_data"]
+  → 返回 30 个模板键值，系统捕获 Python 产物并通过通用 auto_data 传递模板字段
 
 Step 3: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="generate_charts.py", args=<raw_data>)
   → 生成图表，系统自动复制到 /images/ 并记录 URL 映射
@@ -89,7 +90,7 @@ Step 6: terminate(result="简短摘要")
 
 - **脚本**（均通过 `execute_skill_script_file` 执行）：
   - `scripts/extract_financials.py`：接收 `file_path` 参数，读取财报文件（支持 PDF 和文本格式），提取核心财务数据。
-  - `scripts/calculate_ratios.py`：计算财务比率，输出 30 个模板占位符键值。系统自动记录结果。
+  - `scripts/calculate_ratios.py`：计算财务比率，输出 30 个模板占位符键值。系统捕获实际结果和来源，复用通用模板数据流程。
   - `scripts/generate_charts.py`：生成 3 张可视化图表（matplotlib），系统自动处理图片复制。
   - `scripts/fill_template.py`：（备用）接收 `ratio_data`、`chart_paths`、`analysis` 三个参数，读取 HTML 模板并替换所有占位符。正常情况下不需要使用此脚本，因为 html_interpreter 的 template_path 模式会自动完成模板填充。
 - **参考**：

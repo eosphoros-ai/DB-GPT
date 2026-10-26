@@ -11,9 +11,51 @@ import json
 import pytest
 
 from dbgpt.agent import AgentContext, AgentMessage
+from dbgpt.agent.expand.actions.react_action import Terminate
+from dbgpt.agent.expand.actions.tool_action import ToolCallSpec, run_tools_batch
 from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.resource.tool.pack import ToolPack
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("key", ["output", "result", "final_answer"])
+async def test_text_terminate_returns_only_final_answer(key):
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    out = await agent.act(
+        AgentMessage(
+            content=(
+                "Thought: Task finished.\nAction: terminate\n"
+                f'Action Input: {{"{key}": "技能已创建"}}'
+            )
+        ),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success is True
+    assert out.terminate is True
+    assert out.content == "技能已创建"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("answer", ["...", "…", "", "  "])
+async def test_placeholder_terminate_does_not_end_task(answer):
+    out = await Terminate().run(
+        "Thought: Retry with shell.\nAction: terminate\nAction Input: "
+        + json.dumps({"output": answer})
+    )
+    assert out.is_exe_success is False
+    assert out.terminate is False
+    with pytest.raises(ValueError, match="non-empty final answer"):
+        Terminate().execute(output=answer)
+    native = await run_tools_batch(
+        [ToolCallSpec(name="terminate", args={"output": answer})],
+        ToolPack([Terminate()]),
+        need_vis_render=False,
+    )
+    assert native.is_exe_success is False
+    assert native.terminate is not True
 
 
 @tool(description="Add two numbers")
@@ -58,6 +100,35 @@ def _act_kwargs(agent, enable_parallel):
         "enable_parallel": enable_parallel,
         "tool_calls": None,
     }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["html_interpreter", "append_report_sections"])
+async def test_invalid_report_call_uses_bounded_repair_handler(name):
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    failures = []
+
+    def handle(raw_call, reason):
+        failures.append((raw_call, reason))
+        return "Report call needs valid JSON"
+
+    object.__setattr__(
+        agent,
+        "_report_repair_state",
+        {
+            "_report_invalid_call_handler": handle,
+        },
+    )
+    calls = [{"function": {"name": name, "arguments": '{"sections":['}}]
+    object.__setattr__(agent, "_pending_native_tool_calls", calls)
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    out = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+    assert out.is_exe_success is False
+    assert len(failures) == 1
+    assert "JSON line" in failures[0][1]
+    assert out.content == "Report call needs valid JSON"
 
 
 @pytest.mark.asyncio

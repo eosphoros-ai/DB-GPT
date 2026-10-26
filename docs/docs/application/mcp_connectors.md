@@ -15,7 +15,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 
 ## Highlights
 
-- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, and DeepWiki.
+- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Keenable Search, and DeepWiki.
 - **Custom MCP servers** — Connect any SSE or Streamable HTTP MCP endpoint with your own auth.
 - **Per-conversation selection** — Choose which connectors to attach in the composer; the agent's prompt stays focused and token-efficient.
 - **Human-in-the-loop confirmation** — Write actions (create / update / delete) pop a confirmation dialog before they run.
@@ -55,6 +55,7 @@ A connector lives in one of three states:
 | Notion | Document | Streamable HTTP | Pages and databases read / write |
 | Linear | Project | Streamable HTTP | Issues / projects collaboration |
 | Tavily | Search | Streamable HTTP | LLM-optimized web search, returns Markdown |
+| Keenable Search | Search | Streamable HTTP | Web search and page fetch; works without an account or API key |
 | DeepWiki | Dev Tools | Streamable HTTP | AI reading & Q&A over any GitHub repo |
 
 ## Managing connectors
@@ -85,6 +86,15 @@ Click **Add Connector** to open the dialog:
 | **Connector description** | Optional. Shown in the agent's tool description. |
 
 For a custom server, just provide the endpoint URL, transport, and authentication. Credentials are encrypted before they are stored.
+
+### Example: activate Keenable Search
+
+Keenable Search is a hosted MCP server for web search and page fetching. It does not require an account or an API key: the public tier is rate-limited, and an optional `KEENABLE_API_KEY` raises those limits. Queries and URLs are sent to Keenable.
+
+1. On the **Keenable Search** card, click **Activate**.
+2. Set **Streamable HTTP Endpoint URL** to `https://api.keenable.ai/mcp`.
+3. Leave **Auth type** as `none`. To use an API key instead, choose `bearer` and paste the key into the token field (it is sent as `Authorization: Bearer <key>`).
+4. Save. The connector exposes two read-only tools, `search_web_pages` and `fetch_page_content`, so no confirmation dialog is involved.
 
 ### Inspect the tools
 

@@ -4,6 +4,7 @@ import os
 import tempfile
 from pathlib import Path
 from typing import List
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -82,6 +83,95 @@ def serve(system_app: SystemApp, tmp_path) -> SessionFileServe:
 
 
 class TestServeMounting:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("files_registered_first", [False, True])
+    async def test_scheduled_task_freezes_files_with_either_registration_order(
+        self, system_app, tmp_path, monkeypatch, files_registered_first
+    ):
+        from dbgpt_serve.scheduled_task import serve as task_serve_module
+        from dbgpt_serve.scheduled_task.api import endpoints as task_endpoints
+        from dbgpt_serve.scheduled_task.api.schemas import (
+            ChatReplayPayload,
+            CreateTaskRequest,
+        )
+        from dbgpt_serve.scheduled_task.config import ServeConfig as TaskConfig
+        from dbgpt_serve.scheduled_task.serve import ScheduledTaskServe
+
+        # Disable execution, not CRUD. Match the real Serve construction instead
+        # of injecting a registry into the service (which hid the wiring bug).
+        monkeypatch.setenv("DBGPT_CHAT_TASK_SCHEDULER_ENABLED", "0")
+        scheduler = MagicMock()
+        scheduler.add_job = AsyncMock()
+        scheduler.remove_job = AsyncMock()
+        scheduler.get_job.return_value = None
+        scheduler.is_running.return_value = False
+        monkeypatch.setattr(task_serve_module, "TaskScheduler", lambda **_: scheduler)
+        monkeypatch.setattr(task_endpoints, "_service_instance", None)
+        monkeypatch.setattr(task_endpoints, "global_system_app", None)
+
+        def register_files():
+            return system_app.register(
+                SessionFileServe,
+                config=_test_config(),
+                storage_client=_local_storage_client(tmp_path),
+                work_root=tmp_path / "work",
+            )
+
+        if files_registered_first:
+            files = register_files()
+        tasks = system_app.register(ScheduledTaskServe, config=TaskConfig())
+        if not files_registered_first:
+            assert tasks._get_session_file_registry() is None
+            files = register_files()
+        tasks.on_init()
+        db.create_all()
+        await tasks.async_after_start()
+
+        client = TestClient(system_app.app)
+        uploaded = client.post(
+            PREFIX,
+            data={"session_id": "schedule-session"},
+            files=[("files", ("report.csv", CSV_CONTENT, "text/csv"))],
+            headers=ALICE,
+        ).json()
+        assert uploaded["success"] is True
+        file_id = uploaded["data"][0]["file_id"]
+        try:
+            task = await tasks._service.create_task(
+                CreateTaskRequest(
+                    task_name="File replay",
+                    cron_expression="0 9 * * *",
+                    payload=ChatReplayPayload(
+                        version=2,
+                        user_input="Summarize report.csv",
+                        chat_mode="chat_react_agent",
+                        model_name="test-model",
+                        ext_info={
+                            "session_id": "schedule-session",
+                            "file_ids": [file_id],
+                        },
+                    ),
+                ),
+                user_name="alice",
+                owner_id="alice",
+            )
+            frozen = files.registry.list_task_files(
+                owner_id="alice", task_id=task.task_id
+            )
+            assert len(frozen) == 1
+            assert frozen[0].file_id != file_id
+            assert task.payload.ext_info["file_ids"] == [frozen[0].file_id]
+            await tasks._service.delete_task(task.task_id, owner_id="alice")
+            assert not files.registry.list_task_files(
+                owner_id="alice", task_id=task.task_id
+            )
+            originals = files.registry.list_files(
+                owner_id="alice", session_id="schedule-session"
+            )
+            assert len(originals) == 1
+        finally:
+            await files.async_before_stop()
+
     def test_router_mounted_under_agent_files_prefix(self, serve, system_app):
         routes = {
             (route.path, method)

@@ -121,7 +121,7 @@ uv sync --all-packages \
 
 ### Run Webserver
 
-To run DB-GPT with OpenAI proxy, you must provide the OpenAI API key in the `configs/dbgpt-proxy-openai.toml` configuration file or privide it in the environment variable with key `OPENAI_API_KEY`.
+To run DB-GPT with OpenAI proxy, you must provide the OpenAI API key in the `configs/dbgpt-proxy-openai.toml` configuration file or provide it in the environment variable with key `OPENAI_API_KEY`.
 
 ```toml
 # Model Configurations
