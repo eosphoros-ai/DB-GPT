@@ -310,25 +310,31 @@ class QdrantStore(VectorStoreBase):
                 f"Expected one of: {[t.value for t in TokenizerType]}"
             )
 
+        scoring = TextScoringParams(type=TextScoringType.BM25)
+        field_schema = TextIndexParams(
+            type=TextIndexType.TEXT, tokenizer=tokenizer, scoring=scoring
+        )
         payload_schema = self._client.get_collection(collection_name).payload_schema
-        if "content" in payload_schema:
-            params = payload_schema["content"].params
-            existing = getattr(params, "tokenizer", None) or TokenizerType.WORD
+        params = (
+            payload_schema["content"].params if "content" in payload_schema else None
+        )
+        if isinstance(params, TextIndexParams):
+            existing = params.tokenizer or TokenizerType.WORD
             if existing != tokenizer:
                 logger.warning(
                     f"Qdrant collection {collection_name} already has a text index "
                     f"with tokenizer {existing.value!r}; configured tokenizer "
                     f"{tokenizer.value!r} only applies to new collections."
                 )
-            return
+            if params.scoring is not None:
+                return
+            # Existing text index lacks BM25 scoring: recreate it with scoring,
+            # keeping its text-processing settings.
+            field_schema = params.model_copy(update={"scoring": scoring})
         self._client.create_payload_index(
             collection_name=collection_name,
             field_name="content",
-            field_schema=TextIndexParams(
-                type=TextIndexType.TEXT,
-                tokenizer=tokenizer,
-                scoring=TextScoringParams(type=TextScoringType.BM25),
-            ),
+            field_schema=field_schema,
         )
 
     @staticmethod
