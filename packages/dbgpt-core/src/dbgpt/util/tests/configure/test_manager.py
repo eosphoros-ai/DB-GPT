@@ -1,6 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass, field
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
@@ -1926,3 +1927,25 @@ def test_parse_config_rejects_ambiguous_bool_string():
     )
     with pytest.raises(ValueError):
         config_manager.parse_config(TlsToggleConfig, "tls")
+
+
+@pytest.mark.parametrize(
+    "raw_value, expected",
+    [
+        (Decimal("0"), False),
+        (Decimal("1"), True),
+        (Decimal("0.0"), False),
+    ],
+)
+def test_parse_config_preserves_numeric_bool_truthiness(raw_value, expected):
+    """Numeric values must keep the truthiness they had from ``bool(value)``.
+
+    A config dictionary can carry ``Decimal`` (or another ``numbers.Number``)
+    for a bool field. Before the strict string coercion, ``bool(Decimal("0"))``
+    was ``False``; routing only ``int``/``float`` through the helper would have
+    turned that into a ``ValueError``.
+    """
+    config_manager = ConfigurationManager(
+        {"tls": {"verify_certs": raw_value}}, resolve_env_vars=False
+    )
+    assert config_manager.parse_config(TlsToggleConfig, "tls").verify_certs is expected

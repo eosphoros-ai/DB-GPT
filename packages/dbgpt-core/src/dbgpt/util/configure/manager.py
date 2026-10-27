@@ -1,5 +1,6 @@
 import abc
 import logging
+import numbers
 import os
 import re
 from collections.abc import Callable
@@ -213,7 +214,10 @@ def _to_bool(value: Any) -> bool:
         if normalized in _FALSE_STRINGS:
             return False
         raise ValueError(f"Cannot convert {value!r} to bool")
-    if isinstance(value, (int, float)):
+    if isinstance(value, numbers.Number):
+        # bool is handled above; this keeps the truthiness of int/float and
+        # numeric config values such as Decimal("0") that ``bool(value)``
+        # already accepted before this helper existed.
         return bool(value)
     raise ValueError(f"Cannot convert {value} to bool")
 
