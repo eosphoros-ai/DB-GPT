@@ -149,3 +149,43 @@ def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry)
     assert "content" not in str(after.manifest_snapshot["skills"])
     assert registry.current_pin("existing-conv") == ("db-query", "1.0.0")
     assert registry.sync_official([native]).unchanged == ["db-query"]
+
+
+@pytest.mark.parametrize("source", ["official", "enterprise"])
+def test_same_package_refreshes_localized_snapshot_preserving_state(registry, source):
+    root = Path(__file__).resolve().parents[6] / "assets/suites/db-query"
+    native = load_suite_dir(root)
+    stale = replace(
+        native,
+        snapshot={
+            key: value
+            for key, value in native.snapshot.items()
+            if key not in ("description_en", "skill_details")
+        },
+    )
+
+    def register(pkg):
+        if source == "official":
+            return registry.sync_official([pkg])
+        return registry.install_from_package(pkg, source=source)
+
+    register(stale)
+    registry.set_enabled(native.name, False, user_name="owner")
+    registry.record_pin("existing-conv", native.name, native.version)
+    before = registry.get(native.name)
+    events_before = registry.list_events(native.name)
+    register(native)
+    after = registry.get(native.name)
+    assert after.manifest_snapshot == native.snapshot
+    assert after.manifest_snapshot["description_en"]
+    assert after.manifest_snapshot["skill_details"]
+    assert after.id == before.id
+    assert after.status == STATUS_DISABLED
+    assert after.use_count == before.use_count == 1
+    assert after.source == source
+    assert after.user_name == before.user_name == "owner"
+    assert after.version == before.version
+    assert after.package_digest == before.package_digest
+    assert registry.list_events(native.name) == events_before
+    register(native)
+    assert registry.get(native.name).manifest_snapshot == native.snapshot

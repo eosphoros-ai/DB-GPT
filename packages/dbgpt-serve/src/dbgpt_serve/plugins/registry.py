@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from .api.schemas import SuiteEventResponse, SuiteResponse, SuiteSyncSummary
 from .loader import SuitePackage
-from .models.models import SuiteDao, SuiteEventDao
+from .models.models import SuiteDao, SuiteEntity, SuiteEventDao
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +68,7 @@ class SuiteRegistry:
                 )
                 summary.upgraded.append(pkg.name)
             else:
+                self._refresh_snapshot(existing, pkg)
                 summary.unchanged.append(pkg.name)
 
         # Packages removed from disk: fail-soft disable, never raise.
@@ -87,6 +88,13 @@ class SuiteRegistry:
         return summary
 
     # ------------------------------------------------------------- runtime ops
+    def _refresh_snapshot(self, existing: SuiteEntity, pkg: SuitePackage) -> None:
+        """Rebuild derived metadata when the loader changes for the same package."""
+        if self._dao.to_response(existing).manifest_snapshot != pkg.snapshot:
+            self._dao.update_package(
+                existing, pkg, user_name=existing.user_name or "system"
+            )
+
     def set_enabled(
         self,
         name: str,
@@ -208,6 +216,8 @@ class SuiteRegistry:
                 detail={"digest": pkg.digest, "source": source},
                 user_name=user_name,
             )
+        else:
+            self._refresh_snapshot(existing, pkg)
         row = self._dao.get_by_name(pkg.name)
         return self._dao.to_response(row)  # type: ignore[arg-type]
 

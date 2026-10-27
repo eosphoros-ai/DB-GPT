@@ -28,6 +28,7 @@ const suites = [
       display_en: 'Smart Data Query',
       description: '中文简介',
       description_en: 'Query data using validated read-only SQL',
+      skills: ['nl2sql-precision'],
       commands: [
         {
           name: '/nl2sql',
@@ -217,6 +218,45 @@ test('English plugins list and detail render localized content and search', asyn
   await expect(page.getByTestId('suite-readme')).toContainText('English plugin overview');
   await expect(page.getByTestId('suite-readme')).not.toContainText('中文说明');
 });
+
+for (const path of ['/', '/construct/suites/']) {
+  test(`language switching refreshes stale plugin metadata on ${path}`, async ({ page }) => {
+    await setup(page);
+    let refreshed = false;
+    let requests = 0;
+    await page.route('**/api/v1/suites', route => {
+      requests += 1;
+      const data = refreshed
+        ? suites
+        : suites.map(suite => ({
+            ...suite,
+            skill_details: [],
+            manifest_snapshot: {
+              ...suite.manifest_snapshot,
+              description_en: undefined,
+              recommended_questions: suite.manifest_snapshot.recommended_questions?.map(question => ({
+                ...question,
+                text_en: undefined,
+              })),
+            },
+          }));
+      return route.fulfill({ json: { success: true, data } });
+    });
+    await page.goto(path);
+    await expect.poll(() => requests).toBeGreaterThan(0);
+    const previousRequests = requests;
+    refreshed = true;
+    await page.locator('[aria-label="global"]').click();
+    await expect.poll(() => requests).toBeGreaterThan(previousRequests);
+    if (path === '/') {
+      await expect(page.getByRole('button', { name: /Average order value by category/ })).toBeVisible();
+    } else {
+      await expect(page.getByText('Query data using validated read-only SQL')).toBeVisible();
+      await expect(page.getByText('NL2SQL Precision', { exact: true })).toBeVisible();
+      await expect(page.getByText('中文简介', { exact: true })).toHaveCount(0);
+    }
+  });
+}
 
 test('English examples keep database and canonical command bindings', async ({ page }) => {
   const sends = await setup(page, databases, 'en');

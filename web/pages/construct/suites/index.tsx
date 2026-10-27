@@ -47,7 +47,7 @@ const SuitesPage = () => {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, i18n.language]);
 
   const groups = useMemo(() => {
     const match = (s: SuiteItem) => {

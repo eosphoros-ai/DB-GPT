@@ -871,7 +871,7 @@ const Playground: NextPage = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [i18n.language]);
 
   const routedSuiteHit = useMemo(() => scoreSuites(query, suites), [query, suites]);
   const routedSuite = useMemo(
