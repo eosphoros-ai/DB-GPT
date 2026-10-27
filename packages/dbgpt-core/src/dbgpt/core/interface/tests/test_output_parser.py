@@ -1,5 +1,9 @@
 """Tests for :class:`BaseOutputParser.parse_prompt_response`."""
 
+import json
+
+import pytest
+
 from dbgpt.core.interface.output_parser import BaseOutputParser
 
 
@@ -61,3 +65,39 @@ def test_parse_prompt_response_bracket_inside_string_value():
     parser = _parser()
     text = 'Result:\n["a]b", "c"]\nDone.'
     assert parser.parse_prompt_response(text) == '["a]b", "c"]'
+
+
+def test_parse_prompt_response_escaped_quote_inside_string_value():
+    """A backslash-escaped quote must not end the JSON string."""
+    parser = _parser()
+    text = 'Result:\n{"sql": "SELECT \\"x\\" FROM t"}\nDone.'
+    assert parser.parse_prompt_response(text) == ('{"sql": "SELECT \\"x\\" FROM t"}')
+
+
+def test_parse_prompt_response_escaped_backslash_before_closing_quote():
+    """``\\\\`` inside a string is data, so the following quote still closes it."""
+    parser = _parser()
+    text = 'Result:\n{"path": "C:\\\\"}\nDone.'
+    result = parser.parse_prompt_response(text)
+    assert result == '{"path": "C:\\\\"}'
+    assert json.loads(result) == {"path": "C:\\"}
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'Result: {"a": 1',
+        'Result: ["a", "b"',
+        'Result: {"a": "unterminated',
+    ],
+)
+def test_parse_prompt_response_unterminated_input_is_returned_unchanged(text):
+    """Unterminated JSON falls back to the raw model output, not a fragment.
+
+    ``_json_interception`` returns ``""`` for an unterminated object/array, and
+    ``parse_prompt_response`` then returns the original text. The important
+    part is that no truncated fragment is handed to ``json.loads``.
+    """
+    parser = _parser()
+    assert parser._json_interception(text) == ""
+    assert parser.parse_prompt_response(text) == text
