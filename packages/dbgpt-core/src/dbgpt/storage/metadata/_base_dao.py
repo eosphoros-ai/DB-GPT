@@ -325,6 +325,8 @@ class BaseDao(Generic[T, REQ, RES]):
         Returns:
             PaginationResult: The pagination result.
         """
+        page = max(page, 1)
+        page_size = max(page_size, 1)
         with self.session() as session:
             query = self._create_query_object(session, query_request, desc_order_column)
             total_count = query.count()
