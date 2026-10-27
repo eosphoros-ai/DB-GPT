@@ -28,7 +28,11 @@ _USAGE = [("app-a", 5), ("app-b", 4), ("app-c", 3), ("app-d", 2), ("app-e", 1)]
 def hot_app_db():
     """Seed an in-memory database with five published apps and their history."""
     db.init_db("sqlite:///:memory:")
-    db.create_all()
+    # Create only the two tables this test drives. ``db.create_all()`` walks the
+    # shared metadata, so any test module that imported ``GptsAppEntity`` would
+    # make the stand-in ``gpts_app`` below collide with the real table.
+    ChatHistoryEntity.__table__.create(bind=db.engine)
+    ChatHistoryMessageEntity.__table__.create(bind=db.engine)
 
     with db.session() as session:
         # Minimal stand-in for the gpts_app table the hot-app SQL joins.
