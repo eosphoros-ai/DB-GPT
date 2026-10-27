@@ -1874,3 +1874,55 @@ def test_model_config_lists():
     type_desc = next(d for d in deploy_fields if d.param_name == "type")
     assert type_desc.param_type == "string"
     assert not type_desc.is_array
+
+
+@dataclass
+class TlsToggleConfig:
+    """A dataclass with a bool field to exercise value coercion."""
+
+    verify_certs: bool = True
+
+
+@pytest.mark.parametrize(
+    "raw_value, expected",
+    [
+        ("true", True),
+        ("True", True),
+        ("1", True),
+        ("yes", True),
+        ("false", False),
+        ("False", False),
+        ("0", False),
+        ("no", False),
+        ("off", False),
+    ],
+)
+def test_parse_config_coerces_bool_strings(raw_value, expected):
+    """A TOML/env string must not become True just because it is non-empty.
+
+    ``bool("false")`` is ``True`` in Python, so a value such as
+    ``verify_certs = "false"`` used to enable the field it was meant to
+    disable.
+    """
+    config_manager = ConfigurationManager(
+        {"tls": {"verify_certs": raw_value}}, resolve_env_vars=False
+    )
+    assert config_manager.parse_config(TlsToggleConfig, "tls").verify_certs is expected
+
+
+def test_parse_config_coerces_bool_from_env_var(monkeypatch):
+    """The ${env:NAME:-default} form must coerce the substituted value too."""
+    monkeypatch.setenv("DBGPT_TEST_VERIFY_CERTS", "false")
+    config_manager = ConfigurationManager(
+        {"tls": {"verify_certs": "${env:DBGPT_TEST_VERIFY_CERTS:-true}"}}
+    )
+    assert config_manager.parse_config(TlsToggleConfig, "tls").verify_certs is False
+
+
+def test_parse_config_rejects_ambiguous_bool_string():
+    """A string that is not a recognized boolean must not silently become True."""
+    config_manager = ConfigurationManager(
+        {"tls": {"verify_certs": "definitely"}}, resolve_env_vars=False
+    )
+    with pytest.raises(ValueError):
+        config_manager.parse_config(TlsToggleConfig, "tls")

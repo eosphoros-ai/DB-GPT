@@ -192,6 +192,32 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
         return cls.__name__.lower()
 
 
+_TRUE_STRINGS = frozenset({"true", "t", "yes", "y", "on", "1"})
+_FALSE_STRINGS = frozenset({"false", "f", "no", "n", "off", "0"})
+
+
+def _to_bool(value: Any) -> bool:
+    """Coerce a configuration value to ``bool`` without the ``bool(str)`` trap.
+
+    TOML carries real booleans, but values coming from ``${env:NAME}``
+    substitution or from a hand-edited config are plain strings. Python treats
+    every non-empty string as truthy, so ``"false"``/``"0"``/``"no"`` used to
+    silently enable the field they were meant to disable.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in _TRUE_STRINGS:
+            return True
+        if normalized in _FALSE_STRINGS:
+            return False
+        raise ValueError(f"Cannot convert {value!r} to bool")
+    if isinstance(value, (int, float)):
+        return bool(value)
+    raise ValueError(f"Cannot convert {value} to bool")
+
+
 def _resolve_env_vars(value: str, env_var_patten=None) -> str:
     """Resolve environment variables in a string value.
 
@@ -483,6 +509,11 @@ class ConfigurationManager:
 
         # Handle basic types
         if origin is None and field_type in (str, int, float, bool):
+            if field_type is bool:
+                # ``bool("false")`` is True: a TOML/env string has to be read as
+                # a boolean literal, otherwise a value such as
+                # ``verify_certs = "false"`` would enable the field it disables.
+                return _to_bool(value)
             try:
                 return field_type(value)
             except (ValueError, TypeError):
