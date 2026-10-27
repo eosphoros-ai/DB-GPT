@@ -17,7 +17,7 @@ import shutil
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, HTTPException
 
 from dbgpt._private.config import Config
 from dbgpt_app.openapi.api_view_model import Result
@@ -238,7 +238,13 @@ async def use_example_file(
             _resolve_user_id,
         )
 
-        user_id = _resolve_user_id(user_token.user_id)
+        # Reject a user-id that is not a plain identifier with the same 400
+        # the sibling upload endpoint returns, instead of letting the generic
+        # handler below turn it into a 200 failure envelope.
+        try:
+            user_id = _resolve_user_id(user_token.user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         source_path = _resolve_example_source(example)
         if source_path is None:
@@ -253,7 +259,10 @@ async def use_example_file(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        upload_dir = _resolve_upload_dir(base_dir, user_id)
+        try:
+            upload_dir = _resolve_upload_dir(base_dir, user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         os.makedirs(upload_dir, exist_ok=True)
 
         try:
@@ -272,6 +281,8 @@ async def use_example_file(
         abs_path = os.path.abspath(target_path).replace("\\", "/")
         logger.info(f"Example file copied: {abs_path}")
         return Result.succ(abs_path)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Failed to use example file: {e}")
         return Result.failed(msg=f"Error: {str(e)}")
