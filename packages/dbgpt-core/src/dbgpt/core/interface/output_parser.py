@@ -171,37 +171,40 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             )
 
     def _json_interception(self, s, is_json_array: bool = False):
-        try:
-            if is_json_array:
-                i = s.find("[")
-                if i < 0:
-                    return ""
-                count = 1
-                for j, c in enumerate(s[i + 1 :], start=i + 1):
-                    if c == "]":
-                        count -= 1
-                    elif c == "[":
-                        count += 1
-                    if count == 0:
-                        break
-                assert count == 0
-                return s[i : j + 1]
-            else:
-                i = s.find("{")
-                if i < 0:
-                    return ""
-                count = 1
-                for j, c in enumerate(s[i + 1 :], start=i + 1):
-                    if c == "}":
-                        count -= 1
-                    elif c == "{":
-                        count += 1
-                    if count == 0:
-                        break
-                assert count == 0
-                return s[i : j + 1]
-        except Exception:
+        opener, closer = ("[", "]") if is_json_array else ("{", "}")
+        i = s.find(opener)
+        if i < 0:
             return ""
+        count = 1
+        in_string = False
+        escaped = False
+        j = i
+        for j, c in enumerate(s[i + 1 :], start=i + 1):
+            if in_string:
+                # Brackets inside a JSON string are data, not structure: a SQL
+                # payload such as json_extract(col, '$.a}') must not close the
+                # object. Track string state and backslash escapes so the scan
+                # only counts structural brackets.
+                if escaped:
+                    escaped = False
+                elif c == "\\":
+                    escaped = True
+                elif c == '"':
+                    in_string = False
+                continue
+            if c == '"':
+                in_string = True
+            elif c == closer:
+                count -= 1
+                if count == 0:
+                    break
+            elif c == opener:
+                count += 1
+        if count != 0:
+            # Unterminated object/array: report no match instead of returning a
+            # truncated fragment that cannot be parsed downstream.
+            return ""
+        return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> Any:
         """Parse model out text to prompt define response.

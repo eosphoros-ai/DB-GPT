@@ -35,3 +35,29 @@ def test_parse_prompt_response_no_fence():
     """Plain JSON without a fence is returned unchanged."""
     parser = _parser()
     assert parser.parse_prompt_response('{"a": 1}') == '{"a": 1}'
+
+
+def test_parse_prompt_response_brace_inside_string_value():
+    """A ``}`` inside a JSON string must not terminate the object early.
+
+    ``_json_interception`` counted raw ``{``/``}`` characters without tracking
+    string literals, so a SQL payload such as
+    ``json_extract(col, '$.a}')`` closed the object at the brace inside the
+    string. The returned text was then truncated mid-token and downstream
+    ``json.loads`` failed, surfacing as "Failed to find a valid json in LLM
+    response".
+    """
+    parser = _parser()
+    text = (
+        'Here is the SQL:\n{"sql": "SELECT json_extract(col, \'$.a}\') FROM t"}\nDone.'
+    )
+    assert parser.parse_prompt_response(text) == (
+        '{"sql": "SELECT json_extract(col, \'$.a}\') FROM t"}'
+    )
+
+
+def test_parse_prompt_response_bracket_inside_string_value():
+    """The same early-termination bug applies to ``]`` in the array branch."""
+    parser = _parser()
+    text = 'Result:\n["a]b", "c"]\nDone.'
+    assert parser.parse_prompt_response(text) == '["a]b", "c"]'
