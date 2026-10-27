@@ -7,9 +7,12 @@ export interface SuiteMessageReference {
 
 export interface SuiteRecommendedQuestion {
   text: string;
+  text_en?: string;
   /** Short display title for the inline composer prefix. */
   title?: string;
+  title_en?: string;
   hint?: string;
+  hint_en?: string;
   /** Named example database; omitted questions use the selected session database. */
   database_name?: string;
   command?: string;
@@ -17,12 +20,26 @@ export interface SuiteRecommendedQuestion {
 
 export interface SuiteCommand {
   name: string;
+  /** Translated label only; requests always use name. */
+  display_en?: string;
+  display?: string;
   aliases?: string[];
   description?: string;
+  description_en?: string;
   summary?: string;
   skill?: string;
   example?: string;
   prefill?: string;
+  prefill_en?: string;
+}
+
+export interface SuiteSkill {
+  name: string;
+  display?: string;
+  display_en?: string;
+  description?: string;
+  description_en?: string;
+  user_invocable?: boolean;
 }
 
 /**
@@ -39,6 +56,7 @@ export interface SuiteManifestSnapshot {
   scenario_id?: string;
   execution?: string;
   description?: string;
+  description_en?: string;
   routing?: {
     keywords?: string[];
     specificity?: number;
@@ -51,6 +69,7 @@ export interface SuiteManifestSnapshot {
   semantic?: Record<string, any>;
   output_contract?: string;
   skills?: string[];
+  skill_details?: SuiteSkill[];
 }
 
 export interface SuiteItem {
@@ -68,7 +87,8 @@ export interface SuiteItem {
   package_digest?: string;
   manifest_snapshot?: SuiteManifestSnapshot;
   readme?: string | null;
-  skill_details?: { name: string; display?: string; description?: string; user_invocable?: boolean }[] | null;
+  readme_locales?: Record<string, string> | null;
+  skill_details?: SuiteSkill[] | null;
   use_count?: number;
   user_name?: string | null;
 }

@@ -70,7 +70,7 @@ import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
-import { resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
+import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
 import {
@@ -832,7 +832,11 @@ const Playground: NextPage = () => {
   // Expert suites (scenario presets) rendered on the home page from the
   // registry (GET /api/v1/suites).  Tab click = explicit preset initializer;
   // the route chip is only a suggestion scored from routing.keywords.
-  const [suites, setSuites] = useState<SuiteItem[]>([]);
+  const [suitePackages, setSuites] = useState<SuiteItem[]>([]);
+  const suites = useMemo(
+    () => suitePackages.map(suite => localizeSuite(suite, i18n.language)),
+    [suitePackages, i18n.language],
+  );
   const [activeSuiteTab, setActiveSuiteTab] = useState<string>('');
   const [suiteQOffset, setSuiteQOffset] = useState(0);
   // Tab click = explicit preset override; until the user touches a tab the
@@ -5679,7 +5683,9 @@ const Playground: NextPage = () => {
                             <span className='truncate'>
                               {suiteDisplayName(effectiveSuite, i18n.language)}
                               {' · '}
-                              {effectiveSuiteCommand?.name || t('suite_command_choose')}
+                              {effectiveSuiteCommand?.display ||
+                                effectiveSuiteCommand?.name ||
+                                t('suite_command_choose')}
                             </span>
                           </span>
                         )}
@@ -6488,7 +6494,7 @@ const Playground: NextPage = () => {
                                 : 'border-gray-200 text-gray-600 hover:border-green-300 dark:border-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            {command.name}
+                            {command.display || command.name}
                           </button>
                         </Tooltip>
                       ))}
@@ -6559,7 +6565,11 @@ const Playground: NextPage = () => {
                                 </h3>
                                 {q.command && (
                                   <div className='mb-2 text-xs text-green-700 dark:text-green-300'>
-                                    {t('suite_command_label', { command: q.command })}
+                                    {t('suite_command_label', {
+                                      command:
+                                        activeSuite?.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command)
+                                          ?.display || q.command,
+                                    })}
                                   </div>
                                 )}
                                 {q.hint && (

@@ -36,6 +36,9 @@ class SuiteResponse(BaseModel):
     readme: Optional[str] = Field(
         None, description="Package README.md text (detail page only, read from disk)"
     )
+    readme_locales: Optional[Dict[str, str]] = Field(
+        None, description="Localized README texts, read from package files"
+    )
     skill_details: Optional[List[Dict[str, Any]]] = Field(
         None, description="Per-skill name+summary for the detail page (read from disk)"
     )

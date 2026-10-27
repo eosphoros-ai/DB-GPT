@@ -1,6 +1,9 @@
 ---
 name: explain-plan
 name_zh: 执行计划解读
+name_en: Execution Plan Review
+description_en: Interpret a SQL execution plan and identify full scans, index issues, sorting, and lock evidence. Clearly mark findings that still require verification.
+argument-hint-en: Review the EXPLAIN output for this SQL and identify plan issues
 command: /explain
 description: 解读单条 SQL 的执行计划，定位全表扫描、索引失效、排序与锁等待证据。
 user-invocable: true

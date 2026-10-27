@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "displayNameCn": "智能运维",
   "displayName": "Smart Database Operations",
+  "descriptionEn": "Inspect slow queries, execution plans, database health, indexes, and storage profiles. Produce diagnostics and repair proposals with evidence and change-risk assessments. Changes require approval; production DDL is denied by default.",
   "descriptionZh": "面向企业业务库（非数仓）的智能运维工作台。以 DBA 角色执行\"采集慢日志/EXPLAIN → 聚合多维信息 → 根因定位 → 诊断 → 修复提案\"五步链，产出诊断报告、修复计划、 执行计划与血缘影响四类产物。覆盖慢查询诊断、健康巡检、索引优化、画像治理、 受控 DDL 评审五个技能。含破坏性操作（DDL/ANALYZE），审批最严：破坏性动作一律 人确认，生产库 DDL 默认拒绝，修复永远是\"提案 + 人确认\"，套件不自动执行变更。",
   "author": { "name": "DB-GPT Official" },
   "category": "engineering",
@@ -138,26 +139,38 @@
     "recommended_questions": [
       {
         "text": "订单库昨晚慢查询根因",
+        "text_en": "Diagnose last night's slow queries in the orders database",
+        "hint_en": "Collect slow logs and EXPLAIN evidence, identify causes, and propose repairs",
         "hint": "采集慢日志+EXPLAIN→聚合→根因→修复提案"
       },
       {
         "text": "生产库健康巡检出报告",
+        "text_en": "Run a health inspection of the production database and produce a report",
+        "hint_en": "Inspect connections, QPS, slow queries, buffers, disks, and replication lag",
         "hint": "db_metrics 多维基线（连接/QPS/慢查询率/缓冲池/磁盘/复制延迟）+ 巡检结论"
       },
       {
         "text": "生成数据库 profile 与治理建议",
+        "text_en": "Generate a database profile and governance recommendations",
+        "hint_en": "Review table growth, fragmentation, missing primary keys, large fields, and data tiers",
         "hint": "表膨胀/碎片/无主键/大字段/冷热分层，出 profile + 治理路线图"
       },
       {
         "text": "orders 表该加什么索引",
+        "text_en": "Recommend indexes for the orders table",
+        "hint_en": "Compare existing indexes and query patterns; propose additions and cleanup",
         "hint": "index_info + 查询模式聚类→索引候选→重复/未用索引清理建议（仅提案）"
       },
       {
         "text": "这条 SQL 为什么走了全表扫",
+        "text_en": "Explain why this SQL performs a full table scan",
+        "hint_en": "Interpret EXPLAIN type, key, rows, and Extra, then suggest query rewrites",
         "hint": "explain 判读 type/key/rows/Extra，定位坏计划并给改写建议"
       },
       {
         "text": "给 payment 表加索引的变更风险有多大",
+        "text_en": "Assess the risk of adding an index to the payment table",
+        "hint_en": "Review destructive risk, locks, and online DDL options; production changes need review",
         "hint": "safe-ddl-review 出破坏性分级/锁影响/在线 DDL 工具建议，生产默认 deny"
       }
     ],

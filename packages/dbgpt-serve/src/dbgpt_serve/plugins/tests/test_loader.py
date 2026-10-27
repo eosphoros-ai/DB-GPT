@@ -1,14 +1,17 @@
 import json
 import textwrap
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+from dbgpt_serve.plugins.api.schemas import SuiteResponse
 from dbgpt_serve.plugins.loader import (
     load_suite_dir,
     read_skill_summaries,
     scan_suites,
 )
+from dbgpt_serve.plugins.service.service import Service
 
 MANIFEST = textwrap.dedent(
     """
@@ -188,12 +191,18 @@ def test_native_plugin_derives_commands_without_writing_yaml(tmp_path):
             "aliases": ["/doctor", "/SQL Doctor"],
             "skill": "doctor",
             "description": "示例知识",
+            "description_en": "Diagnostics: safe checks",
+            "display_en": "/SQL Doctor",
             "prefill": "",
+            "prefill_en": "",
         }
     ]
     assert not (root / "suite.yaml").exists()
     summaries = read_skill_summaries(str(root), pkg.skills)
     assert summaries[0]["display"] == "SQL 体检"
+    assert summaries[0]["display_en"] == "SQL Doctor"
+    assert summaries[0]["description_en"] == "Diagnostics: safe checks"
+    assert pkg.snapshot["skill_details"] == summaries
     assert summaries[1]["user_invocable"] is False
     # If both manifests exist, plugin.json remains the source of truth.
     (root / "suite.yaml").write_text(MANIFEST, encoding="utf-8")
@@ -252,3 +261,62 @@ def test_native_runtime_extension_preserves_policy_and_command_identity(tmp_path
     assert pkg.snapshot["context_defaults"]["datasource"] == "session"
     assert pkg.manifest["sop"] == "prompts/query.md"
     assert "sop" not in pkg.snapshot
+
+
+def test_builtin_localizations_are_complete_and_keep_execution_identity():
+    root = Path(__file__).resolve().parents[6] / "assets/suites"
+    for slug in ("db-query", "db-analysis", "db-ops"):
+        package = load_suite_dir(root / slug)
+        assert package.snapshot["description_en"]
+        assert Service._read_readme(str(root / slug), "en")
+        for skill in read_skill_summaries(package.path, package.skills):
+            assert skill["display_en"]
+            assert skill["description_en"]
+        for command in package.snapshot["commands"]:
+            assert command["display_en"] == command["name"]
+            assert command["description_en"]
+        for question in package.snapshot["recommended_questions"]:
+            assert question["text_en"]
+            assert question["hint_en"]
+        assert "readme" not in package.snapshot
+
+
+def test_readme_locales_do_not_read_outside_package(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    (root / "README.md").write_text("原文")
+    (root / "README.en.md").write_text("English overview")
+    assert Service._read_readme(str(root)) == "原文"
+    assert Service._read_readme(str(root), "en") == "English overview"
+    assert Service._read_readme(str(root), "zh") is None
+    outside = tmp_path / "outside.md"
+    outside.write_text("private")
+    (root / "README.zh.md").symlink_to(outside)
+    assert Service._read_readme(str(root), "zh") is None
+
+
+def test_detail_response_includes_locales_without_putting_readme_in_snapshot(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    (root / "README.md").write_text("原文")
+    (root / "README.en.md").write_text("English overview")
+    package = load_suite_dir(root)
+    response = SuiteResponse(
+        name=package.name,
+        version=package.version,
+        package_path=package.path,
+        manifest_snapshot=package.snapshot,
+    )
+    service = object.__new__(Service)
+    service._registry = SimpleNamespace(get=lambda *args, **kwargs: response)
+    detail = service.get("native")
+    assert detail.readme == "原文"
+    assert detail.readme_locales == {"en": "English overview"}
+    assert detail.skill_details[0]["display_en"] == "SQL Doctor"
+    assert "readme" not in detail.manifest_snapshot
+
+
+@pytest.mark.parametrize("key", ["name_en", "description_en", "argument-hint-en"])
+def test_native_rejects_invalid_localized_metadata(tmp_path, key):
+    root = write_plugin(tmp_path / "native")
+    skill = root / "skills/doctor/SKILL.md"
+    skill.write_text(f"---\nname: doctor\n{key}: [invalid]\n---\nbody")
+    assert load_suite_dir(root) is None

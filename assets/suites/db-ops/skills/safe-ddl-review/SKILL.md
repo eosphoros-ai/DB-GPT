@@ -1,6 +1,9 @@
 ---
 name: safe-ddl-review
 name_zh: 变更评审
+name_en: Change Review
+description_en: Review structural changes for destructive risk, locks, duration, replication impact, online DDL options, rollback, and approvals. Production DDL is denied by default; changes remain proposals.
+argument-hint-en: Prepare a repair plan with risk levels, lock impact, online DDL options, rollback, and approval requirements
 command: /fix
 user-invocable: true
 argument-hint-zh: 把本次诊断的修复动作整理为 fix_plan：分级、锁影响、在线 DDL 方案、回滚与审批要求

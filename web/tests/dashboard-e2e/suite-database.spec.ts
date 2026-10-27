@@ -13,14 +13,38 @@ const suites = [
     version: '1.0.0',
     status: 'enabled',
     source: 'official',
+    readme: '# 智能取数\n中文说明',
+    readme_locales: { en: '# Smart Data Query\nEnglish plugin overview' },
+    skill_details: [
+      {
+        name: 'nl2sql-precision',
+        display: '精准 NL2SQL',
+        display_en: 'NL2SQL Precision',
+        description: '生成 SQL',
+        description_en: 'Generate validated SQL',
+      },
+    ],
     manifest_snapshot: {
+      display_en: 'Smart Data Query',
+      description: '中文简介',
+      description_en: 'Query data using validated read-only SQL',
       commands: [
-        { name: '/nl2sql', description: '自然语言取数', skill: 'nl2sql-precision' },
+        {
+          name: '/nl2sql',
+          description: '自然语言取数',
+          description_en: 'Natural-language data queries',
+          skill: 'nl2sql-precision',
+        },
         { name: '/schema', description: '查看表结构', skill: 'semantic-linking' },
         { name: '/export', description: '导出结果', skill: 'result-export' },
       ],
       recommended_questions: [
-        { text: '近30天各品类客单价', command: '/nl2sql' },
+        {
+          text: '近30天各品类客单价',
+          text_en: 'Average order value by category over the last 30 days',
+          hint_en: 'Use consistent metric definitions',
+          command: '/nl2sql',
+        },
         { text: '导出订单明细', command: '/export' },
       ],
     },
@@ -33,9 +57,15 @@ const suites = [
     version: '1.0.0',
     status: 'enabled',
     manifest_snapshot: {
+      display_en: 'Smart Data Analysis',
       commands: [{ name: '/analyze', skill: 'multi-step-analysis' }],
       recommended_questions: [
-        { text: '生成 Walmart 销售分析报告', command: '/analyze', database_name: 'Walmart_Sales' },
+        {
+          text: '生成 Walmart 销售分析报告',
+          text_en: 'Generate a Walmart sales analysis report',
+          command: '/analyze',
+          database_name: 'Walmart_Sales',
+        },
       ],
     },
   },
@@ -47,10 +77,18 @@ const suites = [
     version: '1.0.0',
     status: 'enabled',
     manifest_snapshot: {
+      display_en: 'MySQL Operations Expert',
       package_format: 'qwenwork-plugin',
       context_defaults: { datasource: 'optional' },
       commands: [
-        { name: '/SQL 体检', aliases: ['/SQL Doctor'], skill: 'mysql-sql-doctor', description: '诊断 SQL' },
+        {
+          name: '/SQL 体检',
+          display_en: '/SQL Doctor',
+          aliases: ['/SQL Doctor'],
+          skill: 'mysql-sql-doctor',
+          description: '诊断 SQL',
+          description_en: 'Diagnose SQL',
+        },
       ],
     },
   },
@@ -66,19 +104,23 @@ function bindingEvent(send: Record<string, any>) {
     documents: native
       ? [
           { path: 'skills/mysql-sql-doctor/SKILL.md', status: 'loaded', sha256: 'a'.repeat(64) },
-          { path: 'skills/mysql-ops-knowledge/references/safe-execution-rules.md', status: 'loaded', sha256: 'b'.repeat(64) },
+          {
+            path: 'skills/mysql-ops-knowledge/references/safe-execution-rules.md',
+            status: 'loaded',
+            sha256: 'b'.repeat(64),
+          },
         ]
       : [],
   };
 }
 
-async function setup(page: Page, availableDatabases = databases) {
+async function setup(page: Page, availableDatabases = databases, language = 'zh') {
   const sends: Record<string, any>[] = [];
-  await page.addInitScript(() => {
-    localStorage.setItem('__db_gpt_lng_key', 'zh');
+  await page.addInitScript(language => {
+    localStorage.setItem('__db_gpt_lng_key', language);
     localStorage.setItem('__db_gpt_theme_key', 'light');
     localStorage.setItem('dbgpt-selected-model', 'deepseek-v4-flash');
-  });
+  }, language);
   await page.route('**/api/**', async route => {
     const pathname = new URL(route.request().url()).pathname.replace(/\/$/, '');
     let data: unknown = [];
@@ -119,11 +161,7 @@ async function setup(page: Page, availableDatabases = databases) {
       return route.fulfill({
         contentType: 'text/event-stream',
         body: [
-          ...(sends[sends.length - 1].ext_info.suite_command
-            ? [
-                bindingEvent(sends[sends.length - 1]),
-              ]
-            : []),
+          ...(sends[sends.length - 1].ext_info.suite_command ? [bindingEvent(sends[sends.length - 1])] : []),
           { type: 'final', content: '数据库绑定请求已收到。' },
           { type: 'done' },
         ]
@@ -134,7 +172,9 @@ async function setup(page: Page, availableDatabases = databases) {
     return route.fulfill({ json: { success: true, data } });
   });
   await page.goto('/');
-  await expect(page.getByRole('button', { name: '智能取数', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: language === 'en' ? 'Smart Data Query' : '智能取数', exact: true }),
+  ).toBeVisible();
   return sends;
 }
 
@@ -162,7 +202,49 @@ test('generic suite examples select a database and send it with the suite', asyn
   await expect(page.getByTestId('message-suite-reference').locator('[data-icon="suite-hammer"]')).toBeVisible();
 });
 
-test('sent suite references keep their command when editing and reopening history', async ({ page }) => {
+test('English plugins list and detail render localized content and search', async ({ page }) => {
+  await setup(page, databases, 'en');
+  await page.goto('/construct/suites/');
+  await expect(page.getByRole('heading', { name: /Plugins$/ })).toBeVisible();
+  await expect(page.getByText('Query data using validated read-only SQL')).toBeVisible();
+  await page.getByPlaceholder('Search plugins…').fill('Smart Data Query');
+  await page
+    .locator('span')
+    .filter({ hasText: /^Smart Data Query$/ })
+    .click();
+  await expect(page.getByRole('button', { name: /\/nl2sql.*Natural-language data queries/ })).toBeVisible();
+  await expect(page.getByText('Generate validated SQL', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('suite-readme')).toContainText('English plugin overview');
+  await expect(page.getByTestId('suite-readme')).not.toContainText('中文说明');
+});
+
+test('English examples keep database and canonical command bindings', async ({ page }) => {
+  const sends = await setup(page, databases, 'en');
+  await page.getByRole('button', { name: 'Smart Data Analysis', exact: true }).click();
+  await page.getByRole('button', { name: /Generate a Walmart sales analysis report/ }).click();
+  await expect(page.getByTestId('suite-composer-prefix')).toContainText('Smart Data Analysis · /analyze');
+  await page.locator('textarea').first().press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  expect(sends[0].ext_info).toMatchObject({
+    suite: 'db-analysis',
+    suite_command: '/analyze',
+    database_name: 'Walmart_Sales',
+  });
+  expect(sends[0].user_input).toBe('[Database: Walmart_Sales] Generate a Walmart sales analysis report');
+});
+
+test('English native command labels send the original canonical command', async ({ page }) => {
+  const sends = await setup(page, [], 'en');
+  await page.getByRole('button', { name: 'MySQL Operations Expert', exact: true }).click();
+  await page.getByRole('button', { name: '/SQL Doctor', exact: true }).click();
+  await expect(page.getByTestId('suite-composer-prefix')).toHaveText('MySQL Operations Expert · /SQL Doctor');
+  await page.locator('textarea').first().fill('SELECT * FROM orders');
+  await page.locator('textarea').first().press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  expect(sends[0].ext_info).toMatchObject({ suite: 'mysql-ops-expert', suite_command: '/SQL 体检' });
+});
+
+test('sent suite references keep their command when editing and reopening history', async ({ page }, testInfo) => {
   await setup(page);
   await page.getByRole('button', { name: /近30天各品类客单价/ }).click();
   await page.getByRole('dialog').getByText('Olist_Ecommerce', { exact: true }).click();
@@ -174,7 +256,7 @@ test('sent suite references keep their command when editing and reopening histor
   // Typing another shortcut must not relabel the already sent message.
   await page.getByPlaceholder('向您的数据库提问，上传CSV，或生成报告...').fill('/schema 查看表结构');
   await expect(reference).toContainText('智能取数 · /nl2sql');
-  await page.screenshot({ path: '../output/playwright/expert-suite-message-reference.png' });
+  await page.screenshot({ path: testInfo.outputPath('expert-suite-message-reference.png') });
   await page.reload();
   await expect(reference).toHaveCount(1);
   await expect(reference).toContainText('智能取数 · /nl2sql');

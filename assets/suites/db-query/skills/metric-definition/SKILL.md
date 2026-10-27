@@ -1,6 +1,9 @@
 ---
 name: metric-definition
 name_zh: 指标口径查询
+name_en: Metric Definitions
+description_en: Look up authoritative metric formulas, versions, default filters, and source references without executing a data query.
+argument-hint-en: Metric name or definition question (e.g., the definition and version of valid_gmv)
 command: /metric
 description: 查询指标定义、版本与默认过滤，按标识回源权威语义口径。
 user-invocable: true

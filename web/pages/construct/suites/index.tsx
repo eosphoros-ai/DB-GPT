@@ -3,7 +3,7 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import SuiteReadme from '@/new-components/suites/SuiteReadme';
 import { SuiteItem } from '@/types/suite';
 import { getUserId } from '@/utils';
-import { suiteDisplayName } from '@/utils/suite-routing';
+import { localizeSuite, suiteDisplayName } from '@/utils/suite-routing';
 import {
   AppstoreAddOutlined,
   ArrowRightOutlined,
@@ -23,11 +23,16 @@ const SuitesPage = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { token } = theme.useToken();
-  const [suites, setSuites] = useState<SuiteItem[]>([]);
+  const [suitePackages, setSuites] = useState<SuiteItem[]>([]);
   const [seg, setSeg] = useState<Seg>('official');
   const [search, setSearch] = useState('');
   const [mineOnly, setMineOnly] = useState(false);
-  const [detail, setDetail] = useState<SuiteItem | null>(null);
+  const [detailPackage, setDetail] = useState<SuiteItem | null>(null);
+  const suites = useMemo(
+    () => suitePackages.map(suite => localizeSuite(suite, i18n.language)),
+    [suitePackages, i18n.language],
+  );
+  const detail = detailPackage ? localizeSuite(detailPackage, i18n.language) : null;
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +55,7 @@ const SuitesPage = () => {
       const kw = search.trim().toLowerCase();
       return (
         s.name.toLowerCase().includes(kw) ||
-        (s.display || '').toLowerCase().includes(kw) ||
+        suiteDisplayName(s, i18n.language).toLowerCase().includes(kw) ||
         (s.manifest_snapshot?.description || '').toLowerCase().includes(kw)
       );
     };
@@ -62,7 +67,7 @@ const SuitesPage = () => {
       installed: all.filter(s => s.status === 'enabled'),
       market: [] as SuiteItem[],
     };
-  }, [suites, search, mineOnly]);
+  }, [suites, search, mineOnly, i18n.language]);
 
   const openDetail = async (name: string) => {
     try {
@@ -128,15 +133,13 @@ const SuitesPage = () => {
         <span className='text-[18px]'>{suite.icon || '🧩'}</span>
         <span className='text-[14px] font-bold'>{suiteDisplayName(suite, i18n.language)}</span>
         <Tag className='ml-1' style={{ fontSize: 10 }}>
-          scenario:{suite.scenario_id || '-'}
+          {t(`suites_scenario_${suite.scenario_id}`, { defaultValue: suite.scenario_id || '-' })}
         </Tag>
-        <Tag style={{ fontSize: 10 }}>exec:{suite.execution || 'react'}</Tag>
+        <Tag style={{ fontSize: 10 }}>
+          {t('suites_execution')}: {suite.execution || 'react'}
+        </Tag>
         <span className='ml-auto' onClick={e => e.stopPropagation()}>
-          <Switch
-            size='small'
-            checked={suite.status === 'enabled'}
-            onChange={checked => toggle(suite, checked)}
-          />
+          <Switch size='small' checked={suite.status === 'enabled'} onChange={checked => toggle(suite, checked)} />
         </span>
       </div>
       <p className='mt-2 line-clamp-2 text-xs' style={{ color: token.colorTextSecondary }}>
@@ -145,7 +148,7 @@ const SuitesPage = () => {
       <div className='mt-2 flex flex-wrap gap-1'>
         {(suite.manifest_snapshot?.skills || []).map(skill => (
           <Tag key={skill} style={{ fontSize: 10 }}>
-            {skill}
+            {suite.skill_details?.find(item => item.name === skill)?.display || skill}
           </Tag>
         ))}
       </div>
@@ -224,7 +227,7 @@ const SuitesPage = () => {
             </p>
 
             <h3 className='mb-3 mt-7 text-[15px] font-bold'>
-              {t('suites_cmds')}（{(detail.manifest_snapshot?.commands || []).length}）
+              {t('suites_cmds')} ({(detail.manifest_snapshot?.commands || []).length})
             </h3>
             {(detail.manifest_snapshot?.commands || []).map((cmd: any) => (
               <button
@@ -236,7 +239,7 @@ const SuitesPage = () => {
                 style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
               >
                 <Tag color='green' className='font-mono' style={{ fontSize: 11.5, marginInlineEnd: 0 }}>
-                  {cmd.name || cmd}
+                  {cmd.display || cmd.name || cmd}
                 </Tag>
                 <span style={{ color: token.colorTextSecondary }}>{cmd.description || cmd.summary || ''}</span>
                 <ArrowRightOutlined className='ml-auto' style={{ color: token.colorTextQuaternary }} />
@@ -244,7 +247,7 @@ const SuitesPage = () => {
             ))}
 
             <h3 className='mb-3 mt-7 text-[15px] font-bold'>
-              {t('suites_skills_section')}（{(detail.skill_details || []).length}）
+              {t('suites_skills_section')} ({(detail.skill_details || []).length})
             </h3>
             <div
               className='overflow-hidden rounded-xl border'
@@ -272,24 +275,22 @@ const SuitesPage = () => {
             <h3 className='mb-2 mt-7 text-[15px] font-bold'>{t('suites_manifest')}</h3>
             <div className='rounded-xl border p-4 text-[12px]' style={{ borderColor: token.colorBorderSecondary }}>
               <div className='flex justify-between py-1'>
-                <span style={{ color: token.colorTextTertiary }}>execution</span>
+                <span style={{ color: token.colorTextTertiary }}>{t('suites_execution')}</span>
                 <span className='font-mono font-bold'>{detail.execution || 'react'}</span>
               </div>
               <div className='flex justify-between py-1'>
-                <span style={{ color: token.colorTextTertiary }}>tools.allow</span>
+                <span style={{ color: token.colorTextTertiary }}>{t('suites_allowed_tools')}</span>
                 <span className='font-mono'>{(detail.manifest_snapshot?.tools?.allow || []).join(', ')}</span>
               </div>
               <div className='flex justify-between py-1'>
-                <span style={{ color: token.colorTextTertiary }}>approval_overrides</span>
+                <span style={{ color: token.colorTextTertiary }}>{t('suites_approval_policy')}</span>
                 <Tooltip title={t('suites_overrides_note')}>
                   <span className='font-mono'>{t('suites_overrides_note')}</span>
                 </Tooltip>
               </div>
               <div className='flex justify-between py-1'>
-                <span style={{ color: token.colorTextTertiary }}>context_defaults</span>
-                <span className='font-mono'>
-                  {JSON.stringify(detail.manifest_snapshot?.context_defaults || {})}
-                </span>
+                <span style={{ color: token.colorTextTertiary }}>{t('suites_context_defaults')}</span>
+                <span className='font-mono'>{JSON.stringify(detail.manifest_snapshot?.context_defaults || {})}</span>
               </div>
             </div>
 
@@ -312,12 +313,7 @@ const SuitesPage = () => {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
-              <Button
-                type='primary'
-                icon={<UploadOutlined />}
-                loading={busy}
-                onClick={() => fileRef.current?.click()}
-              >
+              <Button type='primary' icon={<UploadOutlined />} loading={busy} onClick={() => fileRef.current?.click()}>
                 {t('suites_add')}
               </Button>
               <input

@@ -1,6 +1,9 @@
 ---
 name: index-advisor
 name_zh: 索引优化
+name_en: Index Advisor
+description_en: Recommend indexes from existing index statistics, query patterns, and execution plans. Assess redundant indexes, write overhead, and storage costs; produce proposals without executing DDL.
+argument-hint-en: Recommend indexes for {target_db} using query patterns from {time_window}; proposals only
 command: /index
 user-invocable: true
 argument-hint-zh: 基于 {time_window} 的查询模式，给 {target_db} 输出索引优化建议（仅提案）

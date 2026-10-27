@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "displayNameCn": "智能取数",
   "displayName": "Smart Data Query",
+  "descriptionEn": "Turn natural-language questions into validated, read-only SQL. Use authoritative metric definitions, table scopes and default filters, preview results with source references, and export data with masking and approval controls.",
   "descriptionZh": "自然语言→SQL 精准取数能力包。强制绑定语义层（表白名单 + 指标口径 + 默认过滤 + 行级权限规则），SQL 经 NL2SQL 生成并通过 sql.validate 自纠后在只读从库执行； 高代价扫描按预估成本触发审批 confirm；答案下附引用溯源 chips（指标版本/表/样例/规则）， 点赞沉淀样例库、纠错进语义标注待审队列。",
   "author": { "name": "@DB-GPT 官方" },
   "category": "engineering",
@@ -85,26 +86,36 @@
     "recommended_questions": [
       {
         "text": "查询上月各区域销售额",
+        "text_en": "Query last month's sales by region",
+        "hint_en": "Aggregate by region with month-over-month changes",
         "command": "/nl2sql",
         "hint": "按 region 汇总，含环比"
       },
       {
         "text": "上个月华东区的有效GMV",
+        "text_en": "Query last month's valid GMV in East China",
+        "hint_en": "Use the v2 metric definition and inject default filters",
         "command": "/nl2sql",
         "hint": "指标 v2 口径 + 默认过滤自动注入"
       },
       {
         "text": "统计 Top10 客户 GMV 及环比",
+        "text_en": "Rank the top 10 customers by GMV with month-over-month changes",
+        "hint_en": "Rank customer GMV and compare with the previous month",
         "command": "/nl2sql",
         "hint": "客户维度 GMV 排序 + 环比变化"
       },
       {
         "text": "近30天各品类客单价",
+        "text_en": "Query average order value by category over the last 30 days",
+        "hint_en": "Average order value = valid_gmv / order_count",
         "command": "/nl2sql",
         "hint": "客单价 = valid_gmv / order_count"
       },
       {
         "text": "导出上月华东区订单明细",
+        "text_en": "Export last month's order details for East China",
+        "hint_en": "Apply masking and export row limits",
         "command": "/export",
         "hint": "明细导出走脱敏与行数上限"
       }

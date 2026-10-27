@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "displayNameCn": "智能分析",
   "displayName": "Smart Data Analysis",
+  "descriptionEn": "Scope a dataset, run several read-only queries with consistent metric definitions, select charts, explain changes with evidence, and produce an HTML or PDF analysis report with source references.",
   "descriptionZh": "面向企业业务库的图文数据分析能力包。SOP 为\"圈数据集 → 多步取数 → 图表 → 结论 → 报告\"：先用语义层表白名单 + 血缘 join 路径圈定数据集（模型不从全量表选表），再多步 取数且每步引用同一指标定义（版本 pin）、统一注入默认过滤与时间粒度，保证跨图跨步 口径一致；随后按数据形态自动匹配柱/线/饼/散点，提炼有数据支撑的归因结论，最终导出 含引用 chips 的 HTML/PDF 报告。以只读为主，审批模式默认 auto-edit。",
   "author": { "name": "@DB-GPT 官方" },
   "category": "engineering",
@@ -152,25 +153,36 @@
     "recommended_questions": [
       {
         "text": "生成 Walmart 销售分析报告",
+        "text_en": "Generate a Walmart sales analysis report",
         "title": "销售分析报告",
+        "title_en": "Sales analysis report",
         "command": "/analyze",
         "hint": "圈数据集→多步取数→图表→结论→报告",
+        "hint_en": "Scope the dataset, query, chart, draw conclusions, and report",
         "database_name": "Walmart_Sales"
       },
       {
         "text": "分析本月华东区销售下滑的归因，出图文报告",
+        "text_en": "Explain this month's sales decline in East China and produce a visual report",
+        "hint_en": "Scope the dataset, pin valid_gmv@v2, and compare channel and category contributions",
         "hint": "数据集圈定 + valid_gmv@v2 pin + 渠道/品类贡献度拆解 + HTML 报告"
       },
       {
         "text": "对比华东华南近 12 周订单占比趋势",
+        "text_en": "Compare order share in East and South China over the last 12 weeks",
+        "hint_en": "Use consistent definitions, stacked bars, share trends, and evidence-based conclusions",
         "hint": "同一口径跨区对比，堆叠柱 + 占比折线 + 结论卡"
       },
       {
         "text": "近 30 天各品类 GMV Top10 及环比，生成周报",
+        "text_en": "Create a weekly report on the top 10 categories by GMV over the last 30 days",
+        "hint_en": "Use daily grain, ranking charts, month-over-month changes, and anomaly annotations",
         "hint": "时间粒度统一为日，Top10 榜单柱图 + 异动标注 + 周报"
       },
       {
         "text": "618 大促 ROI 归因，哪些渠道品类拉动了增量",
+        "text_en": "Analyze ROI for the June 18 promotion and identify channels and categories driving growth",
+        "hint_en": "Compare the promotion with a normal baseline and report incremental contributions",
         "hint": "大促 vs 日常基线，增量拆解 + 投入产出散点 + 报告"
       }
     ],

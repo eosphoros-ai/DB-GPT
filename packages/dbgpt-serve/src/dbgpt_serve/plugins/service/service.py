@@ -88,6 +88,11 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         response = self.registry.get(name, workspace_id=workspace_id)
         if response is not None:
             response.readme = self._read_readme(response.package_path)
+            response.readme_locales = {
+                locale: text
+                for locale in ("en", "zh")
+                if (text := self._read_readme(response.package_path, locale))
+            }
             response.skill_details = read_skill_summaries(
                 response.package_path,
                 list((response.manifest_snapshot or {}).get("skills") or []),
@@ -95,12 +100,15 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         return response
 
     @staticmethod
-    def _read_readme(package_path: Optional[str]) -> Optional[str]:
+    def _read_readme(
+        package_path: Optional[str], locale: Optional[str] = None
+    ) -> Optional[str]:
         if not package_path:
             return None
-        readme = Path(package_path) / "README.md"
+        root = Path(package_path).resolve()
+        readme = root / (f"README.{locale}.md" if locale else "README.md")
         try:
-            if readme.is_file():
+            if readme.resolve().is_relative_to(root) and readme.is_file():
                 return readme.read_text(encoding="utf-8")
         except Exception:  # noqa: BLE001 - unreadable readme must not break detail
             logger.warning("suite readme unreadable: %s", readme)

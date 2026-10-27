@@ -47,6 +47,8 @@ SNAPSHOT_FIELDS = (
     "semantic",
     "output_contract",
     "description",
+    "description_en",
+    "skill_details",
     "author",
     "tags",
     "package_format",
@@ -61,6 +63,7 @@ _TYPE_CHECKS: Dict[str, type] = {
     "scenario_id": str,
     "execution": str,
     "description": str,
+    "description_en": str,
     "author": str,
     "sop": str,
     "routing": dict,
@@ -239,6 +242,15 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
         if not skill_file.is_relative_to(root) or not skill_file.is_file():
             raise ValueError(f"invalid plugin skill path: {rel}")
         metadata = read_skill_metadata(skill_file)
+        for key in (
+            "name_en",
+            "description_en",
+            "argument-hint",
+            "argument-hint-en",
+            "argument-hint-zh",
+        ):
+            if key in metadata and not isinstance(metadata[key], str):
+                raise ValueError(f"skill {key} must be a string")
         name = metadata["name"]
         if name in names:
             raise ValueError(f"duplicate plugin skill name: {name}")
@@ -255,7 +267,10 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
                 "name": name,
                 "path": skill_file.relative_to(root).as_posix(),
                 "display": display,
+                "display_en": metadata.get("name_en") or name,
                 "description": description,
+                "description_en": metadata.get("description_en")
+                or metadata.get("description", ""),
                 "user_invocable": invocable,
             }
         )
@@ -280,7 +295,17 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
                     ],
                     "skill": name,
                     "description": description,
+                    "description_en": metadata.get("description_en")
+                    or metadata.get("description", ""),
+                    "display_en": (
+                        command_name
+                        if metadata.get("command")
+                        else f"/{metadata.get('name_en') or name}"
+                    ),
                     "prefill": metadata.get("argument-hint-zh")
+                    or metadata.get("argument-hint")
+                    or "",
+                    "prefill_en": metadata.get("argument-hint-en")
                     or metadata.get("argument-hint")
                     or "",
                 }
@@ -294,6 +319,7 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
         "display": raw.get("displayNameCn") or raw.get("displayName") or raw["name"],
         "display_en": raw.get("displayNameEn") or raw.get("displayName") or raw["name"],
         "description": raw.get("descriptionZh") or raw.get("description", ""),
+        "description_en": raw.get("descriptionEn") or raw.get("description", ""),
         "author": author.get("name", "") if isinstance(author, dict) else author or "",
         "tags": raw.get("tags") or [],
         "scenario_id": "expert",
@@ -361,7 +387,9 @@ def read_skill_summaries(
             {
                 "name": name,
                 "display": item.get("display", name),
+                "display_en": item.get("display_en", name),
                 "description": item.get("description") or _frontmatter_desc(skill_md),
+                "description_en": item.get("description_en", ""),
                 "user_invocable": item.get("user_invocable", True),
             }
         )
@@ -412,6 +440,22 @@ def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
     skills = _collect_skills(dirpath, manifest, warnings)
     snapshot = {k: manifest[k] for k in SNAPSHOT_FIELDS if k in manifest}
     snapshot["skills"] = skills
+    snapshot["skill_details"] = [
+        {
+            key: item[key]
+            for key in (
+                "name",
+                "display",
+                "display_en",
+                "description",
+                "description_en",
+                "user_invocable",
+            )
+            if key in item
+        }
+        for item in manifest.get("skills", [])
+        if isinstance(item, dict)
+    ]
     return SuitePackage(
         name=manifest["name"],
         version=str(manifest["version"]),

@@ -1,6 +1,9 @@
 ---
 name: profile-governance
 name_zh: 画像治理
+name_en: Database Profiling
+description_en: Profile table sizes, fragmentation, primary keys, large fields, data tiers, and index redundancy. Propose governance, archival, partitioning, and storage improvements without making changes.
+argument-hint-en: Profile {target_db} for growth, fragmentation, keys, large fields, and data tiers
 command: /profile
 user-invocable: true
 argument-hint-zh: 生成 {target_db} 的数据库 profile：表膨胀/碎片/无主键/大字段/冷热分层与治理建议

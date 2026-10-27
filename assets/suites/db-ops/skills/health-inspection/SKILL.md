@@ -1,6 +1,9 @@
 ---
 name: health-inspection
 name_zh: 健康巡检
+name_en: Health Inspection
+description_en: Inspect connections, QPS, slow queries, buffer hit rates, storage, replication lag, and locks. Compare baselines and produce a read-only health report with severity and recommendations.
+argument-hint-en: Inspect {target_db} for connections, QPS, slow queries, buffers, disks, and replication lag
 command: /inspect
 user-invocable: true
 argument-hint-zh: 对 {target_db} 做健康巡检，覆盖连接数/QPS/慢查询率/缓冲池/磁盘/复制延迟

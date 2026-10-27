@@ -39,6 +39,24 @@ plugin.json 的 `skills` 数组声明技能目录或 SKILL.md 路径。
 
 ## 内置套件与数据库
 
+### 内容国际化
+
+英文入口显示为 `Plugins`，中文入口仍为“专家套件”。列表、详情和首页示例
+随当前语言切换；命令 ID、技能绑定、数据库名和工具权限不随语言改变。
+
+- plugin.json：`displayNameEn` / `displayName`、`descriptionEn` / `description`
+  为英文内容；中文仍用 `displayNameCn`、`descriptionZh`。
+- SKILL.md：读取 `name_en`、`description_en`、`argument-hint-en`；对应中文字段
+  保持可用。原生中文命令可展示英文别名，发送时仍用规范命令名。
+- 示例：在 `dbgpt.recommended_questions` 中提供 `text_en`、`title_en`、
+  `hint_en`，数据库与 command 字段由两种语言共用。
+- README：详情接口从包内 `README.en.md`、`README.zh.md` 读取可选译文，
+  缺省回退 `README.md`。正文不存入注册快照。
+
+三个内置套件已提供英文简介、全部技能说明、示例和英文 README。
+导入包没有译文时回退原文，不自动机器翻译技能正文或修改原始文件。
+添加译文后通过启动同步或 `/api/v1/suites/sync` 更新注册快照。
+
 智能取数、智能分析、智能运维均采用 `.qwenwork-plugin/plugin.json`，
 不再保留 suite.yaml 或第二份平台清单，版本为 1.1.0。
 命令只从 SKILL.md 元数据生成，不在 JSON 中维护第二份命令映射。

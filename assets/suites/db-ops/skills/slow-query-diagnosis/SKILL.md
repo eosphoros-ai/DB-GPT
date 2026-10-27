@@ -1,6 +1,9 @@
 ---
 name: slow-query-diagnosis
 name_zh: 慢查询诊断
+name_en: Slow Query Diagnosis
+description_en: Collect slow logs, group SQL fingerprints, interpret execution plans, and identify index, scan, locking, query, or resource issues. Produce evidence-based diagnostics and repair proposals.
+argument-hint-en: Collect slow queries from {target_db} over {time_window} and rank the top 10 fingerprints
 command: /slowlog
 user-invocable: true
 argument-hint-zh: 拉取 {target_db} 最近 {time_window} 的慢查询并按指纹聚合 Top10

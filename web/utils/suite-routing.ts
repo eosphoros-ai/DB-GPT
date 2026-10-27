@@ -54,3 +54,36 @@ export function suiteDisplayName(suite: SuiteItem, lang?: string): string {
   if (isEn && snap?.display_en) return snap.display_en;
   return suite.display || snap?.display || suite.name;
 }
+
+/** Translate presentation fields without changing command IDs or database scope. */
+export function localizeSuite(suite: SuiteItem, lang?: string): SuiteItem {
+  const isEn = (lang || '').toLowerCase().startsWith('en');
+  const snap = suite.manifest_snapshot;
+  const skills = suite.skill_details ?? snap?.skill_details;
+  return {
+    ...suite,
+    display: suiteDisplayName(suite, lang),
+    readme: suite.readme_locales?.[isEn ? 'en' : 'zh'] || suite.readme,
+    skill_details: skills?.map(skill => ({
+      ...skill,
+      display: (isEn && skill.display_en) || skill.display || skill.name,
+      description: (isEn && skill.description_en) || skill.description,
+    })),
+    manifest_snapshot: snap && {
+      ...snap,
+      description: (isEn && snap.description_en) || snap.description,
+      commands: snap.commands?.map(command => ({
+        ...command,
+        display: (isEn && command.display_en) || command.name,
+        description: (isEn && command.description_en) || command.description || command.summary,
+        prefill: (isEn && command.prefill_en) || command.prefill,
+      })),
+      recommended_questions: snap.recommended_questions?.map(question => ({
+        ...question,
+        text: (isEn && question.text_en) || question.text,
+        title: (isEn && question.title_en) || question.title,
+        hint: (isEn && question.hint_en) || question.hint,
+      })),
+    },
+  };
+}

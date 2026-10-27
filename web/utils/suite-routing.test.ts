@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SuiteItem } from '@/types/suite';
-import { resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from './suite-routing';
+import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from './suite-routing';
 
 const makeSuite = (name: string, keywords: string[], specificity = 0.8, display = name): SuiteItem =>
   ({
@@ -92,5 +92,80 @@ describe('suiteDisplayName', () => {
 
   it('falls back to slug when no display', () => {
     expect(suiteDisplayName({ name: 'x' } as SuiteItem, 'zh')).toBe('x');
+  });
+});
+
+describe('localizeSuite', () => {
+  const bilingual: SuiteItem = {
+    ...query,
+    readme: '原文',
+    readme_locales: { en: 'English overview' },
+    manifest_snapshot: {
+      display_en: 'Data Query',
+      description: '中文简介',
+      description_en: 'English description',
+      skill_details: [
+        { name: 'doctor', display: 'SQL 体检', display_en: 'SQL Doctor', description_en: 'Diagnose SQL' },
+      ],
+      commands: [
+        {
+          name: '/SQL 体检',
+          display_en: '/SQL Doctor',
+          aliases: ['/SQL Doctor'],
+          skill: 'doctor',
+          description: '检查 SQL',
+          description_en: 'Review SQL',
+          prefill: '输入 SQL',
+          prefill_en: 'Enter SQL',
+        },
+      ],
+      recommended_questions: [
+        {
+          text: '生成销售报告',
+          text_en: 'Generate a sales report',
+          hint: '只读',
+          hint_en: 'Read only',
+          database_name: 'Walmart_Sales',
+          command: '/SQL 体检',
+        },
+      ],
+    },
+  };
+
+  it('translates the full presentation while preserving execution and database bindings', () => {
+    const en = localizeSuite(bilingual, 'en-US');
+    expect(en.display).toBe('Data Query');
+    expect(en.readme).toBe('English overview');
+    expect(en.manifest_snapshot?.description).toBe('English description');
+    expect(en.skill_details?.[0].display).toBe('SQL Doctor');
+    expect(en.manifest_snapshot?.commands?.[0]).toMatchObject({
+      name: '/SQL 体检',
+      display: '/SQL Doctor',
+      skill: 'doctor',
+      description: 'Review SQL',
+      prefill: 'Enter SQL',
+    });
+    expect(en.manifest_snapshot?.recommended_questions?.[0]).toMatchObject({
+      text: 'Generate a sales report',
+      hint: 'Read only',
+      database_name: 'Walmart_Sales',
+      command: '/SQL 体检',
+    });
+  });
+
+  it('can switch back to Chinese without mutating the source package', () => {
+    localizeSuite(bilingual, 'en');
+    const zh = localizeSuite(bilingual, 'zh-CN');
+    expect(zh.display).toBe('智能取数');
+    expect(zh.readme).toBe('原文');
+    expect(zh.manifest_snapshot?.commands?.[0].display).toBe('/SQL 体检');
+    expect(bilingual.manifest_snapshot?.description).toBe('中文简介');
+    expect(bilingual.manifest_snapshot?.commands?.[0].display).toBeUndefined();
+  });
+
+  it('falls back to original content for packages without translations', () => {
+    const en = localizeSuite(query, 'en');
+    expect(en.manifest_snapshot?.recommended_questions?.[0].text).toBe('q');
+    expect(en.readme).toBeUndefined();
   });
 });
