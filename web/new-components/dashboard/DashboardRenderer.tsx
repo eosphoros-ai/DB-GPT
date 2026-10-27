@@ -14,7 +14,12 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import ReactGridLayout, { Layout, useContainerWidth } from 'react-grid-layout';
 import { dashboardThemeCssVariables, resolveDashboardTheme } from './dashboard-appearance';
 import type { DashboardAnnotationDraft } from './dashboard-assistant';
-import { catalogPresentation, catalogTheme, presentationNames } from './dashboard-catalog-presentation';
+import {
+  catalogPresentation,
+  catalogTheme,
+  galleryStyleTheme,
+  presentationNames,
+} from './dashboard-catalog-presentation';
 import { dashboardGridCompactor } from './dashboard-grid-interaction';
 import sceneStyles from './DashboardCatalogScene.module.css';
 import { DashboardResearchRail } from './DashboardResearchScene';
@@ -119,10 +124,9 @@ export default function DashboardRenderer({
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailWidget = schema.widgets.find(w => w.id === detailId);
   const gridRows = Math.max(1, ...schema.layouts.desktop.map(p => p.y + p.h));
-  const theme = catalogTheme(
-    resolveDashboardTheme(schema.dashboard.theme),
-    presentation,
-    schema.dashboard.theme?.overrides,
+  const theme = galleryStyleTheme(
+    catalogTheme(resolveDashboardTheme(schema.dashboard.theme), presentation, schema.dashboard.theme?.overrides),
+    schema,
   );
   const sceneRef = useRef<HTMLDivElement>(null);
   const [fullscreenHeight, setFullscreenHeight] = useState(0);

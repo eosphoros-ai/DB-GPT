@@ -64,7 +64,13 @@ export default function DashboardEditorPage() {
       <Head>
         <title>{record.schema.dashboard.title} · DB-GPT</title>
       </Head>
-      <DashboardEditor key={record.id} initialRecord={record} initialPanel={initialPanel} onRecordChange={setRecord} />
+      <DashboardEditor
+        key={record.id}
+        initialRecord={record}
+        initialPanel={initialPanel}
+        initialView={router.query.view === 'preview' ? 'preview' : 'edit'}
+        onRecordChange={setRecord}
+      />
     </>
   );
 }

@@ -135,7 +135,7 @@ export default function DashboardCreatePage() {
           ext_info: {
             creation_mode: 'dashboard',
             locale: dashboardLocale,
-            ...(templateEntry ? { skill_name: templateEntry.name } : {}),
+            ...(templateEntry ? { skill_name: templateEntry.name, dashboard_template: templateEntry.selection } : {}),
             ...(datasetId.current
               ? { dataset_id: datasetId.current }
               : {

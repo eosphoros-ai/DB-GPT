@@ -229,6 +229,10 @@ export const ChatEn = {
   example_fin_report_query:
     'Please deeply analyze this Zhejiang Haixiang Pharmaceutical 2019 annual report, including revenue and profit trends, asset and liability structure, cash flow analysis, and key financial indicators, and generate a professional interactive web analysis report.',
   example_create_sql_skill_title: 'Create SQL Analysis Skill',
+  example_ecommerce_dashboard_title: 'E-commerce Operations Dashboard',
+  example_ecommerce_dashboard_desc: 'Explore sales trends, category contributions and orders in an editable dashboard',
+  example_ecommerce_dashboard_query:
+    'Create an operations dashboard from the selected e-commerce data with exactly 3 charts: monthly sales, the top 10 categories by sales, and monthly orders. Check actual fields, order status and revenue definitions first. Show a plan and wait for confirmation before generating the dashboard.',
   example_create_sql_skill_desc: 'Use skill-creator to create a practical SQL data analysis skill',
   example_create_sql_skill_query:
     'Please use skill-creator to help me create a practical SQL data analysis skill, including core functions like connecting to a database, executing SQL queries, and data visualization.',
@@ -374,6 +378,10 @@ export const ChatEn = {
   select_skill: 'Select Skill',
   skill_selected: 'Skill: {{name}}',
   select_database: 'Select Database',
+  database_required_title: 'Select a database first',
+  database_required_description:
+    'This dashboard has no data yet. Select a database or upload a CSV / Excel file before sending. Your message will be kept.',
+  database_required_continue_editing: 'Continue editing',
   database_selected: 'Database: {{name}}',
   select_knowledge: 'Select Knowledge Base',
   knowledge_selected: 'Knowledge Base: {{name}}',

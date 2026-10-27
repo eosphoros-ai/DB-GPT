@@ -641,6 +641,8 @@ async def list_skills(
     """
     from dbgpt.agent.skill.loader import SkillLoader
 
+    from .dashboard.gallery_templates import is_internal_dashboard_skill
+
     skills_data = []
     skills_dir = DEFAULT_SKILLS_DIR
     skills_dir_resolved = Path(skills_dir).expanduser().resolve()
@@ -658,6 +660,8 @@ async def list_skills(
             file_path = getattr(metadata, "file_path", None) or ""
             if not file_path and hasattr(skill, "_config"):
                 file_path = skill._config.get("file_path", "")
+            if is_internal_dashboard_skill(file_path):
+                continue
 
             # Convert absolute file_path to relative (relative to skills_dir)
             if file_path:
@@ -2093,6 +2097,32 @@ async def _react_agent_stream_impl(
                 exc_info=True,
             )
 
+    if (
+        not database_name
+        and not dashboard_continuation_turn
+        and (attachment_ctx is not None or file_paths)
+        and (
+            skill_name == DASHBOARD_BUILDER_SKILL_NAME
+            or _is_dashboard_workflow_request(user_input, creation_mode)
+        )
+    ):
+        from .dashboard.uploaded_source import prepare_dashboard_files
+
+        try:
+            prepared = await prepare_dashboard_files(
+                attachment_ctx=attachment_ctx,
+                legacy_paths=file_paths,
+                owner_id=dialogue.user_name,
+                conversation_id=dialogue.conv_uid,
+            )
+            database_name = prepared["database_name"]
+            dataset_id = prepared["dataset_id"]
+            uploaded_files = prepared["files"]
+        except (ValueError, OSError) as exc:
+            yield _sse_event({"type": "error", "error": str(exc)})
+            yield _sse_event({"type": "done"})
+            return
+
     # Connector selection (Task C): only inject user-selected connectors.
     connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
 
@@ -2303,7 +2333,13 @@ async def _react_agent_stream_impl(
 
     # Step 1: Pre-load skills
     load_skills_from_dir(skills_dir, recursive=True)
-    all_skills = registry.list_skills()
+    from .dashboard.gallery_templates import is_internal_dashboard_skill
+
+    all_skills = [
+        skill
+        for skill in registry.list_skills()
+        if not is_internal_dashboard_skill(skill.file_path)
+    ]
 
     # Step 2: Get business tools from ResourceManager
     rm = get_resource_manager(CFG.SYSTEM_APP)
@@ -2434,6 +2470,29 @@ async def _react_agent_stream_impl(
 ## 数据库
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
+
+    if database_connector is None and (
+        creation_mode == "dashboard"
+        or skill_name == DASHBOARD_BUILDER_SKILL_NAME
+        or (
+            not skill_name
+            and not dashboard_continuation_turn
+            and _is_dashboard_workflow_request(user_input)
+        )
+    ):
+        locale = str((dialogue.ext_info or {}).get("locale", "zh")).lower()
+        yield _sse_event(
+            AgentFinalAnswer(
+                content=(
+                    "Choose an available data source or upload a CSV/Excel file "
+                    "before generating a dashboard."
+                    if locale.startswith("en")
+                    else "请选择可用数据源或上传 CSV / Excel 文件，再生成看板。"
+                )
+            ).to_sse_payload()
+        )
+        yield _sse_event({"type": "done"})
+        return
 
     if database_connector is not None:
         database_context += """
@@ -2983,11 +3042,13 @@ async def _react_agent_stream_impl(
         user_prompt=user_input,
         model_name=dialogue.model_name,
         stream_callback=stream_callback,
+        gallery_template=(dialogue.ext_info or {}).get("dashboard_template"),
     )
     from .dashboard.confirmation import (
         DashboardConfirmationAgent,
         generation_failure,
         generation_start_event,
+        query_batch_size,
         run_bounded_generation,
     )
 
@@ -3365,9 +3426,19 @@ async def _react_agent_stream_impl(
             if hasattr(skill_template, "template")
             else str(skill_template)
         )
+        if pre_matched_skill.metadata.name == DASHBOARD_BUILDER_SKILL_NAME:
+            from .dashboard.skill_context import (
+                confirmed_skill_instructions,
+                planning_skill_instructions,
+            )
+
+            if react_state.get("dashboard_confirmation_contract"):
+                skill_text = confirmed_skill_instructions(skill_text)
+            elif not dashboard_continuation_turn:
+                skill_text = planning_skill_instructions(skill_text)
         skill_prompt_context = f"""
 ## 已加载技能指令（{pre_matched_skill.metadata.name}）
-以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
+以下是用户选择的技能在当前阶段的指令，请严格按照这些指令进行操作：
 
 {skill_text}
 """
@@ -3378,6 +3449,17 @@ async def _react_agent_stream_impl(
 3. 阅读技能指令，理解每一步需要调用的工具
 4. 按顺序执行工具调用，完成技能目标
 """
+
+    if react_state.get("dashboard_gallery_context"):
+        gallery_context = react_state["dashboard_gallery_context"]
+        if react_state.get("dashboard_confirmation_contract"):
+            from .dashboard.skill_context import confirmed_gallery_context
+
+            gallery_context = confirmed_gallery_context(gallery_context)
+        skill_prompt_context += (
+            "\n## Loaded internal dashboard-design skill\n"
+            + json.dumps(gallery_context, ensure_ascii=False)
+        )
 
     # Build a hint listing all images currently available in
     # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
@@ -3862,7 +3944,8 @@ Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
             confirmation_contract_prompt = f"""
 ## Authoritative confirmed plan contract
 The following persisted contract is authoritative. Generate exactly one query for
-every listed widget_id across staged calls of at most two widgets each, use each id
+every listed widget_id across staged calls of at most {query_batch_size(react_state)}
+widgets each (fewer for long queries), use each id
 verbatim, and do not invent extra widgets. Pass the dashboard_id and
 expected_revision below unchanged.
 

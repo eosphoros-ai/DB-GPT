@@ -158,6 +158,7 @@ import { LAYOUT_TEMPLATES_ENABLED } from './dashboard-release-features';
 import { useDashboardPaneResize } from './use-dashboard-pane-resize';
 
 interface DashboardEditorProps {
+  initialView?: 'edit' | 'preview';
   initialRecord: DashboardRecord;
   initialPanel?: 'access' | 'lifecycle' | 'schedule' | null;
   mode?: 'embedded' | 'standalone';
@@ -352,6 +353,7 @@ const sameDesktopLayout = (left: DashboardLayoutItem[], right: DashboardLayoutIt
 };
 
 export default function DashboardEditor({
+  initialView = 'edit',
   initialRecord,
   initialPanel = null,
   mode = 'standalone',
@@ -448,7 +450,7 @@ export default function DashboardEditor({
   const [applyingAnnotationId, setApplyingAnnotationId] = useState<string | null>(null);
   const [filterParameterDrafts, setFilterParameterDrafts] = useState<Record<string, string>>({});
   const [widgetSettingsMode, setWidgetSettingsMode] = useState<WidgetSettingsMode>('visual');
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('edit');
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(initialView);
   const paneResize = useDashboardPaneResize({
     libraryMode,
     settingsMode: widgetSettingsMode,

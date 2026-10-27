@@ -11,6 +11,7 @@ import DashboardAnomalyRuleEditor from './DashboardAnomalyRuleEditor';
 import DashboardDataFreshness from './DashboardDataFreshness';
 import DashboardExtendedChart from './DashboardExtendedChart';
 import DashboardGenerationCard from './DashboardGenerationCard';
+import { GALLERY_DESIGN_SKILL_IDS } from './dashboard-catalog';
 import { dashboardDateLocale, dashboardText, useDashboardTranslation } from './dashboard-i18n';
 import { dashboardTemplateEntry, dashboardTemplatePrompt } from './dashboard-template-entry';
 
@@ -152,18 +153,19 @@ describe('Dashboard locale integration', () => {
     );
   });
 
-  it('localizes all built-in template requests without translating skill names or custom requests', async () => {
+  it('localizes template requests while preserving their selection and custom text', async () => {
     for (const language of ['en', 'zh']) {
       await act(async () => {
         await i18next.changeLanguage(language);
       });
-      for (const [name, design] of Object.entries(ADAPTED_SKILLS)) {
+      for (const name of GALLERY_DESIGN_SKILL_IDS) {
+        const design = ADAPTED_SKILLS[name];
         const prompt = dashboardTemplatePrompt(name);
-        expect(prompt).toContain(name);
-        expect(prompt).toContain('dashboard-builder');
+        expect(dashboardTemplateEntry({ creation_mode: 'dashboard', skill: name })?.selection).toBe(`design:${name}`);
+        expect(prompt).not.toContain('dashboard-builder');
         if (language === 'en') {
           expect(prompt).not.toMatch(/[\u4e00-\u9fff]/);
-          expect(prompt).toContain('All values must come from actual queries.');
+          expect(prompt).toContain('Adapt metrics to the actual fields');
         } else {
           expect(prompt.startsWith(design.prompt)).toBe(true);
         }

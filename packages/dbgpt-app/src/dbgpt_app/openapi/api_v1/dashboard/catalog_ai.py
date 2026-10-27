@@ -454,7 +454,8 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
         "须精确对应 SQL 别名。\n字段 type 使用 string/numb"
         "er/date/datetime/boolean/unknown。\n所有 query.da"
         "ta_source_id 必须为所选数据源。\nquery.max_rows "
-        "不超过 500；SQL 聚合及 LIMIT 应保证不截断。\nenco"
+        "默认 1000，完整的多系列时间趋势可按需提高到 5000；"
+        "SQL 聚合及 LIMIT 应保证不截断。\nenco"
         "ding 仅引用输出别名。组件 type 仅可为 kpi,line,b"
         "ar,pie,table。\npresentation.visualization 可用 k"
         "pi,line,area,column,bar,stacked_column,\npie,donu"
@@ -581,8 +582,10 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
                     widget.style = original.style.copy()
                     widget.presentation.colors = original.presentation.colors.copy()
                 widget.query.timeout_seconds = 20
-                # A guessed small limit (e.g. 24 months) must not discard valid history.
-                widget.query.max_rows = 500
+                # Use the shared query default as a floor; multi-series history
+                # may need more rows. The schema still enforces the 5000-row cap
+                # and validation rejects truncated results, including filters.
+                widget.query.max_rows = max(1000, widget.query.max_rows)
             schema.metadata.compatibility = {
                 **reference.metadata.compatibility,
                 "catalog_template_id": template_id,

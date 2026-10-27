@@ -216,6 +216,7 @@ docs/superpowers/
 .gstack/
 
 # Generated Dashboard demo data and local share-token encryption key
+/output/
 /examples/dashboard/generated/
 /pilot/meta_data/dashboard-share.key
 /examples/dashboard/olist/data/

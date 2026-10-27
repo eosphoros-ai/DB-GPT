@@ -4,51 +4,26 @@ import { dashboardSourceLabel } from '@/new-components/dashboard/dashboard-sourc
 import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
 import { ArrowRightOutlined, FolderOutlined, SearchOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Alert, Button, Empty, Input, Spin } from 'antd';
+import { Alert, Button, Empty, Input, Modal, Spin } from 'antd';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
-import { AVAILABLE_CATALOG, catalogProof, type CatalogTemplate } from './dashboard-catalog';
+import {
+  AVAILABLE_CATALOG,
+  catalogProof,
+  GALLERY_DESIGN_SKILL_IDS,
+  TEMPLATE_GALLERY_ORDER,
+  type CatalogTemplate,
+} from './dashboard-catalog';
 import DashboardDesignTemplate from './DashboardDesignTemplate';
 import styles from './DashboardGallery.module.css';
 import DashboardTemplateCarousel from './DashboardTemplateCarousel';
 import DashboardTemplateLayoutPreview from './DashboardTemplateLayoutPreview';
-import DashboardTemplateSetup from './DashboardTemplateSetup';
 import { useTemplateFavorites } from './use-template-favorites';
 
-const showcaseOrder = [
-  'clinical-insight',
-  'cardio-journal',
-  'voice-observatory',
-  'store-marketing',
-  'national-command',
-  'healthcare-command',
-  'rural-finance',
-  'brand-revenue',
-];
-const catalogPriority = (id: string) => {
-  const index = showcaseOrder.indexOf(id);
-  return index < 0 ? showcaseOrder.length : index;
-};
-
-// The user's selected styles and data templates share one display order.
-const preferredTemplates = [
-  'design:learnhub-viz-design',
-  'design:brutal-viz-design',
-  'design:pawspa-viz-design',
-  'design:serenityspa-viz-design',
-  'voice-observatory',
-  'store-marketing',
-  'national-command',
-  'brand-revenue',
-  'business-dossier',
-  'store-coverage',
-  'northwind-revenue',
-  'northwind-freight',
-];
 const preferredPriority = (id: string) => {
-  const index = preferredTemplates.indexOf(id);
-  return index < 0 ? preferredTemplates.length : index;
+  const index = TEMPLATE_GALLERY_ORDER.indexOf(id);
+  return index < 0 ? TEMPLATE_GALLERY_ORDER.length : index;
 };
 
 export default function DashboardTemplateGallery({ featured = false }: { featured?: boolean }) {
@@ -75,11 +50,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   ); // Errors are shown in the gallery's retry alert.
   const available = useMemo(
     () =>
-      sources.length
-        ? [...AVAILABLE_CATALOG].sort(
-            (a, b) => catalogPriority(a.id) - catalogPriority(b.id) || Number(!!b.style) - Number(!!a.style),
-          )
-        : [],
+      sources.length ? [...AVAILABLE_CATALOG].sort((a, b) => preferredPriority(a.id) - preferredPriority(b.id)) : [],
     [sources],
   );
   const categories =
@@ -93,19 +64,12 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
   );
-  const featuredIds = [
-    'brand-revenue',
-    'retail-overview',
-    'growth-map',
-    'retail-terminal',
-    'service-desk',
-    'sales-receipt',
-  ];
-  const matches = featured ? featuredIds.flatMap(id => filtered.filter(item => item.id === id)) : filtered;
+  const matches = filtered;
   const designs = featured
     ? []
     : Object.entries(ADAPTED_SKILLS).filter(
         ([name, design]) =>
+          GALLERY_DESIGN_SKILL_IDS.has(name) &&
           (category === '全部' || category === '设计') &&
           (collection !== 'favorites' || favorites.includes(`design:${name}`)) &&
           `${design.title} ${design.description} ${dt(design.title)} ${dt(design.description)}`
@@ -115,6 +79,8 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   const open = (item: CatalogTemplate) => {
     setSelected(item);
   };
+  const startFromTemplate = (item: CatalogTemplate) =>
+    void router.push({ pathname: '/', query: { creation_mode: 'dashboard', template: item.id } });
   const cards = matches.map(item => {
     const proof = catalogProof(item.id);
     return (
@@ -169,7 +135,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
           <span>{dashboardSourceLabel(proof?.source || item.sourceNames[0])}</span>
           <button
             type='button'
-            onClick={() => open(item)}
+            onClick={() => startFromTemplate(item)}
             aria-label={dt('使用模板 {{value0}}', { value0: dt(item.title) })}
           >
             {dt('使用')}
@@ -231,7 +197,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
                 favorites.filter(
                   id =>
                     AVAILABLE_CATALOG.some(item => item.id === id) ||
-                    (id.startsWith('design:') && ADAPTED_SKILLS[id.slice(7)]),
+                    (id.startsWith('design:') && GALLERY_DESIGN_SKILL_IDS.has(id.slice(7))),
                 ).length
               }
             </span>
@@ -300,7 +266,32 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
           }
         />
       )}
-      {selected && <DashboardTemplateSetup template={selected} sources={sources} onClose={() => setSelected(null)} />}
+      {selected && (
+        <Modal
+          open
+          title={dt(selected.title)}
+          onCancel={() => setSelected(null)}
+          width={1000}
+          footer={
+            <Button type='primary' onClick={() => startFromTemplate(selected)}>
+              {dt('选择数据并创建看板')}
+            </Button>
+          }
+        >
+          {catalogProof(selected.id)?.preview ? (
+            <Image
+              src={catalogProof(selected.id)!.preview!}
+              alt={dt('{{value0}}模板示例预览', { value0: dt(selected.title) })}
+              width={1200}
+              height={750}
+              style={{ width: '100%', height: 'auto' }}
+            />
+          ) : (
+            <DashboardTemplateLayoutPreview template={selected} />
+          )}
+          <p>{dt(selected.description)}</p>
+        </Modal>
+      )}
     </>
   );
 }

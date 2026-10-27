@@ -1610,5 +1610,11 @@ const DashboardEn: Record<string, string> = {
   '{{value0}}模板示例预览': '{{value0}} template example preview',
   示例预览: 'Example preview',
   '，已截断': ', truncated',
+  '已选择模板：{{name}}。请选择数据后发送需求。': 'Selected template: {{name}}. Choose data, then send your request.',
+  请使用看板计划卡片操作: 'Use the actions on the dashboard plan card',
+  '请根据实际字段调整指标，保留所选模板的布局与配色；先展示计划，确认后再生成看板。':
+    'Adapt metrics to the actual fields and keep the selected layout and colors. Show the plan first, then generate the dashboard after confirmation.',
+  '生成已中断，已完成的计划或草稿仍保留，请重试。':
+    'Generation was interrupted. Your existing plan or draft is preserved; please retry.',
 };
 export default DashboardEn;

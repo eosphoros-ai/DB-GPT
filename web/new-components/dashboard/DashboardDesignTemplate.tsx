@@ -5,7 +5,6 @@ import { ArrowRightOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 import { Button, Modal } from 'antd';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { dashboardTemplatePrompt } from './dashboard-template-entry';
 import styles from './DashboardGallery.module.css';
 
 export default function DashboardDesignTemplate({
@@ -23,11 +22,10 @@ export default function DashboardDesignTemplate({
   const [open, setOpen] = useState(false);
   const use = () =>
     void router.push({
-      pathname: '/dashboards/new',
+      pathname: '/',
       query: {
         creation_mode: 'dashboard',
         skill: name,
-        skill_prompt: dashboardTemplatePrompt(name),
       },
     });
   return (
