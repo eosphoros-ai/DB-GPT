@@ -7,6 +7,7 @@ returned, so those callers received ``None`` and dropped the prompt of every
 resource pack.
 """
 
+import asyncio
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
@@ -53,6 +54,33 @@ class _ToolResource(_PromptOnlyResource):
         return ResourceType.Tool
 
 
+class _StatefulPromptResource(_PromptOnlyResource):
+    """A leaf resource whose prompt is derived from the pack it was applied to.
+
+    ``ResourcePack.apply`` used to rebind its loop target to the last child and
+    then write the rebuilt ``_resources`` map onto it.  A resource that reads
+    ``_resources`` from itself therefore observed the whole pack, so this class
+    turns that write into an observable prompt change instead of a private
+    attribute assertion.
+    """
+
+    async def get_prompt(
+        self,
+        *,
+        lang: str = "en",
+        prompt_type: str = "default",
+        question: Optional[str] = None,
+        resource_name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        """Return the marker prompt, plus any pack contents attached to it."""
+        inherited = getattr(self, "_resources", None)
+        if inherited:
+            names = ",".join(sorted(inherited))
+            return f"prompt:{self._name}[inherited:{names}]", None
+        return f"prompt:{self._name}", None
+
+
 def _make_pack() -> ResourcePack:
     return ResourcePack(
         [_PromptOnlyResource("kb"), _PromptOnlyResource("files")],
@@ -93,14 +121,17 @@ async def test_apply_keeps_only_the_surviving_resources():
 
 
 def test_apply_does_not_write_the_pack_contents_onto_a_child():
-    """The rebuilt ``_resources`` map belongs to the pack, not to its last child."""
-    pack = _make_pack()
-    children = list(pack.sub_resources)
+    """The rebuilt map belongs to the pack; a child's prompt must not change."""
+    kb = _StatefulPromptResource("kb")
+    files = _StatefulPromptResource("files")
+    pack = ResourcePack([kb, files], name="agent-resources")
 
+    # The child prompts before apply() are the reference: apply() must not leak
+    # the pack's contents into any child, which is what the loop rebinding did.
     pack.apply(apply_func=lambda resource: resource)
 
-    for child in children:
-        assert "_resources" not in child.__dict__
+    assert asyncio.run(kb.get_prompt())[0] == "prompt:kb"
+    assert asyncio.run(files.get_prompt())[0] == "prompt:files"
 
 
 @pytest.mark.asyncio
