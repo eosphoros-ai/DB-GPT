@@ -1168,6 +1168,8 @@ def _write_pi_trace(
 def _build_pi_history_payload(
     final_content: str,
     steps: List[Dict[str, Any]],
+    suite_reference: Optional[Dict[str, Any]] = None,
+    suite_binding: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Same persisted-history shape as the dbgpt branch."""
     return json.dumps(
@@ -1182,6 +1184,8 @@ def _build_pi_history_payload(
             "generated_images": [],
             "sub_agents": [],
             "input_files": [],
+            "suite_reference": suite_reference,
+            "suite_binding": suite_binding,
         },
         ensure_ascii=False,
     )
@@ -1530,10 +1534,22 @@ async def run_pi_harness_turn(
 
     # Suite binder (T3): resolve the pin once per turn; the loopback tool-run
     # endpoint reads it back by conv_id (pi runs in a separate process).
+    suite_reference = None
+    suite_binding_snapshot = None
     try:
-        from .suite_binder import resolve_binding_for_turn, set_conv_suite
+        from .suite_binder import (
+            command_binding_event,
+            resolve_binding_for_turn,
+            set_conv_suite,
+            suite_message_reference,
+        )
 
-        set_conv_suite(conv_id, resolve_binding_for_turn(dialogue))
+        suite_binding = resolve_binding_for_turn(dialogue)
+        suite_reference = suite_message_reference(suite_binding, dialogue.ext_info)
+        set_conv_suite(conv_id, suite_binding)
+        if suite_binding is not None:
+            suite_binding_snapshot = command_binding_event(suite_binding)
+            yield _sse_event(suite_binding_snapshot)
     except Exception:
         logger.debug("pi harness: suite binding not recorded", exc_info=True)
 
@@ -1554,7 +1570,7 @@ async def run_pi_harness_turn(
             storage_conv = _open_pi_storage_conv(dialogue, conv_id)
             for frame in _pi_terminal_events(
                 storage_conv,
-                _build_pi_history_payload(msg, []),
+                _build_pi_history_payload(msg, [], suite_reference, suite_binding_snapshot),
                 AgentFinalAnswer(content=msg),
             ):
                 yield frame
@@ -1613,7 +1629,7 @@ async def run_pi_harness_turn(
         msg = f"pi harness init failed: {e}"
         for frame in _pi_terminal_events(
             storage_conv,
-            _build_pi_history_payload(msg, []),
+            _build_pi_history_payload(msg, [], suite_reference, suite_binding_snapshot),
             AgentFinalAnswer(content=msg),
         ):
             yield frame
@@ -1773,7 +1789,9 @@ async def run_pi_harness_turn(
     )
     for frame in _pi_terminal_events(
         storage_conv,
-        _build_pi_history_payload(final_content, state.history_steps),
+        _build_pi_history_payload(
+            final_content, state.history_steps, suite_reference, suite_binding_snapshot
+        ),
         AgentFinalAnswer(content=final_content),
     ):
         yield frame

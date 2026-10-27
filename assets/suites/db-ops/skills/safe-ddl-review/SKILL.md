@@ -1,9 +1,18 @@
 ---
 name: safe-ddl-review
+name_zh: 变更评审
+command: /fix
+user-invocable: true
+argument-hint-zh: 把本次诊断的修复动作整理为 fix_plan：分级、锁影响、在线 DDL 方案、回滚与审批要求
 description: 受控 DDL 评审技能。对任何结构变更（ADD/DROP INDEX、ADD COLUMN、改主键、OPTIMIZE、分区、归档搬迁）做破坏性分级 L0-L3、锁影响与耗时预估、复制延迟风险评估、在线 DDL 方案选型（INPLACE/LOCK=NONE、gh-ost、pt-online-schema-change）、回滚预案与审批要求判定；生产环境 DDL 默认拒绝，仅输出提案。触发词包括"DDL""变更评审""加索引风险""能不能改表""改字段""改主键""锁表""在线 DDL""gh-ost""pt-osc""OPTIMIZE""ANALYZE""变更单""回滚方案""这个变更安全吗""生产能改吗"。绝不自动执行任何变更。
 ---
 
 # 受控 DDL 评审技能 (Safe DDL Review)
+
+## 必需参考
+
+按[生产安全清单](../../runbooks/production-safety-checklist.md)和
+[运维 SOP](../../prompts/ops-playbook.md)判定审批与变更边界。
 
 本技能是 `db-ops`（智能运维）套件的**安全闸门**，也是三个官方套件中审批最严的一环。所有来自 `index-advisor`、`profile-governance`、`slow-query-diagnosis` 的变更动作，落地前都要经本技能评审：分级、算锁影响、选在线方案、写回滚、定审批要求。
 

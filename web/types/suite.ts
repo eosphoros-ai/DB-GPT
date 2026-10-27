@@ -1,9 +1,38 @@
+/** Display snapshot of the suite and shortcut attached to one sent message. */
+export interface SuiteMessageReference {
+  name: string;
+  display: string;
+  command?: string;
+}
+
+export interface SuiteRecommendedQuestion {
+  text: string;
+  /** Short display title for the inline composer prefix. */
+  title?: string;
+  hint?: string;
+  /** Named example database; omitted questions use the selected session database. */
+  database_name?: string;
+  command?: string;
+}
+
+export interface SuiteCommand {
+  name: string;
+  aliases?: string[];
+  description?: string;
+  summary?: string;
+  skill?: string;
+  example?: string;
+  prefill?: string;
+}
+
 /**
  * Expert-suite (scenario suite) types mirrored from the backend registry
  * (`GET /api/v1/suites`, dbgpt_serve/plugins).  The manifest_snapshot is a
- * derived, rebuildable projection of suite.yaml — never the SOP body.
+ * derived, rebuildable projection of plugin.json or legacy suite.yaml.
+ * It never contains the SOP body.
  */
 export interface SuiteManifestSnapshot {
+  package_format?: 'qwenwork-plugin' | 'scenario-suite';
   display?: string;
   display_en?: string;
   icon?: string;
@@ -14,8 +43,8 @@ export interface SuiteManifestSnapshot {
     keywords?: string[];
     specificity?: number;
   };
-  recommended_questions?: { text: string; hint?: string }[];
-  commands?: { name: string; description?: string }[];
+  recommended_questions?: SuiteRecommendedQuestion[];
+  commands?: SuiteCommand[];
   tools?: { allow?: string[]; deny?: string[] };
   artifacts?: string[];
   context_defaults?: Record<string, any>;
@@ -39,7 +68,7 @@ export interface SuiteItem {
   package_digest?: string;
   manifest_snapshot?: SuiteManifestSnapshot;
   readme?: string | null;
-  skill_details?: { name: string; description?: string }[] | null;
+  skill_details?: { name: string; display?: string; description?: string; user_invocable?: boolean }[] | null;
   use_count?: number;
   user_name?: string | null;
 }

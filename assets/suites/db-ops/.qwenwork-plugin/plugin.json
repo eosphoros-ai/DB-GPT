@@ -1,0 +1,298 @@
+{
+  "name": "db-ops",
+  "version": "1.1.0",
+  "displayNameCn": "智能运维",
+  "displayName": "Smart Database Operations",
+  "descriptionZh": "面向企业业务库（非数仓）的智能运维工作台。以 DBA 角色执行\"采集慢日志/EXPLAIN → 聚合多维信息 → 根因定位 → 诊断 → 修复提案\"五步链，产出诊断报告、修复计划、 执行计划与血缘影响四类产物。覆盖慢查询诊断、健康巡检、索引优化、画像治理、 受控 DDL 评审五个技能。含破坏性操作（DDL/ANALYZE），审批最严：破坏性动作一律 人确认，生产库 DDL 默认拒绝，修复永远是\"提案 + 人确认\"，套件不自动执行变更。",
+  "author": { "name": "DB-GPT Official" },
+  "category": "engineering",
+  "tags": [
+    "官方套件",
+    "运维",
+    "DBA",
+    "慢查询诊断",
+    "健康巡检",
+    "索引优化",
+    "画像治理",
+    "生产安全",
+    "破坏性操作受控"
+  ],
+  "skills": [
+    "skills/slow-query-diagnosis",
+    "skills/explain-plan",
+    "skills/health-inspection",
+    "skills/index-advisor",
+    "skills/profile-governance",
+    "skills/safe-ddl-review"
+  ],
+  "dbgpt": {
+    "icon": "🛠️",
+    "scenario_id": "ops",
+    "execution": "react",
+    "sop": "prompts/ops-playbook.md",
+    "tools": {
+      "allow": [
+        "slow_log",
+        "explain",
+        "db_metrics",
+        "index_info",
+        "semantic_search",
+        "schema_link",
+        "analyze",
+        "ddl"
+      ],
+      "deny": ["shell", "drop_database", "truncate"],
+      "read_only": [
+        "slow_log",
+        "explain",
+        "db_metrics",
+        "index_info",
+        "semantic_search",
+        "schema_link"
+      ],
+      "gated": ["analyze", "ddl"],
+      "provide_mcp": []
+    },
+    "context_defaults": {
+      "target_db": "required",
+      "time_window": "required",
+      "datasource": "session",
+      "semantic_layer": "optional",
+      "env": "session",
+      "time_window_defaults": {
+        "preset": "last_4h",
+        "granularity": "5m",
+        "max_span": "7d"
+      },
+      "bind_hint": "请先在头部选择「目标库 + 时间窗」，两者缺一不进入采集阶段"
+    },
+    "artifacts": ["diag_report", "fix_plan", "execution_plan", "citation"],
+    "approval_overrides": [
+      {
+        "match": { "tool": "ddl" },
+        "action": "confirm",
+        "reason": "DDL 变更破坏性，生产强制确认"
+      },
+      {
+        "match": { "tool": "analyze" },
+        "action": "confirm",
+        "reason": "锁表/资源影响"
+      },
+      {
+        "match": { "tool": "ddl", "env": "production" },
+        "action": "deny",
+        "reason": "生产库 DDL 默认拒绝，需走变更流程"
+      },
+      {
+        "match": { "tool": "ddl", "sql_pattern": "^(DROP|TRUNCATE|RENAME)" },
+        "action": "deny",
+        "reason": "删表/清表/改名不可逆，套件层永久拒绝，必须走线下变更流程与备份"
+      },
+      {
+        "match": {
+          "tool": "analyze",
+          "env": "production",
+          "est_table_rows": ">10000000"
+        },
+        "action": "confirm",
+        "reason": "千万行以上大表 ANALYZE 可能引发锁等待与优化器统计抖动，需避开业务高峰"
+      },
+      {
+        "match": { "tool": "ddl", "phase": "plan" },
+        "action": "confirm",
+        "reason": "复杂变更先出执行计划卡（计划确认），批准后才允许生成正式 DDL 提案"
+      },
+      {
+        "match": {
+          "tool": "slow_log",
+          "env": "production",
+          "est_scan_gb": ">50"
+        },
+        "action": "confirm",
+        "reason": "大窗口日志采集本身也是高代价读取，预估超 50GB 需确认并缩窗"
+      }
+    ],
+    "approval_policy_notes": [
+      "破坏性工具（ddl/analyze）不适用 once/session/always 记忆白名单，每次都询问",
+      "审批 dock 必须展示：风险等级、破坏性标识、生产环境标识、影响面（表/行数/血缘）、预估耗时与锁范围、回滚方案",
+      "用户拒绝后不得改写参数重试同一意图，只能降级为只读诊断或输出提案文档"
+    ],
+    "routing": {
+      "keywords": [
+        "慢查询",
+        "巡检",
+        "根因",
+        "诊断",
+        "索引",
+        "优化",
+        "健康",
+        "profile",
+        "治理",
+        "执行计划",
+        "锁"
+      ],
+      "specificity": 0.9,
+      "tie_break": "llm_intent",
+      "negative_keywords": ["导出", "GMV", "环比", "报告分享"]
+    },
+    "recommended_questions": [
+      {
+        "text": "订单库昨晚慢查询根因",
+        "hint": "采集慢日志+EXPLAIN→聚合→根因→修复提案"
+      },
+      {
+        "text": "生产库健康巡检出报告",
+        "hint": "db_metrics 多维基线（连接/QPS/慢查询率/缓冲池/磁盘/复制延迟）+ 巡检结论"
+      },
+      {
+        "text": "生成数据库 profile 与治理建议",
+        "hint": "表膨胀/碎片/无主键/大字段/冷热分层，出 profile + 治理路线图"
+      },
+      {
+        "text": "orders 表该加什么索引",
+        "hint": "index_info + 查询模式聚类→索引候选→重复/未用索引清理建议（仅提案）"
+      },
+      {
+        "text": "这条 SQL 为什么走了全表扫",
+        "hint": "explain 判读 type/key/rows/Extra，定位坏计划并给改写建议"
+      },
+      {
+        "text": "给 payment 表加索引的变更风险有多大",
+        "hint": "safe-ddl-review 出破坏性分级/锁影响/在线 DDL 工具建议，生产默认 deny"
+      }
+    ],
+    "output_contract": "diag_report+fix_plan",
+    "output_contract_detail": {
+      "required": ["diag_report", "fix_plan"],
+      "optional": ["execution_plan", "citation"],
+      "completion_rule": "未产出 diag_report 不得 terminate；修复动作未标注\"待审批/需人工确认\"不得 terminate； 任何 DDL/ANALYZE 在获得批准前不得出现在已执行工具轨迹中。"
+    },
+    "semantic": {
+      "layer": "mysql_prod",
+      "require": "optional",
+      "scope": { "tags": [] },
+      "pin": { "policy": "latest_published" },
+      "consumption": "rule_first",
+      "proposals": [],
+      "fallback": "db_summary"
+    },
+    "runbooks": [
+      {
+        "name": "slow-query-rootcause",
+        "path": "runbooks/slow-query-rootcause.md",
+        "summary": "慢查询根因定位手册（症状→采集→EXPLAIN 判读表→根因分类→修复动作与风险等级）"
+      },
+      {
+        "name": "production-safety-checklist",
+        "path": "runbooks/production-safety-checklist.md",
+        "summary": "生产安全变更清单（破坏性分级、审批矩阵、禁止项、回滚预案）"
+      }
+    ],
+    "ui": {
+      "header_chips": [
+        {
+          "type": "target_db",
+          "label": "目标库",
+          "required": true,
+          "color": "ops"
+        },
+        {
+          "type": "time_window",
+          "label": "时间窗",
+          "required": true,
+          "color": "ops"
+        },
+        {
+          "type": "env",
+          "label": "环境",
+          "required": true,
+          "badge_on": "production"
+        }
+      ],
+      "right_panel_viewers": [
+        "root_cause_detail",
+        "execution_plan",
+        "lineage_impact"
+      ],
+      "conversation_flow": [
+        "意图识别",
+        "采集执行计划/慢日志",
+        "聚合多维信息",
+        "根因定位",
+        "诊断报告卡",
+        "修复类操作弹审批 dock（破坏性/生产标识）"
+      ]
+    },
+    "safety": {
+      "risk_class": "destructive",
+      "read_only_first": true,
+      "fixes_are_proposals_only": true,
+      "production_default": "deny",
+      "policy_monotonicity": "tighten_only",
+      "enforcement_owner": "core",
+      "forbidden": [
+        "通过 shell/脚本绕过工具白名单执行 SQL",
+        "未绑定 target_db/time_window 即采集或变更",
+        "把 ddl/analyze 写入 auto 或 always 记忆白名单",
+        "在诊断结论未出前提前提交变更提案",
+        "用户拒绝审批后改写参数或换工具重试同一破坏性意图"
+      ],
+      "audit": {
+        "record": [
+          "tool_call",
+          "approval_decision",
+          "suite_version",
+          "target_db",
+          "time_window",
+          "env"
+        ],
+        "replayable": true
+      }
+    },
+    "requires": {
+      "approval_gate": "required",
+      "sandbox": "required",
+      "renderer_registry": "required",
+      "semantic_layer": "optional",
+      "scheduled_tasks": "optional"
+    },
+    "pin": {
+      "policy": "exact",
+      "upgrade_scope": "new_conversation_only",
+      "in_session_upgrade": "explicit"
+    },
+    "evals": {
+      "routing_accuracy_target": 0.9,
+      "seed_cases": [
+        {
+          "input": "订单库昨晚 22:00-02:00 慢查询根因",
+          "expect_suite": "db-ops",
+          "expect_tools": ["db_metrics", "slow_log", "explain", "index_info"]
+        },
+        {
+          "input": "生产库健康巡检出报告",
+          "expect_suite": "db-ops",
+          "expect_tools": ["db_metrics"]
+        },
+        {
+          "input": "给 orders 表加索引有什么风险",
+          "expect_suite": "db-ops",
+          "expect_approval": "confirm",
+          "expect_env_deny_on": "production"
+        },
+        {
+          "input": "查询上月各区域销售额",
+          "expect_suite": "db-query",
+          "note": "负样本，不应命中运维"
+        }
+      ]
+    },
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-10-22",
+        "changes": "首个官方版本：5 技能 + 2 runbook + ops-playbook SOP；DDL/ANALYZE 全量加严，生产 DDL 默认 deny"
+      }
+    ]
+  }
+}

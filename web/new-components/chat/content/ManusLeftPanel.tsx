@@ -1,7 +1,9 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
+import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
+import type { SuiteMessageReference } from '@/types/suite';
 import type { ITaskflowArtifact } from '@/types/taskflow';
 import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
 import { envelopeReadableText } from '@/utils/tool-envelope';
@@ -180,6 +182,7 @@ export interface ManusLeftPanelProps {
     db_name: string;
     db_type: string;
   };
+  attachedSuite?: SuiteMessageReference;
   attachedConnectors?: AttachedConnector[];
   taskPlan?: TaskItem[];
   /** Citation indexes that are valid for this answer. */
@@ -1037,6 +1040,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedFiles,
   attachedKnowledge,
   attachedSkill,
+  attachedSuite,
   attachedDb,
   attachedConnectors,
   taskPlan,
@@ -1216,6 +1220,23 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {userQuery && (
           <div className='flex justify-end'>
             <div className='max-w-[85%] space-y-2'>
+              {attachedSuite && (
+                <div
+                  data-testid='message-suite-reference'
+                  className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'
+                >
+                  <div className='w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 text-[#18a447] dark:text-[#79cc94]'>
+                    <SuiteHammerIcon className='flex-shrink-0' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>
+                      {attachedSuite.display}
+                      {attachedSuite.command ? ` · ${attachedSuite.command}` : ''}
+                    </div>
+                    <div className='text-[11px] text-gray-400 dark:text-gray-500'>{t('suite_reference_label')}</div>
+                  </div>
+                </div>
+              )}
               {attachedKnowledge && (
                 <div className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'>
                   <div className='w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0'>

@@ -1,0 +1,119 @@
+{
+  "name": "db-query",
+  "version": "1.1.0",
+  "displayNameCn": "智能取数",
+  "displayName": "Smart Data Query",
+  "descriptionZh": "自然语言→SQL 精准取数能力包。强制绑定语义层（表白名单 + 指标口径 + 默认过滤 + 行级权限规则），SQL 经 NL2SQL 生成并通过 sql.validate 自纠后在只读从库执行； 高代价扫描按预估成本触发审批 confirm；答案下附引用溯源 chips（指标版本/表/样例/规则）， 点赞沉淀样例库、纠错进语义标注待审队列。",
+  "author": { "name": "@DB-GPT 官方" },
+  "category": "engineering",
+  "tags": ["取数", "NL2SQL", "语义层", "只读", "ChatBI", "官方内置"],
+  "skills": [
+    "skills/nl2sql-precision",
+    "skills/semantic-linking",
+    "skills/metric-definition",
+    "skills/result-export",
+    "skills/readonly-guardrails"
+  ],
+  "dbgpt": {
+    "icon": "🔍",
+    "scenario_id": "query",
+    "execution": "react",
+    "sop": "prompts/query-playbook.md",
+    "tools": {
+      "allow": [
+        "semantic_search",
+        "schema_link",
+        "nl2sql",
+        "sql_execute",
+        "export_csv"
+      ],
+      "deny": ["ddl", "shell"],
+      "provide_mcp": []
+    },
+    "context_defaults": {
+      "semantic_model": "required",
+      "datasource": "session",
+      "time_window": "session"
+    },
+    "semantic": {
+      "layer": "mysql_prod",
+      "require": "required",
+      "scope": {
+        "metrics": ["valid_gmv", "active_users", "order_count"],
+        "tags": ["交易"]
+      },
+      "pin": { "policy": "latest_published", "version": null },
+      "consumption": "metric_first",
+      "proposals": []
+    },
+    "artifacts": ["sql_card", "result_table", "citation"],
+    "approval_overrides": [
+      {
+        "match": { "tool": "sql_execute", "est_scan_gb": ">100" },
+        "action": "confirm",
+        "reason": "高代价扫描"
+      },
+      {
+        "match": { "tool": "sql_execute", "est_scan_rows": ">50000000" },
+        "action": "confirm",
+        "reason": "超大行数扫描（预估 > 5000 万行）"
+      },
+      {
+        "match": { "tool": "sql_execute", "without_time_filter": true },
+        "action": "confirm",
+        "reason": "缺少时间范围过滤的全表聚合"
+      },
+      {
+        "match": { "tool": "export_csv", "row_count": ">100000" },
+        "action": "confirm",
+        "reason": "大批量导出（> 10 万行）需确认脱敏与落盘范围"
+      }
+    ],
+    "routing": {
+      "keywords": [
+        "查",
+        "统计",
+        "导出",
+        "GMV",
+        "客单价",
+        "top",
+        "环比",
+        "明细"
+      ],
+      "specificity": 0.8
+    },
+    "recommended_questions": [
+      {
+        "text": "查询上月各区域销售额",
+        "command": "/nl2sql",
+        "hint": "按 region 汇总，含环比"
+      },
+      {
+        "text": "上个月华东区的有效GMV",
+        "command": "/nl2sql",
+        "hint": "指标 v2 口径 + 默认过滤自动注入"
+      },
+      {
+        "text": "统计 Top10 客户 GMV 及环比",
+        "command": "/nl2sql",
+        "hint": "客户维度 GMV 排序 + 环比变化"
+      },
+      {
+        "text": "近30天各品类客单价",
+        "command": "/nl2sql",
+        "hint": "客单价 = valid_gmv / order_count"
+      },
+      {
+        "text": "导出上月华东区订单明细",
+        "command": "/export",
+        "hint": "明细导出走脱敏与行数上限"
+      }
+    ],
+    "output_contract": "result_set+sql",
+    "few_shots": {
+      "path": "few_shots/verified-queries.yaml",
+      "consumption": "metric_first",
+      "writeback": "on_thumbs_up"
+    }
+  }
+}

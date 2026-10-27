@@ -1,0 +1,185 @@
+{
+  "name": "db-analysis",
+  "version": "1.1.0",
+  "displayNameCn": "智能分析",
+  "displayName": "Smart Data Analysis",
+  "descriptionZh": "面向企业业务库的图文数据分析能力包。SOP 为\"圈数据集 → 多步取数 → 图表 → 结论 → 报告\"：先用语义层表白名单 + 血缘 join 路径圈定数据集（模型不从全量表选表），再多步 取数且每步引用同一指标定义（版本 pin）、统一注入默认过滤与时间粒度，保证跨图跨步 口径一致；随后按数据形态自动匹配柱/线/饼/散点，提炼有数据支撑的归因结论，最终导出 含引用 chips 的 HTML/PDF 报告。以只读为主，审批模式默认 auto-edit。",
+  "author": { "name": "@DB-GPT 官方" },
+  "category": "engineering",
+  "tags": [
+    "分析",
+    "归因",
+    "报告",
+    "可视化",
+    "数据集",
+    "语义层",
+    "ChatBI",
+    "官方内置"
+  ],
+  "skills": [
+    "skills/multi-step-analysis",
+    "skills/dataset-scoping",
+    "skills/chart-advisor",
+    "skills/report-generation",
+    "skills/attribution-analysis"
+  ],
+  "dbgpt": {
+    "icon": "📊",
+    "scenario_id": "analysis",
+    "execution": "react",
+    "sop": "prompts/analysis-playbook.md",
+    "tools": {
+      "allow": [
+        "semantic_search",
+        "schema_link",
+        "nl2sql",
+        "sql_execute",
+        "dataset_scope",
+        "chart",
+        "report_export",
+        "export_csv"
+      ],
+      "deny": ["ddl", "shell"],
+      "provide_mcp": []
+    },
+    "context_defaults": {
+      "semantic_model": "required",
+      "dataset": "required",
+      "datasource": "session",
+      "time_window": "session"
+    },
+    "semantic": {
+      "layer": "mysql_prod",
+      "require": "required",
+      "scope": {
+        "metrics": [
+          "valid_gmv",
+          "paid_order_cnt",
+          "aov",
+          "refund_rate",
+          "active_buyers"
+        ],
+        "tags": ["交易", "销售"]
+      },
+      "pin": {
+        "policy": "pin",
+        "versions": {
+          "valid_gmv": "v2",
+          "paid_order_cnt": "v1",
+          "aov": "v1",
+          "refund_rate": "v1"
+        },
+        "reason": "多步取数会产出多张图与多段结论；若各步各自解析口径，环比/同比/贡献度会出现 \"同一指标不同算法\"的自相矛盾。会话级 pin 后，升级只影响新会话，历史报告可复现。"
+      },
+      "consumption": "metric_first",
+      "proposals": []
+    },
+    "analysis_defaults": {
+      "grain": "day",
+      "compare": ["mom", "yoy"],
+      "default_filters": "inject",
+      "max_steps": 8,
+      "chart_type": "auto",
+      "conclusion": "evidence_required"
+    },
+    "artifacts": [
+      "dataset_card",
+      "chart",
+      "conclusion_card",
+      "report",
+      "citation"
+    ],
+    "templates": { "report": "templates/report-template.md" },
+    "report_formats": ["markdown", "html", "pdf"],
+    "report_sections": [
+      "summary",
+      "dataset_and_semantics",
+      "multi_dim_charts",
+      "attribution",
+      "recommendations",
+      "citations"
+    ],
+    "approval_overrides": [
+      {
+        "match": { "tool": "sql_execute", "est_scan_gb": ">100" },
+        "action": "confirm",
+        "reason": "高代价扫描"
+      },
+      {
+        "match": { "tool": "sql_execute", "est_scan_rows": ">50000000" },
+        "action": "confirm",
+        "reason": "超大行数扫描（预估 > 5000 万行）"
+      },
+      {
+        "match": { "tool": "sql_execute", "without_time_filter": true },
+        "action": "confirm",
+        "reason": "缺少时间范围过滤的全表聚合（分析多步取数更易放大该代价）"
+      },
+      {
+        "match": { "tool": "dataset_scope", "table_count": ">40" },
+        "action": "confirm",
+        "reason": "数据集过宽（>40 表）会显著降低 schema linking 与口径命中率"
+      },
+      {
+        "match": { "tool": "report_export", "share_scope": "external" },
+        "action": "confirm",
+        "reason": "报告外发分享需确认脱敏范围与可见性"
+      },
+      {
+        "match": { "tool": "export_csv", "row_count": ">100000" },
+        "action": "confirm",
+        "reason": "大批量导出（> 10 万行）需确认脱敏与落盘范围"
+      }
+    ],
+    "routing": {
+      "keywords": [
+        "分析",
+        "归因",
+        "报告",
+        "趋势",
+        "对比",
+        "占比",
+        "下滑",
+        "洞察",
+        "可视化",
+        "拆解",
+        "贡献度",
+        "异动",
+        "复盘"
+      ],
+      "specificity": 0.85
+    },
+    "recommended_questions": [
+      {
+        "text": "生成 Walmart 销售分析报告",
+        "title": "销售分析报告",
+        "command": "/analyze",
+        "hint": "圈数据集→多步取数→图表→结论→报告",
+        "database_name": "Walmart_Sales"
+      },
+      {
+        "text": "分析本月华东区销售下滑的归因，出图文报告",
+        "hint": "数据集圈定 + valid_gmv@v2 pin + 渠道/品类贡献度拆解 + HTML 报告"
+      },
+      {
+        "text": "对比华东华南近 12 周订单占比趋势",
+        "hint": "同一口径跨区对比，堆叠柱 + 占比折线 + 结论卡"
+      },
+      {
+        "text": "近 30 天各品类 GMV Top10 及环比，生成周报",
+        "hint": "时间粒度统一为日，Top10 榜单柱图 + 异动标注 + 周报"
+      },
+      {
+        "text": "618 大促 ROI 归因，哪些渠道品类拉动了增量",
+        "hint": "大促 vs 日常基线，增量拆解 + 投入产出散点 + 报告"
+      }
+    ],
+    "output_contract": "report+charts",
+    "few_shots": {
+      "path": "few_shots/verified-analyses.yaml",
+      "consumption": "metric_first",
+      "writeback": "on_thumbs_up",
+      "eval_set": true
+    }
+  }
+}

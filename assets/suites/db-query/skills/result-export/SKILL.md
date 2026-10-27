@@ -1,5 +1,6 @@
 ---
 name: result-export
+command: /export
 version: 1.0.0
 description: Result set export to CSV / Excel. Use when the user needs to download / save / email a report, or when the preview hit max_rows (default 1000) and the full set must be persisted; enforces column-type fidelity, PII masking, and export row-count approval.
 name_en: Result Export
@@ -13,6 +14,11 @@ argument-hint-zh: 当前结果集或全量明细（导出为 CSV / Excel）
 ---
 
 # 结果集导出 (Result Export)
+
+## 必需关联知识
+
+读取[只读执行护栏](../readonly-guardrails/SKILL.md)和[取数 SOP](../../prompts/query-playbook.md)，
+沿用已确认的口径、脱敏与导出行数限制。
 
 ## 技能目标
 

@@ -1,9 +1,17 @@
 ---
 name: index-advisor
+name_zh: 索引优化
+command: /index
+user-invocable: true
+argument-hint-zh: 基于 {time_window} 的查询模式，给 {target_db} 输出索引优化建议（仅提案）
 description: 索引优化建议技能。基于 index_info 的现有索引与基数、slow_log 的查询模式聚类、explain 的计划判读，生成组合索引候选、识别重复与未使用索引、评估写入放大与体积代价，并输出 ADD INDEX / DROP INDEX 提案（含在线 DDL 方案与回滚）。触发词包括"索引""加索引""建索引""索引优化""索引建议""组合索引""覆盖索引""冗余索引""重复索引""未使用索引""索引失效""该不该加索引""index advisor""ADD INDEX"。只出提案，绝不自动执行 DDL。
 ---
 
 # 索引优化建议技能 (Index Advisor)
+
+## 必需关联知识
+
+所有索引变更提案均遵循[受控变更评审](../safe-ddl-review/SKILL.md)。
 
 本技能是 `db-ops`（智能运维）套件的索引专项能力。它回答三个问题：**该加什么索引、该删什么索引、代价与风险有多大**。输出永远是**提案**（`fix_plan` + 需要时 `execution_plan`），执行由人经审批完成。
 

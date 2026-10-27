@@ -1,4 +1,16 @@
-import { SuiteItem } from '@/types/suite';
+import type { SuiteItem, SuiteRecommendedQuestion } from '@/types/suite';
+
+/** Resolve the example's database without silently falling back to another one. */
+export function resolveSuiteQuestionDatabase<T extends { db_name: string }>(
+  question: SuiteRecommendedQuestion,
+  selectedDatabase: T | null,
+  databases: T[],
+): T | null {
+  if (question.database_name) {
+    return databases.find(database => database.db_name === question.database_name) ?? null;
+  }
+  return selectedDatabase;
+}
 
 export interface SuiteRouteHit {
   slug: string;

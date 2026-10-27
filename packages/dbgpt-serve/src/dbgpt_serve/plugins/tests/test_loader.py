@@ -1,8 +1,14 @@
+import json
 import textwrap
+from pathlib import Path
 
 import pytest
 
-from dbgpt_serve.plugins.loader import load_suite_dir, scan_suites
+from dbgpt_serve.plugins.loader import (
+    load_suite_dir,
+    read_skill_summaries,
+    scan_suites,
+)
 
 MANIFEST = textwrap.dedent(
     """
@@ -121,7 +127,6 @@ def test_scan_suites_missing_root_is_failsoft():
 
 def test_scan_real_official_suites():
     """The three official packages in the repo must parse cleanly."""
-    from pathlib import Path
 
     root = Path(__file__).resolve().parents[6] / "assets" / "suites"
     if not root.is_dir():  # pragma: no cover - depends on checkout layout
@@ -132,3 +137,118 @@ def test_scan_real_official_suites():
     for pkg in packages:
         assert pkg.snapshot["skills"], pkg.name
         assert pkg.warnings == [], (pkg.name, pkg.warnings)
+        if pkg.name in {"db-query", "db-analysis", "db-ops"}:
+            assert pkg.snapshot["package_format"] == "qwenwork-plugin"
+            assert not (Path(pkg.path) / "suite.yaml").exists()
+            assert pkg.snapshot["context_defaults"]["datasource"] == "session"
+            assert "shell" in pkg.snapshot["tools"]["deny"]
+
+
+def write_plugin(root):
+    """A native package with an invocable skill and an internal knowledge skill."""
+    root.mkdir(parents=True, exist_ok=True)
+    manifest = root / ".qwenwork-plugin" / "plugin.json"
+    manifest.parent.mkdir()
+    manifest.write_text(
+        json.dumps(
+            {
+                "name": "native",
+                "version": "1.0",
+                "displayNameCn": "运维专家",
+                "skills": ["skills/doctor", "skills/knowledge"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    for name, metadata in (
+        ("doctor", "name_zh: SQL 体检\nname_en: SQL Doctor\nuser-invocable: true"),
+        ("knowledge", "user-invocable: false"),
+    ):
+        skill = root / "skills" / name / "SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text(
+            f"---\nname: {name}\n{metadata}\n"
+            "description_en: Diagnostics: safe checks\n"
+            "description_zh: 示例知识\n---\n# Instructions\n",
+            encoding="utf-8",
+        )
+    return root
+
+
+def test_native_plugin_derives_commands_without_writing_yaml(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    pkg = load_suite_dir(root)
+    assert pkg is not None
+    assert pkg.skills == ["doctor", "knowledge"]
+    assert pkg.snapshot["package_format"] == "qwenwork-plugin"
+    assert pkg.snapshot["context_defaults"]["datasource"] == "optional"
+    assert pkg.snapshot["commands"] == [
+        {
+            "name": "/SQL 体检",
+            "aliases": ["/doctor", "/SQL Doctor"],
+            "skill": "doctor",
+            "description": "示例知识",
+            "prefill": "",
+        }
+    ]
+    assert not (root / "suite.yaml").exists()
+    summaries = read_skill_summaries(str(root), pkg.skills)
+    assert summaries[0]["display"] == "SQL 体检"
+    assert summaries[1]["user_invocable"] is False
+    # If both manifests exist, plugin.json remains the source of truth.
+    (root / "suite.yaml").write_text(MANIFEST, encoding="utf-8")
+    assert load_suite_dir(root).name == "native"
+
+
+@pytest.mark.parametrize(
+    "paths", [["../outside"], ["skills/missing"], ["skills/doctor", "skills/doctor"]]
+)
+def test_native_rejects_missing_outside_and_duplicate_skills(tmp_path, paths):
+    root = write_plugin(tmp_path / "native")
+    manifest = root / ".qwenwork-plugin" / "plugin.json"
+    raw = json.loads(manifest.read_text())
+    raw["skills"] = paths
+    manifest.write_text(json.dumps(raw))
+    assert load_suite_dir(root) is None
+
+
+def test_native_rejects_ambiguous_command_and_non_boolean_visibility(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    knowledge = root / "skills/knowledge/SKILL.md"
+    knowledge.write_text(
+        "---\nname: knowledge\nname_zh: SQL 体检\n---\nbody", encoding="utf-8"
+    )
+    assert load_suite_dir(root) is None
+    knowledge.write_text(
+        '---\nname: knowledge\nuser-invocable: "false"\n---\nbody',
+        encoding="utf-8",
+    )
+    assert load_suite_dir(root) is None
+
+
+def test_native_runtime_extension_preserves_policy_and_command_identity(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    manifest = root / ".qwenwork-plugin/plugin.json"
+    raw = json.loads(manifest.read_text())
+    raw["dbgpt"] = {
+        "name": "cannot-override",
+        "commands": [{"name": "/wrong"}],
+        "tools": {"allow": ["sql_execute"], "deny": ["shell", "ddl"]},
+        "context_defaults": {"datasource": "session"},
+        "scenario_id": "query",
+        "sop": "prompts/query.md",
+        "recommended_questions": [{"text": "查询", "command": "/nl2sql"}],
+    }
+    manifest.write_text(json.dumps(raw))
+    skill = root / "skills/doctor/SKILL.md"
+    skill.write_text(
+        skill.read_text().replace("name: doctor", "name: doctor\ncommand: /nl2sql")
+    )
+    pkg = load_suite_dir(root)
+    assert pkg.name == "native"
+    assert pkg.snapshot["commands"][0]["name"] == "/nl2sql"
+    assert "/SQL 体检" in pkg.snapshot["commands"][0]["aliases"]
+    assert pkg.snapshot["tools"] == raw["dbgpt"]["tools"]
+    assert pkg.snapshot["context_defaults"]["datasource"] == "session"
+    assert pkg.manifest["sop"] == "prompts/query.md"
+    assert "sop" not in pkg.snapshot

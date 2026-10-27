@@ -1,6 +1,6 @@
 # 智能分析套件 · db-analysis
 
-> DB-GPT 官方场景套件（Scenario Suite）· `db-analysis@1.0.0` · execution: `react`
+> DB-GPT 官方专家套件 · `db-analysis@1.1.0` · 原生 plugin 格式 · execution: `react`
 > 三官方套件之二：`db-query`（智能取数）· **`db-analysis`（智能分析）** · `db-ops`（智能运维）
 > 设计依据：[`docs/design/data-agent-product-design.md`](../../../docs/design/data-agent-product-design.md) §4.1 / §5.1 / §7.3、[`docs/design/scenario-suite-impl-plan.md`](../../../docs/design/scenario-suite-impl-plan.md) §一
 
@@ -40,7 +40,7 @@
 
 ```
 assets/suites/db-analysis/
-├── suite.yaml                          # manifest（loader 入口，字段名即契约）
+├── .qwenwork-plugin/plugin.json        # 唯一 manifest：原生元数据 + dbgpt 扩展
 ├── README.md                           # 本文件
 ├── prompts/
 │   └── analysis-playbook.md            # SOP，注入 system prompt
@@ -78,7 +78,7 @@ assets/suites/db-analysis/
 | `/report` | 汇总图表与结论导出报告（HTML/PDF） | `/report html 分享链接` |
 | `/attribute` | 归因：贡献度拆解 + 环比同比 + 异动定位 | `/attribute 本月华东区 valid_gmv 下滑，拆渠道与品类` |
 
-## 6. manifest 关键值（`suite.yaml`）
+## 6. manifest 关键值（`plugin.json` 的原生字段与 `dbgpt` 扩展）
 
 | 字段 | 值 | 说明 |
 |---|---|---|
@@ -144,7 +144,7 @@ assets/suites/db-analysis/
 
 **P0（官方内置，随仓库出货）**
 
-1. 套件目录已在 `assets/suites/db-analysis/`，loader 扫描 `assets/suites/*/suite.yaml` 并注册到 suite registry（记录"装没装、启没启用、版本"）。
+1. 套件目录位于 `assets/suites/db-analysis/`，loader 扫描 `.qwenwork-plugin/plugin.json` 并注册到数据库 registry，保存状态、版本、路径及派生配置快照；正文保存在套件文件中。
 2. 通过 REST 启用：`POST /api/v1/suites/db-analysis/enable`（列表：`GET /api/v1/suites`；停用：`POST /api/v1/suites/db-analysis/disable`）。
 3. 启用后首页出现「📊 智能分析」场景 Tab 与本套件的推荐问题；停用即从首页移除（进行中对话保留 pin 版本直至结束）。
 4. 新建对话时选择该场景（或在 composer 输入分析类问句由路由命中），对话创建即写入 `ext_info.suite = db-analysis@1.0.0`，binder 完成：SOP 注入 → 工具 allowlist 求交 → 数据集/语义层绑定 → 审批 overrides 合并（仅加严）→ 产物渲染器挂载。

@@ -15,7 +15,7 @@ SERVE_APP_NAME_HUMP = "dbgpt_serve_Plugins"
 SERVE_CONFIG_KEY_PREFIX = "dbgpt.serve.plugins."
 SERVE_SERVICE_COMPONENT_NAME = f"{APP_NAME}_service"
 # Database table names.  Module naming = plugins (product sidebar module),
-# domain object = suite (suite.yaml / kind: scenario-suite / assets/suites/).
+# domain object = suite (plugin.json or legacy suite.yaml / assets/suites/).
 SERVER_APP_TABLE_NAME = "dbgpt_serve_plugins"
 SERVER_EVENT_TABLE_NAME = "dbgpt_serve_plugins_event"
 SERVER_HUB_TABLE_NAME = "dbgpt_serve_plugins_hub"
@@ -38,7 +38,7 @@ class ServeConfig(BaseServeConfig):
         default=None,
         metadata={
             "help": _(
-                "Directory holding scenario-suite packages (each with suite.yaml). "
+                "Directory holding expert plugins (plugin.json or legacy suite.yaml). "
                 "Falls back to $DBGPT_SUITES_DIR, then <cwd>/assets/suites."
             )
         },

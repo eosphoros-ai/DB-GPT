@@ -1,7 +1,7 @@
-"""Scenario-suite package loader.
+"""Scenario-suite and native QwenWork plugin package loader.
 
-A suite package is a directory (or extracted zip) containing ``suite.yaml``
-(the manifest) plus optional ``prompts/``, ``skills/`` and ``few_shots/``.
+A package contains ``.qwenwork-plugin/plugin.json`` and skill frontmatter,
+or a legacy ``suite.yaml`` with optional prompts, skills and few shots.
 The package on disk is the **source of truth**; this loader only reads it and
 projects a renderable snapshot for the registry.
 
@@ -13,8 +13,10 @@ a warning instead of aborting the whole scan.  No jsonschema dependency.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -22,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 MANIFEST_FILENAME = "suite.yaml"
+PLUGIN_MANIFEST_FILENAME = ".qwenwork-plugin/plugin.json"
 VALID_KINDS = ("scenario-suite", "scenario-plugin")
 REQUIRED_FIELDS = ("kind", "name", "version")
 
@@ -46,6 +49,7 @@ SNAPSHOT_FIELDS = (
     "description",
     "author",
     "tags",
+    "package_format",
 )
 
 _TYPE_CHECKS: Dict[str, type] = {
@@ -176,28 +180,208 @@ def _frontmatter_desc(path: Path) -> str:
     return ""
 
 
+def read_skill_metadata(path: Path) -> Dict[str, Any]:
+    """Read the standard YAML frontmatter without interpreting the skill body."""
+    import yaml
+
+    text = path.read_text(encoding="utf-8")
+    match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|$)", text, re.S)
+    if not match:
+        raise ValueError(f"skill frontmatter missing: {path.name}")
+    try:
+        metadata = yaml.safe_load(match.group(1))
+    except yaml.YAMLError:
+        # Generated plugins use flat frontmatter and sometimes leave colons
+        # in descriptions unquoted. Preserve those strings without rewriting
+        # the user's package; booleans still govern menu visibility.
+        metadata = {}
+        for line in match.group(1).splitlines():
+            entry = re.match(r"^([\w-]+):\s*(.*)$", line)
+            if not entry:
+                raise ValueError(f"unsupported skill frontmatter: {path.name}")
+            key, value = entry.groups()
+            metadata[key] = (
+                value.lower() == "true"
+                if value.lower() in ("true", "false")
+                else value.strip().strip("\"'")
+            )
+    if not isinstance(metadata, dict) or not isinstance(metadata.get("name"), str):
+        raise ValueError(f"skill frontmatter must declare a name: {path.name}")
+    return metadata
+
+
+def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
+    """Project QwenWork's native plugin format into the runtime suite index.
+
+    The JSON manifest and SKILL.md files stay authoritative and unmodified.
+    This projection is in memory only; no suite.yaml is generated.
+    """
+    root = dirpath.resolve()
+    raw = json.loads((root / PLUGIN_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("plugin.json must contain an object")
+    for key in ("name", "version"):
+        if not isinstance(raw.get(key), str) or not raw[key].strip():
+            raise ValueError(f"plugin.json must declare {key}")
+    paths = raw.get("skills")
+    if not isinstance(paths, list) or not paths:
+        raise ValueError("plugin.json must declare skill directories")
+    skills: List[Dict[str, Any]] = []
+    commands: List[Dict[str, Any]] = []
+    names = set()
+    command_names = set()
+    for rel in paths:
+        if not isinstance(rel, str):
+            raise ValueError("plugin skill paths must be strings")
+        skill_file = (root / rel).resolve()
+        if skill_file.is_dir():
+            skill_file = (skill_file / "SKILL.md").resolve()
+        if not skill_file.is_relative_to(root) or not skill_file.is_file():
+            raise ValueError(f"invalid plugin skill path: {rel}")
+        metadata = read_skill_metadata(skill_file)
+        name = metadata["name"]
+        if name in names:
+            raise ValueError(f"duplicate plugin skill name: {name}")
+        names.add(name)
+        display = metadata.get("name_zh") or name
+        description = metadata.get("description_zh") or metadata.get("description", "")
+        if not isinstance(display, str) or not isinstance(description, str):
+            raise ValueError(f"invalid plugin skill display or description: {name}")
+        if not isinstance(metadata.get("user-invocable", True), bool):
+            raise ValueError(f"user-invocable must be a boolean: {name}")
+        invocable = metadata.get("user-invocable", True) is not False
+        skills.append(
+            {
+                "name": name,
+                "path": skill_file.relative_to(root).as_posix(),
+                "display": display,
+                "description": description,
+                "user_invocable": invocable,
+            }
+        )
+        if invocable:
+            command_name = metadata.get("command") or f"/{display}"
+            if not isinstance(command_name, str) or not command_name.startswith("/"):
+                raise ValueError(f"skill command must start with /: {name}")
+            aliases = [f"/{name}", f"/{display}"]
+            if metadata.get("name_en"):
+                aliases.append(f"/{metadata['name_en']}")
+            identifiers = set([command_name, *aliases])
+            if identifiers & command_names:
+                raise ValueError(f"duplicate plugin command or alias: {name}")
+            command_names.update(identifiers)
+            commands.append(
+                {
+                    "name": command_name,
+                    "aliases": [
+                        alias
+                        for alias in dict.fromkeys(aliases)
+                        if alias != command_name
+                    ],
+                    "skill": name,
+                    "description": description,
+                    "prefill": metadata.get("argument-hint-zh")
+                    or metadata.get("argument-hint")
+                    or "",
+                }
+            )
+    author = raw.get("author")
+    manifest = {
+        "kind": "scenario-plugin",
+        "package_format": "qwenwork-plugin",
+        "name": raw["name"],
+        "version": raw["version"],
+        "display": raw.get("displayNameCn") or raw.get("displayName") or raw["name"],
+        "display_en": raw.get("displayNameEn") or raw.get("displayName") or raw["name"],
+        "description": raw.get("descriptionZh") or raw.get("description", ""),
+        "author": author.get("name", "") if isinstance(author, dict) else author or "",
+        "tags": raw.get("tags") or [],
+        "scenario_id": "expert",
+        "execution": "react",
+        "context_defaults": {"datasource": "optional"},
+        "commands": commands,
+        "skills": skills,
+    }
+    # Native metadata remains authoritative. DB-GPT runtime settings live in
+    # a namespaced extension, so packages need only one manifest.
+    extension = raw.get("dbgpt", {})
+    if not isinstance(extension, dict):
+        raise ValueError("plugin.json dbgpt extension must contain an object")
+    runtime_fields = {
+        "icon",
+        "scenario_id",
+        "execution",
+        "sop",
+        "tools",
+        "context_defaults",
+        "semantic",
+        "artifacts",
+        "approval_overrides",
+        "routing",
+        "recommended_questions",
+        "output_contract",
+        "analysis_defaults",
+        "templates",
+        "report_formats",
+        "report_sections",
+        "few_shots",
+        "runbooks",
+        "ui",
+        "safety",
+        "requires",
+        "pin",
+        "evals",
+        "changelog",
+        "approval_policy_notes",
+        "output_contract_detail",
+    }
+    manifest.update(
+        {key: value for key, value in extension.items() if key in runtime_fields}
+    )
+    return manifest
+
+
 def read_skill_summaries(
     package_path: Optional[str], skill_names: List[str]
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Any]]:
     """Name + one-line summary per skill, for the suite detail page."""
     if not package_path:
         return []
-    summaries: List[Dict[str, str]] = []
+    pkg = load_suite_dir(Path(package_path))
+    declared = {
+        item["name"]: item
+        for item in (pkg.manifest.get("skills", []) if pkg else [])
+        if isinstance(item, dict) and "name" in item
+    }
+    summaries: List[Dict[str, Any]] = []
     for name in skill_names:
-        skill_md = Path(package_path) / "skills" / name / "SKILL.md"
-        summaries.append({"name": name, "description": _frontmatter_desc(skill_md)})
+        item = declared.get(name, {})
+        skill_md = Path(package_path) / item.get("path", f"skills/{name}/SKILL.md")
+        summaries.append(
+            {
+                "name": name,
+                "display": item.get("display", name),
+                "description": item.get("description") or _frontmatter_desc(skill_md),
+                "user_invocable": item.get("user_invocable", True),
+            }
+        )
     return summaries
 
 
 def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
     """Parse one suite package directory; None when unusable."""
     dirpath = Path(dirpath)
+    plugin_path = dirpath / PLUGIN_MANIFEST_FILENAME
     manifest_path = dirpath / MANIFEST_FILENAME
-    if not manifest_path.is_file():
+    if not plugin_path.is_file() and not manifest_path.is_file():
         return None
     warnings: List[str] = []
     try:
-        raw = _load_yaml(manifest_path)
+        raw = (
+            _load_plugin_manifest(dirpath)
+            if plugin_path.is_file()
+            else _load_yaml(manifest_path)
+        )
     except Exception as exc:  # noqa: BLE001 - fail-soft by design
         logger.warning("suite manifest unparsable, skipped: %s (%s)", dirpath, exc)
         return None
@@ -247,11 +431,13 @@ def scan_suites(root: Optional[Path]) -> Tuple[List[SuitePackage], List[str]]:
     packages: List[SuitePackage] = []
     warnings: List[str] = []
     for child in sorted(Path(root).iterdir()):
-        if not child.is_dir():
+        if child.name.startswith(".") or not child.is_dir():
             continue
         pkg = load_suite_dir(child)
         if pkg is None:
-            if (child / MANIFEST_FILENAME).is_file():
+            if (child / MANIFEST_FILENAME).is_file() or (
+                child / PLUGIN_MANIFEST_FILENAME
+            ).is_file():
                 warnings.append(f"suite skipped due to manifest errors: {child.name}")
             continue
         warnings.extend(pkg.warnings)

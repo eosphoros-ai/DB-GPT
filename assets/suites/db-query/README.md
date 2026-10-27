@@ -1,9 +1,9 @@
 # 🔍 db-query · 智能取数（官方场景套件）
 
-> `db-query@1.0.0` · 作者 `@DB-GPT 官方` · 分类 `official`
+> `db-query@1.1.0` · 作者 `@DB-GPT 官方` · 分类 `official`
 > 三个官方场景套件之一（`db-query` 取数 / `db-analysis` 分析 / `db-ops` 运维）。
 > 设计依据：`docs/design/data-agent-product-design.md`（§4.1 六维配置束、§5.2 manifest、§7.2 智能取数工作台）、`docs/design/scenario-suite-impl-plan.md`（manifest P0 字段约定）。
-> 双重规范：本套件同时符合 **DB-GPT scenario-suite 规范**（`suite.yaml` loader 契约）与 **AntWork 专家套件规范**（`.qoder-plugin/plugin.json` + `SKILL.md` 双语 frontmatter + `CONNECTORS.md`），可被两侧运行时直接加载。
+> 统一采用 **千问办公原生 plugin 格式**（`.qwenwork-plugin/plugin.json` + `SKILL.md`）。DB-GPT 的路由、数据库要求和工具边界声明在 `plugin.json.dbgpt`；命令由技能 frontmatter 生成。
 
 ---
 
@@ -41,7 +41,7 @@
 
 ```
 assets/suites/db-query/
-├── suite.yaml                        # manifest：套件入口文件（loader 解析契约）
+├── .qwenwork-plugin/plugin.json      # 唯一 manifest：原生元数据 + dbgpt 扩展
 ├── README.md                         # 本文件
 ├── prompts/
 │   └── query-playbook.md             # SOP 行事规程，注入 system prompt
@@ -142,12 +142,12 @@ assets/suites/db-query/
 
 **P0（官方内置，随仓库出货）**
 
-1. 套件包已置于 `assets/suites/db-query/`，loader 扫描该目录解析 `suite.yaml`，registry 记录"装没装、启没启用、版本"（存储即包本身，无独立 manifest 存储）。
+1. 套件包位于 `assets/suites/db-query/`，loader 解析 `.qwenwork-plugin/plugin.json`。数据库 registry 保存安装状态、版本、路径与派生配置快照；技能及参考正文从包内读取。
 2. REST：`GET /suites` 列出（返回版本/状态/推荐问题）；`POST /suites/db-query/enable` 启用；`POST /suites/db-query/disable` 停用。
 3. 启用后首页出现「🔍 智能取数」场景 Tab 与推荐问题（由 registry 渲染）；停用即从首页移除，**进行中对话保留 pin 版本直至结束**。
 4. 会话创建时 binder 产出：`sop` 注入 system prompt、`tools.allow` 与核心 gate 求交、语义层绑定、产物渲染器注册、`approval_overrides` 合并进 policy。
 
-**P1（企业自发布）**：套件管理页 zip 上传（≤50MB，根目录一个 `suite.yaml` + `skills/`），启用/停用按**工作空间（实例）级**生效。
+**企业自发布**：套件管理页上传 ZIP（≤50MB），包内包含 `.qwenwork-plugin/plugin.json` 与 `skills/`，支持根目录或一层包目录。
 
 **校验策略**：必填字段存在 + 类型粗检 + 缺省值补全，**fail-soft**（坏字段跳过并告警），不引入 jsonschema 依赖。本地自检：
 

@@ -8,17 +8,288 @@ composition, and the resolution-order fail-soft behaviour.
 """
 
 import asyncio
+import hashlib
+import tempfile
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from dbgpt_app.openapi.api_v1.suite_binder import (
     IMPLICIT_ALLOW,
     SEMANTIC_DEGRADED_WATERMARK,
     SuiteBinding,
+    bind_command,
     build_sop_block,
     canonical_suite_tool,
+    command_binding_event,
     compose_gates,
+    load_binding,
     make_suite_gate,
+    resolve_binding_for_turn,
+    suite_message_reference,
 )
+from dbgpt_serve.plugins.loader import load_suite_dir
+
+SUITES_ROOT = Path(__file__).resolve().parents[5] / "assets" / "suites"
+
+
+class SuiteCommandTest(unittest.TestCase):
+    def test_message_reference_snapshots_resolved_command(self):
+        binding = self.make_binding()
+        bind_command(binding, "/nl2sql")
+        reference = suite_message_reference(binding, {"suite_display": "智能取数"})
+        bind_command(binding, "/schema")
+        self.assertEqual(
+            reference,
+            {"name": "db-query", "display": "智能取数", "command": "/nl2sql"},
+        )
+        self.assertIsNone(suite_message_reference(None))
+        self.assertEqual(
+            suite_message_reference(binding, {"suite_display": 123})["display"],
+            "db-query",
+        )
+
+    def make_binding(self, slug="db-query"):
+        root = SUITES_ROOT / slug
+        package = load_suite_dir(root)
+        manifest = package.manifest
+        return SuiteBinding(
+            name=slug,
+            version=manifest["version"],
+            package_path=str(root),
+            commands=manifest["commands"],
+            skills=manifest["skills"],
+            package_format=manifest["package_format"],
+            sop_text=(root / manifest["sop"]).read_text(),
+            allow={"sql_query"},
+            deny={"bash"},
+        )
+
+    def test_every_shipped_command_loads_its_declared_skill(self):
+        for slug in ("db-query", "db-analysis", "db-ops"):
+            for command in self.make_binding(slug).commands:
+                with self.subTest(suite=slug, command=command["name"]):
+                    binding = self.make_binding(slug)
+                    bind_command(binding, command["name"])
+                    self.assertFalse(binding.command_error)
+                    self.assertEqual(binding.command_skill, command["skill"])
+                    block = build_sop_block(binding)
+                    self.assertIn(f"本轮快捷命令：{command['name']}", block)
+                    self.assertIn(binding.command_skill_text, block)
+                    event = command_binding_event(binding)
+                    self.assertTrue(event["skill_loaded"])
+                    self.assertEqual(
+                        event["skill_sha256"],
+                        hashlib.sha256(
+                            binding.command_skill_text.encode("utf-8")
+                        ).hexdigest(),
+                    )
+                    # Loading a skill cannot widen the suite's tools.
+                    self.assertIsNotNone(binding.violation("bash"))
+                    self.assertIsNotNone(binding.violation("load_skill"))
+                    self.assertIsNone(binding.violation("sql_query"))
+
+    def test_query_and_analysis_load_their_full_dependency_chain(self):
+        for slug, command, expected in (
+            (
+                "db-query",
+                "/nl2sql",
+                {
+                    "skills/nl2sql-precision/SKILL.md",
+                    "skills/semantic-linking/SKILL.md",
+                    "skills/readonly-guardrails/SKILL.md",
+                    "prompts/query-playbook.md",
+                },
+            ),
+            (
+                "db-analysis",
+                "/analyze",
+                {
+                    "skills/multi-step-analysis/SKILL.md",
+                    "skills/dataset-scoping/SKILL.md",
+                    "skills/chart-advisor/SKILL.md",
+                    "skills/attribution-analysis/SKILL.md",
+                    "skills/report-generation/SKILL.md",
+                    "templates/report-template.md",
+                    "prompts/analysis-playbook.md",
+                },
+            ),
+        ):
+            binding = self.make_binding(slug)
+            bind_command(binding, command)
+            self.assertFalse(binding.command_error)
+            self.assertEqual(
+                {doc["path"] for doc in binding.loaded_documents}, expected
+            )
+            self.assertIn(binding.sop_text.strip(), build_sop_block(binding))
+
+    def test_native_builtin_keeps_tool_gate_sop_and_semantic_warning(self):
+        package = load_suite_dir(SUITES_ROOT / "db-query")
+        row = SimpleNamespace(
+            name=package.name,
+            version=package.version,
+            status="enabled",
+            package_path=package.path,
+            manifest_snapshot=package.snapshot,
+        )
+        with (
+            patch(
+                "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
+                return_value=SimpleNamespace(get=lambda _: row),
+            ),
+            patch(
+                "dbgpt_app.openapi.api_v1.suite_binder._probe_semantic_status",
+                return_value="degraded",
+            ),
+        ):
+            binding = load_binding("db-query")
+        self.assertEqual(binding.package_format, "qwenwork-plugin")
+        self.assertIsNotNone(binding.violation("bash"))
+        self.assertIsNotNone(binding.violation("ddl"))
+        self.assertIsNone(binding.violation("sql_query"))
+        self.assertTrue(binding.sop_text)
+        self.assertEqual(binding.watermark, SEMANTIC_DEGRADED_WATERMARK)
+
+    def test_unknown_command_blocks_business_tools(self):
+        binding = self.make_binding()
+        bind_command(binding, "/not-installed")
+        self.assertIn("没有快捷命令", binding.command_error)
+        self.assertFalse(command_binding_event(binding)["skill_loaded"])
+        self.assertIsNotNone(binding.violation("sql_query"))
+        self.assertIsNone(binding.violation("question"))
+
+    def test_missing_or_outside_skill_path_cannot_run(self):
+        for path in ("missing/SKILL.md", "../db-ops/.qwenwork-plugin/plugin.json"):
+            binding = self.make_binding()
+            binding.skills = [{"name": "semantic-linking", "path": path}]
+            bind_command(binding, "/schema")
+            self.assertTrue(binding.command_error)
+            self.assertFalse(binding.command_skill_text)
+            self.assertIsNotNone(binding.violation("sql_query"))
+
+    def test_turn_selection_is_not_sticky_and_typed_commands_resolve(self):
+        service = SimpleNamespace(
+            registry=SimpleNamespace(current_pin=lambda _: ("db-query", "1.1.0"))
+        )
+        for ext, text, expected in (
+            ({"suite_command": "/schema"}, "orders", "/schema"),
+            ({}, "[Database: Walmart_Sales] /metric valid_gmv", "/metric"),
+            ({}, "下一个普通问题", ""),
+        ):
+            with (
+                patch(
+                    "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
+                    return_value=service,
+                ),
+                patch(
+                    "dbgpt_app.openapi.api_v1.suite_binder.load_binding",
+                    side_effect=lambda _: self.make_binding(),
+                ),
+            ):
+                result = resolve_binding_for_turn(
+                    SimpleNamespace(ext_info=ext, conv_uid="test", user_input=text)
+                )
+            self.assertIsNotNone(result)
+            self.assertEqual(result.command, expected)
+
+
+class NativePluginBindingTest(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.skill = self.root / "skills/doctor/SKILL.md"
+        self.skill.parent.mkdir(parents=True)
+        self.skill.write_text(
+            "# Doctor\n[知识](../knowledge/SKILL.md)\n"
+            "[Repeated](../knowledge/SKILL.md#rules)\n"
+            "```\n[Example](missing.md)\n```\n",
+            encoding="utf-8",
+        )
+        knowledge = self.root / "skills/knowledge/SKILL.md"
+        knowledge.parent.mkdir()
+        knowledge.write_text(
+            "# Shared rules\n[Template](report%20template.md)\n"
+            "[Cycle](../doctor/SKILL.md)\n",
+            encoding="utf-8",
+        )
+        (knowledge.parent / "report template.md").write_text(
+            "# Report template\nNever invent measurements", encoding="utf-8"
+        )
+        self.binding = SuiteBinding(
+            name="native",
+            version="1",
+            package_format="qwenwork-plugin",
+            package_path=str(self.root),
+            commands=[
+                {
+                    "name": "/SQL 体检",
+                    "aliases": ["/doctor", "/SQL Doctor"],
+                    "skill": "doctor",
+                }
+            ],
+            skills=[{"name": "doctor", "path": "skills/doctor/SKILL.md"}],
+        )
+
+    def test_alias_loads_transitive_references_once_and_records_hashes(self):
+        bind_command(self.binding, "/SQL Doctor")
+        self.assertEqual(self.binding.command, "/SQL 体检")
+        self.assertFalse(self.binding.command_error)
+        event = command_binding_event(self.binding)
+        self.assertTrue(event["skill_loaded"])
+        self.assertEqual(len(event["documents"]), 3)
+        for doc in event["documents"]:
+            text = (self.root / doc["path"]).read_text().strip()
+            self.assertEqual(
+                doc["sha256"], hashlib.sha256(text.encode("utf-8")).hexdigest()
+            )
+            self.assertNotIn("content", doc)
+        self.assertIn("Never invent measurements", build_sop_block(self.binding))
+
+    def test_missing_outside_and_empty_references_stop_business_execution(self):
+        for link in ("missing.md", "../../../outside.md", "empty.md"):
+            with self.subTest(link=link):
+                (self.skill.parent / "empty.md").write_text("")
+                self.skill.write_text(f"# Doctor\n[Required]({link})")
+                bind_command(self.binding, "/doctor")
+                self.assertTrue(self.binding.command_error)
+                self.assertFalse(command_binding_event(self.binding)["skill_loaded"])
+                self.assertIsNotNone(self.binding.violation("sql_query"))
+                self.assertIsNone(self.binding.violation("question"))
+
+    def test_oversized_skill_is_rejected(self):
+        self.skill.write_text("x" * (512 * 1024 + 1))
+        bind_command(self.binding, "/doctor")
+        self.assertTrue(self.binding.command_error)
+        self.assertIsNotNone(self.binding.violation("sql_query"))
+
+    def test_rebinding_unknown_command_clears_previous_skill(self):
+        bind_command(self.binding, "/doctor")
+        bind_command(self.binding, "/missing")
+        self.assertEqual(self.binding.command_skill, "")
+        self.assertEqual(command_binding_event(self.binding)["documents"], [])
+
+    def test_typed_chinese_and_spaced_english_aliases_resolve(self):
+        service = SimpleNamespace(
+            registry=SimpleNamespace(current_pin=lambda _: ("native", "1"))
+        )
+        for text in ("/SQL 体检 select 1", "/SQL Doctor select 1"):
+            with (
+                patch(
+                    "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
+                    return_value=service,
+                ),
+                patch(
+                    "dbgpt_app.openapi.api_v1.suite_binder.load_binding",
+                    return_value=self.binding,
+                ),
+            ):
+                binding = resolve_binding_for_turn(
+                    SimpleNamespace(ext_info={}, conv_uid="test", user_input=text)
+                )
+            self.assertEqual(binding.command, "/SQL 体检")
+            self.assertFalse(binding.command_error)
 
 
 class CanonicalSuiteToolTest(unittest.TestCase):

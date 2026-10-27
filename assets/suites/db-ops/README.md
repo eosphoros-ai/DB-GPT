@@ -1,6 +1,6 @@
 # 🛠️ db-ops · 智能运维（官方场景套件）
 
-> `kind: scenario-suite` ｜ `name: db-ops` ｜ `version: 1.0.0` ｜ `scenario_id: ops` ｜ `execution: react`
+> 原生 plugin ｜ `name: db-ops` ｜ `version: 1.1.0` ｜ `dbgpt.scenario_id: ops` ｜ `dbgpt.execution: react`
 > DB-GPT 数据 Agent 三个官方场景套件之一（另两个：`db-query` 智能取数、`db-analysis` 智能分析）。
 > 一句话：**一个 ReAct agent + 三个套件** —— 套件是"会话级声明式配置束"，agent 是执行器；**套件只声明，核心来执行**。
 
@@ -219,7 +219,7 @@ SOP/playbook、工具白名单、默认绑定、产物声明、审批 overrides�
 本套件位于 `assets/suites/db-ops/`，与 `db-query`、`db-analysis` 同为官方内置套件，loader 启动时扫描入库。目录结构：
 ```
 assets/suites/db-ops/
-├── suite.yaml                              # manifest（P0 契约字段 + 声明性增补）
+├── .qwenwork-plugin/plugin.json            # 唯一 manifest：原生元数据 + dbgpt 扩展
 ├── README.md                               # 本文件
 ├── prompts/ops-playbook.md                 # SOP，注入 system prompt
 ├── skills/
@@ -245,7 +245,7 @@ assets/suites/db-ops/
 > ⚠️ 启用前置：`requires.approval_gate = required`、`requires.sandbox = required`。**审批 gate 不可用时本套件不得启用**（破坏性工具无法拦截）。`semantic_layer` 为 optional，缺失时降级 DBSummary 不报错。
 
 ### 8.3 zip 上传（企业专属，P1）
-把 `db-ops/` 目录打包为 zip（根目录含 `suite.yaml`）经套件管理页上传；卡片形态与专家套件一致（图标 / 名称 / 描述 / N 技能 / 版本 / 安装·启用）。企业可 fork 本套件做定制（如替换阈值、增补 runbook、加严审批），但**不得放宽**核心策略。
+把 `db-ops/` 目录打包为 ZIP（包内含 `.qwenwork-plugin/plugin.json`）经套件管理页上传。DB-GPT 特有配置位于 `dbgpt` 扩展，原有审批声明和工具边界保留；企业可定制阈值、runbook 与审批要求，核心权限和审批仍控制执行。
 
 ### 8.4 校验
 manifest 必须能被 `yaml.safe_load` 解析；校验策略为 **fail-soft**（必填字段存在 + 类型粗检 + 缺省补全，坏字段跳过并告警，不引入 jsonschema 依赖）：

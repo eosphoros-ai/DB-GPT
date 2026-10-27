@@ -1,6 +1,6 @@
 import { getSuiteDetail, getSuites, setSuiteEnabled, uninstallSuite } from '@/client/api/suite';
-import MarkDownContext from '@/new-components/common/MarkdownContext';
 import ConstructLayout from '@/new-components/layout/Construct';
+import SuiteReadme from '@/new-components/suites/SuiteReadme';
 import { SuiteItem } from '@/types/suite';
 import { getUserId } from '@/utils';
 import { suiteDisplayName } from '@/utils/suite-routing';
@@ -13,12 +13,14 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import { Button, Dropdown, Input, Segmented, Switch, Tag, Tooltip, message, theme } from 'antd';
+import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Seg = 'official' | 'enterprise' | 'installed' | 'market';
 
 const SuitesPage = () => {
+  const router = useRouter();
   const { t, i18n } = useTranslation();
   const { token } = theme.useToken();
   const [suites, setSuites] = useState<SuiteItem[]>([]);
@@ -96,7 +98,7 @@ const SuitesPage = () => {
         message.success(t('suites_upload_ok'));
         await refresh();
       } else {
-        message.error(`${t('suites_upload_fail')}: ${body?.err_msg || res.status}`);
+        message.error(`${t('suites_upload_fail')}: ${body?.detail || body?.err_msg || res.status}`);
       }
     } finally {
       setBusy(false);
@@ -160,7 +162,7 @@ const SuitesPage = () => {
 
   return (
     <ConstructLayout>
-      <div className='mx-auto max-w-[1180px] px-6 py-6'>
+      <div className='mx-auto w-full min-w-0 max-w-[1180px] px-6 py-6'>
         {detail ? (
           <div>
             <Button type='link' className='px-0' onClick={() => setDetail(null)}>
@@ -225,17 +227,20 @@ const SuitesPage = () => {
               {t('suites_cmds')}（{(detail.manifest_snapshot?.commands || []).length}）
             </h3>
             {(detail.manifest_snapshot?.commands || []).map((cmd: any) => (
-              <div
+              <button
+                type='button'
                 key={cmd.name || cmd}
-                className='mb-2 flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-[13px] transition-colors hover:border-[#b7eb8f]'
+                disabled={detail.status !== 'enabled'}
+                onClick={() => router.push({ pathname: '/', query: { suite: detail.name, suite_command: cmd.name } })}
+                className='mb-2 flex w-full text-left cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-[13px] transition-colors hover:border-[#b7eb8f] disabled:cursor-not-allowed disabled:opacity-50'
                 style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
               >
                 <Tag color='green' className='font-mono' style={{ fontSize: 11.5, marginInlineEnd: 0 }}>
                   {cmd.name || cmd}
                 </Tag>
-                <span style={{ color: token.colorTextSecondary }}>{cmd.description || ''}</span>
+                <span style={{ color: token.colorTextSecondary }}>{cmd.description || cmd.summary || ''}</span>
                 <ArrowRightOutlined className='ml-auto' style={{ color: token.colorTextQuaternary }} />
-              </div>
+              </button>
             ))}
 
             <h3 className='mb-3 mt-7 text-[15px] font-bold'>
@@ -251,7 +256,7 @@ const SuitesPage = () => {
                   className='px-5 py-4'
                   style={{ borderTop: i ? `1px solid ${token.colorBorderSecondary}` : undefined }}
                 >
-                  <div className='text-[14px] font-bold'>{sk.name}</div>
+                  <div className='text-[14px] font-bold'>{sk.display || sk.name}</div>
                   <p className='mt-1 text-[12.5px] leading-6' style={{ color: token.colorTextTertiary }}>
                     {sk.description}
                   </p>
@@ -288,10 +293,7 @@ const SuitesPage = () => {
               </div>
             </div>
 
-            <h3 className='mb-2 mt-7 text-[15px] font-bold'>README</h3>
-            <div className='text-[12.8px] leading-6' style={{ color: token.colorTextSecondary }}>
-              <MarkDownContext>{detail.readme || ''}</MarkDownContext>
-            </div>
+            <SuiteReadme label={t('suites_readme_label')}>{detail.readme || ''}</SuiteReadme>
           </div>
         ) : (
           <>

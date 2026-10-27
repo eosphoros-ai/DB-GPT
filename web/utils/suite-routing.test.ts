@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SuiteItem } from '@/types/suite';
-import { scoreSuites, suiteDisplayName } from './suite-routing';
+import { resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from './suite-routing';
 
 const makeSuite = (name: string, keywords: string[], specificity = 0.8, display = name): SuiteItem =>
   ({
@@ -26,6 +26,33 @@ const query = makeSuite('db-query', ['查', '统计', '导出', 'gmv', '客单�
 const analysis = makeSuite('db-analysis', ['分析', '归因', '报告', '趋势', '对比', '复盘'], 0.85, '智能分析');
 const ops = makeSuite('db-ops', ['慢查询', '巡检', '排障', '根因', 'profile', '治理'], 0.9, '智能运维');
 const suites = [query, analysis, ops];
+
+describe('resolveSuiteQuestionDatabase', () => {
+  const olist = { db_name: 'Olist_Ecommerce', db_type: 'sqlite' };
+  const walmart = { db_name: 'Walmart_Sales', db_type: 'sqlite' };
+
+  it('binds a named example to its database even when another database is selected', () => {
+    expect(
+      resolveSuiteQuestionDatabase({ text: '生成 Walmart 销售分析报告', database_name: 'Walmart_Sales' }, olist, [
+        olist,
+        walmart,
+      ]),
+    ).toBe(walmart);
+  });
+
+  it('does not send a named example against a different database when its source is missing', () => {
+    expect(
+      resolveSuiteQuestionDatabase({ text: '生成 Walmart 销售分析报告', database_name: 'Walmart_Sales' }, olist, [
+        olist,
+      ]),
+    ).toBeNull();
+  });
+
+  it('uses the session database for generic questions and requires selection when absent', () => {
+    expect(resolveSuiteQuestionDatabase({ text: '统计客户 GMV' }, olist, [olist])).toBe(olist);
+    expect(resolveSuiteQuestionDatabase({ text: '统计客户 GMV' }, null, [olist])).toBeNull();
+  });
+});
 
 describe('scoreSuites', () => {
   it('returns null for empty query or no suites', () => {

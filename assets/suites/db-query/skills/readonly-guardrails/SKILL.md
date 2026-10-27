@@ -6,7 +6,7 @@ name_en: Readonly Guardrails
 name_zh: 只读安全执行
 description_en: Read-only safe execution and cost guardrails. Runs validated SQL on a read replica with cost estimation, approval routing, timeout / row-limit / row-level-security enforcement.
 description_zh: 只读安全执行与成本护栏技能。当 SQL 通过 sql.validate 后需要在只读从库上执行、需要预估扫描成本判断是否触发审批 confirm、需要落地超时/行数上限/行级权限/软删除过滤时使用；也用于处理执行超时、超行数、审批被拒等异常。触发词：执行SQL、跑一下、只读、从库、replica、超时、行数上限、大扫描、高代价、扫描成本、审批确认、行级权限、tenant_id、护栏。
-user-invocable: true
+user-invocable: false
 argument-hint: Validated SQL to execute on read replica (with cost/approval check)
 argument-hint-en: Validated SQL to execute on read replica (with cost/approval check)
 argument-hint-zh: 已校验的 SQL（在只读从库执行，含成本预估与审批判定）

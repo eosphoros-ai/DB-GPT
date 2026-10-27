@@ -1,10 +1,8 @@
 import { ChatContext } from '@/app/chat-context';
+import type { ResponseType } from '@/client/api';
 import { apiInterceptors } from '@/client/api';
 import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
 import { getSuites } from '@/client/api/suite';
-import type { SuiteItem } from '@/types/suite';
-import { scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
-import type { ResponseType } from '@/client/api';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
@@ -36,7 +34,6 @@ import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
 import ApprovalDock from '@/new-components/chat/content/ApprovalDock';
-import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
 import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
 import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -54,6 +51,8 @@ import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content
 import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
+import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
+import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
@@ -62,6 +61,7 @@ import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsSch
 import type { IFlow } from '@/types/flow';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
+import type { SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
 import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
@@ -70,6 +70,7 @@ import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
+import { resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
 import {
@@ -423,6 +424,7 @@ interface ChatMessage {
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
   attachedSkill?: { name: string; id: string };
+  attachedSuite?: SuiteMessageReference;
   attachedDb?: { db_name: string; db_type: string };
   taskPlan?: TaskItem[];
   attachedConnectors?: AttachedConnector[];
@@ -836,6 +838,13 @@ const Playground: NextPage = () => {
   // Tab click = explicit preset override; until the user touches a tab the
   // keyword router decides the bound suite (design §三 routing rules).
   const [suiteTabTouched, setSuiteTabTouched] = useState(false);
+  const [selectedSuiteCommand, setSelectedSuiteCommand] = useState<{
+    suite: string;
+    name: string;
+  } | null>(null);
+  const [suiteCommandBindings, setSuiteCommandBindings] = useState<
+    Record<string, { command: string; skill: string; error?: string; documents?: { path: string; status: string }[] }>
+  >({});
 
   useEffect(() => {
     let cancelled = false;
@@ -875,9 +884,32 @@ const Playground: NextPage = () => {
   // Explicit tab selection overrides automatic keyword routing; an untouched
   // tab is only a question-browser default, not a preset choice.
   const effectiveSuite = (suiteTabTouched ? activeSuite : null) ?? routedSuite ?? activeSuite;
+  const typedSuiteCommand = effectiveSuite?.manifest_snapshot?.commands
+    ?.flatMap(cmd => [cmd.name, ...(cmd.aliases || [])])
+    .sort((a, b) => b.length - a.length)
+    .find(name => query.trim() === name || query.trim().startsWith(`${name} `));
+  const effectiveSuiteCommand = effectiveSuite?.manifest_snapshot?.commands?.find(
+    cmd =>
+      [cmd.name, ...(cmd.aliases || [])].includes(
+        typedSuiteCommand ||
+          (selectedSuiteCommand?.suite === effectiveSuite?.name ? selectedSuiteCommand.name : '') || '',
+      ),
+  );
+
+  useEffect(() => {
+    if (!router.isReady || !suites.length) return;
+    const suite = suites.find(item => item.name === router.query.suite);
+    const command = suite?.manifest_snapshot?.commands?.find(cmd => cmd.name === router.query.suite_command);
+    if (!suite || !command) return;
+    setActiveSuiteTab(suite.name);
+    setSuiteTabTouched(true);
+    setSelectedSuiteCommand({ suite: suite.name, name: command.name });
+    const { suite: _suite, suite_command: _command, ...rest } = router.query;
+    router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+  }, [router, router.isReady, router.query.suite, router.query.suite_command, suites]);
   const rotatedSuiteQuestions = useMemo(() => {
     const qs = activeSuite?.manifest_snapshot?.recommended_questions ?? [];
-    if (!qs.length) return [] as { text: string; hint?: string }[];
+    if (!qs.length) return [] as SuiteRecommendedQuestion[];
     const off = suiteQOffset % qs.length;
     return [...qs.slice(off), ...qs.slice(0, off)].slice(0, 4);
   }, [activeSuite, suiteQOffset]);
@@ -1538,6 +1570,8 @@ const Playground: NextPage = () => {
     setMessages([]);
     setConversationId(null);
     setQuery('');
+    setSelectedSuiteCommand(null);
+    setSuiteCommandBindings({});
     setLoading(false);
     setHistoryLoading(false);
     setQueuedSendAfterUpload(false);
@@ -2760,6 +2794,17 @@ const Playground: NextPage = () => {
       return;
     }
 
+    if (
+      suiteTabTouched &&
+      activeSuite &&
+      activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional' &&
+      !effectiveDb
+    ) {
+      message.warning(t('suite_database_required'));
+      setIsDbModalOpen(true);
+      return;
+    }
+
     const taskEpoch = taskEpochRef.current;
 
     cancelSummaryPresentation();
@@ -2867,6 +2912,13 @@ const Playground: NextPage = () => {
       attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
       attachedKnowledge: effectiveKnowledge ?? undefined,
       attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
+      attachedSuite: effectiveSuite
+        ? {
+            name: effectiveSuite.name,
+            display: suiteDisplayName(effectiveSuite, i18n.language),
+            command: effectiveSuiteCommand?.name,
+          }
+        : undefined,
       attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
       attachedConnectors:
         selectedConnectors.length > 0
@@ -2926,7 +2978,10 @@ const Playground: NextPage = () => {
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
       // Suite pin: explicit tab selection wins over keyword routing; the
       // backend binder records the pin and keeps it sticky for the conv.
-      ...(effectiveSuite ? { suite: effectiveSuite.name } : {}),
+      ...(effectiveSuite
+        ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
+        : {}),
+      ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
     };
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
@@ -3011,6 +3066,20 @@ const Playground: NextPage = () => {
         try {
           payload = JSON.parse(data);
         } catch (_err) {
+          return;
+        }
+        if (payload.type === 'suite.bound') {
+          if (payload.command) {
+            setSuiteCommandBindings(prev => ({
+              ...prev,
+              [responseId]: {
+                command: payload.command,
+                skill: payload.skill_loaded ? payload.command_skill : '',
+                error: payload.command_error || undefined,
+                documents: payload.documents || [],
+              },
+            }));
+          }
           return;
         }
         if (payload.type === 'context.status') {
@@ -3790,6 +3859,25 @@ const Playground: NextPage = () => {
     }
   };
 
+  const handleSuiteQuestionClick = (question: SuiteRecommendedQuestion) => {
+    setQuery(question.text);
+    if (activeSuite && question.command) {
+      setSelectedSuiteCommand({ suite: activeSuite.name, name: question.command });
+    }
+    if (activeSuite) {
+      setActiveSuiteTab(activeSuite.name);
+      setSuiteTabTouched(true);
+    }
+    const database = resolveSuiteQuestionDatabase(question, selectedDb, dataSources || []);
+    setSelectedDb(database);
+    if (!database) {
+      if (question.database_name) {
+        message.warning(t('suite_database_unavailable', { name: question.database_name }));
+      }
+      setIsDbModalOpen(true);
+    }
+  };
+
   const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
     const queryKey = `example_${example.id}_query`;
     const queryVal = t(queryKey) as string;
@@ -3943,6 +4031,7 @@ const Playground: NextPage = () => {
     const newExecutionMap: typeof executionMap = {};
     const allArtifacts: Artifact[] = [];
     const restoredSkillNames: Record<string, string> = {};
+    const restoredSuiteBindings: typeof suiteCommandBindings = {};
 
     historyMessages.forEach(msg => {
       if (msg.role === 'human') {
@@ -4024,6 +4113,28 @@ const Playground: NextPage = () => {
 
           const historyAnswer = decodeHistoryAnswer(payload);
           const finalContent = cleanFinalContent(historyAnswer.content);
+          const recordedBinding = payload.suite_binding;
+          if (recordedBinding && typeof recordedBinding.command === 'string') {
+            restoredSuiteBindings[viewId] = {
+              command: recordedBinding.command,
+              skill: recordedBinding.skill_loaded ? recordedBinding.command_skill : '',
+              error: recordedBinding.command_error || undefined,
+              documents: Array.isArray(recordedBinding.documents) ? recordedBinding.documents : [],
+            };
+          }
+
+          // Restore this turn's recorded reference, never the current suite selection.
+          const reference = payload.suite_reference;
+          if (reference && typeof reference.name === 'string' && typeof reference.display === 'string') {
+            const lastHuman = [...newMessages].reverse().find(m => m.role === 'human');
+            if (lastHuman) {
+              lastHuman.attachedSuite = {
+                name: reference.name,
+                display: reference.display,
+                command: typeof reference.command === 'string' ? reference.command : undefined,
+              };
+            }
+          }
 
           // History payload v2: the turn's input_files snapshot attaches to
           // the human message of this round. v1 stays on the legacy one-item
@@ -4118,6 +4229,7 @@ const Playground: NextPage = () => {
       }
     }
     setMessages(newMessages);
+    setSuiteCommandBindings(prev => ({ ...prev, ...restoredSuiteBindings }));
     setExecutionMap(newExecutionMap);
     setArtifacts(allArtifacts);
     if (Object.keys(restoredSkillNames).length > 0) {
@@ -4132,6 +4244,7 @@ const Playground: NextPage = () => {
         // the in-flight SSE handlers own; only re-anchor the active ids.
         if (lastView.flowRun) setActiveViewMsgId(lastView.id);
       } else {
+        setActiveViewMsgId(lastView.id);
         setStreamingSummary(lastView.context || '');
         setSummaryComplete(true);
         setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
@@ -4523,6 +4636,7 @@ const Playground: NextPage = () => {
                             attachedFiles={round.humanMsg?.attachedFiles}
                             attachedKnowledge={round.humanMsg?.attachedKnowledge}
                             attachedSkill={round.humanMsg?.attachedSkill}
+                            attachedSuite={round.humanMsg?.attachedSuite}
                             attachedDb={round.humanMsg?.attachedDb}
                             taskPlan={round.viewMsg?.taskPlan}
                             attachedConnectors={round.humanMsg?.attachedConnectors}
@@ -4654,6 +4768,21 @@ const Playground: NextPage = () => {
                     <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
+                        {activeViewMsgId && suiteCommandBindings[activeViewMsgId] && (
+                          <Tag color={suiteCommandBindings[activeViewMsgId].error ? 'red' : 'green'}>
+                            {suiteCommandBindings[activeViewMsgId].error ||
+                              t('suite_command_bound', {
+                                command: suiteCommandBindings[activeViewMsgId].command,
+                                skill: suiteCommandBindings[activeViewMsgId].skill,
+                              })}
+                          </Tag>
+                        )}
+                        {activeViewMsgId &&
+                          (suiteCommandBindings[activeViewMsgId]?.documents || []).map(doc => (
+                            <Tag key={doc.path} color='green' data-testid='suite-loaded-document'>
+                              {doc.path}
+                            </Tag>
+                          ))}
                         {selectedFlow && (
                           <Tag
                             closable
@@ -5447,7 +5576,7 @@ const Playground: NextPage = () => {
             </div>
           ) : (
             // Welcome Mode: Display Hero Section
-            <div className='flex-1 flex flex-col items-center justify-center px-6 py-4 pb-20 overflow-y-auto'>
+            <div className='flex-1 flex flex-col items-center justify-start lg:justify-center px-6 py-4 pb-20 overflow-y-auto'>
               <div className='w-full max-w-[860px] 2xl:max-w-[1000px] flex flex-col items-center animate-fade-in-up'>
                 <h1 className='text-4xl md:text-5xl font-serif text-gray-900 dark:text-gray-100 mb-4 text-center flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-xl bg-white dark:bg-[#1a1b1e] shadow-md flex items-center justify-center flex-shrink-0'>
@@ -5460,16 +5589,15 @@ const Playground: NextPage = () => {
                   {t('home_subtitle')}
                 </p>
 
-                {/* Input Box Container - Premium Layered Style */}
+                {/* Composer follows the suite reference: quiet frame and inline preset. */}
                 <div className='w-full relative'>
                   {/* Outer Frame - Floating Effect */}
                   <div
-                    className='w-full relative transition-all duration-500 rounded-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
+                    className='suite-composer w-full relative rounded-[28px] shadow-[0_12px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.2)]'
                     {...composerDragHandlers}
                   >
                     {composerDragOverlay}
-                    {/* White Inner Box - Clean Glass Card */}
-                    <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-[28px] border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-5 relative z-10'>
+                    <div className='bg-white dark:bg-[#1e1f24] rounded-[28px] border border-gray-300 dark:border-[#44464d] p-5 relative z-10'>
                       <AttachmentRail
                         drafts={sessionFiles.files}
                         legacyFiles={sessionFiles.legacyFile ? [sessionFiles.legacyFile] : []}
@@ -5541,46 +5669,48 @@ const Playground: NextPage = () => {
                         </div>
                       )}
 
-                      {effectiveSuite && (
-                        <div className='flex items-center gap-2 pb-2'>
-                          <span className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12.5px] font-semibold bg-[#f2fbf5] text-[#237804] border border-[#d9f0d0] dark:bg-[#16231a] dark:text-[#7fc48b] dark:border-[#2c4a33]'>
-                            <span>{effectiveSuite.icon || '🧩'}</span>
-                            {suiteDisplayName(effectiveSuite, i18n.language)}
-                            <span className='font-mono text-[10px] opacity-70'>@{effectiveSuite.version}</span>
+                      <div className='flex flex-col sm:flex-row items-start gap-x-3 gap-y-1 px-1 pt-2 mb-4'>
+                        {effectiveSuite && (
+                          <span
+                            data-testid='suite-composer-prefix'
+                            className='inline-flex items-center gap-2 max-w-full sm:max-w-[45%] flex-shrink-0 text-base leading-7 text-[#18a447] dark:text-[#79cc94]'
+                          >
+                            <SuiteHammerIcon className='flex-shrink-0' />
+                            <span className='truncate'>
+                              {suiteDisplayName(effectiveSuite, i18n.language)}
+                              {' · '}
+                              {effectiveSuiteCommand?.name || t('suite_command_choose')}
+                            </span>
                           </span>
-                          <span className='text-[12px] text-gray-400 dark:text-gray-500'>
-                            {t('suite_prefix_hint')}
-                          </span>
-                        </div>
-                      )}
-
-                      <Input.TextArea
-                        value={query}
-                        onChange={e => {
-                          const newValue = e.target.value;
-                          setQuery(newValue);
-                          if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
-                            setIsSkillPanelOpen(true);
+                        )}
+                        <Input.TextArea
+                          value={query}
+                          onChange={e => {
+                            const newValue = e.target.value;
+                            setQuery(newValue);
+                            if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
+                              setIsSkillPanelOpen(true);
+                            }
+                          }}
+                          onPressEnter={e => {
+                            if (!e.shiftKey) {
+                              e.preventDefault();
+                              handleStart();
+                            }
+                          }}
+                          placeholder={
+                            t('ask_data_question') ||
+                            'Ask a question about your database, upload a CSV, or generate a report...'
                           }
-                        }}
-                        onPressEnter={e => {
-                          if (!e.shiftKey) {
-                            e.preventDefault();
-                            handleStart();
-                          }
-                        }}
-                        placeholder={
-                          t('ask_data_question') ||
-                          'Ask a question about your database, upload a CSV, or generate a report...'
-                        }
-                        autoSize={{ minRows: 3, maxRows: 8 }}
-                        className='text-lg resize-none !border-none !shadow-none !bg-transparent px-2 py-2 mb-2'
-                        style={{ backgroundColor: 'transparent' }}
-                      />
+                          autoSize={{ minRows: 3, maxRows: 8 }}
+                          className='w-full sm:w-auto flex-1 min-w-0 text-base resize-none !border-none !shadow-none !bg-transparent !p-0 !leading-7'
+                          style={{ backgroundColor: 'transparent' }}
+                        />
+                      </div>
 
                       {/* Input Toolbar */}
-                      <div className='flex items-center justify-between px-1 mt-1'>
-                        <div className='flex items-center gap-4'>
+                      <div className='flex flex-wrap items-center justify-between gap-3 px-1 mt-1'>
+                        <div className='flex flex-wrap items-center gap-2'>
                           {/* Add Button with Dropdown Menu */}
                           <Dropdown
                             menu={{
@@ -6223,17 +6353,19 @@ const Playground: NextPage = () => {
                             }}
                           />
                           {/* Smart-routing chip: keyword scoring over enabled suites */}
-                          <span
-                            className={`ml-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-                              routedSuite
-                                ? 'bg-[#eef6ff] text-[#0069fe] border-[#cfe3ff] dark:bg-[#0d1b2e] dark:border-[#1d4ed8]'
-                                : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
-                            }`}
-                          >
-                            {routedSuite
-                              ? t('suite_route_hit', { name: suiteDisplayName(routedSuite, i18n.language) })
-                              : t('suite_route_idle')}
-                          </span>
+                          {routedSuite && !suiteTabTouched && (
+                            <span
+                              className={`ml-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
+                                routedSuite
+                                  ? 'bg-[#eef6ff] text-[#0069fe] border-[#cfe3ff] dark:bg-[#0d1b2e] dark:border-[#1d4ed8]'
+                                  : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                              }`}
+                            >
+                              {routedSuite
+                                ? t('suite_route_hit', { name: suiteDisplayName(routedSuite, i18n.language) })
+                                : t('suite_route_idle')}
+                            </span>
+                          )}
                         </div>
 
                         <div className='flex items-center gap-3'>
@@ -6249,12 +6381,13 @@ const Playground: NextPage = () => {
                             />
                           </Tooltip>
 
-                          {/* Send Button with blue gradient + gloss */}
+                          {/* Circular send control matches the reference composer. */}
                           <Button
                             type='primary'
                             shape={queuedSendAfterUpload ? 'round' : 'circle'}
                             size='large'
                             icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
+                            aria-label={t('sent')}
                             onClick={() => handleStart()}
                             disabled={
                               (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
@@ -6262,35 +6395,23 @@ const Playground: NextPage = () => {
                               queuedSendAfterUpload
                             }
                             loading={loading || queuedSendAfterUpload}
-                            className={`group/send relative overflow-hidden border-none shadow-lg transition-all duration-200 ${
+                            className={`border-none !shadow-none transition-colors duration-200 ${
                               queuedSendAfterUpload ? 'px-4' : ''
                             } ${
                               query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
+                                ? '!bg-[#171717] hover:!bg-[#333333] dark:!bg-gray-100 dark:!text-gray-900'
                                 : 'bg-gray-200 text-gray-400'
                             }`}
-                            style={
-                              query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
-                                : undefined
-                            }
                           >
                             {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
-                            {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
-                              <span
-                                className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
-                                style={{
-                                  background:
-                                    'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
-                                  animation: 'glossSweepHero 1.8s ease-in-out infinite',
-                                }}
-                              />
-                            )}
                           </Button>
                         </div>
                         <style
                           dangerouslySetInnerHTML={{
-                            __html: `@keyframes glossSweepHero { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`,
+                            __html: `
+                              .suite-composer .ant-btn-circle { box-shadow: none !important; background-image: none !important; transform: none !important; }
+                              .suite-composer .model-selector-premium .ant-select-selector { background: transparent !important; box-shadow: none !important; border-radius: 999px !important; }
+                            `,
                           }}
                         />
                       </div>
@@ -6299,48 +6420,81 @@ const Playground: NextPage = () => {
                 </div>
 
                 {/* Scenario tabs + recommended questions, rendered from enabled suites */}
-                <div className='mt-10 w-full'>
-                  <div className='flex items-center justify-center gap-2 mb-4'>
-                    <div className='h-px flex-1 bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-700' />
-                    <span className='text-xs font-medium text-gray-400 dark:text-gray-500 tracking-wider uppercase'>
-                      {t('suite_scenarios_header')}
-                    </span>
-                    <div className='h-px flex-1 bg-gradient-to-l from-transparent to-gray-200 dark:to-gray-700' />
-                  </div>
-                  <div className='flex flex-wrap justify-center gap-2 mb-4'>
+                <div className='mt-8 w-full'>
+                  <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
                     {suites.map(suite => (
                       <button
                         key={suite.name}
+                        aria-pressed={activeSuiteTab === suite.name}
                         onClick={() => {
                           setActiveSuiteTab(suite.name);
                           setSuiteQOffset(0);
                           setSuiteTabTouched(true);
+                          setSelectedSuiteCommand(null);
                         }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-semibold transition-all ${
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
                           activeSuiteTab === suite.name
-                            ? 'border-[#0069fe] bg-[#eaf2ff] text-[#0069fe] shadow-[0_2px_10px_rgba(0,105,254,0.12)] dark:bg-[#0d1b2e]'
-                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                            ? 'border-[#9edab1] bg-[#f2faf5] text-[#188842] dark:bg-[#16231a] dark:border-[#3b6a48] dark:text-[#79cc94]'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-400'
                         }`}
                       >
-                        <span className='text-[15px]'>{suite.icon || '🧩'}</span>
-                        {suiteDisplayName(suite, i18n.language)}
-                        <span className='font-mono text-[9.5px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'>
-                          {suite.name}@{suite.version}
+                        <span className='text-[17px] text-[#18a447]' aria-hidden='true'>
+                          {suite.scenario_id === 'query' ? (
+                            <ConsoleSqlOutlined />
+                          ) : suite.scenario_id === 'analysis' ? (
+                            <BarChartOutlined />
+                          ) : suite.scenario_id === 'ops' ? (
+                            <CloudServerOutlined />
+                          ) : (
+                            <ThunderboltOutlined />
+                          )}
                         </span>
+                        {suiteDisplayName(suite, i18n.language)}
                       </button>
                     ))}
                     <button
-                      onClick={() => setActiveSuiteTab(SUITE_EXAMPLES_TAB)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-semibold transition-all ${
+                      onClick={() => {
+                        setActiveSuiteTab(SUITE_EXAMPLES_TAB);
+                        setSelectedSuiteCommand(null);
+                      }}
+                      aria-pressed={activeSuiteTab === SUITE_EXAMPLES_TAB}
+                      className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
                         activeSuiteTab === SUITE_EXAMPLES_TAB
-                          ? 'border-[#0069fe] bg-[#eaf2ff] text-[#0069fe] shadow-[0_2px_10px_rgba(0,105,254,0.12)] dark:bg-[#0d1b2e]'
+                          ? 'border-[#9edab1] bg-[#f2faf5] text-[#188842] dark:bg-[#16231a] dark:text-[#79cc94]'
                           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-300'
                       }`}
                     >
-                      <span className='text-[15px]'>🧪</span>
+                      <ReadOutlined className='text-[17px] text-blue-500' />
                       {t('suite_tab_examples')}
                     </button>
                   </div>
+                  {activeSuite && (
+                    <div
+                      className='flex flex-wrap items-center justify-center gap-2 mb-4'
+                      aria-label={t('suites_cmds')}
+                    >
+                      {(activeSuite.manifest_snapshot?.commands || []).map(command => (
+                        <Tooltip key={command.name} title={command.description || command.summary}>
+                          <button
+                            type='button'
+                            aria-pressed={effectiveSuiteCommand?.name === command.name}
+                            onClick={() => {
+                              setSuiteTabTouched(true);
+                              setSelectedSuiteCommand({ suite: activeSuite.name, name: command.name });
+                            }}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                              effectiveSuiteCommand?.name === command.name
+                                ? 'border-green-300 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                                : 'border-gray-200 text-gray-600 hover:border-green-300 dark:border-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {command.name}
+                          </button>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  )}
+                  <p className='text-center text-xs text-gray-500 dark:text-gray-400 mb-4'>{t('suite_usage_hint')}</p>
                   {activeSuiteTab === SUITE_EXAMPLES_TAB ? (
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                       {EXAMPLE_CARDS.map(example => (
@@ -6384,11 +6538,13 @@ const Playground: NextPage = () => {
                         {rotatedSuiteQuestions.map((q, idx) => (
                           <div
                             key={`${activeSuite?.name}-${idx}-${q.text}`}
-                            onClick={() => {
-                              setQuery(q.text);
-                              if (activeSuite) {
-                                setActiveSuiteTab(activeSuite.name);
-                                setSuiteTabTouched(true);
+                            role='button'
+                            tabIndex={0}
+                            onClick={() => handleSuiteQuestionClick(q)}
+                            onKeyDown={event => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                handleSuiteQuestionClick(q);
                               }
                             }}
                             className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfe0ff] transition-all duration-300'
@@ -6401,9 +6557,22 @@ const Playground: NextPage = () => {
                                 <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
                                   {q.text}
                                 </h3>
+                                {q.command && (
+                                  <div className='mb-2 text-xs text-green-700 dark:text-green-300'>
+                                    {t('suite_command_label', { command: q.command })}
+                                  </div>
+                                )}
                                 {q.hint && (
                                   <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>{q.hint}</p>
                                 )}
+                                <div className='mt-3 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400'>
+                                  <DatabaseOutlined />
+                                  <span className='truncate'>
+                                    {t('suite_database_label', {
+                                      name: q.database_name || selectedDb?.db_name || t('suite_database_choose'),
+                                    })}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>

@@ -149,10 +149,15 @@ async def upload_suite(
     user_name: Optional[str] = Query(None),
     service: Service = Depends(get_service),
 ) -> Result[SuiteResponse]:
-    """Upload an enterprise suite zip (root must contain suite.yaml)."""
+    """Upload a native QwenWork plugin or a legacy scenario-suite package."""
     from pathlib import Path
 
-    from dbgpt_serve.plugins.loader import load_suite_dir, resolve_suites_dir
+    from dbgpt_serve.plugins.loader import (
+        MANIFEST_FILENAME,
+        PLUGIN_MANIFEST_FILENAME,
+        load_suite_dir,
+        resolve_suites_dir,
+    )
 
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="only .zip packages are accepted")
@@ -164,58 +169,102 @@ async def upload_suite(
     if root is None:
         raise HTTPException(status_code=500, detail="suites dir is not configured")
     import io
+    import shutil
+    import stat
+    import tempfile
     import zipfile
 
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(payload))
+    except zipfile.BadZipFile as exc:
+        raise HTTPException(status_code=400, detail="invalid zip package") from exc
     target: Optional[Path] = None
-    with zipfile.ZipFile(io.BytesIO(payload)) as zf:
+    with (
+        archive as zf,
+        tempfile.TemporaryDirectory(dir=root, prefix=".plugin-upload-") as staging_dir,
+    ):
         names = zf.namelist()
         if not names:
             raise HTTPException(status_code=400, detail="empty zip")
-        # suite.yaml at zip root, or inside a single top-level directory
-        tops = {n.split("/", 1)[0] for n in names}
-        prefix = ""
-        if "suite.yaml" not in names:
-            candidates = [t for t in tops if f"{t}/suite.yaml" in names]
-            if len(candidates) != 1:
-                raise HTTPException(
-                    status_code=400, detail="zip must contain suite.yaml at root"
-                )
-            prefix = candidates[0] + "/"
-        slug = None
-        with zf.open(f"{prefix}suite.yaml") as fh:
-            import yaml
-
-            manifest = yaml.safe_load(fh.read().decode("utf-8")) or {}
-        slug = str(manifest.get("name") or "").strip()
-        if not slug or "/" in slug or slug in (".", ".."):
-            raise HTTPException(status_code=400, detail="manifest name is invalid")
-        target = root / slug
-        target.mkdir(parents=True, exist_ok=True)
-        for member in names:
-            if member.endswith("/"):
-                continue
-            rel = (
-                member[len(prefix) :]
-                if prefix and member.startswith(prefix)
-                else member
+        if sum(info.file_size for info in zf.infolist()) > _MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413, detail="extracted package exceeds 50MB"
             )
+        prefixes = {
+            member[: -len(filename)]
+            for member in names
+            for filename in (PLUGIN_MANIFEST_FILENAME, MANIFEST_FILENAME)
+            if member.endswith(filename) and member[: -len(filename)].count("/") <= 1
+        }
+        if len(prefixes) != 1:
+            raise HTTPException(
+                status_code=400,
+                detail="zip must contain .qwenwork-plugin/plugin.json or suite.yaml "
+                "at root or inside one package directory",
+            )
+        prefix = prefixes.pop()
+        staging = Path(staging_dir).resolve()
+        for info in zf.infolist():
+            member = info.filename
+            if info.is_dir():
+                continue
+            if prefix and not member.startswith(prefix):
+                raise HTTPException(
+                    status_code=400, detail=f"file outside package: {member}"
+                )
+            rel = member[len(prefix) :]
             if not rel:
                 continue
-            dest = (target / rel).resolve()
-            if not str(dest).startswith(str(target.resolve())):  # zip-slip guard
+            dest = (staging / rel).resolve()
+            if (
+                "\\" in rel
+                or not dest.is_relative_to(staging)
+                or stat.S_ISLNK(info.external_attr >> 16)
+            ):
                 raise HTTPException(
                     status_code=400, detail=f"unsafe zip path: {member}"
                 )
             dest.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(member) as src, open(dest, "wb") as out:
                 out.write(src.read())
-    pkg = load_suite_dir(target) if target else None
-    if pkg is None:
-        raise HTTPException(
-            status_code=400, detail="uploaded package failed validation"
-        )
-    owner = user_name or file.filename or "enterprise"
-    return Result.succ(service.install_package(pkg, user_name=owner))
+        staged_package = load_suite_dir(staging)
+        if staged_package is None:
+            raise HTTPException(
+                status_code=400, detail="uploaded package failed validation"
+            )
+        slug = staged_package.name
+        if (
+            not slug
+            or "/" in slug
+            or "\\" in slug
+            or slug in (".", "..")
+            or not (root / slug).resolve().is_relative_to(root.resolve())
+        ):
+            raise HTTPException(status_code=400, detail="manifest name is invalid")
+        target = root / slug
+        # Replace the complete package so upgrades cannot retain deleted skills
+        # or stale references. Keep the previous tree until registration succeeds.
+        with tempfile.TemporaryDirectory(
+            dir=root, prefix=".plugin-backup-"
+        ) as backup_dir:
+            previous = Path(backup_dir) / "package"
+            if target.exists():
+                target.rename(previous)
+            try:
+                staging.rename(target)
+                pkg = load_suite_dir(target)
+                if pkg is None:
+                    raise HTTPException(
+                        status_code=400, detail="uploaded package failed validation"
+                    )
+                owner = user_name or file.filename or "enterprise"
+                return Result.succ(service.install_package(pkg, user_name=owner))
+            except Exception:
+                if target.exists():
+                    shutil.rmtree(target)
+                if previous.exists():
+                    previous.rename(target)
+                raise
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

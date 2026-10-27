@@ -650,6 +650,7 @@ export const CommonEn = {
   suites_skills_section: 'Skills',
   suites_cmds: 'Quick commands',
   suites_manifest: 'Manifest key values',
+  suites_readme_label: 'Suite overview',
   suites_overrides_note: 'strict-only · enforced by the core gate',
   suites_market_empty: 'Market opens in P2. Upload enterprise suites via "+ Add" (zip ≤ 50MB, suite.yaml at root).',
   suites_upload_ok: 'Suite uploaded',

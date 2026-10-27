@@ -1,5 +1,6 @@
 ---
 name: nl2sql-precision
+command: /nl2sql
 version: 1.0.0
 description: Precise NL2SQL generation with validation-driven self-correction. Use after semantic-linking has provided authoritative context (metric expression, default filters, join paths, table whitelist, column enums) to generate one correct, replayable, read-only SQL statement; also handles automatic rewrite when sql.validate reports errors.
 name_en: NL2SQL Precision
@@ -13,6 +14,12 @@ argument-hint-zh: 自然语言问句（如"上月华东有效GMV按渠道拆分�
 ---
 
 # 精准 NL2SQL (NL2SQL Precision)
+
+## 必需关联知识
+
+按顺序应用[语义召回与口径加载](../semantic-linking/SKILL.md)、
+[只读执行护栏](../readonly-guardrails/SKILL.md)和[取数 SOP](../../prompts/query-playbook.md)。
+这些正文由运行时预加载；执行工具仍需遵守平台权限与审批。
 
 ## 技能目标
 

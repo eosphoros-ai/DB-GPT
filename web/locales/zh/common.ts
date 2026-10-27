@@ -650,6 +650,7 @@ export const CommonZh: Resources['translation'] = {
   suites_skills_section: '知识技能',
   suites_cmds: '快捷命令',
   suites_manifest: 'manifest 关键值',
+  suites_readme_label: '套件说明',
   suites_overrides_note: '仅可加严 · enforcement 在核心 gate',
   suites_market_empty: '市场 P2 开放；企业套件可点"＋ 添加"上传 zip（≤50MB，根目录含 suite.yaml）。',
   suites_upload_ok: '套件已上传',

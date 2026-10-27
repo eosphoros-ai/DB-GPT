@@ -1474,6 +1474,8 @@ def _build_react_history_payload(
     generated_images: List[Any],
     sub_agents: Any,
     input_files: List[Dict[str, Any]],
+    suite_reference: Optional[Dict[str, Any]] = None,
+    suite_binding: Optional[Dict[str, Any]] = None,
     citations: Optional[List[Dict[str, Any]]] = None,
     report_id: Optional[str] = None,
     report_run_id: Optional[str] = None,
@@ -1500,6 +1502,8 @@ def _build_react_history_payload(
         "generated_images": generated_images,
         "sub_agents": sub_agents,
         "input_files": input_files,
+        "suite_reference": suite_reference,
+        "suite_binding": suite_binding,
         "dashboard_refs": dashboard_refs or [],
         "dashboard_generation_failure": dashboard_generation_failure,
     }
@@ -4220,15 +4224,22 @@ After partial results, finish only missing requested deliverables, then report.
 """
     # --- Suite binder (T3): resolve the scenario-suite pin and prepend SOP ---
     suite_binding = None
+    suite_reference = None
+    suite_binding_snapshot = None
     try:
         from dbgpt_app.openapi.api_v1.suite_binder import (
             build_sop_block,
+            command_binding_event,
             resolve_binding_for_turn,
+            suite_message_reference,
         )
 
         suite_binding = resolve_binding_for_turn(dialogue)
+        suite_reference = suite_message_reference(suite_binding, dialogue.ext_info)
         if suite_binding is not None:
             workflow_prompt = build_sop_block(suite_binding) + workflow_prompt
+            suite_binding_snapshot = command_binding_event(suite_binding)
+            yield _sse_event(suite_binding_snapshot)
     except Exception:
         suite_binding = None
         logger.warning("suite binder failed; turn continues unbound", exc_info=True)
@@ -5019,6 +5030,8 @@ After partial results, finish only missing requested deliverables, then report.
             generated_images=react_state.get("generated_images", []),
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
+            suite_reference=suite_reference,
+            suite_binding=suite_binding_snapshot,
             citations=[],
             report_id=error_answer.report_id,
             report_run_id=error_answer.report_run_id,
@@ -5178,6 +5191,8 @@ After partial results, finish only missing requested deliverables, then report.
         generated_images=react_state.get("generated_images", []),
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,
+        suite_reference=suite_reference,
+        suite_binding=suite_binding_snapshot,
         citations=[citation.to_dict() for citation in final_answer.citations],
         report_id=final_answer.report_id,
         report_run_id=final_answer.report_run_id,

@@ -1,9 +1,20 @@
 ---
 name: slow-query-diagnosis
+name_zh: 慢查询诊断
+command: /slowlog
+user-invocable: true
+argument-hint-zh: 拉取 {target_db} 最近 {time_window} 的慢查询并按指纹聚合 Top10
 description: 数据库慢查询诊断技能。用于采集慢日志、按 SQL 指纹聚合、解读 EXPLAIN 执行计划并归类根因（缺索引/坏计划/锁等待/大扫描/SQL 写法/资源瓶颈），产出带证据链的诊断报告与待审批的修复提案。触发词包括"慢查询""慢 SQL""慢日志""查询变慢""根因""执行计划""EXPLAIN""全表扫""filesort""锁等待""接口超时""数据库卡""slow query""为什么这么慢"。只读优先，DDL/ANALYZE 仅出提案不自动执行。
 ---
 
 # 慢查询诊断技能 (Slow Query Diagnosis)
+
+## 必需参考
+
+读取[根因定位手册](../../runbooks/slow-query-rootcause.md)、
+[生产安全清单](../../runbooks/production-safety-checklist.md)和
+[运维 SOP](../../prompts/ops-playbook.md)；修复动作按
+[受控变更评审](../safe-ddl-review/SKILL.md)输出提案。
 
 本技能是 `db-ops`（智能运维）套件的核心技能，实现"采集 → 聚合 → 根因 → 诊断 → 修复提案"五步链中前四步的完整闭环，并把第五步收敛为**可评审的提案**。适用对象是企业业务库（OLTP），不是数仓大查询调优。
 

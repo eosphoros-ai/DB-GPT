@@ -1,4 +1,6 @@
 import textwrap
+from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -119,3 +121,31 @@ def test_record_pin_bumps_use_count_and_event(tmp_path, registry):
     assert row.use_count == 1
     assert registry.list_events("demo-query")[0].event_type == "pin"
     assert registry.list_events("demo-query")[0].conv_uid == "conv-1"
+
+
+def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry):
+    root = Path(__file__).resolve().parents[6] / "assets/suites/db-query"
+    native = load_suite_dir(root)
+    legacy = replace(
+        native,
+        version="1.0.0",
+        digest="legacy-digest",
+        snapshot={**native.snapshot, "package_format": "scenario-suite"},
+    )
+    registry.sync_official([legacy])
+    registry.set_enabled("db-query", False)
+    registry.record_pin("existing-conv", "db-query", "1.0.0")
+    before = registry.get("db-query")
+    summary = registry.sync_official([native])
+    after = registry.get("db-query")
+    assert summary.upgraded == ["db-query"]
+    assert after.id == before.id
+    assert after.status == STATUS_DISABLED
+    assert after.use_count == before.use_count == 1
+    assert after.source == "official"
+    assert after.version == "1.1.0"
+    assert after.manifest_snapshot["package_format"] == "qwenwork-plugin"
+    assert "sop" not in after.manifest_snapshot
+    assert "content" not in str(after.manifest_snapshot["skills"])
+    assert registry.current_pin("existing-conv") == ("db-query", "1.0.0")
+    assert registry.sync_official([native]).unchanged == ["db-query"]
