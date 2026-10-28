@@ -157,7 +157,7 @@ class ContextManager:
                     messages,
                     self.llm_client,
                     self.tracker,
-                    model_name=self.model_name,
+                    model_name=self.tracker.model_name,
                 )
                 self.tracker.record_compact_success()
                 token_count = self.tracker.count_messages(messages)
