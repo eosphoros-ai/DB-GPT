@@ -80,34 +80,60 @@ beforeEach(() => {
 });
 
 describe('scoped Dashboard creation entry', () => {
-  it('prefills a style link after hydration without sending or overwriting user edits', async () => {
-    state.isReady = false;
+  it.each(['brutal-viz-design', 'serenityspa-viz-design'])(
+    'prefills retained %s after hydration without sending or overwriting user edits',
+    async skill => {
+      state.isReady = false;
+      state.query = { creation_mode: 'dashboard', skill, skill_prompt: 'Show business performance' };
+      const view = render(<DashboardCreatePage />);
+      const input = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
+      expect(input.value).toBe('');
+      state.isReady = true;
+      view.rerender(<DashboardCreatePage />);
+      expect(input.value).toBe('Show business performance');
+      expect(state.chat).not.toHaveBeenCalled();
+      fireEvent.change(input, { target: { value: 'My revised business dashboard' } });
+      view.rerender(<DashboardCreatePage />);
+      expect(input.value).toBe('My revised business dashboard');
+      await chooseSource();
+      state.chat.mockImplementation(async request => request.onDashboardEvent(plan));
+      fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+      await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
+      expect(state.chat.mock.calls[0][0].data).toMatchObject({
+        user_input: 'My revised business dashboard',
+        ext_info: {
+          creation_mode: 'dashboard',
+          database_name: 'sales-db',
+          skill_name: skill,
+          dashboard_template: `design:${skill}`,
+        },
+      });
+    },
+  );
+
+  it('ignores a retired style link without leaking its metadata into a new request', async () => {
     state.query = { creation_mode: 'dashboard', skill: 'learnhub-viz-design', skill_prompt: 'Show course progress' };
-    const view = render(<DashboardCreatePage />);
+    render(<DashboardCreatePage />);
     const input = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
     expect(input.value).toBe('');
-    state.isReady = true;
-    view.rerender(<DashboardCreatePage />);
-    expect(input.value).toBe('Show course progress');
     expect(state.chat).not.toHaveBeenCalled();
-    fireEvent.change(input, { target: { value: 'My revised learning dashboard' } });
-    view.rerender(<DashboardCreatePage />);
-    expect(input.value).toBe('My revised learning dashboard');
+    fireEvent.change(input, { target: { value: 'Show monthly sales' } });
     await chooseSource();
     state.chat.mockImplementation(async request => request.onDashboardEvent(plan));
     fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
     await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
-    expect(state.chat.mock.calls[0][0].data).toMatchObject({
-      user_input: 'My revised learning dashboard',
-      ext_info: { creation_mode: 'dashboard', database_name: 'sales-db', skill_name: 'learnhub-viz-design' },
-    });
+    const request = state.chat.mock.calls[0][0].data;
+    expect(request.user_input).toBe('Show monthly sales');
+    expect(request.ext_info).toMatchObject({ creation_mode: 'dashboard', database_name: 'sales-db' });
+    expect(request.ext_info).not.toHaveProperty('skill_name');
+    expect(request.ext_info).not.toHaveProperty('dashboard_template');
   });
 
   it('ignores unrecognized or repeated template query values', () => {
     state.query = { creation_mode: 'dashboard', skill: '__proto__', skill_prompt: 'Unexpected request' };
     const view = render(<DashboardCreatePage />);
     expect((screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement).value).toBe('');
-    state.query = { creation_mode: 'dashboard', skill: ['learnhub-viz-design', 'brutal-viz-design'] };
+    state.query = { creation_mode: 'dashboard', skill: ['brutal-viz-design', 'serenityspa-viz-design'] };
     view.rerender(<DashboardCreatePage />);
     expect((screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement).value).toBe('');
     expect(state.chat).not.toHaveBeenCalled();
