@@ -5316,5 +5316,69 @@
         "last_updated": ""
       }
     ]
+  },
+  "proxy/runcrate": {
+    "models": [
+      {
+        "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "name": "DeepSeek V4.1 Flash (Runcrate)",
+        "description": "DeepSeek V4.1 Flash served by Runcrate.",
+        "context_length": 1048576,
+        "max_output_length": 1048576,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "zai-org/GLM-5.3",
+        "name": "GLM 5.3 (Runcrate)",
+        "description": "Zhipu GLM 5.3 served by Runcrate.",
+        "context_length": 1048576,
+        "max_output_length": 1048576,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "zai-org/GLM-5.3-Flash",
+        "name": "GLM 5.3 Flash (Runcrate)",
+        "description": "Zhipu GLM 5.3 Flash served by Runcrate.",
+        "context_length": 1048576,
+        "max_output_length": 1048576,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "Qwen/Qwen3.8-Flash",
+        "name": "Qwen3.8 Flash (Runcrate)",
+        "description": "Qwen3.8 Flash served by Runcrate.",
+        "context_length": 1000000,
+        "max_output_length": 1000000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "moonshotai/Kimi-K2.6",
+        "name": "Kimi K2.6 (Runcrate)",
+        "description": "Moonshot Kimi K2.6 served by Runcrate.",
+        "context_length": 262144,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-oss-120b",
+        "name": "gpt-oss 120B (Runcrate)",
+        "description": "OpenAI gpt-oss 120B served by Runcrate.",
+        "context_length": 131072,
+        "max_output_length": 117964,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
   }
 }
