@@ -40,6 +40,7 @@ from dbgpt.core.interface.report_capture import (
     get_current_artifact_sink,
 )
 
+from ..tools.semantic_tools import make_semantic_tools
 from .react_tools import make_react_tools
 from .result import (
     SubagentArtifactSink,
@@ -344,6 +345,7 @@ async def build_sub_react_agent(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     knowledge_resources: Any = None,
     readonly_connector_tools: Optional[List[Any]] = None,
     extra_context: Optional[str] = None,
@@ -405,6 +407,7 @@ async def build_sub_react_agent(
     )
     sub_tool_pack = ToolPack(
         [sub_tools[name] for name in _SUBAGENT_FACTORY_TOOL_NAMES]
+        + (make_semantic_tools(database_name) if database_connector is not None else [])
         + (readonly_connector_tools or [])
         + [Terminate()]
     )
@@ -532,6 +535,7 @@ def make_dispatch_tool(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     database_context: str = "",
     knowledge_resources: Any = None,
     connector_tool_extras: Optional[List[Any]] = None,
@@ -659,6 +663,7 @@ def make_dispatch_tool(
                     llm_client=llm_client,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,
+                    database_name=database_name,
                     knowledge_resources=knowledge_resources,
                     readonly_connector_tools=readonly_connector_tools,
                     extra_context=extra,

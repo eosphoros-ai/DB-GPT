@@ -82,6 +82,11 @@ from .attachment_react_adapter import (
     resolve_legacy_chat_file_path,
     scrub_react_history_for_share,
 )
+from .public_progress import (
+    PublicProgressStream,
+    public_assistant_text,
+    react_public_intention,
+)
 from .react_final import AgentFinalAnswer, FinalAnswerAssembler
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
@@ -172,14 +177,26 @@ DASHBOARD_AGENT_KEYWORDS = (
 
 
 def _is_dashboard_workflow_request(
-    user_input: str, creation_mode: Optional[str] = None
+    user_input: str,
+    creation_mode: Optional[str] = None,
+    *,
+    suite_binding: Any = None,
 ) -> bool:
     """Return whether a message belongs to the bounded Dashboard workflow."""
 
+    if creation_mode == "expert_suite":
+        return False
     # The composer explicitly offers Dashboard creation. Its selection must
     # work for requests such as "show annual revenue", without forcing users
     # to repeat the word "dashboard" in every prompt.
     if creation_mode == "dashboard":
+        return True
+    if (
+        suite_binding is not None
+        and suite_binding.name == "db-analysis"
+        and suite_binding.command_skill == "build-dashboard"
+        and not suite_binding.command_error
+    ):
         return True
     normalized = (user_input or "").casefold()
     if any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS):
@@ -2089,7 +2106,9 @@ async def _react_agent_stream_inner(
         resolve_harness_engine,
         run_pi_harness_turn,
     )
+    from .suite_binder import apply_suite_configuration
 
+    apply_suite_configuration(dialogue)
     if resolve_harness_engine(dialogue) == "pi":
         # Hand the resolved uploads to the pi branch too: it stages them
         # into the pi conv workspace so the agent can read them.
@@ -2163,6 +2182,7 @@ async def _react_agent_stream_impl(
     from dbgpt.agent import AgentContext, AgentMemory, AgentMessage
     from dbgpt.agent.claude_skill import get_registry, load_skills_from_dir
     from dbgpt.agent.core.memory.gpts import (
+        DefaultGptsMessageMemory,
         DefaultGptsPlansMemory,
         GptsMemory,
     )
@@ -2646,13 +2666,35 @@ async def _react_agent_stream_impl(
             required_recommendation_count
         )
 
+    # Resolve plugin commands before selecting the workflow and its tools.
+    # /dashboard also works with terse metric requests without a dashboard keyword.
+    suite_binding = None
+    suite_reference = None
+    suite_binding_snapshot = None
+    try:
+        from dbgpt_app.openapi.api_v1.suite_binder import (
+            build_sop_block,
+            command_binding_event,
+            resolve_binding_for_turn,
+            suite_message_reference,
+        )
+
+        suite_binding = resolve_binding_for_turn(dialogue)
+        suite_reference = suite_message_reference(suite_binding, dialogue.ext_info)
+    except Exception:
+        logger.warning("suite binder failed; turn continues unbound", exc_info=True)
+
     # An authoritative Dashboard continuation marker always wins over a stale
     # skill selection restored from task history.  Otherwise an annotation for
     # a Walmart dashboard can be misrouted into a one-off Walmart report skill
     # instead of loading and modifying the persisted Dashboard.
     pre_matched_skill = None
     if dashboard_continuation_turn or (
-        database_connector is not None and creation_mode == "dashboard"
+        database_connector is not None
+        and (
+            creation_mode == "dashboard"
+            or _is_dashboard_workflow_request("", suite_binding=suite_binding)
+        )
     ):
         pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
         if pre_matched_skill:
@@ -2667,7 +2709,7 @@ async def _react_agent_stream_impl(
                 "Dashboard workflow selected but skill '%s' is unavailable",
                 DASHBOARD_BUILDER_SKILL_NAME,
             )
-    elif skill_name:
+    elif skill_name and creation_mode != "expert_suite":
         pre_matched_skill = registry.get_skill(skill_name)
         if not pre_matched_skill:
             # Try case-insensitive match
@@ -2680,7 +2722,7 @@ async def _react_agent_stream_impl(
             react_state["skill_prompt"] = pre_matched_skill.get_prompt()
             logger.info(f"Pre-selected skill from ext_info: {skill_name}")
     elif database_connector is not None and _is_dashboard_workflow_request(
-        user_input, creation_mode
+        user_input, creation_mode, suite_binding=suite_binding
     ):
         pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
         if pre_matched_skill:
@@ -3057,6 +3099,7 @@ async def _react_agent_stream_impl(
         make_load_tools,
         make_question,
         make_read_file,
+        make_semantic_tools,
         make_shell_interpreter,
         make_sql_query,
         make_todowrite,
@@ -3105,6 +3148,9 @@ async def _react_agent_stream_impl(
         getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
         for t in kb_tool_list
     )
+    semantic_tool_list = (
+        make_semantic_tools(database_name) if database_connector is not None else []
+    )
     dashboard_skill_selected = bool(
         pre_matched_skill
         and pre_matched_skill.metadata.name == DASHBOARD_BUILDER_SKILL_NAME
@@ -3113,7 +3159,9 @@ async def _react_agent_stream_impl(
         database_connector is not None
         and (
             dashboard_skill_selected
-            or _is_dashboard_workflow_request(user_input, creation_mode)
+            or _is_dashboard_workflow_request(
+                user_input, creation_mode, suite_binding=suite_binding
+            )
         )
     )
     from .dashboard.temporal_discovery import dashboard_temporal_context
@@ -3394,7 +3442,17 @@ async def _react_agent_stream_impl(
     input_files_snapshot = build_input_files_v2(
         attachment_ctx.manifests if attachment_ctx is not None else ()
     )
-    if conv_id in REACT_AGENT_MEMORY_CACHE:
+    if react_state.get("dashboard_confirmation_contract"):
+        # The persisted plan and this run's staged queries are authoritative.
+        # Previous failed tool observations must not masquerade as candidates
+        # available in a new generation run. The normal conversation storage
+        # still persists final answers, steps and dashboard references below.
+        gpt_memory = GptsMemory(
+            plans_memory=DefaultGptsPlansMemory(),
+            message_memory=DefaultGptsMessageMemory(),
+        )
+        gpt_memory.init(conv_id, enable_vis_message=False, publish_messages=False)
+    elif conv_id in REACT_AGENT_MEMORY_CACHE:
         gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
     else:
         gpt_memory = GptsMemory(
@@ -3482,6 +3540,7 @@ async def _react_agent_stream_impl(
         gpts_app_name="ReAct",
         language=react_state["_report_language"],
         temperature=dialogue.temperature or 0.2,
+        max_new_tokens=dialogue.max_new_tokens or 4096,
         enable_context_management=True,
         enable_native_function_calling=True,
     )
@@ -3593,6 +3652,7 @@ async def _react_agent_stream_impl(
         llm_client=llm_client,
         sub_model_name=dialogue.model_name,
         database_connector=database_connector,
+        database_name=database_name,
         database_context=database_context,
         knowledge_resources=knowledge_resources,
         connector_tool_extras=connector_tool_extras,
@@ -3983,6 +4043,7 @@ Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
                     load_tools_tool,
                 ]
                 + kb_tool_list
+                + semantic_tool_list
                 + [
                     execute_skill_script,
                     get_skill_resource,
@@ -4124,6 +4185,23 @@ ordering. The registered tools and backend validation remain authoritative.
     if "execute_skill_script" not in tool_pack._resources:
         logger.error("execute_skill_script NOT in ToolPack!")
 
+    if creation_mode == "expert_suite":
+        from .tools.suite_creation import (
+            creation_tool_allowed,
+            creator_instructions,
+            make_suite_creation_tools,
+        )
+
+        tool_pack = ToolPack(
+            [
+                resource
+                for resource in tool_pack.sub_resources
+                if creation_tool_allowed(resource.name)
+            ]
+            + make_suite_creation_tools(conv_id)
+        )
+        workflow_prompt += "\n\n" + creator_instructions()
+
     # Combine tool_pack and knowledge_resources into a single ResourcePack
     all_resources = [tool_pack]
     if knowledge_resources:
@@ -4223,19 +4301,7 @@ the plan and indexes and changing the SQL; never repeat the unchanged query.
 After partial results, finish only missing requested deliverables, then report.
 """
     # --- Suite binder (T3): resolve the scenario-suite pin and prepend SOP ---
-    suite_binding = None
-    suite_reference = None
-    suite_binding_snapshot = None
     try:
-        from dbgpt_app.openapi.api_v1.suite_binder import (
-            build_sop_block,
-            command_binding_event,
-            resolve_binding_for_turn,
-            suite_message_reference,
-        )
-
-        suite_binding = resolve_binding_for_turn(dialogue)
-        suite_reference = suite_message_reference(suite_binding, dialogue.ext_info)
         if suite_binding is not None:
             workflow_prompt = build_sop_block(suite_binding) + workflow_prompt
             suite_binding_snapshot = command_binding_event(suite_binding)
@@ -4244,13 +4310,60 @@ After partial results, finish only missing requested deliverables, then report.
         suite_binding = None
         logger.warning("suite binder failed; turn continues unbound", exc_info=True)
 
-    # Convert workflow_prompt to PromptTemplate so it is used as system prompt
-    # Use jinja2 format to avoid issues with JSON braces { } in the prompt
-    workflow_prompt_template = PromptTemplate(
-        template=workflow_prompt,
-        input_variables=[],
-        template_format="jinja2",
-    )
+    if suite_binding is not None and not dashboard_agent_mode:
+        from .subagent.report_agent import make_generate_report_tool
+        from .tools.chart_query import make_chart_query
+        from .tools.export_csv import make_export_csv
+
+        suite_tools = []
+        if suite_binding.violation("export_csv") is None:
+            suite_tools.append(make_export_csv(react_state))
+        if (
+            suite_binding.allow is not None
+            and "chart_query" in suite_binding.allow
+            and suite_binding.violation("chart_query") is None
+        ):
+            suite_tools.append(make_chart_query(react_state, database_connector))
+        if (
+            suite_binding.allow is not None
+            and "generate_report" in suite_binding.allow
+            and suite_binding.violation("generate_report") is None
+        ):
+            suite_tools.append(
+                make_generate_report_tool(
+                    react_state=react_state,
+                    skills_dir=DEFAULT_SKILLS_DIR,
+                    llm_client=llm_client,
+                    model_name=dialogue.model_name,
+                )
+            )
+        if suite_tools:
+            tool_pack = ToolPack(
+                [
+                    resource
+                    for resource in tool_pack.sub_resources
+                    if suite_binding.violation(resource.name) is None
+                ]
+                + suite_tools
+            )
+            workflow_prompt += """
+
+## Suite analysis tools
+The supplied function schemas are the current authoritative tool list. Earlier
+conversation failures about missing chart/report tools do not describe this turn.
+Use chart_query(sql, display_type, thought) for native interactive charts.
+Compute derived metrics with read-only SQL; the suite's tool boundary still applies.
+After the required analysis, call generate_report(instructions) with the report
+title and required sections. The dedicated report agent binds captured SQL/chart
+evidence and renders the report. Only status=completed means the report is ready.
+For report continuation, call generate_report immediately to reuse captured evidence.
+Do not inspect suite configuration or repeat completed analysis.
+Do not write HTML or substitute a textual summary for the requested report.
+"""
+
+    # The prompt is already assembled. Skill and report-template placeholders
+    # are instructions for the model, not expressions for a second render.
+    workflow_prompt_template = PromptTemplate.from_literal(workflow_prompt)
 
     workflow_agent = (
         DashboardConfirmationAgent(dashboard_state=react_state, max_retry_count=30)
@@ -4377,6 +4490,8 @@ After partial results, finish only missing requested deliverables, then report.
     task_plan_emitted = False
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
+    public_progress = PublicProgressStream(history_steps)
+    public_text_buffers: Dict[int, str] = {}
     current_history_step: Optional[Dict[str, Any]] = None
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
@@ -4393,46 +4508,22 @@ After partial results, finish only missing requested deliverables, then report.
     emitted_thought_len: Dict[int, int] = {}
     text_terminate_emitted: Dict[int, str] = {}
 
-    # Emit pre-loaded skill as an SSE step before agent starts processing
-    if pre_matched_skill:
-        skill_step_id, skill_step_event = build_step(
-            f"Load Skill: {pre_matched_skill.metadata.name}",
-            "Pre-loaded skill from user selection",
-            phase="加载技能",
-        )
-        current_history_step = {
-            "id": skill_step_id,
-            "title": f"Load Skill: {pre_matched_skill.metadata.name}",
-            "detail": "Pre-loaded skill from user selection",
-            "phase": "加载技能",
-            "thought": None,
-            "action": None,
-            "action_input": None,
-            "outputs": [],
-            "status": "done",
-        }
-        yield skill_step_event
-        # Emit skill metadata as text chunk
-        skill_desc = (
-            f"Skill: {pre_matched_skill.metadata.name}"
-            f" - {pre_matched_skill.metadata.description}"
-        )
-        yield step_chunk(skill_step_id, "text", skill_desc)
-        current_history_step["outputs"].append(
-            {"output_type": "text", "content": skill_desc}
-        )
-        # Emit skill instructions as markdown content (shows in right panel)
-        if pre_matched_skill.instructions:
-            yield step_chunk(skill_step_id, "markdown", pre_matched_skill.instructions)
-            current_history_step["outputs"].append(
-                {
-                    "output_type": "markdown",
-                    "content": pre_matched_skill.instructions,
-                }
-            )
-        yield step_done(skill_step_id)
-        history_steps.append(current_history_step)
-        current_history_step = None
+    from .skill_read_steps import preloaded_skill_steps, skill_read_events
+
+    if creation_mode == "expert_suite":
+        from .tools.suite_creation import creator_read_step
+
+        creator_step = creator_read_step()
+        for event in skill_read_events(creator_step):
+            yield _sse_event(event)
+        history_steps.append(creator_step)
+
+    for skill_step in preloaded_skill_steps(
+        binding=suite_binding, skill=pre_matched_skill
+    ):
+        for event in skill_read_events(skill_step):
+            yield _sse_event(event)
+        history_steps.append(skill_step)
 
     while True:
         if agent_task.done() and stream_queue.empty():
@@ -4477,6 +4568,55 @@ After partial results, finish only missing requested deliverables, then report.
             # lineage and creates duplicate nodes in the evidence graph.
             update_subagent_history(subagent_history, event)
             yield _sse_event(event)
+        elif event_type == "action.start":
+            round_num = int(event.get("round") or 1)
+            calls = event.get("tool_calls") or []
+            names = [(call.get("function") or {}).get("name", "") for call in calls]
+            if not names or "terminate" in names:
+                removed = public_progress.remove(round_num)
+                if removed:
+                    yield _sse_event(removed)
+                continue
+            inputs = []
+            intentions = []
+            for call in calls:
+                raw = (call.get("function") or {}).get("arguments") or "{}"
+                try:
+                    args = json.loads(raw) if isinstance(raw, str) else dict(raw)
+                except (ValueError, TypeError):
+                    args = {}
+                if isinstance(args, dict):
+                    intention = args.pop("intention", None) or args.pop("intent", None)
+                    args.pop("thought", None)
+                    if intention:
+                        intentions.append(str(intention))
+                inputs.append(args)
+            text = public_assistant_text(
+                normalize_display_text(event.get("public_text")) or ""
+            ) or "\n".join(intentions)
+            if text:
+                progress_event = public_progress.update(
+                    round_num,
+                    text,
+                    streaming=False,
+                    before_step_id=round_step_map.get(round_num),
+                )
+                if progress_event:
+                    yield _sse_event(progress_event)
+            action_title = ", ".join(names)
+            if round_num not in round_step_map:
+                step_id, start_event = build_step(action_title, "Tool execution")
+                round_step_map[round_num] = step_id
+                yield start_event
+            yield step_meta(
+                round_step_map[round_num],
+                None,
+                action_title,
+                json.dumps(
+                    inputs if len(inputs) > 1 else inputs[0], ensure_ascii=False
+                ),
+                title=action_title,
+            )
         elif event_type == "thinking":
             # Parse thinking content but don't create step yet
             # Step will be created when 'act' event arrives with confirmed
@@ -4510,12 +4650,47 @@ After partial results, finish only missing requested deliverables, then report.
             reason_text = normalize_display_text(action_reason)
             if reason_text:
                 pending_action_reasons[round_num] = reason_text
-            # Don't emit anything yet - wait for 'act' event to create step
+            if intention_text and action and action.lower() != "terminate":
+                progress_event = public_progress.update(
+                    round_num,
+                    intention_text,
+                    streaming=False,
+                    before_step_id=round_step_map.get(round_num),
+                )
+                if progress_event:
+                    yield _sse_event(progress_event)
+                if round_num not in round_step_map:
+                    step_id, start_event = build_step(action, "Tool execution")
+                    round_step_map[round_num] = step_id
+                    yield start_event
+                yield step_meta(
+                    round_step_map[round_num],
+                    None,
+                    action,
+                    action_input,
+                    title=action,
+                    action_intention=intention_text,
+                )
 
         elif event_type == "thinking_chunk":
             round_num = int(event.get("round") or (len(round_step_map) + 1))
             delta_thinking = event.get("delta_thinking") or ""
             delta_text = event.get("delta_text") or ""
+            if delta_text:
+                public_text_buffers[round_num] = (
+                    public_text_buffers.get(round_num, "") + delta_text
+                )
+                public_text = public_text_buffers[round_num]
+                if not event.get("public_text_stream"):
+                    public_text = react_public_intention(public_text)
+                progress_event = public_progress.update(
+                    round_num,
+                    public_text,
+                    streaming=True,
+                    before_step_id=round_step_map.get(round_num),
+                )
+                if progress_event:
+                    yield _sse_event(progress_event)
 
             chunk = delta_thinking or delta_text
             if chunk:
@@ -4580,6 +4755,24 @@ After partial results, finish only missing requested deliverables, then report.
                             native_args_buffers.get(buf_key, "") + delta_args
                         )
                     if native_args_names.get(buf_key) != "terminate":
+                        intention_parts = []
+                        for key, args_text in native_args_buffers.items():
+                            if key[0] != round_num:
+                                continue
+                            intention = _extract_partial_json_string_value(
+                                args_text, "intention"
+                            ) or _extract_partial_json_string_value(args_text, "intent")
+                            if intention:
+                                intention_parts.append(intention)
+                        if intention_parts and not public_text_buffers.get(round_num):
+                            progress_event = public_progress.update(
+                                round_num,
+                                "\n".join(intention_parts),
+                                streaming=True,
+                                before_step_id=round_step_map.get(round_num),
+                            )
+                            if progress_event:
+                                yield _sse_event(progress_event)
                         continue
                     decoded = _extract_partial_json_string_value(
                         native_args_buffers.get(buf_key, ""), "output"
@@ -4649,6 +4842,9 @@ After partial results, finish only missing requested deliverables, then report.
                 and action_output.get("is_exe_success", True)
             )
             if is_terminate:
+                removed = public_progress.remove(round_num)
+                if removed:
+                    yield _sse_event(removed)
                 pending_thoughts.pop(round_num, [])
                 pending_action_intentions.pop(round_num, None)
                 pending_action_reasons.pop(round_num, None)
@@ -4966,6 +5162,8 @@ After partial results, finish only missing requested deliverables, then report.
 
     # A deadline can interrupt thinking or a tool before an act event arrives.
     # Close those visible placeholders and retain their status for replay.
+    for progress_event in public_progress.finish_all():
+        yield _sse_event(progress_event)
     recorded_step_ids = {step["id"] for step in history_steps}
     if current_history_step is not None:
         current_history_step["status"] = "failed"
@@ -5778,7 +5976,10 @@ async def chat_sql_run(
         local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
         _require_database_access(local_db_manager, database_name, actor_id)
         connector = local_db_manager.get_connector(database_name)
+        started_at = datetime.now(timezone.utc).isoformat()
+        started = asyncio.get_running_loop().time()
         result = await run_in_threadpool(connector.run, sql)
+        duration_ms = int((asyncio.get_running_loop().time() - started) * 1000)
     except PermissionError as e:
         return Result.failed(msg=str(e))
     except ValueError as e:
@@ -5786,20 +5987,20 @@ async def chat_sql_run(
     except Exception as e:
         return Result.failed(msg=f"查询失败: {e}")
 
-    if not result:
-        return Result.succ(
-            {
-                "sql": sql,
-                "columns": [],
-                "rows": [],
-                "row_count": 0,
-                "truncated": False,
-                "db_name": database_name,
-            }
-        )
-    col_names, rows = normalize_result(result)
+    col_names, rows = normalize_result(result) if result else ([], [])
     return Result.succ(
-        build_query_chunk(sql, col_names, rows, db_name=database_name)["content"]
+        build_query_chunk(
+            sql,
+            col_names,
+            rows,
+            db_name=database_name,
+            execution={
+                "status": "succeeded",
+                "started_at": started_at,
+                "duration_ms": duration_ms,
+                "tool": "sql_run",
+            },
+        )["content"]
     )
 
 

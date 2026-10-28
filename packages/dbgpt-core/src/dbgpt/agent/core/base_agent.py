@@ -605,11 +605,20 @@ class ConversableAgent(Role, Agent):
                 ) as span:
                     # 1.Think about how to do things
                     async def _llm_stream_callback(payload: Dict[str, Any]) -> None:
+                        if payload.get("action_start"):
+                            await _emit_stream(
+                                "action.start",
+                                {"round": current_retry_counter + 1, **payload},
+                            )
+                            return
                         await _emit_stream(
                             "thinking_chunk",
                             {
                                 "round": current_retry_counter + 1,
                                 "delta_text": payload.get("delta_text", ""),
+                                "public_text_stream": payload.get(
+                                    "public_text_stream", False
+                                ),
                                 "delta_thinking": payload.get("delta_thinking", ""),
                                 "delta_tool_calls": payload.get("delta_tool_calls")
                                 or [],

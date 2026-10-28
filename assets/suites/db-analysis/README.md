@@ -30,6 +30,7 @@
 
 - **数据集圈定**：从语义层取表白名单与血缘 join 路径固化为数据集卡；模型**不从全量表选表**。
 - **多步取数与口径一致**：每步 `nl2sql` 携带 `dataset_id` + `metric_refs`（含 pin 版本），默认过滤与时间粒度统一注入。
+- **经营仪表板**：`/dashboard` 明确决策与指标口径、检查数据质量，按 KPI → 趋势 → 结构拆解规划；用户确认后生成原生可恢复看板草稿，保留 SQL 与数据证据。
 - **图表自动匹配**：柱/线/饼/散点/堆叠/双轴按数据形态选型，标题结论化、注脚带口径。
 - **归因分析**：维度贡献度拆解（含闭合校验）、环比同比、量价分解、结构效应分离、异动起点定位、假异动排除。
 - **图文报告**：固定章节骨架装配 + 引用 chips（指标@版本 / 表与 join / SQL 步骤 / 命中样例）+ HTML/PDF 导出与分享。
@@ -49,7 +50,10 @@ assets/suites/db-analysis/
 │   ├── multi-step-analysis/SKILL.md    # 多步取数与跨步口径一致（版本 pin）
 │   ├── chart-advisor/SKILL.md          # 图表自动匹配与 option 容错
 │   ├── attribution-analysis/SKILL.md   # 归因（贡献度/环比同比/量价/异动定位）
-│   └── report-generation/SKILL.md      # 图文报告（结论提炼/引用 chips/导出）
+│   ├── report-generation/SKILL.md      # 图文报告（结论提炼/引用 chips/导出）
+│   └── build-dashboard/               # 经营仪表板与三份必需参考
+│       ├── SKILL.md
+│       └── references/                # 连接 / 口径、L1–L4 数据质量、证据卡
 ├── templates/
 │   └── report-template.md              # 报告章节骨架（report_export 的 template 入参）
 └── few_shots/
@@ -65,18 +69,31 @@ assets/suites/db-analysis/
 | `chart-advisor` | `/chart` | 形态识别 → 选型 → 维度度量映射 → option JSON 容错自修 | `chart` |
 | `attribution-analysis` | `/attribute` | 假异动排除 → 贡献度拆解与闭合 → 量价/结构分解 → 异动定位 → 结论卡 | `semantic_search`、`nl2sql`、`sql_execute`、`chart` |
 | `report-generation` | `/report` | 素材盘点 → 摘要提炼 → 章节装配 → 引用 chips → HTML/PDF 导出 | `report_export`、`export_csv`、`chart` |
+| `build-dashboard` | `/dashboard` | 决策与指标 → 口径 / 数据质量 → 规划确认 → 原生看板草稿与证据 | `sql_query`、`plan_dashboard`、`create_dashboard_draft`、`repair_dashboard_draft` |
 
-技能格式为仓库既有 `SKILL.md`（frontmatter 仅 `name` + `description`），走现有 skill registry 与 zip 上传通道；`skills` 块在 manifest 中仅作索引。
+技能使用原生 `SKILL.md` frontmatter，包含 `name`、中英文说明、`command` 与
+`user-invocable` 等字段；命令从技能元数据生成，`skills` 在 manifest 中仅作索引。
 
 ## 5. 快捷命令
 
 | 命令 | 作用 | 示例 |
 |---|---|---|
 | `/analyze` | 跑完整分析链路，默认产出图文报告 | `/analyze 本月华东区销售下滑归因，出图文报告` |
+| `/dashboard` | 构建用于持续监控的经营仪表板，先规划再确认生成 | `/dashboard 订单支付退款大盘，给运营负责人看，近 8 周，按天` |
 | `/dataset` | 圈定或查看当前数据集（表清单 + join + 口径） | `/dataset 交易域，华东区，近 90 天` |
 | `/chart` | 对当前结果集出图（自动选型，可显式指定） | `/chart 按周 valid_gmv 折线，series=渠道` |
 | `/report` | 汇总图表与结论导出报告（HTML/PDF） | `/report html 分享链接` |
 | `/attribute` | 归因：贡献度拆解 + 环比同比 + 异动定位 | `/attribute 本月华东区 valid_gmv 下滑，拆渠道与品类` |
+
+首页全部示例显式绑定命令。完整报告用 `/analyze`，趋势图用 `/chart`，
+贡献度拆解用 `/attribute`，经营大盘用 `/dashboard`。Walmart 报告及大盘示例
+绑定 `Walmart_Sales`，其余示例使用会话选中的数据库。
+
+仪表板分支依赖一个可用的已选数据源，不强制同时连接 MySQL 与 Elasticsearch。
+指标定义优先使用已发布语义上下文；缺失时披露拟采用口径。
+数据质量检查须区分 READY、READY_WITH_CAVEATS 与 BLOCKED。
+原生看板可预览、编辑并由用户确认保存 / 发布；本指令不自动外部发布、
+不交付单文件 HTML，也不自动配置定时刷新。规划成功不等于看板已生成。
 
 ## 6. manifest 关键值（`plugin.json` 的原生字段与 `dbgpt` 扩展）
 

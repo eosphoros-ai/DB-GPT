@@ -165,7 +165,7 @@ def test_map_text_delta():
         },
         1,
     )
-    assert ev.kind == HarnessEventKind.THINKING_DELTA
+    assert ev.kind == HarnessEventKind.TEXT_DELTA
     assert ev.text == "Hello "
     assert ev.round == 1
     assert ev.data["stream"] == "text"
@@ -223,14 +223,87 @@ def test_assistant_text_from_content_blocks():
         ],
     }
     assert _assistant_text_from_message(msg) == "abc"
-    # thinking-only fallback
+    # Private reasoning must not become a public answer.
     assert (
         _assistant_text_from_message(
             {"content": [{"type": "thinking", "thinking": "hmm"}]}
         )
-        == "hmm"
+        == ""
     )
     assert _assistant_text_from_message(None) == ""
+
+
+def test_message_end_distinguishes_progress_from_final_and_keeps_full_text():
+    text = "public progress " * 1000
+    event = map_rpc_event(
+        {
+            "type": "message_end",
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": "private reasoning"},
+                    {"type": "text", "text": text},
+                    {"type": "toolCall", "id": "call-1", "name": "read"},
+                ],
+            },
+        },
+        1,
+    )
+    assert event.kind == HarnessEventKind.MESSAGE_END
+    assert event.data["has_tool_calls"] is True
+    assert event.text == text
+
+
+@pytest.mark.asyncio
+async def test_runner_preserves_model_error_instead_of_empty_success(tmp_path):
+    records = [
+        {"type": "turn_start"},
+        {
+            "type": "message_end",
+            "message": {
+                "role": "assistant",
+                "content": [],
+                "stopReason": "error",
+                "errorMessage": "Insufficient Balance",
+            },
+        },
+        {"type": "agent_end"},
+    ]
+    script = tmp_path / "error_pi.py"
+    script.write_text(
+        "import json, sys\n"
+        f"events = json.loads({json.dumps(json.dumps(records))})\n"
+        "for line in sys.stdin:\n"
+        "    request = json.loads(line)\n"
+        "    print(json.dumps({'type': 'response', 'id': request.get('id'), "
+        "'command': request['type'], 'success': True}), flush=True)\n"
+        "    if request['type'] == 'prompt':\n"
+        "        for event in events: print(json.dumps(event), flush=True)\n"
+    )
+    runner = PiHarnessRunner(
+        PiHarnessConfig(
+            pi_cli=str(script),
+            command_prefix=[sys.executable],
+            cwd=str(tmp_path),
+            excluded_tools=[],
+            idle_timeout_s=0,
+        ),
+        conv_id="model-error-test",
+    )
+    events = []
+
+    async def on_event(event):
+        events.append(event)
+
+    try:
+        result = await runner.run("hello", on_event=on_event)
+    finally:
+        await runner.dispose()
+    assert result.error == "Insufficient Balance"
+    assert result.final_text == ""
+    error = next(event for event in events if event.kind == HarnessEventKind.ERROR)
+    assert error.text == "Insufficient Balance"
+    assert error.data["source"] == "model"
 
 
 @pytest.mark.asyncio

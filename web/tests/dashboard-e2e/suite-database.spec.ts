@@ -28,6 +28,7 @@ const suites = [
       display_en: 'Smart Data Query',
       description: '中文简介',
       description_en: 'Query data using validated read-only SQL',
+      routing: { keywords: ['suite-routing-test'] },
       skills: ['nl2sql-precision'],
       commands: [
         {
@@ -59,7 +60,17 @@ const suites = [
     status: 'enabled',
     manifest_snapshot: {
       display_en: 'Smart Data Analysis',
-      commands: [{ name: '/analyze', skill: 'multi-step-analysis' }],
+      commands: [
+        { name: '/analyze', skill: 'multi-step-analysis' },
+        {
+          name: '/dashboard',
+          skill: 'build-dashboard',
+          prefill: '仪表板目标与受众 + 核心指标',
+          prefill_en: 'Dashboard goal, audience and metrics',
+        },
+        { name: '/chart', skill: 'chart-advisor' },
+        { name: '/attribute', skill: 'attribution-analysis' },
+      ],
       recommended_questions: [
         {
           text: '生成 Walmart 销售分析报告',
@@ -67,6 +78,14 @@ const suites = [
           command: '/analyze',
           database_name: 'Walmart_Sales',
         },
+        {
+          text: '构建 Walmart 销售经营大盘',
+          text_en: 'Build a Walmart operational dashboard',
+          command: '/dashboard',
+          database_name: 'Walmart_Sales',
+        },
+        { text: '对比近 12 周订单占比趋势', command: '/chart' },
+        { text: '哪些渠道拉动了增量', command: '/attribute' },
       ],
     },
   },
@@ -115,7 +134,7 @@ function bindingEvent(send: Record<string, any>) {
   };
 }
 
-async function setup(page: Page, availableDatabases = databases, language = 'zh') {
+async function setup(page: Page, availableDatabases = databases, language = 'zh', queryPayload?: object) {
   const sends: Record<string, any>[] = [];
   await page.addInitScript(language => {
     localStorage.setItem('__db_gpt_lng_key', language);
@@ -145,7 +164,18 @@ async function setup(page: Page, availableDatabases = databases, language = 'zh'
               version: 2,
               type: 'react-agent',
               final_content: '数据库绑定请求已收到。',
-              steps: [],
+              steps: queryPayload
+                ? [
+                    {
+                      id: 'query-step',
+                      step: 1,
+                      title: 'sql_query',
+                      action: 'sql_query',
+                      status: 'done',
+                      outputs: [{ output_type: 'query', content: queryPayload }],
+                    },
+                  ]
+                : [],
               suite_reference: {
                 name: send.ext_info.suite,
                 display: send.ext_info.suite_display,
@@ -163,6 +193,13 @@ async function setup(page: Page, availableDatabases = databases, language = 'zh'
         contentType: 'text/event-stream',
         body: [
           ...(sends[sends.length - 1].ext_info.suite_command ? [bindingEvent(sends[sends.length - 1])] : []),
+          ...(queryPayload
+            ? [
+                { type: 'step.start', id: 'query-step', step: 1, title: 'sql_query', action: 'sql_query' },
+                { type: 'step.chunk', id: 'query-step', output_type: 'query', content: queryPayload },
+                { type: 'step.done', id: 'query-step', status: 'done' },
+              ]
+            : []),
           { type: 'final', content: '数据库绑定请求已收到。' },
           { type: 'done' },
         ]
@@ -177,6 +214,320 @@ async function setup(page: Page, availableDatabases = databases, language = 'zh'
     page.getByRole('button', { name: language === 'en' ? 'Smart Data Query' : '智能取数', exact: true }),
   ).toBeVisible();
   return sends;
+}
+
+for (const language of ['zh', 'en']) {
+  for (const narrow of [false, true]) {
+    test(`composer suite menu selects and switches suites (${language}, ${narrow ? 'narrow' : 'desktop'})`, async ({
+      page,
+    }, testInfo) => {
+      if (narrow) await page.setViewportSize({ width: 390, height: 844 });
+      const sends = await setup(page, databases, language);
+      await page
+        .getByRole('button', { name: language === 'en' ? 'Smart Data Query' : '智能取数', exact: true })
+        .click();
+      await page
+        .getByRole('button', {
+          name: language === 'en' ? /Average order value by category/ : /近30天各品类客单价/,
+        })
+        .click();
+      await page.getByRole('dialog').getByText('Olist_Ecommerce', { exact: true }).click();
+      const input = page.locator('textarea').first();
+      await input.fill('/nl2sql Analyze business performance');
+      await page.getByTestId('composer-context-trigger').click();
+      const suiteMenu = page.getByRole('menuitem', {
+        name: language === 'en' ? /Expert suite/ : /专家套件/,
+      });
+      await suiteMenu.hover();
+      const analysis = page.getByTestId('composer-suite-db-analysis');
+      await expect(analysis).toBeVisible();
+      expect((await suiteMenu.boundingBox())!.height).toBeLessThanOrEqual(48);
+      await expect(page.getByTestId('composer-suite-db-query').locator('..').locator('..')).toHaveCSS(
+        'background-color',
+        'rgb(244, 244, 245)',
+      );
+      const box = await analysis.boundingBox();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      await page.screenshot({ path: testInfo.outputPath('home-suite-menu.png'), animations: 'disabled' });
+      await analysis.click();
+      await expect(input).toHaveValue('Analyze business performance');
+      await expect(page.getByTestId('suite-composer-prefix')).toHaveText(
+        language === 'en' ? 'Smart Data Analysis' : '智能分析',
+      );
+      await input.press('Enter');
+      await expect.poll(() => sends.length).toBe(1);
+      expect(sends[0].ext_info).toMatchObject({ suite: 'db-analysis', database_name: 'Olist_Ecommerce' });
+      expect(sends[0].ext_info.suite_command).toBeUndefined();
+      await expect(page.getByText('数据库绑定请求已收到。', { exact: true }).first()).toBeVisible();
+      await page.getByTestId('composer-context-trigger').click();
+      await page.getByRole('menuitem', { name: language === 'en' ? /Expert suite/ : /专家套件/ }).hover();
+      await page.getByTestId('composer-suite-mysql-ops-expert').click();
+      await expect(page.getByTestId('suite-composer-prefix')).toHaveText(
+        language === 'en' ? 'MySQL Operations Expert' : 'MySQL 运维专家',
+      );
+      await page.locator('textarea').first().fill('Check database health');
+      await page.locator('textarea').first().press('Enter');
+      await expect.poll(() => sends.length).toBe(2);
+      expect(sends[1].ext_info.suite).toBe('mysql-ops-expert');
+      expect(sends[1].ext_info.suite_command).toBeUndefined();
+      // Earlier turns are collapsed by the conversation UI; the visible
+      // current turn must show the suite actually carried by its request.
+      await expect(page.getByTestId('message-suite-reference').last()).toContainText(
+        language === 'en' ? 'MySQL Operations Expert' : 'MySQL 运维专家',
+      );
+      await page.reload();
+      await expect(page.getByTestId('suite-composer-prefix')).toHaveText(
+        language === 'en' ? 'MySQL Operations Expert' : 'MySQL 运维专家',
+      );
+      await page.evaluate(() => document.documentElement.classList.add('dark'));
+      await page.getByTestId('composer-context-trigger').click();
+      await page.getByRole('menuitem', { name: language === 'en' ? /Expert suite/ : /专家套件/ }).hover();
+      await expect(page.getByTestId('composer-suite-mysql-ops-expert').locator('[data-icon="check"]')).toBeVisible();
+      await expect(page.getByRole('menuitem', { name: language === 'en' ? 'View suites' : '查看套件' })).toHaveCSS(
+        'color',
+        'rgb(229, 230, 235)',
+      );
+      await page.screenshot({
+        path: testInfo.outputPath('conversation-suite-menu-dark.png'),
+        animations: 'disabled',
+      });
+      const manageSuites = page.getByRole('menuitem', { name: language === 'en' ? 'View suites' : '查看套件' });
+      await manageSuites.focus();
+      await manageSuites.press('Enter');
+      await expect(page).toHaveURL(/\/construct\/suites/, { timeout: 60_000 });
+    });
+  }
+
+  test(`native batch displays separate tool inputs and results (${language})`, async ({ page }) => {
+    await setup(page, databases, language);
+    const results = [
+      {
+        name: 'semantic_search_metrics',
+        success: true,
+        observation: JSON.stringify({
+          source: 'semantic_center',
+          items: [{ metric_name: 'GMV', formula: 'SUM(price)' }],
+        }),
+      },
+      {
+        name: 'sql_query',
+        success: true,
+        observation: JSON.stringify({
+          chunks: [
+            {
+              output_type: 'query',
+              content: {
+                sql: 'SELECT 77 AS sales',
+                columns: ['sales'],
+                rows: [[77]],
+                row_count: 1,
+                db_name: 'Olist_Ecommerce',
+              },
+            },
+          ],
+        }),
+      },
+    ];
+    await page.route('**/api/v1/chat/dialogue/messages/history*', route =>
+      route.fulfill({
+        json: {
+          success: true,
+          data: [
+            { role: 'human', context: '有哪些业务指标', order: 1 },
+            {
+              role: 'view',
+              order: 1,
+              context: JSON.stringify({
+                version: 2,
+                type: 'react-agent',
+                final_content: 'Metrics loaded',
+                steps: [
+                  {
+                    id: 'batch',
+                    step: 1,
+                    title: 'semantic_search_metrics, sql_query',
+                    action: 'semantic_search_metrics, sql_query',
+                    action_input: JSON.stringify([{ query: '业务指标', limit: 50 }, { sql: 'SELECT 77 AS sales' }]),
+                    status: 'done',
+                    outputs: [{ output_type: 'text', content: JSON.stringify(results) }],
+                  },
+                ],
+              }),
+            },
+          ],
+        },
+      }),
+    );
+    await page.goto('/?id=native-batch-history');
+    const metrics = page.getByRole('button', { name: /semantic_search_metrics/ });
+    const sql = page.getByRole('button', { name: /sql_query/ });
+    await expect(metrics).toHaveCount(1);
+    await expect(sql).toHaveCount(1);
+    await expect(metrics).not.toContainText('SELECT');
+    await expect(sql).not.toContainText('业务指标');
+    await metrics.click();
+    await expect(metrics.locator('..')).toContainText('"metric_name": "GMV"');
+    await expect(metrics.locator('..').locator('table')).toHaveCount(0);
+    await sql.click();
+    await expect(sql.locator('..').locator('pre')).toHaveText('SELECT 77 AS sales');
+    await expect(sql.locator('..').getByRole('cell', { name: '77', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('button', { name: /semantic_search_metrics/ })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: /sql_query/ })).toHaveCount(1);
+  });
+
+  test(`historical SQL group expands each query and result (${language})`, async ({ page }) => {
+    await setup(page, databases, language);
+    await page.route('**/api/v1/chat/dialogue/messages/history*', route =>
+      route.fulfill({
+        json: {
+          success: true,
+          data: [
+            { role: 'human', context: 'Query sales', order: 1 },
+            {
+              role: 'view',
+              order: 1,
+              context: JSON.stringify({
+                version: 2,
+                type: 'react-agent',
+                final_content: 'Queries completed',
+                steps: [111, 222].map((value, index) => ({
+                  id: `query-${index}`,
+                  step: index + 1,
+                  title: 'sql_query',
+                  action: 'sql_query',
+                  status: 'done',
+                  outputs: [
+                    {
+                      output_type: 'query',
+                      content: {
+                        sql: `SELECT ${value} AS sales`,
+                        columns: ['sales'],
+                        rows: [[value]],
+                        row_count: 1,
+                        db_name: 'Walmart_Sales',
+                      },
+                    },
+                  ],
+                })),
+              }),
+            },
+          ],
+        },
+      }),
+    );
+    await page.goto('/?id=timeline-sql-history');
+    const group = page.getByRole('button', { name: /sql_query/ }).first();
+    await expect(group).toHaveAttribute('aria-expanded', 'false');
+    await group.click();
+    const rows = page.getByRole('button', { name: /sql_query/ });
+    await expect(rows).toHaveCount(3);
+    for (const [index, value] of [111, 222].entries()) {
+      const row = rows.nth(index + 1);
+      await row.click();
+      const body = row.locator('..');
+      await expect(body.locator('pre')).toHaveText(`SELECT ${value} AS sales`);
+      await expect(body.getByRole('cell', { name: String(value), exact: true })).toBeVisible();
+      await row.click();
+      await expect(body.locator('table')).toHaveCount(0);
+    }
+    await page.reload();
+    await expect(page.getByRole('button', { name: /sql_query/ })).toHaveCount(1);
+    await page.getByRole('button', { name: /sql_query/ }).click();
+    await page
+      .getByRole('button', { name: /sql_query/ })
+      .nth(1)
+      .press('Enter');
+    await expect(page.getByRole('button', { name: /sql_query/ }).nth(1)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test(`dashboard plan survives reload and confirms generation (${language})`, async ({ page }) => {
+    await setup(page, databases, language);
+    const plan = {
+      dashboard_id: 'test-dashboard',
+      source_turn_id: 'test-turn',
+      title: 'Walmart weekly sales',
+      data_source_id: 'Walmart_Sales',
+      total_widgets: 1,
+      current_revision: 1,
+      status: 'awaiting_confirmation',
+      confirmation_prompt: '[[confirm-dashboard:test-dashboard]] revision 1',
+      plan: { metrics: ['Sales'], widgets: [{ id: 'sales', title: 'Weekly sales', type: 'line' }] },
+    };
+    let generated = false;
+    await page.route('**/api/v1/dashboards/test-dashboard**', route =>
+      route.fulfill({
+        json: {
+          success: true,
+          data: route.request().method() === 'POST' ? { widgets: {} } : { schema: { widgets: [], metric_context: {} } },
+        },
+      }),
+    );
+    await page.route('**/api/v1/chat/dialogue/messages/history*', route =>
+      route.fulfill({
+        json: {
+          success: true,
+          data: [
+            { role: 'human', context: 'Build dashboard', order: 1 },
+            {
+              role: 'view',
+              order: 1,
+              context: JSON.stringify({
+                version: 2,
+                type: 'react-agent',
+                final_content: 'Plan ready',
+                steps: [],
+                dashboard_refs: [
+                  generated ? { ...plan, status: 'draft', editor_path: '/dashboards/test-dashboard' } : plan,
+                ],
+              }),
+            },
+          ],
+        },
+      }),
+    );
+    await page.route('**/api/v1/chat/react-agent', route => {
+      const send = route.request().postDataJSON();
+      expect(send.ext_info).toMatchObject({
+        suite: 'db-analysis',
+        suite_command: '/dashboard',
+        creation_mode: 'dashboard',
+        database_name: 'Walmart_Sales',
+      });
+      expect(send.user_input).toContain('[[confirm-dashboard:test-dashboard]]');
+      generated = true;
+      return route.fulfill({
+        contentType: 'text/event-stream',
+        body: [
+          { ...plan, type: 'dashboard.generation.started' },
+          { ...plan, type: 'dashboard.widget.validated', widget_id: 'sales' },
+          { ...plan, type: 'dashboard.created', validated_widgets: 1, editor_path: '/dashboards/test-dashboard' },
+          { type: 'final', content: 'Dashboard generated' },
+          { type: 'done' },
+        ]
+          .map(event => `data: ${JSON.stringify(event)}\n\n`)
+          .join(''),
+      });
+    });
+    await page.goto('/?id=dashboard-test-conversation');
+    const card = page.getByTestId('chat-dashboard-card');
+    await expect(card).toContainText('Weekly sales');
+    await page.reload();
+    await card
+      .getByRole('button', { name: language === 'en' ? 'Confirm and generate dashboard' : '确认并生成看板' })
+      .click();
+    await expect(card).toHaveCount(1);
+    await expect(page.getByTestId('dashboard-artifact-preview')).toBeVisible();
+    await expect(
+      page.getByTestId('dashboard-artifact-preview').getByRole('button', {
+        name: language === 'en' ? 'Open full dashboard' : '打开完整看板',
+      }),
+    ).toBeVisible();
+    await expect(card.getByRole('button', { name: language === 'en' ? 'View dashboard' : '查看看板' })).toBeVisible();
+    await page.reload();
+    await expect(card.getByRole('button', { name: language === 'en' ? 'View dashboard' : '查看看板' })).toBeVisible();
+  });
 }
 
 test('generic suite examples select a database and send it with the suite', async ({ page }) => {
@@ -201,6 +552,87 @@ test('generic suite examples select a database and send it with the suite', asyn
   expect(sends[0].user_input).toBe('[Database: Olist_Ecommerce] 近30天各品类客单价');
   await expect(page.getByTestId('message-suite-reference')).toContainText('智能取数 · /nl2sql');
   await expect(page.getByTestId('message-suite-reference').locator('[data-icon="suite-hammer"]')).toBeVisible();
+});
+
+for (const language of ['zh', 'en']) {
+  test(`analysis dashboard example carries command, skill and database (${language})`, async ({ page }) => {
+    const sends = await setup(page, databases, language);
+    await page
+      .getByRole('button', {
+        name: language === 'en' ? 'Smart Data Analysis' : '智能分析',
+        exact: true,
+      })
+      .click();
+    const example = page.getByRole('button', {
+      name: language === 'en' ? /Build a Walmart operational dashboard/ : /构建 Walmart 销售经营大盘/,
+    });
+    await expect(example).toContainText('/dashboard');
+    await example.click();
+    await expect(page.getByTestId('suite-composer-prefix')).toContainText('/dashboard');
+    await page.locator('textarea').first().press('Enter');
+    await expect.poll(() => sends.length).toBe(1);
+    expect(sends[0].ext_info).toMatchObject({
+      suite: 'db-analysis',
+      suite_command: '/dashboard',
+      database_name: 'Walmart_Sales',
+    });
+    await expect(page.getByTestId('message-suite-reference')).toContainText('/dashboard');
+  });
+}
+
+test('analysis trend and attribution examples each bind their own command', async ({ page }) => {
+  await setup(page);
+  await page.getByRole('button', { name: '智能分析', exact: true }).click();
+  for (const [question, command] of [
+    ['对比近 12 周订单占比趋势', '/chart'],
+    ['哪些渠道拉动了增量', '/attribute'],
+  ]) {
+    const example = page.getByRole('button', { name: new RegExp(question) });
+    await expect(example).toContainText(command);
+    await example.click();
+    if (await page.getByRole('dialog').isVisible()) {
+      await page.getByRole('dialog').getByText('Olist_Ecommerce', { exact: true }).click();
+    }
+    await expect(page.getByTestId('suite-composer-prefix')).toContainText(command);
+  }
+});
+
+test('smart query artifacts expose SQL, result and execution record live and after reload', async ({ page }) => {
+  await setup(page, databases, 'zh', {
+    sql: 'SELECT 42 AS answer',
+    columns: ['answer'],
+    rows: [[42]],
+    row_count: 1,
+    truncated: false,
+    db_name: 'Olist_Ecommerce',
+    execution: {
+      status: 'succeeded',
+      started_at: '2026-10-27T06:00:00+00:00',
+      duration_ms: 123,
+      tool: 'sql_query',
+      artifact_id: 'test-query-record',
+    },
+  });
+  await page.getByRole('button', { name: /近30天各品类客单价/ }).click();
+  await page.getByRole('dialog').getByText('Olist_Ecommerce', { exact: true }).click();
+  await page.locator('textarea').first().press('Enter');
+  const artifact = page.getByTestId('query-artifact').first();
+  await expect(artifact).toContainText('取数产物');
+  await expect(artifact.locator('pre')).toContainText('SELECT 42 AS answer');
+  await expect(artifact.getByRole('columnheader', { name: 'answer' })).toBeVisible();
+  await expect(artifact.getByRole('cell', { name: '42', exact: true })).toBeVisible();
+  await expect(artifact.getByTestId('query-execution-record')).toContainText('执行成功');
+  await expect(artifact.getByTestId('query-execution-record')).toContainText('123 ms');
+  await expect(page).toHaveURL(/\bid=/);
+  await page.reload();
+  await expect(artifact.getByTestId('query-execution-record')).toContainText('test-query-record');
+  await expect(artifact.getByTestId('query-execution-record')).toContainText('Olist_Ecommerce');
+  await expect(artifact.getByRole('cell', { name: '42', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /会话产物/ }).click();
+  await page.getByRole('button', { name: /查询结果 · 1 行/ }).click();
+  const preview = page.getByTestId('query-artifact').last();
+  await expect(preview.getByTestId('query-execution-record')).toBeVisible();
+  await expect(preview.getByRole('columnheader', { name: 'answer' })).toBeVisible();
 });
 
 test('English plugins list and detail render localized content and search', async ({ page }) => {
@@ -396,3 +828,100 @@ test('native plugin supports spaced aliases without a database and restores load
   await expect(page.getByTestId('suite-loaded-document').last()).toContainText('safe-execution-rules.md');
   await expect(page.getByText('指令 /SQL 体检 · 知识技能 mysql-sql-doctor 已加载')).toBeVisible();
 });
+
+for (const language of ['zh', 'en']) {
+  for (const narrow of [false, true]) {
+    test(`suite cancellation by mouse and keyboard (${language}, ${narrow ? 'narrow' : 'desktop'})`, async ({
+      page,
+    }) => {
+      if (narrow) await page.setViewportSize({ width: 390, height: 844 });
+      const sends = await setup(page, databases, language);
+      const scene = page.getByRole('button', {
+        name: language === 'en' ? 'Smart Data Query' : '智能取数',
+        exact: true,
+      });
+      const prefix = page.getByTestId('suite-composer-prefix');
+      const input = page.locator('textarea').first();
+      await expect(prefix).toHaveCount(0);
+      await scene.click();
+      await page
+        .getByRole('button', {
+          name: language === 'en' ? /Average order value by category/ : /近30天各品类客单价/,
+        })
+        .click();
+      await page.getByRole('dialog').getByText('Olist_Ecommerce', { exact: true }).click();
+      await input.fill('/schema suite-routing-test keep this question');
+      await page.getByTestId('suite-composer-remove').click();
+      await expect(prefix).toHaveCount(0);
+      await expect(scene).toHaveAttribute('aria-pressed', 'false');
+      await expect(input).toHaveValue('suite-routing-test keep this question');
+      await scene.click();
+      await scene.click();
+      await expect(prefix).toHaveCount(0);
+
+      await scene.click();
+      await input.fill('suite-routing-test text');
+      await input.press('End');
+      await input.press('Backspace');
+      await expect(input).toHaveValue('suite-routing-test tex');
+      await expect(prefix).toBeVisible();
+      await input.evaluate(element => (element as HTMLTextAreaElement).setSelectionRange(0, 5));
+      await input.press('Backspace');
+      await expect(input).toHaveValue('-routing-test tex');
+      await expect(prefix).toBeVisible();
+      await input.evaluate(element => (element as HTMLTextAreaElement).setSelectionRange(0, 0));
+      await input.dispatchEvent('keydown', { key: 'Backspace', isComposing: true });
+      await expect(prefix).toBeVisible();
+      await input.press('Backspace');
+      await expect(prefix).toHaveCount(0);
+      await expect(input).toHaveValue('-routing-test tex');
+
+      await scene.click();
+      await input.fill('');
+      await input.press('Delete');
+      await expect(prefix).toHaveCount(0);
+      await scene.click();
+      await page.getByTestId('suite-composer-remove').focus();
+      await page.getByTestId('suite-composer-remove').press('Enter');
+      await expect(prefix).toHaveCount(0);
+      await input.fill('suite-routing-test keep database');
+      await input.press('Enter');
+      await expect.poll(() => sends.length).toBe(1);
+      expect(sends[0].ext_info.database_name).toBe('Olist_Ecommerce');
+      expect(sends[0].ext_info.suite).toBeUndefined();
+      expect(sends[0].ext_info.suite_command).toBeUndefined();
+      await expect(page.getByText('数据库绑定请求已收到。', { exact: true }).first()).toBeVisible();
+
+      const selectNative = async () => {
+        await page.getByTestId('composer-context-trigger').click();
+        await page.getByRole('menuitem', { name: language === 'en' ? /Expert suite/ : /专家套件/ }).hover();
+        await page.getByTestId('composer-suite-mysql-ops-expert').click();
+        await expect(prefix).toBeVisible();
+      };
+      await selectNative();
+      await input.fill('keep chat draft');
+      await input.evaluate(element => (element as HTMLTextAreaElement).setSelectionRange(0, 0));
+      await input.press('Delete');
+      await expect(prefix).toHaveCount(0);
+      await expect(input).toHaveValue('keep chat draft');
+      await selectNative();
+      await input.fill('');
+      await input.press('Backspace');
+      await expect(prefix).toHaveCount(0);
+      await selectNative();
+      await page.getByTestId('suite-composer-remove').click();
+      await expect(prefix).toHaveCount(0);
+      await selectNative();
+      await page.getByTestId('composer-context-trigger').click();
+      await page.getByRole('menuitem', { name: language === 'en' ? /Expert suite/ : /专家套件/ }).hover();
+      await page.getByTestId('composer-suite-mysql-ops-expert').click();
+      await expect(prefix).toHaveCount(0);
+      await input.fill('suite-routing-test keep chat database');
+      await input.press('Enter');
+      await expect.poll(() => sends.length).toBe(2);
+      expect(sends[1].ext_info.database_name).toBe('Olist_Ecommerce');
+      expect(sends[1].ext_info.suite).toBeUndefined();
+      expect(sends[1].ext_info.suite_command).toBeUndefined();
+    });
+  }
+}

@@ -6,6 +6,8 @@ from dbgpt_app.openapi.api_v1.agentic_data_api import (
     _is_dashboard_workflow_request,
     _is_read_only_dashboard_annotation_request,
 )
+from dbgpt_app.openapi.api_v1.suite_binder import SuiteBinding, bind_command
+from dbgpt_serve.plugins.loader import load_suite_dir
 
 
 def _repository_root() -> Path:
@@ -37,6 +39,59 @@ def test_read_only_annotation_intent_is_distinct_from_modification():
         "[[dashboard-annotation:dash-1:a-3]] [修改组件] 右边那个改一下"
     )
     assert not _is_read_only_dashboard_annotation_request("请解释本月收入")
+
+
+def test_native_analysis_dashboard_command_selects_workflow_and_preloads_evidence():
+    root = _repository_root() / "assets/suites/db-analysis"
+    package = load_suite_dir(root)
+    binding = SuiteBinding(
+        name=package.name,
+        version=package.version,
+        package_path=str(root),
+        package_format=package.manifest["package_format"],
+        commands=package.manifest["commands"],
+        skills=package.manifest["skills"],
+    )
+    bind_command(binding, "/dashboard")
+    assert binding.command_skill == "build-dashboard"
+    assert not binding.command_error
+    assert _is_dashboard_workflow_request(
+        "按周监控销售与门店表现", suite_binding=binding
+    )
+    assert {item["path"] for item in binding.loaded_documents} == {
+        "skills/build-dashboard/SKILL.md",
+        "skills/build-dashboard/references/connector-readiness.md",
+        "skills/build-dashboard/references/data-quality.md",
+        "skills/build-dashboard/references/evidence-card.md",
+    }
+    bind_command(binding, "/build-dashboard")
+    assert binding.command == "/dashboard"
+    binding.command_error = "required skill missing"
+    assert not _is_dashboard_workflow_request(
+        "按周监控销售与门店表现", suite_binding=binding
+    )
+    bind_command(binding, "/analyze")
+    assert not _is_dashboard_workflow_request("生成销售分析报告", suite_binding=binding)
+
+
+def test_analysis_examples_have_explicit_valid_commands_and_dashboard_gate():
+    package = load_suite_dir(_repository_root() / "assets/suites/db-analysis")
+    commands = {command["name"] for command in package.manifest["commands"]}
+    questions = package.snapshot["recommended_questions"]
+    assert all(question.get("command") in commands for question in questions)
+    dashboard_example = next(q for q in questions if q["command"] == "/dashboard")
+    assert dashboard_example["database_name"] == "Walmart_Sales"
+    assert dashboard_example["text_en"]
+    allowed = set(package.snapshot["tools"]["allow"])
+    assert {
+        "plan_dashboard",
+        "create_dashboard_draft",
+        "repair_dashboard_draft",
+        "revise_dashboard_plan",
+        "load_dashboard_draft",
+        "modify_dashboard_draft",
+        "propose_dashboard_change",
+    } <= allowed
 
 
 def test_dashboard_builder_skill_declares_orchestration_contract():

@@ -4,6 +4,10 @@
 
 Analyze business data through a scoped dataset, consistent queries, charts, supported conclusions, and a report with source references.
 
+Use `/dashboard` to build an operational dashboard for ongoing metric monitoring:
+define the audience and decision, validate metric definitions and L1–L4 data quality,
+confirm a SQL-free plan, and generate a recoverable native Dashboard draft.
+
 ## Workflow
 
 1. Define the dataset from approved tables and documented join paths.
@@ -17,6 +21,7 @@ Analyze business data through a scoped dataset, consistent queries, charts, supp
 | Command | Purpose | Skill |
 | --- | --- | --- |
 | `/analyze` | Run the full analysis workflow | Multi-step Analysis |
+| `/dashboard` | Plan and build an operational dashboard | Build Operational Dashboard |
 | `/dataset` | Define table scope and semantic context | Dataset Scoping |
 | `/chart` | Select and generate charts | Chart Selection |
 | `/report` | Assemble and export a report | Report Generation |
@@ -24,9 +29,22 @@ Analyze business data through a scoped dataset, consistent queries, charts, supp
 
 The full analysis command references the other skills, the analysis playbook, and the report template. Their content is loaded before business execution.
 
+All homepage examples explicitly bind a command: reports use `/analyze`, trends
+use `/chart`, attribution uses `/attribute`, and operational dashboards use
+`/dashboard`. The dashboard command preloads its connection, data-quality and
+evidence references.
+
 ## Database and metric context
 
 The Walmart sales example explicitly uses `Walmart_Sales`. Other examples use the selected session database. A missing named connection must be resolved before sending the example.
+
+The Walmart dashboard example also uses `Walmart_Sales`. One available selected
+data source is sufficient; MySQL and Elasticsearch are not both mandatory.
+The native Dashboard binds one source and does not merge providers silently.
+Missing semantic definitions must be disclosed. Data-quality checks report
+READY, READY_WITH_CAVEATS or BLOCKED and retain their supporting evidence.
+Planning success is not dashboard completion. The command does not automatically
+publish an external page, export a standalone HTML file or schedule refreshes.
 
 The intended workflow pins published metric definitions across the analysis. For example, multiple charts using `valid_gmv@v2` should share its formula and filters. Unavailable semantic context must be disclosed instead of silently inventing definitions.
 

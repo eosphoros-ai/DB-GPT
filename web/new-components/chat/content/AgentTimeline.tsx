@@ -12,6 +12,8 @@
  *
  * Consumes the same `step.*` SSE data as ManusLeftPanel.
  */
+import { publicAssistantText } from '@/utils/action-display';
+import { expandToolCallSteps } from '@/utils/tool-call-display';
 import { envelopeReadableText, extractEnvelopeObjects } from '@/utils/tool-envelope';
 import {
   BulbOutlined,
@@ -28,6 +30,7 @@ import cls from 'classnames';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import QueryArtifactBlock from './QueryArtifactBlock';
+import TerminalToolRow, { isTerminalTool, terminalCommand, TerminalIcon } from './TerminalToolRow';
 import { resolveImageUrl } from './image-url';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
@@ -81,6 +84,8 @@ interface AgentTimelineProps {
 /** Map a tool/action name to a leading icon (DSH uses 16px leading icons). */
 function toolIcon(tool?: string, title?: string) {
   const key = (tool || title || '').toLowerCase();
+  if (isSkillRead(tool, title)) return <ReadOutlined />;
+  if (isTerminalTool(key)) return <TerminalIcon />;
   if (key.includes('sql') || key.includes('db') || key.includes('database')) return <DatabaseOutlined />;
   if (key.includes('code') || key.includes('python') || key.includes('interpreter')) return <CodeOutlined />;
   if (key.includes('search') || key.includes('grep') || key.includes('knowledge')) return <SearchOutlined />;
@@ -88,6 +93,10 @@ function toolIcon(tool?: string, title?: string) {
   if (key.includes('report') || key.includes('html') || key.includes('visual')) return <FileTextOutlined />;
   if (key.includes('web') || key.includes('http') || key.includes('crawl')) return <GlobalOutlined />;
   return <ThunderboltOutlined />;
+}
+
+function isSkillRead(tool?: string, title?: string): boolean {
+  return tool === 'load_skill' || tool === 'get_skill_resource' || /^Load Skill:/.test(title || '');
 }
 
 /** Latest non-blank line — the DSH live-summary rule for thinking rows. */
@@ -145,6 +154,15 @@ function prettyInput(input?: string): string {
 /** One-line summary for tool rows: the input gist (e.g. the SQL) or the
  *  first output line — never a repeat of the row title. */
 function toolSummary(block: TimelineBlock): string {
+  if (isTerminalTool(block.tool || block.title)) return firstMeaningfulLine(terminalCommand(block.input));
+  if (isSkillRead(block.tool, block.title) && block.input) {
+    try {
+      const input = JSON.parse(block.input);
+      if (input.skill_name) return String(input.skill_name);
+    } catch {
+      /* Legacy inputs can be plain text. */
+    }
+  }
   const input = prettyInput(block.input);
   if (input) return firstMeaningfulLine(input);
   const pretty = parseChunkEnvelope(block.output);
@@ -220,22 +238,40 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
   const [open, setOpen] = useState(false);
   const running = block.status === 'running' || block.streaming;
   const isGroup = Boolean(block.children && block.children.length > 0);
+  const terminal = isTerminalTool(block.tool || block.title);
 
   const summary = useMemo(() => {
     if (block.kind === 'thinking') {
       // Completed reasoning shows its duration next to the title (mockup:
       // "思考 6s"); the summary slot stays empty to avoid duplication.
-      if (running) return latestLine(block.thought || '') || (t('timeline_thinking_dots', '思考中…') as string);
+      if (running) return t('timeline_thinking_dots', '思考中…') as string;
       return '';
     }
     if (isGroup) return toolSummary(block.children![0]);
     return toolSummary(block);
-  }, [block, running, isGroup]);
+  }, [block, running, isGroup, t]);
 
   const prettyOutput = useMemo(() => parseChunkEnvelope(block.output), [block.output]);
   const displayInput = useMemo(() => prettyInput(block.input), [block.input]);
 
-  const hasBody = isGroup || Boolean(block.input || block.output || (block.kind === 'thinking' && block.thought));
+  const hasBody =
+    isGroup ||
+    Boolean(block.input || block.output || block.queryPayload || (block.kind === 'thinking' && block.thought));
+
+  if (block.kind === 'tool' && !isGroup && terminal) {
+    return (
+      <TerminalToolRow
+        id={block.id}
+        tool={block.tool}
+        input={block.input}
+        output={prettyOutput || block.output}
+        status={block.status}
+        running={Boolean(running)}
+        duration={formatDuration(block.durationMs)}
+        sub={sub}
+      />
+    );
+  }
 
   return (
     <div className={cls('select-none', sub && 'ml-5')} data-running={running || undefined}>
@@ -245,7 +281,16 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
           'relative overflow-hidden flex items-center gap-1.5 h-7 rounded-md px-1 -mx-1',
           hasBody && 'cursor-pointer hover:bg-[#f4f4f0] dark:hover:bg-white/[.05]',
         )}
+        role={hasBody ? 'button' : undefined}
+        tabIndex={hasBody ? 0 : undefined}
+        aria-expanded={hasBody ? open : undefined}
         onClick={() => hasBody && setOpen(!open)}
+        onKeyDown={event => {
+          if (hasBody && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            setOpen(!open);
+          }
+        }}
       >
         {/* running shimmer sweep */}
         {running && (
@@ -258,7 +303,9 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
           />
         )}
         <span className='flex-none w-4 text-center text-[#8b8b84] dark:text-[#7c7972] text-xs'>
-          {running ? (
+          {terminal ? (
+            <TerminalIcon />
+          ) : running ? (
             <Loading3QuartersOutlined className='animate-spin' />
           ) : block.kind === 'thinking' ? (
             <BulbOutlined />
@@ -269,7 +316,8 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
         <span
           className={cls({
             'text-[12.5px] leading-7 text-[#8b8b84] dark:text-[#7c7972]': block.kind === 'thinking',
-            'font-mono text-[12.5px] leading-7 font-medium': block.kind !== 'thinking',
+            'text-[12.5px] leading-7 font-medium': block.kind !== 'thinking',
+            'font-mono': block.kind !== 'thinking' && !terminal,
             'text-[#55554f] dark:text-[#a8a59e]': block.kind !== 'thinking' && block.status === 'failed',
             'text-[#1c1c1a] dark:text-[#e6e4df]': block.kind !== 'thinking' && block.status !== 'failed',
           })}
@@ -278,7 +326,17 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
             ? block.streaming
               ? t('timeline_thinking_running', '思考中')
               : `${t('timeline_thinking', '思考')}${block.durationMs ? ` ${formatDuration(block.durationMs)}` : ''}`
-            : block.title || block.tool}
+            : terminal
+              ? t(
+                  running
+                    ? 'timeline_command_running'
+                    : block.status === 'failed'
+                      ? 'timeline_command_failed'
+                      : 'timeline_command_done',
+                )
+              : isSkillRead(block.tool, block.title)
+                ? t(block.tool === 'get_skill_resource' ? 'timeline_read_skill_resource' : 'timeline_read_skill')
+                : block.title || block.tool}
         </span>
         {block.count != null && block.count > 1 && (
           <span className='flex-none text-[11px] leading-4 text-[#8b8b84] dark:text-[#7c7972] bg-[#efefeb] dark:bg-white/[.06] rounded-full px-1.5'>
@@ -432,21 +490,69 @@ function QuestionRecap({ block }: { block: TimelineBlock }) {
 
 // ── main ───────────────────────────────────────────────────────────────
 
+function ToolPhase({ blocks }: { blocks: TimelineBlock[] }) {
+  const { t } = useTranslation();
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null);
+  const running = blocks.some(block => block.status === 'running');
+  const failed = blocks.some(block => block.status === 'failed');
+  const open = manualOpen ?? running;
+  const count = blocks.reduce((total, block) => total + (block.count || 1), 0);
+  return (
+    <div className='my-2'>
+      <button
+        type='button'
+        className='flex items-center gap-2 text-xs text-[#8b8b84] py-1'
+        aria-expanded={open}
+        onClick={() => setManualOpen(!open)}
+      >
+        {running ? <Loading3QuartersOutlined spin /> : <ThunderboltOutlined />}
+        {t(running ? 'timeline_phase_running' : failed ? 'timeline_phase_failed' : 'timeline_phase_done', { count })}
+        <span aria-hidden>{open ? '▾' : '▸'}</span>
+      </button>
+      <div hidden={!open} className='pl-3 border-l border-[#e6e6e2] dark:border-[#33353b]'>
+        {blocks.map(block => (
+          <FlowRow key={block.id} block={block} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AgentTimeline({ blocks, isRunning }: AgentTimelineProps) {
+  const sections: TimelineBlock[][] = [];
+  for (const block of blocks) {
+    const previous = sections[sections.length - 1];
+    if (
+      block.kind === 'tool' &&
+      !isSkillRead(block.tool, block.title) &&
+      previous?.every(item => item.kind === 'tool' && !isSkillRead(item.tool, item.title))
+    )
+      previous.push(block);
+    else sections.push([block]);
+  }
   if (blocks.length === 0 && !isRunning) {
     return <div className='text-sm text-[#8b8b84] dark:text-[#7c7972] italic py-2'>Waiting for agent to start…</div>;
   }
   return (
     <div className='py-1'>
-      {blocks.map(block =>
-        block.kind === 'text' ? (
-          <TextBlock key={block.id} block={block} />
-        ) : block.kind === 'question' ? (
-          <QuestionRecap key={block.id} block={block} />
-        ) : (
-          <FlowRow key={block.id} block={block} />
-        ),
-      )}
+      {sections.map(section => {
+        const block = section[0];
+        if (
+          section.reduce((total, item) => total + (item.count || 1), 0) >= 3 &&
+          section.every(item => item.kind === 'tool')
+        ) {
+          return <ToolPhase key={`phase-${block.id}`} blocks={section} />;
+        }
+        return section.map(block =>
+          block.kind === 'text' ? (
+            <TextBlock key={block.id} block={block} />
+          ) : block.kind === 'question' ? (
+            <QuestionRecap key={block.id} block={block} />
+          ) : (
+            <FlowRow key={block.id} block={block} />
+          ),
+        );
+      })}
     </div>
   );
 }
@@ -474,24 +580,59 @@ export interface TimelineSourceStep {
   actionInput?: unknown;
   startedAt?: number;
   endedAt?: number;
+  /** Explicit public narration; never populated from model reasoning. */
+  progressContent?: string;
+  actionIntention?: string;
 }
 
 export function stepsToTimelineBlocks(
   steps: TimelineSourceStep[],
   stepThoughts: Record<string, string> | undefined,
   outputsByStep: Record<string, { output_type?: string; content?: unknown }[]> | undefined,
+  skillBinding?: {
+    skill?: string;
+    error?: string;
+    documents?: { path?: string; status?: string }[];
+  },
 ): TimelineBlock[] {
-  const flat = steps.map(step => {
+  const expanded = expandToolCallSteps(steps, outputsByStep || {});
+  const flat = expanded.steps.map(step => {
+    if (step.action === '__progress__') {
+      return {
+        id: step.id,
+        kind: 'text',
+        content: publicAssistantText(step.progressContent || '', step.status === 'running'),
+        status: step.status === 'running' ? 'running' : 'success',
+        streaming: step.status === 'running',
+      } as TimelineBlock;
+    }
     const thought = stepThoughts?.[step.id] || '';
     const isThinking = !step.action && (step.title === '思考中' || (step.title || '').includes('思考'));
-    const rawOutputs = outputsByStep?.[step.id] || [];
+    const rawOutputs = expanded.outputs[step.id] || [];
     const outputText = rawOutputs
-      .filter(o => o.output_type === 'text' && o.content != null)
+      .filter(o => (o.output_type === 'text' || o.output_type === 'markdown') && o.content != null)
       .map(o => String(o.content))
       .join('\n');
     // sql_query result sets ride as structured query chunks; the timeline
     // renders them with the same data card as the artifact surface.
-    const queryChunk = rawOutputs.find(o => o.output_type === 'query' && o.content && typeof o.content === 'object');
+    const embeddedChunks = extractEnvelopeObjects(outputText).flatMap(envelope => envelope.chunks || []);
+    // Older single-tool rounds omitted action_input; bash tools retained
+    // the executed command in a typed code chunk instead.
+    const terminalCode = isTerminalTool(step.action || step.title)
+      ? [
+          ...rawOutputs,
+          ...embeddedChunks,
+          ...extractEnvelopeObjects(
+            rawOutputs
+              .filter(output => output.output_type === 'text' && typeof output.content === 'string')
+              .map(output => output.content)
+              .join(''),
+          ).flatMap(envelope => envelope.chunks || []),
+        ].find(output => output.output_type === 'code' && typeof output.content === 'string')?.content
+      : undefined;
+    const queryChunk = [...rawOutputs, ...embeddedChunks].find(
+      o => o.output_type === 'query' && o.content && typeof o.content === 'object',
+    );
     const queryPayload = queryChunk ? (queryChunk.content as NonNullable<TimelineBlock['queryPayload']>) : undefined;
     // Tool-result envelopes must never leak as raw JSON: lift image payloads
     // to thumbnails and keep only readable chunk text + residue.
@@ -581,11 +722,13 @@ export function stepsToTimelineBlocks(
       pairs,
       rejected: rejectedFlag,
       input:
-        step.actionInput != null
+        step.actionInput != null && step.actionInput !== ''
           ? typeof step.actionInput === 'string'
             ? step.actionInput
             : JSON.stringify(step.actionInput, null, 2)
-          : undefined,
+          : typeof terminalCode === 'string'
+            ? terminalCode
+            : undefined,
       output: sanitizedOutput || undefined,
       queryPayload,
       outputImages,
@@ -593,39 +736,83 @@ export function stepsToTimelineBlocks(
     } as TimelineBlock;
   });
 
+  // Older suite turns stored successful preload evidence only in suite.bound.
+  // Render that recorded evidence immediately and on replay, then replace it
+  // with the full backend step once its events arrive.
+  const documents = skillBinding?.documents || [];
+  if (
+    skillBinding?.skill &&
+    !skillBinding.error &&
+    documents.length > 0 &&
+    documents.every(document => document.status === 'loaded' && document.path) &&
+    !flat.some(
+      block =>
+        block.id === 'skill-read-suite' || (block.tool === 'load_skill' && toolSummary(block) === skillBinding.skill),
+    )
+  ) {
+    flat.unshift({
+      id: 'skill-read-suite',
+      kind: 'tool',
+      title: '读取技能',
+      tool: 'load_skill',
+      status: 'success',
+      input: JSON.stringify({ skill_name: skillBinding.skill, file_path: documents[0].path }),
+      output: documents.map(document => `File: ${document.path}`).join('\n'),
+    });
+  }
+
   // Collapse per-step thinking rows into a single turn-level reasoning
   // row (mockup: one "思考 Xs" disclosure). This also keeps tool blocks
   // consecutive so same-tool grouping spans reasoning gaps.
-  const thinkingBlocks = flat.filter(b => b.kind === 'thinking');
-  const restBlocks = flat.filter(b => b.kind !== 'thinking');
-  const collapsed: TimelineBlock[] = thinkingBlocks.length
-    ? [
-        {
-          id: `${thinkingBlocks[0].id}-reasoning`,
-          kind: 'thinking',
-          title: '思考',
-          status: thinkingBlocks.some(b => b.status === 'running')
-            ? 'running'
-            : thinkingBlocks.some(b => b.status === 'failed')
-              ? 'failed'
-              : 'success',
-          durationMs: thinkingBlocks.reduce((s, b) => s + (b.durationMs || 0), 0) || undefined,
-          thought: thinkingBlocks
-            .map(b => b.thought || '')
-            .filter(Boolean)
-            .join('\n\n'),
-          streaming: thinkingBlocks.some(b => b.streaming),
-        },
-        ...restBlocks,
-      ]
-    : restBlocks;
+  const visible = flat.filter(block => block.kind !== 'text' || block.content?.trim());
+  const thinkingBlocks = visible.filter(b => b.kind === 'thinking');
+  const restBlocks = visible.filter(b => b.kind !== 'thinking');
+  const hasProgress = visible.some(block => block.kind === 'text');
+  const collapsed: TimelineBlock[] = hasProgress
+    ? visible
+    : thinkingBlocks.length
+      ? [
+          {
+            id: `${thinkingBlocks[0].id}-reasoning`,
+            kind: 'thinking',
+            title: '思考',
+            status: thinkingBlocks.some(b => b.status === 'running')
+              ? 'running'
+              : thinkingBlocks.some(b => b.status === 'failed')
+                ? 'failed'
+                : 'success',
+            durationMs: thinkingBlocks.reduce((s, b) => s + (b.durationMs || 0), 0) || undefined,
+            thought: thinkingBlocks
+              .map(b => b.thought || '')
+              .filter(Boolean)
+              .join('\n\n'),
+            streaming: thinkingBlocks.some(b => b.streaming),
+          },
+          ...restBlocks,
+        ]
+      : restBlocks;
 
   // Group consecutive same-tool calls into one collapsible row
   // (``sql_query ×8``) — Codex/OpenCode-style density for repetitive calls.
   const grouped: TimelineBlock[] = [];
+  let lastIntention = '';
   for (const block of collapsed) {
+    if (!hasProgress && block.kind === 'tool') {
+      const source = steps.find(step => block.id === step.id || block.id.startsWith(`${step.id}:tool:`));
+      const intention = publicAssistantText(source?.actionIntention || '').trim();
+      if (intention && intention !== lastIntention) {
+        grouped.push({ id: `${source!.id}-progress`, kind: 'text', content: intention });
+        lastIntention = intention;
+      }
+    }
     const prev = grouped[grouped.length - 1];
-    if (block.kind === 'tool' && prev && prev.kind === 'tool' && prev.tool === block.tool) {
+    if (
+      block.kind === 'tool' &&
+      !isSkillRead(block.tool, block.title) &&
+      prev &&
+      prev.kind === 'tool' &&
+      prev.tool === block.tool
+    ) {
       if (!prev.children) {
         const first = { ...prev };
         delete first.children;

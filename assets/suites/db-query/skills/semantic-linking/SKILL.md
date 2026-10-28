@@ -15,6 +15,33 @@ argument-hint-zh: 业务名词或问句（如"有效GMV"、"orders 表结构"）
 
 # 语义召回与权威口径加载 (Semantic Linking)
 
+## 当前运行时工具契约 / Current runtime tools
+
+本节优先于下面的目标架构示例；示例中的点号工具、双路向量检索、
+规则/血缘/样例读取是设计说明，不能按示例工具名发起调用。
+
+1. `semantic_search_metrics(query="有效GMV", limit=10)`：搜索当前库已发布指标。
+2. `semantic_get_metric(metric_id=<返回的整数ID>, version=<整数版本>)`：
+   回源读取已发布快照，包含 `metric_definition`、`formula`、`base_metrics`、
+   `dimensions`、版本、发布时间和 `citation`。也可用精确 `metric_name`，
+   与 `metric_id` 二选一。未传版本时取最新已发布版本。
+3. `semantic_search_business(query="华东区", table_name="orders", limit=20)`：
+   查询已发布表/字段业务释义、同义词及定义，返回目标表列与版本。
+4. `semantic_get_metadata(table_name="orders", limit=20)`：
+   查询同步的表字段、类型、注释、主外键标记、枚举、敏感/白名单标记。
+   该工具返回元数据快照，不代表业务口径已经发布，需检查 `last_sync_at`。
+
+工具只读且绑定当前数据库，不传 `layer`、`ds_id`、`types` 或 `top_k`。
+普通 `semantic_search` 仍是知识库检索。返回为空或未发布时明确说明，
+不得使用草稿或常识充当正式口径。多步取数复用返回版本；只使用定义中实际
+存在的过滤、时间字段和维度。读取不等于 SQL 强校验、自动 pin 或规则执行。
+
+Use these four tools for structured semantic-center reads. Search business terms,
+load an exact published metric snapshot, inspect published aliases, then verify
+the schema snapshot. Reuse the returned version and cite `citation`. Do not call
+the hypothetical dotted tools below or pass their unsupported parameters.
+Missing results or fields require clarification; they are not governed semantics.
+
 ## 技能目标
 
 把用户口语中的业务名词，**精准且可溯源地**落到语义层的权威定义上，为后续 NL2SQL 提供"四要素齐备"的口径上下文（指标表达式 / 默认过滤 / join 路径 / 表白名单）。

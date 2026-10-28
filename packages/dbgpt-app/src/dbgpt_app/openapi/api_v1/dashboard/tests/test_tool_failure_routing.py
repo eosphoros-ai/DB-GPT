@@ -4,13 +4,14 @@ import json
 
 import pytest
 
-from dbgpt.agent import AgentContext, AgentMessage
+from dbgpt.agent import ActionOutput, AgentContext, AgentMessage
 from dbgpt.agent.resource import ToolPack
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt_app.openapi.api_v1.dashboard.confirmation import (
     DashboardConfirmationAgent,
     generation_failure,
 )
+from dbgpt_app.openapi.api_v1.dashboard.tool_failure import capture_tool_failure
 from dbgpt_app.openapi.api_v1.tools.question import make_question
 from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
 
@@ -20,6 +21,25 @@ from .test_proposal_tool_contract import (
 )
 
 annotation_services = _annotation_services_fixture
+
+
+def test_generation_parse_failure_closes_the_matching_board_card():
+    state = {
+        "conv_id": "conversation",
+        "dashboard_generation": {
+            "dashboard_id": "sales",
+            "source_turn_id": "planning-turn",
+            "generation_id": "run-1",
+            "total_widgets": 4,
+        },
+    }
+    failure = capture_tool_failure(
+        state, ActionOutput(is_exe_success=False, content="Invalid model response")
+    )
+    assert failure["dashboard_id"] == "sales"
+    assert failure["source_turn_id"] == "planning-turn"
+    assert failure["generation_id"] == "run-1"
+    assert failure["editor_path"] == "/dashboards/sales"
 
 
 def bound_agent(state, tools):

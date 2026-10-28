@@ -28,8 +28,7 @@ def _assistant_text_from_message(message: Any) -> str:
 
     ``message.content`` is either a string or a list of content
     blocks (``{"type": "text", "text": ...} / {"type": "thinking",
-    "thinking": ...}``); prefer text blocks, fall back to
-    thinking so final-text fallbacks still carry substance.
+    "thinking": ...}``); only text blocks are public output.
     """
     if message is None:
         return ""
@@ -37,7 +36,6 @@ def _assistant_text_from_message(message: Any) -> str:
     if isinstance(content, str):
         return content
     texts: list = []
-    thoughts: list = []
     if isinstance(content, list):
         for block in content:
             if not isinstance(block, dict):
@@ -45,12 +43,8 @@ def _assistant_text_from_message(message: Any) -> str:
             btype = block.get("type")
             if btype == "text":
                 texts.append(str(block.get("text", "")))
-            elif btype == "thinking":
-                thoughts.append(str(block.get("thinking", "")))
     if texts:
         return "".join(texts)
-    if thoughts:
-        return "".join(thoughts)
     return ""
 
 
@@ -70,8 +64,8 @@ def map_rpc_event(record: Dict[str, Any], round_no: int) -> Optional[HarnessEven
         itype = inner.get("type")
         if itype == "text_delta":
             return HarnessEvent(
-                kind=HarnessEventKind.THINKING_DELTA,
-                text=_clip(str(inner.get("delta", "")), _MAX_DELTA),
+                kind=HarnessEventKind.TEXT_DELTA,
+                text=str(inner.get("delta", "")),
                 round=round_no,
                 data={"stream": "text"},
             )
@@ -89,10 +83,23 @@ def map_rpc_event(record: Dict[str, Any], round_no: int) -> Optional[HarnessEven
         role = message.get("role")
         text = _assistant_text_from_message(message)
         if role == "assistant":
+            if message.get("stopReason") == "error":
+                return HarnessEvent(
+                    kind=HarnessEventKind.ERROR,
+                    text=str(message.get("errorMessage") or "pi model request failed"),
+                    round=round_no,
+                    data={"source": "model"},
+                )
             return HarnessEvent(
                 kind=HarnessEventKind.MESSAGE_END,
-                text=_clip(text, _MAX_TEXT),
+                text=text,
                 round=round_no,
+                data={
+                    "has_tool_calls": any(
+                        isinstance(block, dict) and block.get("type") == "toolCall"
+                        for block in (message.get("content") or [])
+                    ),
+                },
             )
         return None
 

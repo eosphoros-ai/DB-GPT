@@ -92,17 +92,11 @@ def _build_openai_tools(resource) -> List[Dict[str, Any]]:
             continue
         parameters = tool.parameters_schema()
         properties = parameters["properties"]
-        # derisk ReActMasterAgentV3-style: inject intent + thought as first-class,
-        # optional tool args so native function calling carries a user-facing
-        # "意图(做什么)" + "思考(为什么/怎么想)" narration. Keep descriptions
-        # minimal (derisk uses "查询意图"/"思考过程") so the model stays terse.
+        # Only the public intention belongs in tool arguments. Private
+        # reasoning uses the provider's separate thinking channel.
         properties["intention"] = {
             "type": "string",
             "description": "这一步的意图（给用户看，一句话）",
-        }
-        properties["thought"] = {
-            "type": "string",
-            "description": "思考过程（给用户看，简短说明）",
         }
         tools.append(
             {
@@ -635,6 +629,12 @@ class ToolCallingReActAgent(ReActAgent):
             llm_messages[0]["content"] += (
                 "\nProvider-native function calling is enabled. Use the supplied "
                 "tool_calls functions for actions, with JSON arguments. "
+                "Before each group of tool calls, include a short public "
+                "progress message in the user's language explaining what "
+                "you are doing and what comes next. Keep private reasoning "
+                "in the thinking channel. "
+                "Write ordinary prose without Thought, Action, Action Input "
+                "or other ReAct protocol labels. "
                 "Do not return only reasoning or describe an intended tool call. "
                 "Call terminate with the final result when the task is complete."
             )
@@ -648,6 +648,11 @@ class ToolCallingReActAgent(ReActAgent):
             try:
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
+
+                async def native_stream(payload: Dict[str, Any]) -> None:
+                    if stream_callback:
+                        await stream_callback({**payload, "public_text_stream": True})
+
                 response = await self.llm_client.create_with_output(
                     context=llm_messages[-1].pop("context", None),
                     messages=llm_messages,
@@ -659,7 +664,7 @@ class ToolCallingReActAgent(ReActAgent):
                     conv_id=self.not_null_agent_context.conv_id,
                     sender=sender.role if sender else "?",
                     stream_out=self.stream_out,
-                    stream_callback=stream_callback,
+                    stream_callback=native_stream if stream_callback else None,
                     tools=tools,
                     tool_choice="auto",
                 )
@@ -678,6 +683,14 @@ class ToolCallingReActAgent(ReActAgent):
                 tool_calls = getattr(response, "tool_calls", None) or None
                 if tool_calls:
                     object.__setattr__(self, "_pending_native_tool_calls", tool_calls)
+                    if stream_callback:
+                        await stream_callback(
+                            {
+                                "action_start": True,
+                                "public_text": text,
+                                "tool_calls": tool_calls,
+                            }
+                        )
                 return text, llm_model
             except LLMChatError as e:
                 logger.error(f"model:{llm_model} generate Failed!{str(e)}")

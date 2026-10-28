@@ -316,6 +316,9 @@ const SuitesPage = () => {
               <Button type='primary' icon={<UploadOutlined />} loading={busy} onClick={() => fileRef.current?.click()}>
                 {t('suites_add')}
               </Button>
+              <Button type='primary' href='/?creation_mode=expert_suite'>
+                {i18n.language.startsWith('en') ? 'Create with AI' : '智能创建'}
+              </Button>
               <input
                 ref={fileRef}
                 type='file'

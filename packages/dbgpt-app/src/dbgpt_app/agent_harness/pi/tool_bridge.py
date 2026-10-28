@@ -216,8 +216,35 @@ def register_conv_tools(
     from dbgpt.agent.resource.tool.pack import ToolPack
     from dbgpt_app.openapi.api_v1.subagent.react_tools import make_react_tools
     from dbgpt_app.openapi.api_v1.tools.kb_tools import make_kb_tools
+    from dbgpt_app.openapi.api_v1.tools.semantic_tools import make_semantic_tools
 
     ext = ext_info if isinstance(ext_info, dict) else {}
+    extra = react_state_extra or {}
+    user_prompt = str(extra.get("_report_original_request") or "")
+    from dbgpt_app.openapi.api_v1.agentic_data_api import (
+        _dashboard_id_from_workflow_marker,
+        _is_dashboard_workflow_request,
+    )
+    from dbgpt_app.openapi.api_v1.suite_binder import get_conv_suite
+
+    binding = get_conv_suite(conv_id)
+    if ext.get("creation_mode") == "expert_suite":
+        binding = None
+    dashboard_mode = _is_dashboard_workflow_request(
+        user_prompt, ext.get("creation_mode"), suite_binding=binding
+    )
+    marker_id = _dashboard_id_from_workflow_marker(user_prompt)
+    if marker_id and not ext.get("database_name"):
+        from dbgpt_app.openapi.api_v1.dashboard.service import DashboardService
+
+        try:
+            record = DashboardService().get_dashboard(marker_id, extra.get("owner_id"))
+            ext = {
+                **ext,
+                "database_name": record.schema_payload.dashboard.data_source_id,
+            }
+        except Exception:
+            logger.info("pi dashboard source could not be restored")
     datasources = [d for d in [ext.get("database_name")] if d]
     knowledge = [
         k
@@ -242,6 +269,7 @@ def register_conv_tools(
             )
 
     react_state: Dict[str, Any] = {"conv_id": conv_id, "file_path": None}
+    react_state["_suite_creation_mode"] = ext.get("creation_mode") == "expert_suite"
     if react_state_extra:
         react_state.update(react_state_extra)
     # Carried into query artifacts so the edit & re-run endpoint can
@@ -253,6 +281,14 @@ def register_conv_tools(
         database_connector=connector,
         knowledge_resources=None,
     )
+    if dashboard_mode:
+        from dbgpt_app.openapi.api_v1.tools.sql_query import make_sql_query
+
+        factory["sql_query"] = make_sql_query(
+            react_state, connector, max_calls=0 if marker_id else 8
+        )
+        react_state["dashboard_agent_mode"] = True
+        react_state["_dashboard_connector"] = connector
     # Execution tools are always bridged (same containment as the dbgpt
     # engine: sandboxed code/shell, server-side html render), so bare
     # conversations keep analysis capability; sql_query needs a database.
@@ -269,6 +305,74 @@ def register_conv_tools(
             tool_list.extend(make_kb_tools(knowledge[0]))
         except Exception as e:
             logger.warning("pi tool bridge: make_kb_tools failed: %s", e)
+    if connector is not None:
+        tool_list.extend(make_semantic_tools(datasources[0]))
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+    )
+
+    react_state["_report_artifact_sink"] = InMemoryArtifactSink(
+        ArtifactCaptureContext(conv_uid=conv_id, run_id=f"pi-{os.urandom(16).hex()}")
+    )
+    if dashboard_mode:
+        from dbgpt_app.openapi.api_v1.tools.dashboard import (
+            make_dashboard_planner_tools,
+        )
+
+        async def dashboard_event(event_type: str, payload: Dict[str, Any]) -> None:
+            push_conv_event(conv_id, {**payload, "type": event_type})
+
+        tool_list.extend(
+            make_dashboard_planner_tools(
+                react_state=react_state,
+                database_connector=connector,
+                database_name=datasources[0] if datasources else None,
+                owner_id=extra.get("owner_id"),
+                user_prompt=user_prompt,
+                model_name=extra.get("_report_model_name"),
+                stream_callback=dashboard_event,
+            )
+        )
+    if ext.get("creation_mode") == "expert_suite":
+        from dbgpt_app.openapi.api_v1.tools.suite_creation import (
+            creation_tool_allowed,
+            make_suite_creation_tools,
+        )
+
+        tool_list.extend(make_suite_creation_tools(conv_id))
+
+    if binding is not None:
+        from dbgpt.configs.model_config import SKILLS_DIR
+        from dbgpt_app.openapi.api_v1.tools.chart_query import make_chart_query
+        from dbgpt_app.openapi.api_v1.tools.export_csv import make_export_csv
+
+        if binding.violation("export_csv") is None:
+            tool_list.append(make_export_csv(react_state))
+        if binding.allow is not None and "chart_query" in binding.allow:
+            tool_list.append(make_chart_query(react_state, connector))
+        if binding.allow is not None and "generate_report" in binding.allow:
+            from dbgpt.component import ComponentType
+            from dbgpt.model.cluster import WorkerManagerFactory
+            from dbgpt.model.cluster.client import DefaultLLMClient
+            from dbgpt_app.openapi.api_v1.subagent.report_agent import (
+                make_generate_report_tool,
+            )
+
+            client = DefaultLLMClient(
+                system_app.get_component(
+                    ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+                ).create(),
+                auto_convert_message=True,
+            )
+            tool_list.append(
+                make_generate_report_tool(
+                    react_state=react_state,
+                    skills_dir=SKILLS_DIR,
+                    llm_client=client,
+                    model_name=react_state.get("_report_model_name"),
+                )
+            )
     # Skill family (load_skill / get_skill_resource /
     # execute_skill_script_file) so pi can read and run the platform's
     # installed skills, same as the dbgpt engine. Mounted only when the
@@ -278,7 +382,39 @@ def register_conv_tools(
     except Exception as e:
         logger.warning("pi tool bridge: skill tools unavailable: %s", e)
 
-    pack = ToolPack(tool_list) if tool_list else None
+    if ext.get("creation_mode") == "expert_suite":
+        tool_list = [
+            item
+            for item in tool_list
+            if creation_tool_allowed(getattr(getattr(item, "_tool", item), "name", ""))
+        ]
+
+    if binding is not None:
+        tool_list = [
+            item
+            for item in tool_list
+            if binding.violation(getattr(getattr(item, "_tool", item), "name", ""))
+            is None
+        ]
+    if dashboard_mode:
+        from dbgpt_app.openapi.api_v1.agentic_data_api import (
+            _is_read_only_dashboard_annotation_request,
+        )
+        from dbgpt_app.openapi.api_v1.tools.dashboard_contracts import (
+            describe_registered_tools,
+            make_dashboard_tool_pack,
+        )
+
+        pack = make_dashboard_tool_pack(
+            tool_list,
+            user_prompt,
+            read_only_annotation=_is_read_only_dashboard_annotation_request(
+                user_prompt
+            ),
+        )
+        react_state["_dashboard_tool_contracts"] = describe_registered_tools(pack)
+    else:
+        pack = ToolPack(tool_list) if tool_list else None
     # ToolPack wraps plain callables into BaseTool instances; read the
     # manifest from the wrapped resources (name/description/args).
     manifest = [
@@ -343,6 +479,7 @@ def register_conv_tools(
         "ts": time.time(),
         "todowrite": todowrite_fn,
         "todo_list": todo_list,
+        "react_state": react_state,
     }
     _evict_expired()
     logger.info(
@@ -361,6 +498,11 @@ def get_manifest(conv_id: str) -> List[Dict[str, Any]]:
     return entry["manifest"]
 
 
+def get_react_state(conv_id: str) -> Dict[str, Any]:
+    """Return the current turn's shared state for orchestration and replay."""
+    return (_REGISTRY.get(conv_id) or {}).get("react_state", {})
+
+
 async def run_tool(conv_id: str, name: str, arguments: Dict[str, Any]) -> str:
     """Execute one bridged tool server-side; returns result text."""
     entry = _REGISTRY.get(conv_id)
@@ -377,9 +519,20 @@ async def run_tool(conv_id: str, name: str, arguments: Dict[str, Any]) -> str:
         raw = (arguments or {}).get("todos", "[]")
         return str(fn(raw if isinstance(raw, str) else json.dumps(raw)))
     try:
-        result = await entry["pack"].async_execute(
-            resource_name=name, **(arguments or {})
-        )
+        from dbgpt.core.interface.report_capture import bind_artifact_sink
+
+        with bind_artifact_sink(entry["react_state"]["_report_artifact_sink"]):
+
+            async def execute():
+                return await entry["pack"].async_execute(
+                    resource_name=name, **(arguments or {})
+                )
+
+            from dbgpt_app.openapi.api_v1.dashboard.confirmation import (
+                run_bounded_generation,
+            )
+
+            result = await run_bounded_generation(entry["react_state"], execute)
         return str(result)
     except Exception as e:
         logger.exception("pi tool bridge: tool %s failed", name)

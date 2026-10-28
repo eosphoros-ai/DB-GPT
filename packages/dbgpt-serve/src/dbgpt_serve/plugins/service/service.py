@@ -64,6 +64,15 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         """Scan the suites dir and upsert official packages (fail-soft)."""
         root = resolve_suites_dir(self._serve_config.suites_dir)
         packages, warnings = scan_suites(root)
+        from ..creation import SuiteCreationStore
+
+        drafts = SuiteCreationStore()
+        packages = [
+            pkg
+            for pkg in packages
+            if not drafts.has_installation_intent(pkg.name)
+            or self.registry.get(pkg.name) is not None
+        ]
         summary = self.registry.sync_official(packages)
         summary.warnings.extend(warnings)
         logger.info(
@@ -124,6 +133,12 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         workspace_id: Optional[str] = None,
         user_name: Optional[str] = None,
     ) -> SuiteResponse:
+        suite = self.get(name, workspace_id=workspace_id)
+        if suite and (suite.manifest_snapshot or {}).get("required_resources"):
+            from ..creation import SuiteCreationStore
+
+            if not SuiteCreationStore().configuration(name).get("database_name"):
+                raise ValueError("套件需要数据库配置，请从产物卡片选择数据库后启用")
         return self.registry.set_enabled(
             name, True, workspace_id=workspace_id, user_name=user_name
         )
@@ -145,3 +160,52 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         return self.registry.install_from_package(
             pkg, source="enterprise", user_name=user_name or "enterprise"
         )
+
+    def install_generated_package(
+        self, pkg, artifact_id: str, pending_configuration: bool
+    ) -> SuiteResponse:
+        """Commit generated registration and audit together, initially disabled
+        when resources still need to be selected by the user."""
+        import json
+        from datetime import datetime
+
+        from ..models.models import SuiteEventEntity
+
+        status = "disabled" if pending_configuration else "enabled"
+        entity = SuiteEntity(
+            name=pkg.name,
+            version=pkg.version,
+            source="enterprise",
+            display=pkg.manifest.get("display"),
+            icon=pkg.manifest.get("icon"),
+            scenario_id=pkg.manifest.get("scenario_id"),
+            execution="react",
+            status=status,
+            workspace_id=None,
+            package_path=pkg.path,
+            package_digest=pkg.digest,
+            manifest_snapshot=json.dumps(pkg.snapshot, ensure_ascii=False),
+            use_count=0,
+            user_name="suite-creator",
+            enabled_at=datetime.utcnow() if status == "enabled" else None,
+        )
+        with self._dao.session() as session:
+            session.add(entity)
+            session.add(
+                SuiteEventEntity(
+                    suite_name=pkg.name,
+                    event_type="install",
+                    to_version=pkg.version,
+                    user_name="suite-creator",
+                    detail=json.dumps(
+                        {
+                            "artifact_id": artifact_id,
+                            "digest": pkg.digest,
+                            "pending_configuration": pending_configuration,
+                        }
+                    ),
+                )
+            )
+            session.flush()
+            session.expunge(entity)
+        return self._dao.to_response(entity)

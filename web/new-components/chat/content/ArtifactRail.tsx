@@ -25,8 +25,11 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
+import DashboardArtifactPreview from '@/new-components/dashboard/DashboardArtifactPreview';
 
 import { resolveHtmlImageUrls, resolveImageUrl } from './image-url';
+import QueryArtifactBlock from './QueryArtifactBlock';
+import SuiteArtifactCard from './SuiteArtifactCard';
 
 export interface RailArtifact {
   id: string;
@@ -71,6 +74,7 @@ function textOf(artifact: RailArtifact): string | null {
 
 function typeIcon(type: string, name: string) {
   const ext = extOf(name);
+  if (type === 'query') return <FileExcelOutlined className='text-green-600' />;
   if (type === 'image') return <PictureOutlined className='text-blue-500' />;
   if (type === 'skill') return <FolderOutlined className='text-amber-500' />;
   if (MD_EXTS.has(ext)) return <FileMarkdownOutlined className='text-blue-500' />;
@@ -86,10 +90,12 @@ type TrFn = (key: string, fallback: string) => string;
 function typeLabel(type: string, name: string, tr: TrFn): string {
   const ext = extOf(name);
   if (type === 'html') return 'HTML';
+  if (type === 'dashboard') return 'Dashboard';
   if (type === 'image') return tr('rail_type_image', '图片');
   if (type === 'skill') return tr('rail_type_skill', '技能包');
   if (type === 'summary') return 'summary';
   if (type === 'code') return tr('rail_type_code', '代码');
+  if (type === 'query') return tr('qa_bundle_title', '取数产物');
   return ext ? ext.toUpperCase() : tr('rail_type_file', '文件');
 }
 
@@ -172,6 +178,15 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
   const { t } = useTranslation();
   const text = textOf(artifact);
   const ext = extOf(artifact.name);
+  if (artifact.type === 'expert_suite' && artifact.content) {
+    return <SuiteArtifactCard content={artifact.content} />;
+  }
+  if (artifact.type === 'dashboard' && artifact.content) {
+    return <DashboardArtifactPreview state={artifact.content} />;
+  }
+  if (artifact.type === 'query' && artifact.content) {
+    return <QueryArtifactBlock payload={artifact.content} fileName={`query_${artifact.id.slice(-8)}`} />;
+  }
   if (artifact.type === 'image') {
     return (
       <img

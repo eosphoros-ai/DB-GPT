@@ -1,5 +1,4 @@
 import { ChatContext } from '@/app/chat-context';
-import type { ResponseType } from '@/client/api';
 import { apiInterceptors } from '@/client/api';
 import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
 import { getSuites } from '@/client/api/suite';
@@ -52,10 +51,23 @@ import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
+import ComposerContextMenu from '@/new-components/chat/input/ComposerContextMenu';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import ChatDashboardCard from '@/new-components/dashboard/ChatDashboardCard';
+import type { DashboardGenerationState } from '@/new-components/dashboard/DashboardGenerationCard';
+import {
+  applyDashboardGenerationToMessages,
+  createDashboardGenerationEventGate,
+  reduceDashboardGenerations,
+} from '@/new-components/dashboard/dashboard-generation-state';
+import {
+  dashboardGenerationFromHistoryRef,
+  deduplicateDashboardHistoryGenerations,
+  enrichHistoryWithDashboardRefs,
+} from '@/new-components/dashboard/dashboard-history-recovery';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { IFlow } from '@/types/flow';
@@ -83,6 +95,7 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
+  CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
@@ -96,7 +109,6 @@ import {
   InboxOutlined,
   LeftOutlined,
   LoadingOutlined,
-  PaperClipOutlined,
   PieChartOutlined,
   PlusOutlined,
   ReadOutlined,
@@ -104,7 +116,6 @@ import {
   SearchOutlined,
   TableOutlined,
   ThunderboltOutlined,
-  UploadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
@@ -114,7 +125,6 @@ import {
   Button,
   ConfigProvider,
   Drawer,
-  Dropdown,
   Input,
   List,
   Modal,
@@ -431,6 +441,7 @@ interface ChatMessage {
   citations?: AgentCitation[];
   reportId?: string;
   reportRunId?: string;
+  dashboardGenerations?: DashboardGenerationState[];
 }
 
 interface ExecutionStep {
@@ -446,6 +457,7 @@ interface ExecutionStep {
   endedAt?: number;
   /** User-facing intent line from step.meta (action_intention). */
   actionIntention?: string;
+  progressContent?: string;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -466,7 +478,19 @@ interface Skill {
   icon?: string;
 }
 
-type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html' | 'skill' | 'query';
+type ArtifactType =
+  | 'file'
+  | 'table'
+  | 'chart'
+  | 'image'
+  | 'code'
+  | 'markdown'
+  | 'summary'
+  | 'html'
+  | 'skill'
+  | 'query'
+  | 'expert_suite'
+  | 'dashboard';
 
 interface Artifact {
   id: string;
@@ -494,7 +518,7 @@ interface Artifact {
 }
 
 /** Output types that materialize as stream artifact cards. */
-const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code', 'query']);
+const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code', 'query', 'expert_suite']);
 const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutput[]> }): boolean =>
   Object.values(execution?.outputs || {}).some(arr =>
     arr.some(
@@ -566,7 +590,8 @@ const _convertExecutionToMessageParts = (
             ? 'write'
             : step.title?.toLowerCase().includes('code') ||
                 step.title?.toLowerCase().includes('execute') ||
-                (actionLower === 'shell_interpreter' || actionLower === 'bash')
+                actionLower === 'shell_interpreter' ||
+                actionLower === 'bash'
               ? 'bash'
               : 'task';
 
@@ -677,7 +702,7 @@ const convertToManusFormat = (
   const steps: ManusExecutionStep[] = execution.steps
     .filter(step => {
       const detail = (step.detail || '').toLowerCase();
-      return !detail.includes('action: terminate');
+      return step.action !== '__progress__' && !detail.includes('action: terminate');
     })
     .map(step => {
       const cleanDetail = step.detail?.replace(/^Thought:.*\n?/gm, '').trim();
@@ -744,95 +769,23 @@ const convertToManusFormat = (
   return { sections, activeStep, outputs, stepThoughts };
 };
 
-const SUITE_EXAMPLES_TAB = '__examples__';
-
-const EXAMPLE_CARDS = [
-  {
-    id: 'olist_ecommerce_report',
-    icon: '🛍️',
-    title: 'Olist 巴西电商经营诊断',
-    description: '使用内置离线演示库分析电商经营；也可连接完整 Olist 数据',
-    query:
-      '帮我看看巴西站这段时间的生意怎么样，重点看 2017 年 1 月到 2018 年 8 月：销售额和订单量有什么变化？哪些品类、哪些地区表现比较好？送货慢会不会影响客户评分？最后给我三个最值得先做的改进建议，再整理成一份带图表的报告。',
-    dbName: 'Olist_Ecommerce',
-    knowledgeName: 'Olist_Analytics_Governance',
-    color: 'from-rose-500/10 to-orange-500/10',
-    borderColor: 'border-rose-200/60 dark:border-rose-800/40',
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-  },
-  {
-    id: 'walmart_sales',
-    icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
-    query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
-    fileName: 'Walmart_Sales.csv',
-    fileType: 'text/csv',
-    fileSize: 98304, // ~96 KB
-    color: 'from-blue-500/10 to-cyan-500/10',
-    borderColor: 'border-blue-200/60 dark:border-blue-800/40',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-    skillName: 'csv-data-analysis',
-  },
-  {
-    id: 'db_profile_report',
-    icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
-    query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
-    dbName: 'Walmart_Sales',
-    color: 'from-emerald-500/10 to-teal-500/10',
-    borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
-  },
-  {
-    id: 'fin_report',
-    icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
-    query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
-    fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
-    fileType: 'application/pdf',
-    fileSize: 2621440, // ~2.5 MB
-    color: 'from-violet-500/10 to-purple-500/10',
-    borderColor: 'border-violet-200/60 dark:border-violet-800/40',
-    iconBg: 'bg-violet-100 dark:bg-violet-900/40',
-    skillName: 'financial-report-analyzer',
-  },
-  {
-    id: 'create_sql_skill',
-    icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
-    query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
-    color: 'from-amber-500/10 to-orange-500/10',
-    borderColor: 'border-amber-200/60 dark:border-amber-800/40',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-    skillName: 'skill-creator',
-  },
-];
-
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const {
-    model,
-    modelList,
-    setModel,
-    setConvRunning,
-    runningConvIds,
-    addOptimisticConv,
-    bumpDialogueList,
-  } = useContext(ChatContext);
+  const { model, modelList, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList } =
+    useContext(ChatContext);
   const [query, setQuery] = useState('');
   // Expert suites (scenario presets) rendered on the home page from the
   // registry (GET /api/v1/suites).  Tab click = explicit preset initializer;
   // the route chip is only a suggestion scored from routing.keywords.
   const [suitePackages, setSuites] = useState<SuiteItem[]>([]);
+  const suiteCreationMode = router.query.creation_mode === 'expert_suite';
+  const [suiteRefresh, setSuiteRefresh] = useState(0);
+  useEffect(() => {
+    const refresh = () => setSuiteRefresh(value => value + 1);
+    window.addEventListener('suites-updated', refresh);
+    return () => window.removeEventListener('suites-updated', refresh);
+  }, []);
   const suites = useMemo(
     () => suitePackages.map(suite => localizeSuite(suite, i18n.language)),
     [suitePackages, i18n.language],
@@ -865,13 +818,12 @@ const Playground: NextPage = () => {
               a.name.localeCompare(b.name),
           );
         setSuites(enabled);
-        setActiveSuiteTab(prev => prev || (enabled[0]?.name ?? SUITE_EXAMPLES_TAB));
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [i18n.language]);
+  }, [i18n.language, suiteRefresh]);
 
   const routedSuiteHit = useMemo(() => scoreSuites(query, suites), [query, suites]);
   const routedSuite = useMemo(
@@ -879,25 +831,21 @@ const Playground: NextPage = () => {
     [suites, routedSuiteHit],
   );
   const activeSuite = useMemo(
-    () =>
-      activeSuiteTab && activeSuiteTab !== SUITE_EXAMPLES_TAB
-        ? suites.find(s => s.name === activeSuiteTab) ?? null
-        : null,
+    () => (activeSuiteTab ? (suites.find(s => s.name === activeSuiteTab) ?? null) : null),
     [activeSuiteTab, suites],
   );
-  // Explicit tab selection overrides automatic keyword routing; an untouched
-  // tab is only a question-browser default, not a preset choice.
-  const effectiveSuite = (suiteTabTouched ? activeSuite : null) ?? routedSuite ?? activeSuite;
+  // A fresh home page stays neutral until a scene is selected or input is routed.
+  const effectiveSuite = suiteCreationMode ? null : suiteTabTouched ? activeSuite : routedSuite;
   const typedSuiteCommand = effectiveSuite?.manifest_snapshot?.commands
     ?.flatMap(cmd => [cmd.name, ...(cmd.aliases || [])])
     .sort((a, b) => b.length - a.length)
     .find(name => query.trim() === name || query.trim().startsWith(`${name} `));
-  const effectiveSuiteCommand = effectiveSuite?.manifest_snapshot?.commands?.find(
-    cmd =>
-      [cmd.name, ...(cmd.aliases || [])].includes(
-        typedSuiteCommand ||
-          (selectedSuiteCommand?.suite === effectiveSuite?.name ? selectedSuiteCommand.name : '') || '',
-      ),
+  const effectiveSuiteCommand = effectiveSuite?.manifest_snapshot?.commands?.find(cmd =>
+    [cmd.name, ...(cmd.aliases || [])].includes(
+      typedSuiteCommand ||
+        (selectedSuiteCommand?.suite === effectiveSuite?.name ? selectedSuiteCommand.name : '') ||
+        '',
+    ),
   );
 
   useEffect(() => {
@@ -918,7 +866,6 @@ const Playground: NextPage = () => {
     return [...qs.slice(off), ...qs.slice(0, off)].slice(0, 4);
   }, [activeSuite, suiteQOffset]);
   const [loading, setLoading] = useState(false);
-  const exampleRunInFlightRef = useRef(false);
   const sendInFlightRef = useRef(false);
 
   // Selection State
@@ -1426,7 +1373,9 @@ const Playground: NextPage = () => {
       if (msg.role !== 'view') continue;
       const exec = executionMap[msg.id];
       if (!exec || exec.steps.length === 0) continue;
-      const toolCalls = exec.steps.filter(s => s.action && s.action.toLowerCase() !== 'terminate').length;
+      const toolCalls = exec.steps.filter(
+        s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
+      ).length;
       const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
       const running = exec.steps.some(s => s.status === 'running') || Boolean(msg.thinking);
       const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
@@ -1512,7 +1461,6 @@ const Playground: NextPage = () => {
    *  a running conversation can re-inject the live human/view pair — history
    *  only holds flushed rounds and New Task clears the messages state. */
   const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
-  const exampleAbortControllerRef = useRef<AbortController | null>(null);
   const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
 
   const abortInFlightChat = useCallback(() => {
@@ -1553,15 +1501,12 @@ const Playground: NextPage = () => {
     conversationIdRef.current = null;
     sendInFlightRef.current = false;
     setPendingApprovals([]);
-    exampleRunInFlightRef.current = false;
     // Parallel tasks: do NOT abort the in-flight stream — drop the handle so
     // the stop button targets only the active session while the old SSE
     // keeps pumping in the background until its own finally clears badges.
     chatAbortControllerRef.current = null;
     historyAbortControllerRef.current?.abort();
     historyAbortControllerRef.current = null;
-    exampleAbortControllerRef.current?.abort();
-    exampleAbortControllerRef.current = null;
     cancelSummaryPresentation();
     message.destroy('example-loading');
 
@@ -1690,6 +1635,16 @@ const Playground: NextPage = () => {
   });
 
   // Fetch Knowledge Bases
+  useEffect(() => {
+    const name = router.query.database_name;
+    if (typeof name !== 'string' || !dataSources?.length) return;
+    const source = dataSources.find((item: DataSource) => item.db_name === name);
+    if (!source) return;
+    setSelectedDb(source);
+    const { database_name: _name, ...rest } = router.query;
+    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+  }, [router.query.database_name, dataSources]);
+
   const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
       const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
@@ -2198,6 +2153,20 @@ const Playground: NextPage = () => {
                   downloadable: true,
                 });
               }
+            } else if (output.output_type === 'expert_suite') {
+              const payload = output.content;
+              if (payload?.artifact_id && !finalArtifacts.some(a => a.content?.artifact_id === payload.artifact_id)) {
+                finalArtifacts.push({
+                  id: `${messageId}-suite-${payload.artifact_id}`,
+                  type: 'expert_suite',
+                  name: payload.display || payload.suite_name,
+                  content: payload,
+                  createdAt: now,
+                  messageId,
+                  stepId: step.id,
+                  downloadable: true,
+                });
+              }
             } else if (output.output_type === 'file') {
               finalArtifacts.push({
                 id: `${messageId}-file-${step.id}-${oIdx}`,
@@ -2264,7 +2233,14 @@ const Playground: NextPage = () => {
 
           // For bash steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          const WRITE_SCAN_ACTIONS = new Set(['shell_interpreter', 'code_interpreter', 'bash', 'code', 'write', 'edit']);
+          const WRITE_SCAN_ACTIONS = new Set([
+            'shell_interpreter',
+            'code_interpreter',
+            'bash',
+            'code',
+            'write',
+            'edit',
+          ]);
           if (WRITE_SCAN_ACTIONS.has((step.action || '') as string)) {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
@@ -2468,6 +2444,7 @@ const Playground: NextPage = () => {
       const hasStrongDeliverable = finalArtifacts.some(
         a =>
           a.type === 'skill' ||
+          a.type === 'expert_suite' ||
           a.type === 'html' ||
           (a.type === 'file' && (referencedNames.has(a.name) || STRONG_EXTS.has(extOfName(a.name)))),
       );
@@ -2588,6 +2565,19 @@ const Playground: NextPage = () => {
     const list: Artifact[] = [];
     for (const msg of messages) {
       if (msg.role !== 'view') continue;
+      for (const state of msg.dashboardGenerations || []) {
+        if (state.status === 'created' && state.dashboardId) {
+          list.push({
+            id: `dashboard-${state.dashboardId}`,
+            type: 'dashboard',
+            name: state.title,
+            content: state,
+            createdAt: 0,
+            messageId: msg.id,
+            tier: 'final',
+          });
+        }
+      }
       const exec = executionMap[msg.id];
       if (!exec || !hasArtifactOutputs(exec)) continue;
       list.push(...buildArtifactsFromExecution(msg.id, exec, undefined, undefined, msg.context));
@@ -2771,8 +2761,9 @@ const Playground: NextPage = () => {
     overrideDb?: DataSource | null,
     explicitLegacyFile?: LegacyServerFile | null,
     overrideKnowledge?: KnowledgeSpace | null,
+    overrideExtInfo?: Record<string, any>,
   ) => {
-    const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
+    const effectiveSkill = suiteCreationMode ? null : overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     const effectiveKnowledge = overrideKnowledge !== undefined ? overrideKnowledge : selectedKnowledge;
     // A browser tab can retain a model name from an older backend config.
@@ -2793,13 +2784,14 @@ const Playground: NextPage = () => {
     // TaskFlow: a selected flow takes over the send — it runs the compiled
     // AWEL DAG via the chat_flow channel instead of the ReAct agent.
     const activeFlow = selectedFlowRef.current;
-    if (activeFlow && inputQuery.trim()) {
+    if (!suiteCreationMode && activeFlow && inputQuery.trim()) {
       await performFlowStart(activeFlow, inputQuery.trim());
       return;
     }
 
     if (
       suiteTabTouched &&
+      !suiteCreationMode &&
       activeSuite &&
       activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional' &&
       !effectiveDb
@@ -2986,6 +2978,8 @@ const Playground: NextPage = () => {
         ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
         : {}),
       ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
+      ...(suiteCreationMode ? { creation_mode: 'expert_suite' } : {}),
+      ...overrideExtInfo,
     };
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
@@ -3061,6 +3055,7 @@ const Playground: NextPage = () => {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
+      const acceptDashboardEvent = createDashboardGenerationEventGate();
       const processEvent = (raw: string) => {
         if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
@@ -3070,6 +3065,37 @@ const Playground: NextPage = () => {
         try {
           payload = JSON.parse(data);
         } catch (_err) {
+          return;
+        }
+        if (typeof payload.type === 'string' && payload.type.startsWith('dashboard.')) {
+          if (acceptDashboardEvent(payload)) {
+            setMessages(prev => applyDashboardGenerationToMessages(prev, responseId, payload));
+            if (
+              payload.type === 'dashboard.generation.started' ||
+              payload.type === 'dashboard.created' ||
+              payload.type === 'dashboard.updated' ||
+              payload.type === 'dashboard.generation.failed' ||
+              payload.type.startsWith('dashboard.widget.')
+            ) {
+              setRailDebug(false);
+              setPreviewArtifact(prev => {
+                const states = prev?.type === 'dashboard' ? [prev.content] : [];
+                const state = reduceDashboardGenerations(states, payload).find(
+                  item => item.dashboardId === payload.dashboard_id || item.sourceTurnId === payload.source_turn_id,
+                );
+                if (!state) return prev;
+                return {
+                  id: `dashboard-${state.dashboardId || state.sourceTurnId}`,
+                  type: 'dashboard',
+                  name: state.title,
+                  content: state,
+                  createdAt: Date.now(),
+                  messageId: responseId,
+                  tier: 'final',
+                };
+              });
+            }
+          }
           return;
         }
         if (payload.type === 'suite.bound') {
@@ -3229,6 +3255,48 @@ const Playground: NextPage = () => {
           }
           return;
         }
+        if (payload.type === 'progress.remove') {
+          setExecutionMap(prev => {
+            const current = prev[responseId];
+            if (!current) return prev;
+            return {
+              ...prev,
+              [responseId]: { ...current, steps: current.steps.filter(step => step.id !== payload.id) },
+            };
+          });
+          return;
+        }
+        if (payload.type === 'progress') {
+          setExecutionMap(prev => {
+            const current = prev[responseId] || {
+              steps: [],
+              outputs: {},
+              activeStepId: null,
+              collapsed: false,
+              stepThoughts: {},
+            };
+            const progressStep: ExecutionStep = {
+              id: payload.id,
+              step: 0,
+              detail: '',
+              status: payload.streaming ? 'running' : 'done',
+              action: '__progress__',
+              progressContent: payload.content,
+            };
+            const exists = current.steps.some(step => step.id === payload.id);
+            const placeholder = current.steps.findIndex(step => step.id === payload.before_step_id);
+            const nextSteps = [...current.steps];
+            nextSteps.splice(placeholder < 0 ? nextSteps.length : placeholder, 0, progressStep);
+            return {
+              ...prev,
+              [responseId]: {
+                ...current,
+                steps: exists ? current.steps.map(step => (step.id === payload.id ? progressStep : step)) : nextSteps,
+              },
+            };
+          });
+          return;
+        }
         if (payload.type === 'step.start') {
           const id = payload.id || `${payload.step}`;
           if (terminatedStepIdsRef.current.has(id)) return;
@@ -3257,14 +3325,12 @@ const Playground: NextPage = () => {
                       todoMeta: payload.todo_meta || step.todoMeta,
                       status: 'running' as const,
                     }
-                  : step.status === 'running'
-                    ? { ...step, status: 'done' }
-                    : step,
+                  : step,
               );
             } else {
-              // New step - mark running steps as done and add new step
+              // Only step.done completes a call; sibling tools may run concurrently.
               nextSteps = [
-                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' } : item)),
+                ...current.steps,
                 {
                   id,
                   step: payload.step,
@@ -3851,7 +3917,7 @@ const Playground: NextPage = () => {
     // React state is only a UI projection and may be stale in callbacks that
     // crossed an await. These refs serialize every send entry point, including
     // the composer and delayed example-card execution.
-    if (sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    if (sendInFlightRef.current) return;
     const taskEpoch = taskEpochRef.current;
     sendInFlightRef.current = true;
     try {
@@ -3879,131 +3945,6 @@ const Playground: NextPage = () => {
         message.warning(t('suite_database_unavailable', { name: question.database_name }));
       }
       setIsDbModalOpen(true);
-    }
-  };
-
-  const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
-    const queryKey = `example_${example.id}_query`;
-    const queryVal = t(queryKey) as string;
-    const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
-
-    if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
-    const taskEpoch = taskEpochRef.current;
-    exampleRunInFlightRef.current = true;
-    let exampleController: AbortController | null = null;
-
-    try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
-      let exampleLegacyFile: LegacyServerFile | null = null;
-
-      // Example files already exist on the server: materialize the selected
-      // file, then explicitly hand it to this turn. handleStart atomically
-      // stages the read-only rail item and freezes the legacy file_path send.
-      if (example.fileName) {
-        if (hasSessionFileDrafts) {
-          message.destroy('example-loading');
-          message.warning('示例文件与本地上传的附件不能混用，请先移除已选附件');
-          return;
-        }
-        exampleController = new AbortController();
-        exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post(
-          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`,
-          {
-            example_id: example.id,
-          },
-          {
-            signal: exampleController.signal,
-          },
-        );
-        if (taskEpochRef.current !== taskEpoch) {
-          return;
-        }
-
-        if (res?.success && res?.data) {
-          exampleLegacyFile = {
-            name: example.fileName,
-            size: example.fileSize || 0,
-            media_type: example.fileType,
-            file_path: res.data,
-          };
-        } else {
-          message.destroy('example-loading');
-          const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
-          return;
-        }
-      }
-
-      message.destroy('example-loading');
-
-      // Auto-select skill if example specifies one
-      let exampleSkill: Skill | null = null;
-      if (example.skillName && skillsList) {
-        const matched = skillsList.find(s => s.name === example.skillName);
-        if (matched) {
-          exampleSkill = matched;
-          setSelectedSkill(matched);
-        }
-      }
-
-      // Auto-select database if example specifies one
-      let matchedDb: DataSource | null = null;
-      if (example.dbName) {
-        const found = (dataSources || []).find((ds: DataSource) => ds.db_name === example.dbName);
-        if (!found) {
-          message.error(`示例依赖的数据源“${example.dbName}”尚未创建或不可访问`);
-          return;
-        }
-        matchedDb = found;
-        setSelectedDb(found);
-      }
-
-      // A business example must use the governing metric definitions that
-      // belong to it. Resolve the actual server-side space so both its name
-      // and ID travel in ext_info, rather than merely mentioning it in text.
-      let exampleKnowledge: KnowledgeSpace | null = null;
-      if (example.knowledgeName) {
-        message.loading({ content: '正在准备示例知识库...', key: 'example-loading', duration: 0 });
-        exampleController = new AbortController();
-        exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post<
-          ResponseType<KnowledgeSpace | null>,
-          ResponseType<KnowledgeSpace | null>,
-          { example_id: string }
-        >(
-          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/prepare`,
-          { example_id: example.id },
-          { signal: exampleController.signal, timeout: 140000 },
-        );
-        if (taskEpochRef.current !== taskEpoch) return;
-        message.destroy('example-loading');
-        if (!res?.success || !res?.data?.id || res.data.name !== example.knowledgeName) {
-          message.error('准备示例知识库失败: ' + (res?.err_msg || '未返回知识库信息'));
-          return;
-        }
-        exampleKnowledge = res.data;
-        setSelectedKnowledge(exampleKnowledge);
-      }
-
-      // Transfer the single-flight ownership to the common send entry point.
-      // No other browser event can interleave between this ref write and the
-      // synchronous acquisition at the start of handleStart.
-      exampleRunInFlightRef.current = false;
-      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile, exampleKnowledge);
-    } catch (err: unknown) {
-      if (taskEpochRef.current !== taskEpoch) return;
-      message.destroy('example-loading');
-      console.error('Example click error:', err);
-      const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
-    } finally {
-      if (exampleAbortControllerRef.current === exampleController) {
-        exampleAbortControllerRef.current = null;
-      }
-      if (taskEpochRef.current === taskEpoch) {
-        exampleRunInFlightRef.current = false;
-      }
     }
   };
 
@@ -4050,13 +3991,15 @@ const Playground: NextPage = () => {
         }
 
         if (payload && (payload.version === 1 || payload.version === 2) && payload.type === 'react-agent') {
+          let historyStepNumber = 0;
           const steps: ExecutionStep[] = (payload.steps || []).map((s: any, idx: number) => ({
             id: s.id || `history-step-${idx}`,
-            step: idx + 1,
+            step: s.action === '__progress__' ? 0 : ++historyStepNumber,
             title: s.title || s.action || `Step ${idx + 1}`,
             detail: s.detail || '',
             status: (s.status === 'failed' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
+            progressContent: s.progress_content,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
             actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
@@ -4074,7 +4017,13 @@ const Playground: NextPage = () => {
                 content: o.content,
               }));
             }
-            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter' || s.action === 'code' || s.action === 'bash') && s.action_input) {
+            if (
+              (s.action === 'code_interpreter' ||
+                s.action === 'shell_interpreter' ||
+                s.action === 'code' ||
+                s.action === 'bash') &&
+              s.action_input
+            ) {
               const existingOutputs = outputs[stepId] || [];
               const hasCode = existingOutputs.some((o: ExecutionOutput) => o.output_type === 'code');
               if (!hasCode) {
@@ -4201,6 +4150,9 @@ const Playground: NextPage = () => {
             reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
+            dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
+              .map(dashboardGenerationFromHistoryRef)
+              .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
             taskPlan: Array.isArray(payload.task_plan)
               ? payload.task_plan
               : Array.isArray(payload.tasks)
@@ -4232,7 +4184,14 @@ const Playground: NextPage = () => {
         if (exec) newExecutionMap[m.id] = exec;
       }
     }
-    setMessages(newMessages);
+    setMessages(deduplicateDashboardHistoryGenerations(newMessages));
+    const latestSuite = [...newMessages].reverse().find(m => m.attachedSuite)?.attachedSuite;
+    if (latestSuite) {
+      setActiveSuiteTab(latestSuite.name);
+      setSuiteTabTouched(true);
+      setSelectedSuiteCommand(latestSuite.command ? { suite: latestSuite.name, name: latestSuite.command } : null);
+      setSelectedSkill(null);
+    }
     setSuiteCommandBindings(prev => ({ ...prev, ...restoredSuiteBindings }));
     setExecutionMap(newExecutionMap);
     setArtifacts(allArtifacts);
@@ -4279,6 +4238,21 @@ const Playground: NextPage = () => {
         msgList = res;
       }
       if (msgList) {
+        // A draft can be saved just before a stream disconnects, before the
+        // final answer stores its reference. Reconcile with persisted assets.
+        try {
+          const boards: any = await axios.get('/api/v1/dashboards', {
+            params: { conversation_id: convUid, include_generated: true },
+            signal: controller.signal,
+          });
+          if (boards?.success && Array.isArray(boards.data)) {
+            msgList = enrichHistoryWithDashboardRefs(msgList, boards.data);
+          }
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          console.warn('Unable to recover dashboard references', error);
+        }
+        if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
         conversationIdRef.current = convUid;
         setConversationId(convUid);
         // Re-entering a RUNNING conversation: the server history only holds
@@ -4289,8 +4263,7 @@ const Playground: NextPage = () => {
         const liveFlushed = (msgList || []).some(
           (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
         );
-        const liveTail =
-          live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
+        const liveTail = live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
         restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
@@ -4404,6 +4377,134 @@ const Playground: NextPage = () => {
     },
   };
 
+  const clearCreationContext = () => {
+    const { creation_mode: _mode, ...rest } = router.query;
+    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+    setSuiteTabTouched(true);
+    setActiveSuiteTab('');
+    setSelectedSuiteCommand(null);
+  };
+  const clearSuiteSelection = () => {
+    setActiveSuiteTab('');
+    // An explicit cancellation overrides keyword routing for this draft.
+    setSuiteTabTouched(true);
+    setSelectedSuiteCommand(null);
+    setSuiteQOffset(0);
+    if (typedSuiteCommand) {
+      setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
+    }
+  };
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      (!effectiveSuite && !suiteCreationMode) ||
+      event.nativeEvent.isComposing ||
+      event.nativeEvent.keyCode === 229 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      (event.key !== 'Backspace' && event.key !== 'Delete') ||
+      event.currentTarget.selectionStart !== 0 ||
+      event.currentTarget.selectionEnd !== 0
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (suiteCreationMode) {
+      clearCreationContext();
+      return;
+    }
+    clearSuiteSelection();
+  };
+  const composerContextProps = {
+    suites,
+    selectedSuite: effectiveSuite?.name,
+    onSelectSuite: (suite: SuiteItem) => {
+      if (suiteCreationMode) clearCreationContext();
+      if (effectiveSuite?.name === suite.name) {
+        clearSuiteSelection();
+        return;
+      }
+      setActiveSuiteTab(suite.name);
+      setSuiteTabTouched(true);
+      setSelectedSuiteCommand(null);
+      setSuiteQOffset(0);
+      setSelectedSkill(null);
+      setSelectedFlow(null);
+      // A typed shortcut from the previous suite must not select a command
+      // in the newly chosen suite. Keep the user's question after the prefix.
+      if (typedSuiteCommand) {
+        setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
+      } else if (selectedSkill && query.startsWith(`/${selectedSkill.name} `)) {
+        setQuery(query.slice(selectedSkill.name.length + 2));
+      }
+    },
+    onManageSuites: () => {
+      void router.push('/construct/suites');
+    },
+    uploadProps,
+    skillItems: (skillsList || []).map(skill => ({
+      key: `skill-${skill.id}`,
+      icon: <ThunderboltOutlined />,
+      label: (
+        <span className='flex items-center gap-2 max-w-[268px]'>
+          <span className='truncate'>{skill.name}</span>
+          <span className='text-xs text-gray-400 truncate flex-1'>{skill.description}</span>
+        </span>
+      ),
+      onClick: () => {
+        setSelectedSkill(skill);
+        setSelectedSuiteCommand(null);
+        setQuery(`/${skill.name} `);
+      },
+    })),
+    onViewSkills: () => setIsSkillPanelOpen(true),
+    onSelectConnector: () => setIsConnectorPanelOpen(true),
+    flowItems: flowMenuItems,
+  };
+  const suiteComposerPrefix = suiteCreationMode ? (
+    <span
+      data-testid='suite-creation-prefix'
+      className='inline-flex items-center gap-2 max-w-full text-sm leading-7 text-[#18a447]'
+    >
+      <SuiteHammerIcon className='flex-shrink-0' />
+      <span>{i18n.language.startsWith('en') ? 'Create expert suite' : '专家套件创建'}</span>
+      <button
+        type='button'
+        data-testid='suite-creation-remove'
+        aria-label={i18n.language.startsWith('en') ? 'Cancel suite creation' : '取消套件创建'}
+        onClick={clearCreationContext}
+        className='inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-green-100'
+      >
+        <CloseOutlined className='text-xs' />
+      </button>
+    </span>
+  ) : (
+    effectiveSuite && (
+      <span
+        data-testid='suite-composer-prefix'
+        title={t('suite_prefix_hint')}
+        className='inline-flex items-center gap-2 max-w-full flex-shrink-0 text-sm leading-7 text-[#18a447] dark:text-[#79cc94]'
+      >
+        <SuiteHammerIcon className='flex-shrink-0' />
+        <span className='truncate'>
+          {suiteDisplayName(effectiveSuite, i18n.language)}
+          {effectiveSuiteCommand && ` · ${effectiveSuiteCommand.display || effectiveSuiteCommand.name}`}
+        </span>
+        <button
+          type='button'
+          data-testid='suite-composer-remove'
+          aria-label={t('suite_remove_selection')}
+          title={t('suite_remove_selection')}
+          onClick={clearSuiteSelection}
+          className='inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500'
+        >
+          <CloseOutlined className='text-xs' />
+        </button>
+      </span>
+    )
+  );
+
   // A report run can be demonstrated inside the data-assistant surface without
   // changing normal chat state or the standard home-page flow.
 
@@ -4503,7 +4604,12 @@ const Playground: NextPage = () => {
                       const useTimelineView =
                         typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
                       const timelineBlocks = useTimelineView
-                        ? stepsToTimelineBlocks(execution?.steps ?? [], stepThoughts, execution?.outputs)
+                        ? stepsToTimelineBlocks(
+                            execution?.steps ?? [],
+                            stepThoughts,
+                            execution?.outputs,
+                            round.viewMsg?.id ? suiteCommandBindings[round.viewMsg.id] : undefined,
+                          )
                         : [];
                       const roundArtifacts: StreamArtifact[] =
                         useTimelineView && execution && hasArtifactOutputs(execution)
@@ -4523,7 +4629,9 @@ const Playground: NextPage = () => {
                               tier: a.tier,
                             }))
                           : [];
-                      const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
+                      const roundIntent = useTimelineView
+                        ? null
+                        : execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
                       const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
                       const rerunExtra = (round.viewMsg?.id && rerunQueryArtifacts[round.viewMsg.id]) || [];
                       const roundArtifactsAll = rerunExtra.length ? [...roundArtifacts, ...rerunExtra] : roundArtifacts;
@@ -4532,6 +4640,40 @@ const Playground: NextPage = () => {
                         <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
                           <ManusLeftPanel
                             key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
+                            dashboardSlot={round.viewMsg?.dashboardGenerations?.map((state, index) => (
+                              <ChatDashboardCard
+                                key={state.dashboardId || state.sourceTurnId || index}
+                                state={state}
+                                busy={loading}
+                                onConfirm={() => {
+                                  const db = dataSources?.find(
+                                    item =>
+                                      item.db_name === state.dataSourceId || String(item.id) === state.dataSourceId,
+                                  );
+                                  if (!db) {
+                                    message.error(t('dashboard_chat_missing_source'));
+                                    return;
+                                  }
+                                  void performStart(state.confirmationPrompt, null, db, undefined, null, {
+                                    creation_mode: 'dashboard',
+                                    suite: 'db-analysis',
+                                    suite_command: '/dashboard',
+                                  });
+                                }}
+                                onRevise={() => setQuery(state.revisionPrompt || '')}
+                                onOpen={() => {
+                                  setRailDebug(false);
+                                  setPreviewArtifact({
+                                    id: `dashboard-${state.dashboardId}`,
+                                    type: 'dashboard',
+                                    name: state.title,
+                                    content: state,
+                                    createdAt: Date.now(),
+                                    tier: 'final',
+                                  });
+                                }}
+                              />
+                            ))}
                             sections={useTimelineView ? [] : sections}
                             flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
                             answerSeparated={
@@ -4575,8 +4717,10 @@ const Playground: NextPage = () => {
                                 ? {
                                     label: round.viewMsg.flowRun.label,
                                     running: !!round.viewMsg.thinking,
-                                    done: execution?.steps.filter(s => s.status === 'done').length ?? 0,
-                                    total: execution?.steps.length ?? 0,
+                                    done:
+                                      execution?.steps.filter(s => s.action !== '__progress__' && s.status === 'done')
+                                        .length ?? 0,
+                                    total: execution?.steps.filter(s => s.action !== '__progress__').length ?? 0,
                                   }
                                 : undefined
                             }
@@ -4736,9 +4880,7 @@ const Playground: NextPage = () => {
                       its own (folded) query block, so repeating them here
                       stacked each sql_query result a second time. */}
                     {(() => {
-                      const surface = convArtifacts.filter(
-                        a => a.type !== 'summary' && a.type !== 'query',
-                      );
+                      const surface = convArtifacts.filter(a => a.type !== 'summary' && a.type !== 'query');
                       const finalCount = surface.filter(a => a.tier !== 'process').length;
                       const hasCharts = surface.some(
                         a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
@@ -4887,8 +5029,10 @@ const Playground: NextPage = () => {
                               <TaskPlanCard tasks={taskPlan} embedded />
                             </div>
                           )}
+                          {suiteComposerPrefix}
                           <Input.TextArea
                             value={query}
+                            onKeyDown={handleComposerKeyDown}
                             onChange={e => {
                               const newValue = e.target.value;
                               setQuery(newValue);
@@ -4903,8 +5047,12 @@ const Playground: NextPage = () => {
                               }
                             }}
                             placeholder={
-                              t('ask_data_question') ||
-                              'Ask a question about your database, upload a CSV, or generate a report...'
+                              suiteCreationMode
+                                ? i18n.language.startsWith('en')
+                                  ? 'Describe the suite you need: tasks, skills, outputs. Attach reference materials.'
+                                  : '描述你想创建的套件：任务、技能、产物要求，也可以上传参考材料'
+                                : t('ask_data_question') ||
+                                  'Ask a question about your database, upload a CSV, or generate a report...'
                             }
                             autoSize={{ minRows: 2, maxRows: 6 }}
                             className='flex-1 resize-none !border-none !shadow-none !bg-transparent px-0 py-2'
@@ -4915,56 +5063,11 @@ const Playground: NextPage = () => {
                           <div className='flex items-center justify-between mt-1'>
                             <div className='flex items-center gap-3'>
                               {/* Add Button */}
-                              <Dropdown
-                                menu={{
-                                  items: [
-                                    {
-                                      key: 'upload',
-                                      label: (
-                                        <Upload {...uploadProps}>
-                                          <div className='w-full'>Upload File</div>
-                                        </Upload>
-                                      ),
-                                      icon: <UploadOutlined />,
-                                    },
-                                    {
-                                      key: 'database',
-                                      label: 'Select Data Source',
-                                      icon: <DatabaseOutlined />,
-                                      onClick: () => setIsDbModalOpen(true),
-                                    },
-                                    {
-                                      key: 'knowledge',
-                                      label: 'Select Knowledge Base',
-                                      icon: <BookOutlined />,
-                                      onClick: () => setIsKnowledgeModalOpen(true),
-                                    },
-                                    {
-                                      key: 'connector',
-                                      label: t('use_connector'),
-                                      icon: <ApiOutlined />,
-                                      onClick: () => setIsConnectorPanelOpen(true),
-                                    },
-                                    {
-                                      key: 'taskflow',
-                                      label: t('taskflow'),
-                                      icon: <ApartmentOutlined />,
-                                      children: flowMenuItems,
-                                    },
-                                  ],
-                                }}
-                                trigger={['click']}
-                              >
-                                <Tooltip title={t('add_context')}>
-                                  <Button
-                                    type='text'
-                                    shape='circle'
-                                    size='small'
-                                    icon={<PlusOutlined />}
-                                    className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
-                                  />
-                                </Tooltip>
-                              </Dropdown>
+                              <ComposerContextMenu
+                                {...composerContextProps}
+                                onSelectDatabase={() => setIsDbModalOpen(true)}
+                                onSelectKnowledge={() => setIsKnowledgeModalOpen(true)}
+                              />
 
                               {/* High-risk tool permission badge (per conversation) */}
                               <ApprovalModeBadge
@@ -5674,23 +5777,10 @@ const Playground: NextPage = () => {
                       )}
 
                       <div className='flex flex-col sm:flex-row items-start gap-x-3 gap-y-1 px-1 pt-2 mb-4'>
-                        {effectiveSuite && (
-                          <span
-                            data-testid='suite-composer-prefix'
-                            className='inline-flex items-center gap-2 max-w-full sm:max-w-[45%] flex-shrink-0 text-base leading-7 text-[#18a447] dark:text-[#79cc94]'
-                          >
-                            <SuiteHammerIcon className='flex-shrink-0' />
-                            <span className='truncate'>
-                              {suiteDisplayName(effectiveSuite, i18n.language)}
-                              {' · '}
-                              {effectiveSuiteCommand?.display ||
-                                effectiveSuiteCommand?.name ||
-                                t('suite_command_choose')}
-                            </span>
-                          </span>
-                        )}
+                        {suiteComposerPrefix}
                         <Input.TextArea
                           value={query}
+                          onKeyDown={handleComposerKeyDown}
                           onChange={e => {
                             const newValue = e.target.value;
                             setQuery(newValue);
@@ -5705,8 +5795,12 @@ const Playground: NextPage = () => {
                             }
                           }}
                           placeholder={
-                            t('ask_data_question') ||
-                            'Ask a question about your database, upload a CSV, or generate a report...'
+                            suiteCreationMode
+                              ? i18n.language.startsWith('en')
+                                ? 'Describe the suite you need: tasks, skills, outputs. Attach reference materials.'
+                                : '描述你想创建的套件：任务、技能、产物要求，也可以上传参考材料'
+                              : t('ask_data_question') ||
+                                'Ask a question about your database, upload a CSV, or generate a report...'
                           }
                           autoSize={{ minRows: 3, maxRows: 8 }}
                           className='w-full sm:w-auto flex-1 min-w-0 text-base resize-none !border-none !shadow-none !bg-transparent !p-0 !leading-7'
@@ -5718,62 +5812,11 @@ const Playground: NextPage = () => {
                       <div className='flex flex-wrap items-center justify-between gap-3 px-1 mt-1'>
                         <div className='flex flex-wrap items-center gap-2'>
                           {/* Add Button with Dropdown Menu */}
-                          <Dropdown
-                            menu={{
-                              items: [
-                                {
-                                  key: 'upload',
-                                  label: (
-                                    <Upload {...uploadProps}>
-                                      <div className='w-full'>{t('add_from_local')}</div>
-                                    </Upload>
-                                  ),
-                                  icon: <PaperClipOutlined />,
-                                },
-                                {
-                                  key: 'skill',
-                                  label: t('use_skill'),
-                                  icon: <ThunderboltOutlined />,
-                                  onClick: () => setIsSkillPanelOpen(true),
-                                },
-                                {
-                                  key: 'knowledge',
-                                  label: t('use_knowledge'),
-                                  icon: <BookOutlined />,
-                                  onClick: () => setIsKnowledgePanelOpen(true),
-                                },
-                                {
-                                  key: 'database',
-                                  label: t('use_database'),
-                                  icon: <DatabaseOutlined />,
-                                  onClick: () => setTimeout(() => setIsDbPanelOpen(true), 100),
-                                },
-                                {
-                                  key: 'connector',
-                                  label: t('use_connector'),
-                                  icon: <ApiOutlined />,
-                                  onClick: () => setIsConnectorPanelOpen(true),
-                                },
-                                {
-                                  key: 'taskflow',
-                                  label: t('taskflow'),
-                                  icon: <ApartmentOutlined />,
-                                  children: flowMenuItems,
-                                },
-                              ],
-                            }}
-                            trigger={['click']}
-                          >
-                            <Tooltip title={t('add_context')}>
-                              <Button
-                                type='text'
-                                shape='circle'
-                                size='small'
-                                icon={<PlusOutlined />}
-                                className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
-                              />
-                            </Tooltip>
-                          </Dropdown>
+                          <ComposerContextMenu
+                            {...composerContextProps}
+                            onSelectDatabase={() => setIsDbPanelOpen(true)}
+                            onSelectKnowledge={() => setIsKnowledgePanelOpen(true)}
+                          />
 
                           {/* High-risk tool permission badge (per conversation) */}
                           <ApprovalModeBadge
@@ -6428,11 +6471,15 @@ const Playground: NextPage = () => {
                 {/* Scenario tabs + recommended questions, rendered from enabled suites */}
                 <div className='mt-8 w-full'>
                   <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
-                    {suites.map(suite => (
+                    {suites.slice(0, 3).map(suite => (
                       <button
                         key={suite.name}
                         aria-pressed={activeSuiteTab === suite.name}
                         onClick={() => {
+                          if (effectiveSuite?.name === suite.name) {
+                            clearSuiteSelection();
+                            return;
+                          }
                           setActiveSuiteTab(suite.name);
                           setSuiteQOffset(0);
                           setSuiteTabTouched(true);
@@ -6458,21 +6505,6 @@ const Playground: NextPage = () => {
                         {suiteDisplayName(suite, i18n.language)}
                       </button>
                     ))}
-                    <button
-                      onClick={() => {
-                        setActiveSuiteTab(SUITE_EXAMPLES_TAB);
-                        setSelectedSuiteCommand(null);
-                      }}
-                      aria-pressed={activeSuiteTab === SUITE_EXAMPLES_TAB}
-                      className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
-                        activeSuiteTab === SUITE_EXAMPLES_TAB
-                          ? 'border-[#9edab1] bg-[#f2faf5] text-[#188842] dark:bg-[#16231a] dark:text-[#79cc94]'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-300'
-                      }`}
-                    >
-                      <ReadOutlined className='text-[17px] text-blue-500' />
-                      {t('suite_tab_examples')}
-                    </button>
                   </div>
                   {activeSuite && (
                     <div
@@ -6500,46 +6532,11 @@ const Playground: NextPage = () => {
                       ))}
                     </div>
                   )}
-                  <p className='text-center text-xs text-gray-500 dark:text-gray-400 mb-4'>{t('suite_usage_hint')}</p>
-                  {activeSuiteTab === SUITE_EXAMPLES_TAB ? (
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                      {EXAMPLE_CARDS.map(example => (
-                        <div
-                          key={example.id}
-                          onClick={() => handleExampleClick(example)}
-                          className={`group relative bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
-                        >
-                          <div className='flex items-start gap-3'>
-                            <div
-                              className={`w-10 h-10 ${example.iconBg} rounded-xl flex items-center justify-center text-xl flex-shrink-0`}
-                            >
-                              {example.icon}
-                            </div>
-                            <div className='flex-1 min-w-0'>
-                              <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                                {(() => {
-                                  const key = `example_${example.id}_title`;
-                                  const val = t(key) as string;
-                                  return val && val !== key ? val : example.title;
-                                })()}
-                              </h3>
-                              <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
-                                {(() => {
-                                  const key = `example_${example.id}_desc`;
-                                  const val = t(key) as string;
-                                  return val && val !== key ? val : example.description;
-                                })()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
-                            <RightOutlined className='text-xs text-gray-400' />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
+                  {activeSuite && (
                     <>
+                      <p className='text-center text-xs text-gray-500 dark:text-gray-400 mb-4'>
+                        {t('suite_usage_hint')}
+                      </p>
                       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                         {rotatedSuiteQuestions.map((q, idx) => (
                           <div

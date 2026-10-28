@@ -17,7 +17,9 @@ class HarnessEventKind(str, Enum):
 
     #: A new assistant turn started (one response + its tool calls).
     TURN_START = "turn_start"
-    #: Streaming text/thinking delta from the model.
+    #: Streaming public assistant text, separate from private reasoning.
+    TEXT_DELTA = "text_delta"
+    #: Streaming reasoning delta from the model.
     THINKING_DELTA = "thinking_delta"
     #: A tool call was requested by the model.
     TOOL_CALL = "tool_call"

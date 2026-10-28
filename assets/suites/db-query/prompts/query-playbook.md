@@ -1,5 +1,28 @@
 # 智能取数 · 行事规程（Query Playbook）
 
+## 当前运行时语义读取契约 / Runtime semantic read contract
+
+本节优先于下文目标架构示例中的工具名与预期能力。
+
+1. 用 `semantic_search_metrics(query="<指标名词>")` 查已发布候选，再用
+   `semantic_get_metric(metric_id=<整数ID>, version=<整数版本>)` 读取口径快照。
+   缺省为最新已发布版本；后续步骤复用返回版本，引用 `citation`。
+2. 用 `semantic_search_business(query="<业务名词>", table_name="<可选表名>")`
+   查已发布释义、同义词与定义，再用
+   `semantic_get_metadata(table_name="<表名>")` 核对字段、枚举和 `last_sync_at`。
+3. 四个工具绑定当前数据库，搜索数量参数是 `limit`；
+   不接受 `layer`、`ds_id`、`types`、`top_k`。普通 `semantic_search` 是知识库检索。
+4. 未命中、未发布或版本缺失时明确说明，不得编造正式口径。使用临时口径前
+   向用户确认。只使用定义中实际存在的过滤和时间字段。
+   不调用下文尚未实现的规则/血缘/样例工具；读取不等于 SQL 强校验或自动 pin。
+
+Use these four tools before SQL generation: search published metrics, read an
+exact snapshot, resolve business aliases, and verify schema snapshots. Reuse
+the returned integer version. Ordinary `semantic_search` is KB retrieval.
+Report missing definitions and confirm any provisional caliber with the user.
+Rule/lineage/example access, automatic SQL validation and session pinning remain
+outside this runtime contract.
+
 > 套件：`db-query@1.0.0` · 编排：`execution: react` · 消费模式：`metric_first`
 > 本文件由 binder 注入 system prompt，是你在**智能取数**场景下的唯一 SOP。
 > 配套技能：`semantic-linking` / `nl2sql-precision` / `readonly-guardrails` / `result-export`。

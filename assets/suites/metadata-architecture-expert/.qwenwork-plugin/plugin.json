@@ -1,0 +1,47 @@
+{
+  "name": "metadata-architecture-expert",
+  "version": "1.0.0",
+  "displayNameCn": "元数据与架构专家",
+  "displayNameEn": "Metadata and Architecture Expert",
+  "description": "基于直连数据库的物理结构，生成可追溯数据字典、物理 ER 图、数据库结构文档和建模建议；区分已声明约束、推断关系和待确认业务语义。",
+  "descriptionEn": "Generate traceable data dictionaries, physical ER diagrams, schema documents and modeling proposals from connected database metadata.",
+  "author": {"name": "DB-GPT"},
+  "category": "engineering",
+  "tags": ["database", "metadata", "architecture", "documentation", "expert"],
+  "skills": [
+    "skills/data-dictionary",
+    "skills/physical-er",
+    "skills/schema-documentation",
+    "skills/modeling-review"
+  ],
+  "dbgpt": {
+    "icon": "🗂️",
+    "scenario_id": "expert",
+    "execution": "react",
+    "sop": "prompts/workflow.md",
+    "tools": {
+      "allow": ["sql_query", "export_csv", "generate_report", "semantic_get_metadata", "semantic_search_business"],
+      "deny": ["ddl", "analyze", "bash", "shell", "code", "execute_tool"]
+    },
+    "context_defaults": {"datasource": "required"},
+    "required_resources": ["database"],
+    "recommended_questions": [
+      {"text": "为选中的业务表生成数据字典，并导出 CSV", "text_en": "Generate a data dictionary for selected tables and export CSV", "command": "/data-dictionary"},
+      {"text": "根据真实外键生成物理 ER 图，单独列出推断关系", "text_en": "Build a physical ER diagram from declared foreign keys and list inferred relationships separately", "command": "/physical-er"},
+      {"text": "生成这个数据库的结构说明文档，标明信息来源和缺失项", "text_en": "Document this database schema with sources and coverage limits", "command": "/schema-doc"},
+      {"text": "评审这些表的建模设计，给出兼容现有业务的改进建议", "text_en": "Review these tables and propose modeling improvements", "command": "/model-review"}
+    ],
+    "artifacts": [
+      {"type": "html", "name": "数据库结构与架构报告"},
+      {"type": "csv", "name": "物理数据字典"},
+      {"type": "code", "name": "Mermaid ER 图源码与建模草案"},
+      {"type": "markdown", "name": "模型评审与业务语义确认清单"},
+      {"type": "query", "name": "元数据采集证据"}
+    ],
+    "output_contract": {
+      "completion": "按任务交付数据字典、物理 ER、结构文档或建模评审。字典包含 schema/table/column/type/nullability/default/PK/FK/comment/source，未知不补造；CSV 仅导出真实未截断的目录查询产物。ER 的声明关系与候选推断分开，复合键保持列映射，不把外键当作跨系统血缘。HTML 文件使用 generate_report 并确认 completed，ER 同时提供可复制 Mermaid 源码；建模草案不执行。",
+      "default_output": "对话摘要；字典任务提供 CSV，ER 提供 Mermaid 源码，完整结构文档提供 HTML 报告。",
+      "validation": "标注采集节点、时点、对象范围及覆盖；语义中心仅为可选增强，缺失时仍可交付物理元数据。"
+    }
+  }
+}

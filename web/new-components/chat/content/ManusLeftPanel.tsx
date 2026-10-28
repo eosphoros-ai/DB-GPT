@@ -113,7 +113,19 @@ export interface ThinkingSection {
 
 export interface ArtifactItem {
   id: string;
-  type: 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
+  type:
+    | 'file'
+    | 'table'
+    | 'chart'
+    | 'image'
+    | 'code'
+    | 'markdown'
+    | 'summary'
+    | 'html'
+    | 'query'
+    | 'skill'
+    | 'dashboard'
+    | 'expert_suite';
   name: string;
   content: any;
   createdAt: number;
@@ -151,6 +163,8 @@ export interface ManusLeftPanelProps {
    *  and the thinking/answer area, so tool execution reads in
    *  conversation order instead of floating above the round. */
   timelineSlot?: React.ReactNode;
+  /** Dashboard planning and generation controls attached to this answer. */
+  dashboardSlot?: React.ReactNode;
   /** Draw a hairline separator above the answer text (timeline mode). */
   answerSeparated?: boolean;
   artifacts?: ArtifactItem[];
@@ -311,6 +325,8 @@ const getFileIconElement = (fileName: string, mimeType?: string) => {
 // Get icon for artifact type
 const getArtifactIcon = (artifact: ArtifactItem) => {
   switch (artifact.type) {
+    case 'expert_suite':
+      return <SuiteHammerIcon className='text-green-500 text-base' />;
     case 'file':
       return getFileIconElement(artifact.name, artifact.mimeType);
     case 'html':
@@ -342,6 +358,7 @@ const getArtifactTypeLabel = (artifact: ArtifactItem, t: any): string => {
     code: t('artifact_type_code'),
     markdown: t('artifact_type_markdown'),
     summary: t('artifact_type_summary'),
+    expert_suite: t('artifact_type_expert_suite'),
   };
   return labels[artifact.type] || t('artifact_type_generic');
 };
@@ -351,6 +368,7 @@ const getArtifactIconBg = (type: string): string => {
   const bgs: Record<string, string> = {
     file: 'bg-gray-50 dark:bg-gray-800',
     html: 'bg-blue-50 dark:bg-blue-900/30',
+    expert_suite: 'bg-green-50 dark:bg-green-900/30',
     table: 'bg-blue-50 dark:bg-blue-900/30',
     chart: 'bg-green-50 dark:bg-green-900/30',
     image: 'bg-pink-50 dark:bg-pink-900/30',
@@ -543,7 +561,8 @@ const StepCard: React.FC<{
           {
             'opacity-0 translate-y-1': !isVisible,
             'opacity-100 translate-y-0': isVisible,
-            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]': true,
+            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]':
+              true,
             'border-amber-300/80 dark:border-amber-500/30 shadow-[0_4px_16px_rgba(245,158,11,0.12)] ring-1 ring-amber-200/50 dark:ring-amber-500/20':
               isActive || isWaiting,
             'border-amber-200/60 dark:border-amber-600/20 hover:border-amber-300 hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)]':
@@ -1028,6 +1047,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   stepThoughts,
   subAgentSlot,
   timelineSlot,
+  dashboardSlot,
   answerSeparated,
   artifacts,
   onArtifactClick,
@@ -1210,6 +1230,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             <span>{t('steps_completed_count', { count: sections.length })}</span>
           </div>
         )}
+        {dashboardSlot && <div onClick={event => event.stopPropagation()}>{dashboardSlot}</div>}
       </div>
     );
   }
@@ -1474,6 +1495,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             )}
           </div>
         )}
+        {dashboardSlot}
       </div>
     </div>
   );

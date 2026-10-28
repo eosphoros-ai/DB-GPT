@@ -43,6 +43,7 @@ from fastapi.responses import FileResponse
 from dbgpt._private.config import Config
 from dbgpt.core import StorageConversation
 from dbgpt_app.agent_harness.base import (
+    HarnessError,
     HarnessEvent,
     HarnessEventKind,
 )
@@ -54,6 +55,7 @@ from dbgpt_app.agent_harness.registry import HARNESS_RUNNER_REGISTRY
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
 from ..api_view_model import ConversationVo, Result
+from .public_progress import PublicProgressStream, public_assistant_text
 from .react_final import AgentFinalAnswer
 
 logger = logging.getLogger(__name__)
@@ -671,6 +673,15 @@ def register_harness_endpoints(router: Any) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _web_port() -> int:
+    """Use the running app's port for both model requests and bridged tools."""
+    system_app = getattr(CFG, "SYSTEM_APP", None)
+    config = getattr(system_app, "config", None)
+    app_config = getattr(config, "configs", {}).get("app_config")
+    web = getattr(getattr(app_config, "service", None), "web", None)
+    return getattr(web, "port", None) or getattr(CFG, "DBGPT_WEBSERVER_PORT", 5670)
+
+
 def _resolve_model_config(default_model: str) -> Dict[str, Any]:
     """Decide how the pi subprocess reaches an LLM.
 
@@ -701,7 +712,7 @@ def _resolve_model_config(default_model: str) -> Dict[str, Any]:
         # the OpenAI-compatible route that passes ``tools`` /
         # ``tool_choice`` through to the model. Models and
         # credentials stay inside DB-GPT's registry.
-        web_port = getattr(CFG, "DBGPT_WEBSERVER_PORT", 5670)
+        web_port = _web_port()
         model_api_base = f"http://127.0.0.1:{web_port}/api/v2/v1/agentic"
         model_api = "openai-completions"
         api_keys = getattr(CFG, "API_KEYS", None)
@@ -835,6 +846,12 @@ def _embedded_artifact_outputs(text: str) -> List[Dict[str, Any]]:
             )
         elif ctype == "image" and content:
             outputs.append({"output_type": "image", "content": content})
+        elif ctype == "expert_suite" and isinstance(content, dict):
+            outputs.append({"output_type": "expert_suite", "content": content})
+        elif ctype == "file" and isinstance(content, dict) and content.get("file_path"):
+            outputs.append({"output_type": "file", "content": content})
+        elif ctype == "markdown" and isinstance(content, str) and content.strip():
+            outputs.append({"output_type": "markdown", "content": content})
         elif (
             ctype == "query"
             and isinstance(content, dict)
@@ -1023,6 +1040,19 @@ def _build_pi_prompt(
         user_input = str(user_input or "")
     ext_info = dialogue.ext_info if isinstance(dialogue.ext_info, dict) else {}
     ctx: List[str] = []
+    if ext_info.get("creation_mode") == "expert_suite":
+        from .tools.suite_creation import creator_instructions
+
+        ctx.append(creator_instructions())
+    ctx.append(
+        "- Before each group of tool calls, write a short public progress "
+        "message in the user's language describing the current task and "
+        "the next step. After meaningful results, explain what changed and "
+        "what you will do next. Keep private reasoning in thinking blocks. "
+        "Write ordinary prose without Thought, Action, Action Input or other "
+        "ReAct protocol labels. Invoke tools through native tool calls. "
+        "Finish with a separate final answer."
+    )
 
     file_path = ext_info.get("file_path")
     if file_path:
@@ -1049,6 +1079,36 @@ def _build_pi_prompt(
             f"- connected database: {db_name} "
             f"(type: {ext_info.get('database_type') or 'unknown'})"
         )
+    dashboard_state = tool_bridge.get_react_state(dialogue.conv_uid or "")
+    if dashboard_state.get("skill_prompt"):
+        skill_prompt = dashboard_state["skill_prompt"]
+        skill_text = getattr(skill_prompt, "template", skill_prompt)
+        ctx.append(
+            "- The selected skill was already read by the server. Follow its "
+            "loaded instructions below; use get_skill_resource for additional "
+            "references when needed:\n" + str(skill_text)
+        )
+    if dashboard_state.get("dashboard_agent_mode"):
+        ctx.append(
+            "- Use the native dashboard tools. Plan first and end the turn after "
+            "plan_dashboard; the user confirms the saved plan in the UI. "
+            "Never substitute a report or scripts for a dashboard draft."
+        )
+        contract = dashboard_state.get("dashboard_confirmation_contract")
+        if contract:
+            ctx.append(
+                "- The user confirmed this persisted plan. Generate only its "
+                "missing widgets with create_dashboard_draft, at most two per "
+                "call. Keep successful widgets; repair only failed ones. "
+                "Do not ask for confirmation again. Authoritative contract:\n"
+                + json.dumps(contract, ensure_ascii=False)
+                + "\nSaved plan:\n"
+                + json.dumps(dashboard_state["dashboard_plan"], ensure_ascii=False)
+            )
+        context = dashboard_state.get("_dashboard_source_context")
+        if context:
+            ctx.append(context)
+        ctx.append(dashboard_state.get("_dashboard_tool_contracts", ""))
     kb = (
         ext_info.get("knowledge_space_name")
         or ext_info.get("knowledge_space")
@@ -1061,7 +1121,11 @@ def _build_pi_prompt(
         base = user_input
     else:
         base = f"{user_input}\n\n—\nTask resources (from DB-GPT):\n" + "\n".join(ctx)
-    skills_block = _skills_prompt_block(ext_info.get("skill_name"))
+    skills_block = (
+        ""
+        if dashboard_state.get("skill_prompt")
+        else _skills_prompt_block(ext_info.get("skill_name"))
+    )
     if skills_block:
         base = f"{base}\n\n—\n{skills_block}"
     try:
@@ -1170,6 +1234,7 @@ def _build_pi_history_payload(
     steps: List[Dict[str, Any]],
     suite_reference: Optional[Dict[str, Any]] = None,
     suite_binding: Optional[Dict[str, Any]] = None,
+    dashboard_state: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Same persisted-history shape as the dbgpt branch."""
     return json.dumps(
@@ -1186,6 +1251,10 @@ def _build_pi_history_payload(
             "input_files": [],
             "suite_reference": suite_reference,
             "suite_binding": suite_binding,
+            "dashboard_refs": (dashboard_state or {}).get("dashboard_refs", []),
+            "dashboard_generation_failure": (dashboard_state or {}).get(
+                "dashboard_generation_failure"
+            ),
         },
         ensure_ascii=False,
     )
@@ -1239,7 +1308,9 @@ class _PiSessionState:
         #: round -> its running step record
         self.round_step_map: Dict[int, Dict[str, Any]] = {}
         self.history_steps: List[Dict[str, Any]] = []
+        self.progress = PublicProgressStream(self.history_steps)
         self.final_text = ""
+        self.public_text = ""
         self.done = False
         self.aborted = False
 
@@ -1289,7 +1360,13 @@ def _translate_event(
     if kind == HarnessEventKind.TURN_START:
         state.round_no = ev.round or state.round_no + 1
         state.thought_buffer = ""
+        state.public_text = ""
         return []
+
+    if kind == HarnessEventKind.TEXT_DELTA:
+        state.public_text += ev.text
+        event = state.progress.update(state.round_no, state.public_text, streaming=True)
+        return [_sse_event(event)] if event else []
 
     if kind == HarnessEventKind.THINKING_DELTA:
         # Stream thinking to the frontend: create a "思考中"
@@ -1330,15 +1407,13 @@ def _translate_event(
         # step begins (thought is attached to the tool step
         # via step.meta, same as the dbgpt branch).
         start_frames: List[str] = state.close_thought_step()
-        record = state.round_step_map.get(state.round_no)
-        if record is None:
-            step_id, start_event, record = state.build_step(title, "pi agent tool")
-            state.round_step_map[state.round_no] = record
-            start_frames.append(start_event)
-        else:
-            step_id = record["id"]
+        step_id, start_event, record = state.build_step(title, "pi agent tool")
+        state.round_step_map[state.step_count] = record
+        state.history_steps.append(record)
+        start_frames.append(start_event)
         record["title"] = title
         record["action"] = ev.tool_name
+        record["action_input"] = (ev.data or {}).get("args")
         record["_open_calls"] = record.get("_open_calls", 0) + 1
         start_call_id = str((ev.data or {}).get("tool_call_id") or "") or title
         state.call_step_map[start_call_id] = record
@@ -1369,7 +1444,7 @@ def _translate_event(
             ev.tool_name or ""
         )
         record = state.call_step_map.pop(end_call_id, None) or state.round_step_map.get(
-            state.round_no
+            state.step_count
         )
         if record is None:
             return []
@@ -1456,13 +1531,27 @@ def _translate_event(
                 _sse_event({"type": "step.done", "id": record["id"], "status": status})
             )
             record["status"] = status
-            state.history_steps.append(record)
-            state.round_step_map.pop(state.round_no, None)
+            for key, item in list(state.round_step_map.items()):
+                if item is record:
+                    state.round_step_map.pop(key, None)
         return frames
 
     if kind == HarnessEventKind.MESSAGE_END:
-        if ev.text.strip():
-            state.final_text = ev.text
+        text = public_assistant_text(ev.text or state.public_text)
+        if ev.data.get("has_tool_calls") and text.strip():
+            frames = state.close_thought_step()
+            event = state.progress.update(state.round_no, text, streaming=False)
+            if event:
+                frames.append(_sse_event(event))
+            return frames
+        if not ev.data.get("has_tool_calls") and text.strip():
+            state.final_text = text
+            event = state.progress.remove(state.round_no)
+            if event:
+                return [
+                    _sse_event(event),
+                    _sse_event({"type": "final.chunk", "content": text}),
+                ]
         return []
 
     if kind == HarnessEventKind.RETRY:
@@ -1485,15 +1574,14 @@ def _translate_event(
 
 def _close_dangling_steps(state: _PiSessionState) -> List[str]:
     """Close steps still running (e.g. final round had no tools)."""
-    frames: List[str] = []
+    frames: List[str] = [_sse_event(event) for event in state.progress.finish_all()]
     for record in list(state.round_step_map.values()):
         if record["status"] == "running":
             frames.append(
                 _sse_event({"type": "step.done", "id": record["id"], "status": "done"})
             )
             record["status"] = "done"
-            state.history_steps.append(record)
-        state.round_step_map.clear()
+    state.round_step_map.clear()
     return frames
 
 
@@ -1536,6 +1624,7 @@ async def run_pi_harness_turn(
     # endpoint reads it back by conv_id (pi runs in a separate process).
     suite_reference = None
     suite_binding_snapshot = None
+    suite_binding = None
     try:
         from .suite_binder import (
             command_binding_event,
@@ -1570,7 +1659,9 @@ async def run_pi_harness_turn(
             storage_conv = _open_pi_storage_conv(dialogue, conv_id)
             for frame in _pi_terminal_events(
                 storage_conv,
-                _build_pi_history_payload(msg, [], suite_reference, suite_binding_snapshot),
+                _build_pi_history_payload(
+                    msg, [], suite_reference, suite_binding_snapshot
+                ),
                 AgentFinalAnswer(content=msg),
             ):
                 yield frame
@@ -1590,18 +1681,107 @@ async def run_pi_harness_turn(
     # Bridge DB-GPT built-in tools (sql_query / code_interpreter / ...)
     # into pi for this conversation; the manifest travels to the pi
     # extension via env at runner creation.
+    previous_creation = tool_bridge.get_react_state(conv_id).get("_suite_creation_mode")
+    current_creation = (dialogue.ext_info or {}).get("creation_mode") == "expert_suite"
+    if previous_creation != current_creation and (
+        previous_creation or current_creation
+    ):
+        # A warm child must not retain native writes or creation-only tools
+        # when the user enters or cancels the creation context.
+        await HARNESS_RUNNER_REGISTRY.pop("pi", conv_id)
     manifest = tool_bridge.register_conv_tools(
         conv_id,
         dialogue.ext_info,
         CFG.SYSTEM_APP,
-        react_state_extra=_attachment_react_state(staged_attachments),
+        react_state_extra={
+            **(_attachment_react_state(staged_attachments) or {}),
+            "_report_original_request": user_input,
+            "_report_language": "en"
+            if str((dialogue.ext_info or {}).get("locale", "")).startswith("en")
+            else "zh",
+            "_report_model_name": dialogue.model_name,
+            "owner_id": dialogue.user_name,
+        },
     )
+    dashboard_state = tool_bridge.get_react_state(conv_id)
+    selected_skill = None
+    selected_name = (dialogue.ext_info or {}).get("skill_name")
+    if (dialogue.ext_info or {}).get("creation_mode") == "expert_suite":
+        selected_name = None
+    if selected_name:
+        from dbgpt.agent.claude_skill import get_registry
+
+        registry = get_registry()
+        selected_skill = registry.get_skill(selected_name)
+        if selected_skill is None:
+            selected_skill = next(
+                (
+                    registry.get_skill(item.name)
+                    for item in registry.list_skills()
+                    if item.name.casefold() == str(selected_name).casefold()
+                ),
+                None,
+            )
+        if selected_skill is not None:
+            dashboard_state["matched"] = selected_skill
+            dashboard_state["skill_prompt"] = selected_skill.get_prompt()
+    from .skill_read_steps import preloaded_skill_steps, skill_read_events
+
+    loaded_skill_steps = preloaded_skill_steps(
+        binding=suite_binding, skill=selected_skill
+    )
+    if (dialogue.ext_info or {}).get("creation_mode") == "expert_suite":
+        from .tools.suite_creation import creator_read_step
+
+        loaded_skill_steps.insert(0, creator_read_step())
+    for skill_step in loaded_skill_steps:
+        for event in skill_read_events(skill_step):
+            yield _sse_event(event)
+    if dashboard_state.get("dashboard_agent_mode"):
+        from .dashboard.temporal_discovery import dashboard_temporal_context
+
+        dashboard_state["_dashboard_source_context"] = await dashboard_temporal_context(
+            dashboard_state.get("_dashboard_connector"),
+            enabled=True,
+            user_input=user_input,
+        )
+        if dashboard_state.get("dashboard_confirmation_error"):
+            message = dashboard_state["dashboard_confirmation_error"]
+            failure = {
+                "type": "dashboard.generation.failed",
+                "message": message,
+                "dashboard_id": dashboard_state.get("dashboard_record_id"),
+            }
+            dashboard_state["dashboard_generation_failure"] = failure
+            yield _sse_event(failure)
+            for frame in _pi_terminal_events(
+                storage_conv,
+                _build_pi_history_payload(
+                    message,
+                    loaded_skill_steps,
+                    suite_reference,
+                    suite_binding_snapshot,
+                    dashboard_state,
+                ),
+                AgentFinalAnswer(content=message),
+            ):
+                yield frame
+            return
+        from .dashboard.confirmation import generation_start_event
+
+        start_event = generation_start_event(dashboard_state)
+        if start_event:
+            yield _sse_event(start_event)
 
     def _pi_config_factory() -> PiHarnessConfig:
         cfg = build_pi_harness_config(conv_id, model_name=dialogue.model_name)
+        if (dialogue.ext_info or {}).get("creation_mode") == "expert_suite":
+            cfg.excluded_tools = list(
+                dict.fromkeys([*cfg.excluded_tools, "bash", "write", "edit"])
+            )
         cfg.prepare_agent_dir()
         if manifest and cfg.agent_dir and tool_bridge.install_extension(cfg.agent_dir):
-            web_port = getattr(CFG, "DBGPT_WEBSERVER_PORT", 5670)
+            web_port = _web_port()
             cfg.extra_env = {
                 "DBGPT_TOOLS_MANIFEST": json.dumps(manifest, ensure_ascii=False),
                 "DBGPT_TOOLS_RUN_URL": (
@@ -1619,6 +1799,10 @@ async def run_pi_harness_turn(
         return cfg
 
     try:
+        if dashboard_state.get("dashboard_agent_mode"):
+            # Each dashboard phase has a different native tool allowlist.
+            # Rebuild the subprocess so confirmation cannot retain planning tools.
+            await HARNESS_RUNNER_REGISTRY.pop("pi", conv_id)
         runner = await HARNESS_RUNNER_REGISTRY.get(
             "pi",
             conv_id,
@@ -1629,13 +1813,16 @@ async def run_pi_harness_turn(
         msg = f"pi harness init failed: {e}"
         for frame in _pi_terminal_events(
             storage_conv,
-            _build_pi_history_payload(msg, [], suite_reference, suite_binding_snapshot),
+            _build_pi_history_payload(
+                msg, loaded_skill_steps, suite_reference, suite_binding_snapshot
+            ),
             AgentFinalAnswer(content=msg),
         ):
             yield frame
         return
 
     state = _PiSessionState()
+    state.history_steps.extend(loaded_skill_steps)
     side_queue: asyncio.Queue = asyncio.Queue()
     tool_bridge.bind_conv_side_queue(conv_id, side_queue)
     tool_bridge.set_conv_model(conv_id, dialogue.model_name)
@@ -1744,12 +1931,32 @@ async def run_pi_harness_turn(
                 preamble = _pi_history_preamble(storage_conv, dialogue.user_input or "")
                 if preamble:
                     prompt = preamble + prompt
-            await runner.run(prompt, on_event=_sink)
+            from .dashboard.confirmation import (
+                continuation_feedback,
+                run_bounded_generation,
+            )
+
+            async def run():
+                result = await runner.run(prompt, on_event=_sink)
+                for _ in range(8):
+                    if result.error or state.aborted:
+                        break
+                    feedback = continuation_feedback(dashboard_state)
+                    if not feedback:
+                        break
+                    result = await runner.run(feedback, on_event=_sink)
+                if result.error:
+                    run_error.append(HarnessError(result.error))
+
+            await run_bounded_generation(dashboard_state, run)
         except Exception as e:
             logger.exception("pi harness run failed")
             run_error.append(e)
         for frame in _close_dangling_steps(state):
             await out_queue.put(frame)
+        # Ensure final dashboard events reach the stream before its sentinel.
+        await side_queue.put(None)
+        await side_task
         await out_queue.put(_SENTINEL)
 
     drive_task = asyncio.ensure_future(_drive())
@@ -1776,11 +1983,20 @@ async def run_pi_harness_turn(
 
         clear_conv_suite(conv_id)
     if run_error:
-        final_content = f"pi harness failed: {run_error[0]}"
+        final_content = f"任务未完成：执行失败。\n原因：{run_error[0]}"
     elif state.aborted:
         final_content = state.final_text or "任务已中止。"
     else:
         final_content = state.final_text or "（pi 引擎未返回文本）"
+    from .dashboard.confirmation import generation_failure
+
+    failure = generation_failure(dashboard_state)
+    if failure:
+        dashboard_state["dashboard_generation_failure"] = failure
+        yield _sse_event(failure)
+        final_content = failure["message"] + (
+            f"\n执行错误：{run_error[0]}" if run_error else ""
+        )
     _write_pi_trace(
         conv_id,
         _build_pi_prompt(dialogue, attachments=staged_attachments),
@@ -1790,7 +2006,11 @@ async def run_pi_harness_turn(
     for frame in _pi_terminal_events(
         storage_conv,
         _build_pi_history_payload(
-            final_content, state.history_steps, suite_reference, suite_binding_snapshot
+            final_content,
+            state.history_steps,
+            suite_reference,
+            suite_binding_snapshot,
+            dashboard_state,
         ),
         AgentFinalAnswer(content=final_content),
     ):

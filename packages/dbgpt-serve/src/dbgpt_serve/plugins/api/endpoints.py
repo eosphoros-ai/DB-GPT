@@ -169,7 +169,6 @@ async def upload_suite(
     if root is None:
         raise HTTPException(status_code=500, detail="suites dir is not configured")
     import io
-    import shutil
     import stat
     import tempfile
     import zipfile
@@ -178,7 +177,6 @@ async def upload_suite(
         archive = zipfile.ZipFile(io.BytesIO(payload))
     except zipfile.BadZipFile as exc:
         raise HTTPException(status_code=400, detail="invalid zip package") from exc
-    target: Optional[Path] = None
     with (
         archive as zf,
         tempfile.TemporaryDirectory(dir=root, prefix=".plugin-upload-") as staging_dir,
@@ -186,6 +184,10 @@ async def upload_suite(
         names = zf.namelist()
         if not names:
             raise HTTPException(status_code=400, detail="empty zip")
+        if len(names) > 10000:
+            raise HTTPException(
+                status_code=413, detail="package contains too many files"
+            )
         if sum(info.file_size for info in zf.infolist()) > _MAX_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=413, detail="extracted package exceeds 50MB"
@@ -204,6 +206,8 @@ async def upload_suite(
             )
         prefix = prefixes.pop()
         staging = Path(staging_dir).resolve()
+        seen_paths = set()
+        extracted_bytes = 0
         for info in zf.infolist():
             member = info.filename
             if info.is_dir():
@@ -224,9 +228,20 @@ async def upload_suite(
                 raise HTTPException(
                     status_code=400, detail=f"unsafe zip path: {member}"
                 )
+            if dest in seen_paths:
+                raise HTTPException(
+                    status_code=400, detail=f"duplicate zip path: {member}"
+                )
+            seen_paths.add(dest)
             dest.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(member) as src, open(dest, "wb") as out:
-                out.write(src.read())
+                while chunk := src.read(64 * 1024):
+                    extracted_bytes += len(chunk)
+                    if extracted_bytes > _MAX_UPLOAD_BYTES:
+                        raise HTTPException(
+                            status_code=413, detail="extracted package exceeds 50MB"
+                        )
+                    out.write(chunk)
         staged_package = load_suite_dir(staging)
         if staged_package is None:
             raise HTTPException(
@@ -241,30 +256,18 @@ async def upload_suite(
             or not (root / slug).resolve().is_relative_to(root.resolve())
         ):
             raise HTTPException(status_code=400, detail="manifest name is invalid")
-        target = root / slug
-        # Replace the complete package so upgrades cannot retain deleted skills
-        # or stale references. Keep the previous tree until registration succeeds.
-        with tempfile.TemporaryDirectory(
-            dir=root, prefix=".plugin-backup-"
-        ) as backup_dir:
-            previous = Path(backup_dir) / "package"
-            if target.exists():
-                target.rename(previous)
-            try:
-                staging.rename(target)
-                pkg = load_suite_dir(target)
-                if pkg is None:
-                    raise HTTPException(
-                        status_code=400, detail="uploaded package failed validation"
-                    )
-                owner = user_name or file.filename or "enterprise"
-                return Result.succ(service.install_package(pkg, user_name=owner))
-            except Exception:
-                if target.exists():
-                    shutil.rmtree(target)
-                if previous.exists():
-                    previous.rename(target)
-                raise
+        from ..installer import commit_package
+
+        def register(installed: Path):
+            pkg = load_suite_dir(installed)
+            if pkg is None:
+                raise HTTPException(
+                    status_code=400, detail="uploaded package failed validation"
+                )
+            owner = user_name or file.filename or "enterprise"
+            return service.install_package(pkg, user_name=owner)
+
+        return Result.succ(commit_package(root, staging, slug, register))
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

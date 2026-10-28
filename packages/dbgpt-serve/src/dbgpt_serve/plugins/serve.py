@@ -45,7 +45,12 @@ class Serve(BaseServe):
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
             return
+        from .api.creation import router as creation_router
+
         self._system_app = system_app
+        self._system_app.app.include_router(
+            creation_router, prefix="/api/v1", tags=self._api_tags
+        )
         self._system_app.app.include_router(
             router, prefix=self._api_prefix, tags=self._api_tags
         )

@@ -11,6 +11,7 @@ import {
   CopyOutlined,
   EditOutlined,
   FileExcelOutlined,
+  HistoryOutlined,
   LoadingOutlined,
   PlayCircleOutlined,
   TableOutlined,
@@ -87,7 +88,7 @@ export interface QueryArtifactBlockProps {
 }
 
 export default function QueryArtifactBlock({ payload, onRerun, fileName, className }: QueryArtifactBlockProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(payload.sql || '');
@@ -99,6 +100,13 @@ export default function QueryArtifactBlock({ payload, onRerun, fileName, classNa
   const numericCols = useMemo(() => columns.map((_, i) => isNumericColumn(rows, i)), [columns, rows]);
   const previewRows = rows.slice(0, PREVIEW_ROWS);
   const exportName = fileName || 'query_result';
+  const execution = payload.execution;
+  const failed = execution?.status === 'failed';
+  const executionTime = execution?.started_at ? new Date(execution.started_at) : null;
+  const executionTimeLabel =
+    executionTime && !Number.isNaN(executionTime.getTime())
+      ? executionTime.toLocaleString(i18n?.language || 'zh', { hour12: false })
+      : execution?.started_at;
 
   const copySql = () => {
     navigator.clipboard.writeText(payload.sql || '').then(() => {
@@ -123,7 +131,10 @@ export default function QueryArtifactBlock({ payload, onRerun, fileName, classNa
   };
 
   return (
-    <div className={cls('flex flex-col gap-3 w-full', className)}>
+    <div data-testid='query-artifact' className={cls('flex flex-col gap-3 w-full', className)}>
+      <div className='text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+        {t('qa_bundle_title', '取数产物')}
+      </div>
       {/* ── SQL card ─────────────────────────────────────────────── */}
       <div className='border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'>
         <div className='px-4 py-2.5 flex items-center gap-2 border-b border-[#efefeb] dark:border-[#232220]'>
@@ -199,99 +210,143 @@ export default function QueryArtifactBlock({ payload, onRerun, fileName, classNa
         </div>
       </div>
 
-      {/* ── Result card ──────────────────────────────────────────── */}
-      <div className='border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'>
-        <div className='px-4 py-2.5 flex items-center gap-2 border-b border-[#efefeb] dark:border-[#232220]'>
-          <span className='h-[22px] px-2 rounded-[6px] bg-[#fff3e6] dark:bg-[#f59e0b22] text-[#d97706] text-[11px] font-semibold inline-flex items-center flex-none'>
-            {t('qa_result_chip', '结果')}
-          </span>
-          <span className='text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df] truncate'>
-            {t('qa_result_title', '查询结果 · {{count}} 行', { count: totalCount })}
-          </span>
-          <span className='ml-auto flex items-center gap-3 flex-none'>
-            <button
-              type='button'
-              onClick={() => downloadQueryCsv(payload, exportName)}
-              className='text-[12.5px] text-[#0069fe] hover:opacity-80'
+      {execution && (
+        <section
+          data-testid='query-execution-record'
+          className='border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden'
+        >
+          <div className='px-4 py-2.5 flex items-center gap-2 border-b border-[#efefeb] dark:border-[#232220] text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+            <HistoryOutlined />
+            {t('qa_execution_title', '执行记录')}
+            <span
+              className={cls(
+                'ml-auto text-xs',
+                failed ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400',
+              )}
             >
-              {t('qa_export_csv', '导出 CSV')} ›
-            </button>
-            <button
-              type='button'
-              onClick={() => downloadQueryXlsx(payload, exportName)}
-              className='inline-flex items-center gap-1 text-[12.5px] text-[#0069fe] hover:opacity-80'
-            >
-              <FileExcelOutlined className='text-[11px]' />
-              {t('qa_export_xlsx', '导出 Excel')} ›
-            </button>
-          </span>
-        </div>
-        {rows.length === 0 ? (
-          <div className='px-4 py-6 flex items-center justify-center gap-2 text-[12.5px] text-[#8b8b84] dark:text-[#7c7972]'>
-            <TableOutlined />
-            {t('qa_empty', '查询返回空结果')}
+              {failed ? t('qa_execution_failed', '执行失败') : t('qa_execution_succeeded', '执行成功')}
+            </span>
           </div>
-        ) : (
-          <>
-            {/* Fixed-height scroll body: 60+ row result sets must not stretch
+          <dl className='px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-[#55554f] dark:text-[#a8a59e]'>
+            {[
+              [t('qa_execution_database', '数据库'), payload.db_name],
+              [t('qa_execution_time', '执行时间'), executionTimeLabel],
+              [t('qa_execution_duration', '耗时'), `${execution.duration_ms.toLocaleString()} ms`],
+              [t('qa_execution_rows', '返回行数'), failed ? undefined : totalCount.toLocaleString()],
+              [t('qa_execution_tool', '执行工具'), execution.tool],
+              [t('qa_execution_id', '记录 ID'), execution.artifact_id],
+            ]
+              .filter(([, value]) => value != null && value !== '')
+              .map(([label, value]) => (
+                <div key={label} className='flex gap-2 min-w-0'>
+                  <dt className='flex-none text-[#8b8b84] dark:text-[#7c7972]'>{label}</dt>
+                  <dd className='break-all'>{value}</dd>
+                </div>
+              ))}
+          </dl>
+          {failed && execution.error && (
+            <p className='px-4 pb-3 text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap break-words'>
+              {execution.error}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* ── Result card ──────────────────────────────────────────── */}
+      {!failed && (
+        <div className='border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'>
+          <div className='px-4 py-2.5 flex items-center gap-2 border-b border-[#efefeb] dark:border-[#232220]'>
+            <span className='h-[22px] px-2 rounded-[6px] bg-[#fff3e6] dark:bg-[#f59e0b22] text-[#d97706] text-[11px] font-semibold inline-flex items-center flex-none'>
+              {t('qa_result_chip', '结果')}
+            </span>
+            <span className='text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df] truncate'>
+              {t('qa_result_title', '查询结果 · {{count}} 行', { count: totalCount })}
+            </span>
+            <span className='ml-auto flex items-center gap-3 flex-none'>
+              <button
+                type='button'
+                onClick={() => downloadQueryCsv(payload, exportName)}
+                className='text-[12.5px] text-[#0069fe] hover:opacity-80'
+              >
+                {t('qa_export_csv', '导出 CSV')} ›
+              </button>
+              <button
+                type='button'
+                onClick={() => downloadQueryXlsx(payload, exportName)}
+                className='inline-flex items-center gap-1 text-[12.5px] text-[#0069fe] hover:opacity-80'
+              >
+                <FileExcelOutlined className='text-[11px]' />
+                {t('qa_export_xlsx', '导出 Excel')} ›
+              </button>
+            </span>
+          </div>
+          {rows.length === 0 ? (
+            <div className='px-4 py-6 flex items-center justify-center gap-2 text-[12.5px] text-[#8b8b84] dark:text-[#7c7972]'>
+              <TableOutlined />
+              {t('qa_empty', '查询返回空结果')}
+            </div>
+          ) : (
+            <>
+              {/* Fixed-height scroll body: 60+ row result sets must not stretch
                 the card across screens; the header row stays pinned. */}
-            <div className='overflow-auto max-h-[380px]'>
-              <table className='w-full text-[13px] text-[#1c1c1a] dark:text-[#e6e4df]'>
-                <thead>
-                  <tr className='text-[#8b8b84] dark:text-[#7c7972]'>
-                    {columns.map((col, i) => (
-                      <th
-                        key={`${col}-${i}`}
-                        className={cls(
-                          'sticky top-0 z-10 bg-[#f7f7f5] dark:bg-[#17181c] px-4 py-2.5 font-medium text-left whitespace-nowrap',
-                          numericCols[i] && 'text-right',
-                        )}
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((row, rIdx) => (
-                    <tr
-                      key={rIdx}
-                      className='border-t border-[#f0f0ec] dark:border-[#232220] hover:bg-[#fafaf7] dark:hover:bg-white/[.03]'
-                    >
-                      {columns.map((_, cIdx) => (
-                        <td
-                          key={cIdx}
+              <div className='overflow-auto max-h-[380px]'>
+                <table className='w-full text-[13px] text-[#1c1c1a] dark:text-[#e6e4df]'>
+                  <thead>
+                    <tr className='text-[#8b8b84] dark:text-[#7c7972]'>
+                      {columns.map((col, i) => (
+                        <th
+                          key={`${col}-${i}`}
                           className={cls(
-                            'px-4 py-2.5 whitespace-nowrap font-mono text-[12.5px]',
-                            numericCols[cIdx] ? 'text-right' : 'text-left',
+                            'sticky top-0 z-10 bg-[#f7f7f5] dark:bg-[#17181c] px-4 py-2.5 font-medium text-left whitespace-nowrap',
+                            numericCols[i] && 'text-right',
                           )}
                         >
-                          {formatCell(row?.[cIdx])}
-                        </td>
+                          {col}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {rows.length > PREVIEW_ROWS && (
-              <div className='px-4 py-2 border-t border-[#f0f0ec] dark:border-[#232220] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
-                {t('qa_preview_note', '仅显示前 {{count}} 行 · 导出获取全量', {
-                  count: PREVIEW_ROWS,
-                })}
+                  </thead>
+                  <tbody>
+                    {previewRows.map((row, rIdx) => (
+                      <tr
+                        key={rIdx}
+                        className='border-t border-[#f0f0ec] dark:border-[#232220] hover:bg-[#fafaf7] dark:hover:bg-white/[.03]'
+                      >
+                        {columns.map((_, cIdx) => (
+                          <td
+                            key={cIdx}
+                            className={cls(
+                              'px-4 py-2.5 whitespace-nowrap font-mono text-[12.5px]',
+                              numericCols[cIdx] ? 'text-right' : 'text-left',
+                            )}
+                          >
+                            {formatCell(row?.[cIdx])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-            {payload.truncated && (
-              <div className='px-4 py-2 border-t border-[#f0f0ec] dark:border-[#232220] text-[12px] text-[#d97706]'>
-                {t('qa_truncated_note', '结果已截断至前 {{kept}} 行（共 {{count}} 行）', {
-                  kept: rows.length,
-                  count: totalCount,
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              {rows.length > PREVIEW_ROWS && (
+                <div className='px-4 py-2 border-t border-[#f0f0ec] dark:border-[#232220] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
+                  {t('qa_preview_note', '仅显示前 {{count}} 行 · 导出获取全量', {
+                    count: PREVIEW_ROWS,
+                  })}
+                </div>
+              )}
+              {payload.truncated && (
+                <div className='px-4 py-2 border-t border-[#f0f0ec] dark:border-[#232220] text-[12px] text-[#d97706]'>
+                  {t('qa_truncated_note', '结果已截断至前 {{kept}} 行（共 {{count}} 行）', {
+                    kept: rows.length,
+                    count: totalCount,
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

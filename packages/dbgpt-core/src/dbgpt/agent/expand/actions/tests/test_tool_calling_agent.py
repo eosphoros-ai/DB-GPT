@@ -7,6 +7,7 @@ no LLM/network is required.
 """
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -100,6 +101,65 @@ def _act_kwargs(agent, enable_parallel):
         "enable_parallel": enable_parallel,
         "tool_calls": None,
     }
+
+
+@pytest.mark.asyncio
+async def test_native_public_progress_arrives_before_tool_execution(monkeypatch):
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    calls = [
+        {
+            "id": "call-1",
+            "function": {"name": "add", "arguments": '{"a": 1, "b": 2}'},
+        },
+    ]
+    events = []
+
+    async def select_model(self, last_model):
+        return "test-model"
+
+    async def create_with_output(**kwargs):
+        assert (
+            "without Thought, Action, Action Input" in kwargs["messages"][0]["content"]
+        )
+        assert all(
+            "thought" not in item["function"]["parameters"]["properties"]
+            for item in kwargs["tools"]
+        )
+        await kwargs["stream_callback"](
+            {"delta_text": "先计算", "delta_thinking": "private"}
+        )
+        return SimpleNamespace(
+            text="先计算总数，再核对结果。",
+            has_text=True,
+            tool_calls=calls,
+        )
+
+    async def callback(payload):
+        events.append(payload)
+
+    monkeypatch.setattr(ToolCallingReActAgent, "_a_select_llm_model", select_model)
+    object.__setattr__(
+        agent, "llm_client", SimpleNamespace(create_with_output=create_with_output)
+    )
+    text, _ = await agent._thinking_native(
+        [], prompt="Compute 1 + 2", stream_callback=callback
+    )
+    assert events == [
+        {
+            "delta_text": "先计算",
+            "delta_thinking": "private",
+            "public_text_stream": True,
+        },
+        {"action_start": True, "public_text": text, "tool_calls": calls},
+    ]
+    assert text == "先计算总数，再核对结果。"
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    out = await agent.act(AgentMessage(content=text), sender=agent, **kwargs)
+    assert out.is_exe_success is True
+    assert out.action == "add"
+    assert json.loads(out.action_input) == {"a": 1, "b": 2}
 
 
 @pytest.mark.asyncio

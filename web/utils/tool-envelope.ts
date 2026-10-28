@@ -79,6 +79,19 @@ function regexChunkContents(text: string): { type: string; content: string }[] {
 
 function nextEnvelopeStart(text: string, from: number): number {
   let best = -1;
+  // Tool envelopes may put success/artifact_id before chunks. Match their
+  // complete object instead of depending on JSON property order.
+  const candidate = text.indexOf('{', from);
+  if (candidate !== -1) {
+    const end = matchBalancedObject(text, candidate);
+    if (end !== -1) {
+      try {
+        if (Array.isArray(JSON.parse(text.slice(candidate, end))?.chunks)) best = candidate;
+      } catch {
+        /* continue with the streaming/truncated envelope markers */
+      }
+    }
+  }
   for (const marker of ENVELOPE_MARKERS) {
     const idx = text.indexOf(marker, from);
     if (idx !== -1 && (best === -1 || idx < best)) best = idx;
@@ -156,8 +169,8 @@ export function envelopeReadableText(text: string): string | null {
 }
 
 /** html/image payloads embedded in envelopes, as synthetic outputs. */
-export function envelopeEmbeddedOutputs(text: string): { type: 'html' | 'image'; content: any }[] {
-  const found: { type: 'html' | 'image'; content: any }[] = [];
+export function envelopeEmbeddedOutputs(text: string): { type: 'html' | 'image' | 'expert_suite'; content: any }[] {
+  const found: { type: 'html' | 'image' | 'expert_suite'; content: any }[] = [];
   for (const envelope of extractEnvelopeObjects(text)) {
     for (const chunk of envelope.chunks || []) {
       if (!chunk || typeof chunk !== 'object') continue;
@@ -171,6 +184,8 @@ export function envelopeEmbeddedOutputs(text: string): { type: 'html' | 'image';
         });
       } else if (chunk.output_type === 'image' && chunk.content != null) {
         found.push({ type: 'image', content: chunk.content });
+      } else if (chunk.output_type === 'expert_suite' && chunk.content?.artifact_id) {
+        found.push({ type: 'expert_suite', content: chunk.content });
       }
     }
   }

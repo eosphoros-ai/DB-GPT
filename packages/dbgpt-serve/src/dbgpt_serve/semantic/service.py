@@ -395,7 +395,10 @@ class SemanticService:
             "column_type",
             "column_comment",
             "is_pk",
+            "is_fk",
             "is_enum",
+            "enum_values",
+            "is_sensitive",
             "status",
         ]
         cols = self._column_dao.list_by_table(ds_id, table_id)
@@ -411,6 +414,7 @@ class SemanticService:
             "entry_name",
             "entry_comment",
             "synonyms",
+            "entry_definition",
             "status",
             "version",
             "confidence",
@@ -428,7 +432,9 @@ class SemanticService:
             "metric_name",
             "metric_comment",
             "metric_type",
+            "metric_definition",
             "formula",
+            "base_metrics",
             "dimensions",
             "status",
             "version",

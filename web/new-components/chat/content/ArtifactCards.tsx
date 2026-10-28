@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 
 import { resolveImageUrl } from './image-url';
 import QueryArtifactBlock from './QueryArtifactBlock';
+import SuiteArtifactCard from './SuiteArtifactCard';
 
 export interface StreamArtifact {
   id: string;
@@ -116,10 +117,7 @@ const CHART_EXT_RE = /\.(png|jpe?g|gif|svg|webp)$/i;
  *  conversation keeps an expanded card, otherwise multi-round fetch sessions
  *  re-stack one card per round down the page.
  */
-export function splitQueryArtifacts<T>(
-  queries: T[],
-  foldAll = false,
-): { visible: T[]; folded: T[] } {
+export function splitQueryArtifacts<T>(queries: T[], foldAll = false): { visible: T[]; folded: T[] } {
   if (foldAll) return { visible: [], folded: queries };
   if (queries.length <= 1) return { visible: queries, folded: [] };
   return { visible: queries.slice(-1), folded: queries.slice(0, -1) };
@@ -203,12 +201,9 @@ export default function ArtifactCards({
   // the turn's deliverable; once demoted to process tier (turn produced a
   // report / package / document) they fold into the process group like any
   // other intermediate.
-  const isFinalQuery = (a: Artifact) => a.type === 'query' && !!a.content && a.tier !== 'process';
+  const isFinalQuery = (a: StreamArtifact) => a.type === 'query' && !!a.content && a.tier !== 'process';
   const queryArtifacts = artifacts.filter(isFinalQuery);
-  const { visible: visibleQueries, folded: foldedQueries } = splitQueryArtifacts(
-    queryArtifacts,
-    foldAllQueries,
-  );
+  const { visible: visibleQueries, folded: foldedQueries } = splitQueryArtifacts(queryArtifacts, foldAllQueries);
   const rest = artifacts.filter(a => !isFinalQuery(a));
   const finals = rest.filter(a => a.tier !== 'process' && a.type !== 'image');
   const processes = rest.filter(a => a.tier === 'process');
@@ -236,7 +231,9 @@ export default function ArtifactCards({
                   peeking at one intermediate never stacks them all. */}
               <div className='flex flex-col gap-1.5 mt-2'>
                 {foldedQueries.map(a => {
-                  const sql = String(a.content?.sql || '').replace(/\s+/g, ' ').trim();
+                  const sql = String(a.content?.sql || '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
                   const rowCount = a.content?.row_count ?? a.content?.rows?.length ?? 0;
                   return (
                     <details
@@ -275,6 +272,9 @@ export default function ArtifactCards({
       )}
       <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
         {finals.map(artifact => {
+          if (artifact.type === 'expert_suite') {
+            return <SuiteArtifactCard key={artifact.id} content={artifact.content} />;
+          }
           const isHtml = artifact.type === 'html';
           const isSkill = artifact.type === 'skill';
           const ext = extOf(artifact.name);

@@ -52,6 +52,7 @@ SNAPSHOT_FIELDS = (
     "author",
     "tags",
     "package_format",
+    "required_resources",
 )
 
 _TYPE_CHECKS: Dict[str, type] = {
@@ -340,6 +341,7 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
         "sop",
         "tools",
         "context_defaults",
+        "required_resources",
         "semantic",
         "artifacts",
         "approval_overrides",

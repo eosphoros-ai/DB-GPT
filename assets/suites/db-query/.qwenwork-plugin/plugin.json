@@ -22,6 +22,10 @@
     "sop": "prompts/query-playbook.md",
     "tools": {
       "allow": [
+        "semantic_get_metadata",
+        "semantic_search_business",
+        "semantic_search_metrics",
+        "semantic_get_metric",
         "semantic_search",
         "schema_link",
         "nl2sql",

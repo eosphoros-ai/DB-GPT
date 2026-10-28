@@ -15,6 +15,14 @@ export interface QueryArtifactPayload {
   row_count?: number;
   truncated?: boolean;
   db_name?: string;
+  execution?: {
+    status: 'succeeded' | 'failed';
+    started_at: string;
+    duration_ms: number;
+    tool: string;
+    artifact_id?: string | null;
+    error?: string;
+  };
 }
 
 function csvCell(value: any): string {

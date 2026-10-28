@@ -430,6 +430,8 @@ async def run_tools_batch(
         # so native single-tool turns still carry the tool name on ActionOutput.
         if not getattr(out, "action", None):
             out.action = spec.name
+        if out.action_input is None:
+            out.action_input = json.dumps(spec.args, ensure_ascii=False)
         return out
 
     async def _run_one(spec: ToolCallSpec) -> ActionOutput:

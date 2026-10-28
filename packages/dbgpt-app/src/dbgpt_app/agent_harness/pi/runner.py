@@ -244,8 +244,13 @@ class PiHarnessRunner:
                             message.get("stopReason"),
                             len(text),
                         )
-                        if text.strip():
+                        if message.get("stopReason") == "error":
+                            error = str(
+                                message.get("errorMessage") or "pi model request failed"
+                            )
+                        elif text.strip():
                             final_text = text
+                            error = None
                 elif etype == "message_update":
                     u = record.get("usage") or {}
                     if isinstance(u, dict) and u.get("totalTokens"):

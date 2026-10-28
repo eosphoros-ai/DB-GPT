@@ -21,9 +21,11 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Iterator, Optional, Set
 from urllib.parse import unquote, urlsplit
 
 from dbgpt._private.config import Config
@@ -37,6 +39,8 @@ CFG = Config()
 #: Suite manifest tool names that map onto differently-named registered tools.
 SUITE_TOOL_ALIASES = {
     "sql_execute": "sql_query",
+    "chart": "chart_query",
+    "report_export": "generate_report",
     "shell": "bash",
     "shell_interpreter": "bash",
     "code_interpreter": "code",
@@ -51,6 +55,27 @@ SEMANTIC_DEGRADED_WATERMARK = (
     "⚠️ 语义层未就绪：本次基于表摘要/原始 schema 取数（水位线：无指标口径 / "
     "默认过滤 / 样例保证，结果需人工复核）。只读、超时、行数与行级权限护栏照常落地。"
 )
+
+_REPORT_AGENT_SCOPE: ContextVar[bool] = ContextVar("suite_report_agent", default=False)
+_REPORT_AGENT_TOOLS = frozenset(
+    {
+        "html_interpreter",
+        "report_evidence_manifest",
+        "read_file",
+        "request_report_calculation",
+        "append_report_sections",
+    }
+)
+
+
+@contextmanager
+def report_agent_tool_scope() -> Iterator[None]:
+    """Delegate rendering helpers only while the dedicated report child runs."""
+    token = _REPORT_AGENT_SCOPE.set(True)
+    try:
+        yield
+    finally:
+        _REPORT_AGENT_SCOPE.reset(token)
 
 
 def canonical_suite_tool(name: str) -> str:
@@ -377,8 +402,31 @@ def _probe_semantic_status(semantic: Dict[str, Any]) -> str:
         return "degraded"
 
 
+def apply_suite_configuration(dialogue: Any) -> None:
+    """Restore a configured resource before either engine builds its tools.
+
+    This selects a resource only; normal datasource access checks still apply.
+    """
+    ext = dict(getattr(dialogue, "ext_info", None) or {})
+    if ext.get("creation_mode") == "expert_suite" or ext.get("database_name"):
+        return
+    ref = resolve_suite_ref(ext)
+    if not ref:
+        return
+    from dbgpt_serve.plugins.creation import SuiteCreationStore
+
+    configured = SuiteCreationStore().configuration(ref)
+    if configured.get("database_name"):
+        ext["database_name"] = configured["database_name"]
+        dialogue.ext_info = ext
+
+
 def resolve_binding_for_turn(dialogue: Any) -> Optional[SuiteBinding]:
     """Resolve + record the suite pin for one chat turn (fail-soft)."""
+    if (getattr(dialogue, "ext_info", None) or {}).get(
+        "creation_mode"
+    ) == "expert_suite":
+        return None
     try:
         ext_info = getattr(dialogue, "ext_info", None)
         conv_uid = getattr(dialogue, "conv_uid", None) or ""
@@ -389,6 +437,13 @@ def resolve_binding_for_turn(dialogue: Any) -> Optional[SuiteBinding]:
             ref = pin[0] if pin else None
         if ref is None:
             return None
+        from dbgpt_serve.plugins.creation import SuiteCreationStore
+
+        configured = SuiteCreationStore().configuration(ref)
+        if configured.get("database_name"):
+            ext_info = dict(ext_info or {})
+            ext_info.setdefault("database_name", configured["database_name"])
+            dialogue.ext_info = ext_info
         binding = load_binding(ref)
         if binding is None:
             logger.info("suite pin %s not enabled/installed; turn runs unbound", ref)
@@ -491,6 +546,13 @@ def make_suite_gate(binding: SuiteBinding):
     """Async gate fn with the same signature as the approval gate."""
 
     async def gate(name: str, args: dict) -> Optional[str]:  # noqa: ARG001
+        if (
+            _REPORT_AGENT_SCOPE.get()
+            and name in _REPORT_AGENT_TOOLS
+            and name not in binding.deny
+            and binding.violation("generate_report") is None
+        ):
+            return None
         return binding.violation(name)
 
     return gate

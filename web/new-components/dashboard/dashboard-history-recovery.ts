@@ -49,6 +49,26 @@ export const dashboardGenerationFromHistoryRef = (ref: any): DashboardGeneration
   };
 };
 
+/** A newer generation round supersedes the same board's earlier planning card. */
+export const deduplicateDashboardHistoryGenerations = <T extends { dashboardGenerations?: DashboardGenerationState[] }>(
+  messages: T[],
+): T[] => {
+  const seen = new Set<string>();
+  return [...messages]
+    .reverse()
+    .map(message => ({
+      ...message,
+      dashboardGenerations: message.dashboardGenerations?.filter(state => {
+        const key = state.dashboardId || state.sourceTurnId;
+        if (!key) return true;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+    }))
+    .reverse();
+};
+
 /**
  * Restore dashboard cards from the dashboard asset table when an older final
  * chat message did not persist `dashboard_refs`.
@@ -71,7 +91,7 @@ export const enrichHistoryWithDashboardRefs = (
     if (message.role !== 'view') return;
     try {
       const payload = JSON.parse(message.context);
-      if (payload?.version !== 1 || payload?.type !== 'react-agent') return;
+      if (![1, 2].includes(payload?.version) || payload?.type !== 'react-agent') return;
       payloads.set(index, payload);
       for (const ref of Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : []) {
         if (typeof ref?.dashboard_id === 'string') existingDashboardIds.add(ref.dashboard_id);
@@ -85,7 +105,18 @@ export const enrichHistoryWithDashboardRefs = (
   if (fallbackIndex === undefined) return historyMessages;
 
   for (const dashboard of dashboards) {
-    if (existingDashboardIds.has(dashboard.id)) continue;
+    if (existingDashboardIds.has(dashboard.id)) {
+      for (const payload of payloads.values()) {
+        payload.dashboard_refs = payload.dashboard_refs?.map((ref: any) =>
+          ref.dashboard_id === dashboard.id &&
+          (dashboard.current_revision > Number(ref.current_revision || 1) ||
+            (dashboard.asset_state === 'saved' && ref.asset_state !== 'saved'))
+            ? { ...ref, ...asDashboardRef(dashboard) }
+            : ref,
+        );
+      }
+      continue;
+    }
     const sourceTurnId = dashboard.source_turn_id;
     const targetIndex =
       (sourceTurnId

@@ -445,6 +445,23 @@ class SemMetricDao(BaseDao):
 
 
 class SemMetricVersionDao(BaseDao):
+    def get_version(
+        self, metric_id: int, version: int
+    ) -> Optional[SemMetricVersionEntity]:
+        """Read an exact caliber snapshot; never fall back to another version."""
+        session = self.get_raw_session()
+        try:
+            return (
+                session.query(SemMetricVersionEntity)
+                .filter(
+                    SemMetricVersionEntity.metric_id == metric_id,
+                    SemMetricVersionEntity.version == version,
+                )
+                .first()
+            )
+        finally:
+            session.close()
+
     def latest(self, metric_id: int) -> Optional[SemMetricVersionEntity]:
         session = self.get_raw_session()
         try:

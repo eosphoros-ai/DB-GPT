@@ -1,6 +1,10 @@
 import type { DashboardListItem } from '@/types/dashboard';
 import { describe, expect, it } from 'vitest';
-import { dashboardGenerationFromHistoryRef, enrichHistoryWithDashboardRefs } from './dashboard-history-recovery';
+import {
+  dashboardGenerationFromHistoryRef,
+  deduplicateDashboardHistoryGenerations,
+  enrichHistoryWithDashboardRefs,
+} from './dashboard-history-recovery';
 
 const dashboard = (overrides: Partial<DashboardListItem> = {}): DashboardListItem => ({
   id: 'dashboard-sales',
@@ -30,6 +34,27 @@ const view = (finalContent: string, sourceTurnId?: string) => ({
 });
 
 describe('enrichHistoryWithDashboardRefs', () => {
+  it('reconciles a stale v2 confirmation with a newer persisted draft', () => {
+    const message = view('计划', 'turn-sales');
+    const payload = JSON.parse(message.context);
+    payload.version = 2;
+    payload.dashboard_refs = [
+      {
+        dashboard_id: 'dashboard-sales',
+        status: 'awaiting_confirmation',
+        current_revision: 1,
+        plan: { widgets: [] },
+        confirmation_prompt: 'confirm revision 1',
+      },
+    ];
+    message.context = JSON.stringify(payload);
+    const result = enrichHistoryWithDashboardRefs([message], [dashboard()]);
+    const state = dashboardGenerationFromHistoryRef(JSON.parse(result[0].context).dashboard_refs[0]);
+    expect(state?.status).toBe('created');
+    expect(state?.currentRevision).toBe(3);
+    expect(state?.confirmationPrompt).toBeUndefined();
+  });
+
   it('recovers a dashboard card from the asset table', () => {
     const result = enrichHistoryWithDashboardRefs([view('完成', 'turn-sales')], [dashboard()]);
     const payload = JSON.parse(result[0].context);
@@ -76,6 +101,23 @@ describe('enrichHistoryWithDashboardRefs', () => {
 });
 
 describe('dashboardGenerationFromHistoryRef', () => {
+  it('keeps the latest generated board instead of its stale confirmation card', () => {
+    const pending = dashboardGenerationFromHistoryRef({
+      dashboard_id: 'sales',
+      status: 'awaiting_confirmation',
+      confirmation_prompt: 'confirm',
+      plan: { widgets: [] },
+    })!;
+    const created = dashboardGenerationFromHistoryRef({ dashboard_id: 'sales', status: 'draft' })!;
+    const other = dashboardGenerationFromHistoryRef({ dashboard_id: 'other', status: 'draft' })!;
+    const result = deduplicateDashboardHistoryGenerations([
+      { dashboardGenerations: [pending, other] },
+      { dashboardGenerations: [created] },
+    ]);
+    expect(result[0].dashboardGenerations).toEqual([other]);
+    expect(result[1].dashboardGenerations).toEqual([created]);
+  });
+
   it('restores an awaiting-confirmation plan without claiming widget validation', () => {
     const state = dashboardGenerationFromHistoryRef({
       dashboard_id: 'dashboard-pending',

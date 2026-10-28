@@ -22,6 +22,7 @@ from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.core import PromptTemplate
 from dbgpt.core.interface.report_capture import read_artifact_result
 
+from ..suite_binder import report_agent_tool_scope
 from ..tools.html_interpreter import (
     _validate_requested_knowledge_bindings,
     make_html_interpreter,
@@ -521,15 +522,13 @@ async def build_report_agent(
         .bind(llm_config)
         .bind(tool_pack)
         .bind(
-            PromptTemplate(
-                template=report_agent_prompt(
+            PromptTemplate.from_literal(
+                report_agent_prompt(
                     template_path,
                     template_text,
                     injected_fields,
                     language=react_state.get("_report_language", "zh"),
-                ),
-                input_variables=[],
-                template_format="jinja2",
+                )
             )
         )
         .build()
@@ -849,12 +848,13 @@ def make_generate_report_tool(
                 skills_dir=skills_dir,
                 model_name=model_name,
             )
-            reply = await asyncio.wait_for(
-                agent.generate_reply(
-                    received_message=AgentMessage(content=message), sender=agent
-                ),
-                timeout=timeout,
-            )
+            with report_agent_tool_scope():
+                reply = await asyncio.wait_for(
+                    agent.generate_reply(
+                        received_message=AgentMessage(content=message), sender=agent
+                    ),
+                    timeout=timeout,
+                )
         except Exception as error:  # one failed report must not break the turn
             logger.warning("report agent failed: %s", error, exc_info=True)
             if await render_saved_report(

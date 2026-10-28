@@ -76,6 +76,7 @@ def build_query_chunk(
     *,
     db_name: Optional[str] = None,
     max_rows: int = QUERY_ARTIFACT_MAX_ROWS,
+    execution: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the ``query`` output chunk for a SQL result set."""
     col_names = [str(c) for c in columns][:QUERY_ARTIFACT_MAX_COLS]
@@ -89,6 +90,8 @@ def build_query_chunk(
     }
     if db_name:
         payload["db_name"] = db_name
+    if execution is not None:
+        payload["execution"] = execution
     return {"output_type": QUERY_OUTPUT_TYPE, "content": payload}
 
 

@@ -1,0 +1,25 @@
+{
+  "name": "mysql-ops-expert",
+  "displayName": "MySQL Ops Expert",
+  "displayNameEn": "MySQL Ops Expert",
+  "displayNameCn": "MySQL 智能运维专家套件",
+  "version": "1.0.0",
+  "description": "A DBA toolkit for MySQL operations: slow-SQL diagnosis, instance patrol, incident triage, online-DDL change review, backup & point-in-time recovery, parameter tuning and ops reporting, backed by a shared knowledge base of metric thresholds, decision trees and safety rules.",
+  "descriptionEn": "A DBA toolkit for MySQL operations: slow-SQL diagnosis, instance patrol, incident triage, online-DDL change review, backup & point-in-time recovery, parameter tuning and ops reporting, backed by a shared knowledge base of metric thresholds, decision trees and safety rules.",
+  "descriptionZh": "面向 DBA 与后端运维的 MySQL 智能运维套件：SQL 体检、实例巡检、故障应急、变更评审、备份恢复、参数调优、运维报告共 7 个可直接调用技能，并由 1 个内置知识库统一提供指标阈值、现象→根因决策树、只读命令清单与安全红线。",
+  "author": {
+    "name": "QwenWork Custom Plugin"
+  },
+  "category": "engineering",
+  "tags": ["mysql", "dba", "database", "sre", "observability", "performance", "incident", "backup"],
+  "skills": [
+    "skills/mysql-sql-doctor",
+    "skills/mysql-instance-patrol",
+    "skills/mysql-incident-triage",
+    "skills/mysql-change-review",
+    "skills/mysql-backup-restore",
+    "skills/mysql-tuning-advisor",
+    "skills/mysql-ops-report",
+    "skills/mysql-ops-knowledge"
+  ]
+}

@@ -1644,13 +1644,25 @@ def make_dashboard_planner_tools(
             ) or react_state.get("dashboard_record_id")
             if not dashboard_id:
                 raise ValueError("dashboard_id is required for a later repair.")
+            existing = planner_service.dashboard_service.get_dashboard(
+                str(dashboard_id), owner_id
+            )
+            workflow = existing.schema_payload.metadata.compatibility.get(
+                "agent_dashboard_workflow", {}
+            )
+            if workflow.get(
+                "status"
+            ) == "awaiting_confirmation" and not react_state.get(
+                "dashboard_query_staging"
+            ):
+                return _tool_result(
+                    "This is still a SQL-free plan; no candidate queries from "
+                    "earlier failed turns are available in this run. Start with "
+                    "create_dashboard_draft for ALL confirmed-plan widgets in "
+                    "batches of at most two. Do not repair placeholder widgets "
+                    "or rely on historical tool observations."
+                )
             if stored_plan is None:
-                existing = planner_service.dashboard_service.get_dashboard(
-                    str(dashboard_id), owner_id
-                )
-                workflow = existing.schema_payload.metadata.compatibility.get(
-                    "agent_dashboard_workflow", {}
-                )
                 stored_plan = workflow.get("plan")
             if stored_plan is None:
                 raise ValueError("The original dashboard plan is unavailable.")
@@ -1659,13 +1671,42 @@ def make_dashboard_planner_tools(
                 DashboardQueryDraftRequest,
                 _normalize_model_query_payload(raw_payload, plan),
             )
-            record, _ = await planner_service.repair_draft(
-                dashboard_id=str(dashboard_id),
-                plan=plan,
-                query_request=query_request,
-                owner_id=owner_id,
-                event_callback=stream_callback,
-            )
+            staging = react_state.get("dashboard_query_staging")
+            if staging and staging.get("dashboard_id") == str(dashboard_id):
+                # A contract failure can occur before any real widget is saved.
+                # Repair those staged candidates, not the SQL-free plan's
+                # placeholder widgets, so successful candidates are retained.
+                query_request = model_validate_compat(
+                    DashboardQueryDraftRequest,
+                    {
+                        **model_dump_compat(query_request),
+                        "dashboard_id": str(dashboard_id),
+                        "expected_revision": staging["expected_revision"],
+                    },
+                )
+                query_request, missing = _stage_dashboard_query_batch(
+                    react_state, query_request, plan
+                )
+                if missing:
+                    return _tool_result(
+                        "Repair staged; missing widget queries: " + ", ".join(missing)
+                    )
+                record, _ = await planner_service.complete_plan_draft(
+                    dashboard_id=str(dashboard_id),
+                    query_request=query_request,
+                    owner_id=owner_id,
+                    request_token=request_token,
+                    event_callback=stream_callback,
+                )
+                react_state.pop("dashboard_query_staging", None)
+            else:
+                record, _ = await planner_service.repair_draft(
+                    dashboard_id=str(dashboard_id),
+                    plan=plan,
+                    query_request=query_request,
+                    owner_id=owner_id,
+                    event_callback=stream_callback,
+                )
         except DashboardGenerationTimeout:
             raise
         except DashboardSchemaValidationError as exc:

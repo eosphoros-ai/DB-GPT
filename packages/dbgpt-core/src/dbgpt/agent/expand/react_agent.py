@@ -38,7 +38,10 @@ Do not output an empty string!
 {% if native_function_calling %}
 # RESPONSE FORMAT #
 Use the supplied native functions for actions, with JSON arguments.
-Call a function to perform the next step; use intention/thought for a short explanation.
+Before calling functions, write a short public progress message in ordinary prose.
+Do not emit Thought, Action, Action Input or other ReAct protocol labels.
+Use intention for a short public explanation;
+keep private reasoning in the thinking channel.
 When the task is complete, call terminate with the final answer in output.
 {% else %}
 {{ action_space }}
@@ -63,8 +66,9 @@ Action Input: {"result": "final answer"}
 For each task input, your response should contain:
 1. One analysis of the task and the current environment, reasoning to determine the \
 next action (prefix "Thought: ").
-2. What this step is trying to do (prefix "Action Intention: "), short and \
-user-facing.
+2. What this step is trying to do and what comes next (prefix \
+"Action Intention: "), a short public progress message in the user's language. \
+After meaningful results, briefly mention what was learned before the next action.
 3. Why this action is needed now (prefix "Action Reason: "), short and \
 user-facing.
 4. One action string in the ACTION SPACE (prefix "Action: "), should be one of \

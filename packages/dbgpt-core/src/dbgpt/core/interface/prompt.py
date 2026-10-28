@@ -90,6 +90,16 @@ class PromptTemplate(BasePromptTemplate):
         )(self.template, **kwargs)
 
     @classmethod
+    def from_literal(cls: Type[T], text: str) -> T:
+        """Preserve fully assembled instructions without interpreting placeholders."""
+        return cls(
+            template=text.replace("{", "{{").replace("}", "}}"),
+            input_variables=[],
+            template_format="f-string",
+            template_is_strict=False,
+        )
+
+    @classmethod
     def from_template(
         cls: Type[T], template: str, template_format: str = "f-string", **kwargs: Any
     ) -> T:

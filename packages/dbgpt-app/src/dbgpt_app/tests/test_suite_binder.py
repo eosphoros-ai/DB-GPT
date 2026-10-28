@@ -15,6 +15,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from dbgpt.agent.core.base_agent import ConversableAgent
+from dbgpt.agent.core.profile.base import ProfileConfig
+from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt_app.openapi.api_v1.suite_binder import (
     IMPLICIT_ALLOW,
     SEMANTIC_DEGRADED_WATERMARK,
@@ -26,6 +29,7 @@ from dbgpt_app.openapi.api_v1.suite_binder import (
     compose_gates,
     load_binding,
     make_suite_gate,
+    report_agent_tool_scope,
     resolve_binding_for_turn,
     suite_message_reference,
 )
@@ -124,6 +128,27 @@ class SuiteCommandTest(unittest.TestCase):
             )
             self.assertIn(binding.sop_text.strip(), build_sop_block(binding))
 
+    def test_analysis_report_template_survives_actual_agent_prompt_rendering(self):
+        binding = self.make_binding("db-analysis")
+        bind_command(binding, "/analyze")
+        block = build_sop_block(binding)
+        self.assertIn("{{...}}", block)
+        self.assertIn("{{report_title}}", block)
+        agent = ConversableAgent(
+            profile=ProfileConfig(name="literal-prompt", role="analyst")
+        ).bind(PromptTemplate.from_literal(block))
+        loop = asyncio.new_event_loop()
+        try:
+            rendered = loop.run_until_complete(
+                agent.build_system_prompt(context={"report_title": "Do not substitute"})
+            )
+        finally:
+            loop.close()
+        self.assertEqual(rendered, block)
+        for document in binding.loaded_documents:
+            if "content" in document:
+                self.assertIn(document["content"], rendered)
+
     def test_native_builtin_keeps_tool_gate_sop_and_semantic_warning(self):
         package = load_suite_dir(SUITES_ROOT / "db-query")
         row = SimpleNamespace(
@@ -150,6 +175,35 @@ class SuiteCommandTest(unittest.TestCase):
         self.assertIsNone(binding.violation("sql_query"))
         self.assertTrue(binding.sop_text)
         self.assertEqual(binding.watermark, SEMANTIC_DEGRADED_WATERMARK)
+
+    def test_native_analysis_tools_match_registered_chart_and_report_tools(self):
+        package = load_suite_dir(SUITES_ROOT / "db-analysis")
+        row = SimpleNamespace(
+            name=package.name,
+            version=package.version,
+            status="enabled",
+            package_path=package.path,
+            manifest_snapshot=package.snapshot,
+        )
+        with (
+            patch(
+                "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
+                return_value=SimpleNamespace(get=lambda _: row),
+            ),
+            patch(
+                "dbgpt_app.openapi.api_v1.suite_binder._probe_semantic_status",
+                return_value="degraded",
+            ),
+        ):
+            binding = load_binding("db-analysis")
+        bind_command(binding, "/analyze")
+        self.assertIsNone(binding.violation("chart_query"))
+        self.assertIsNone(binding.violation("generate_report"))
+        self.assertIsNotNone(binding.violation("code"))
+        self.assertIsNotNone(binding.violation("bash"))
+        self.assertIsNotNone(binding.violation("html_interpreter"))
+        binding.deny.add("generate_report")
+        self.assertIsNotNone(binding.violation("generate_report"))
 
     def test_unknown_command_blocks_business_tools(self):
         binding = self.make_binding()
@@ -348,10 +402,51 @@ class BuildSopBlockTest(unittest.TestCase):
 
 
 class GateOrderTest(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        self.addCleanup(self.loop.close)
+
+    def test_report_helpers_are_delegated_only_to_child_and_keep_approval(self):
+        binding = SuiteBinding(
+            name="analysis", version="1", allow={"generate_report", "sql_query"}
+        )
+        calls = []
+
+        async def inner(name, args):
+            calls.append(name)
+            return "approval required"
+
+        gate = compose_gates(make_suite_gate(binding), inner)
+        loop = self.loop
+        self.assertIn(
+            "not in suite", loop.run_until_complete(gate("html_interpreter", {}))
+        )
+        with report_agent_tool_scope():
+            self.assertEqual(
+                loop.run_until_complete(gate("html_interpreter", {})),
+                "approval required",
+            )
+            self.assertIn("not in suite", loop.run_until_complete(gate("code", {})))
+            binding.deny.add("html_interpreter")
+            self.assertIn(
+                "denied", loop.run_until_complete(gate("html_interpreter", {}))
+            )
+            binding.deny.clear()
+            binding.command_error = "required skill missing"
+            self.assertIn(
+                "required skill missing",
+                loop.run_until_complete(gate("html_interpreter", {})),
+            )
+            binding.command_error = ""
+        self.assertIn(
+            "not in suite", loop.run_until_complete(gate("html_interpreter", {}))
+        )
+        self.assertEqual(calls, ["html_interpreter"])
+
     def test_suite_gate_blocks_before_inner_gate(self):
         binding = SuiteBinding(name="sc", version="1", deny={"bash"})
         gate = make_suite_gate(binding)
-        observation = asyncio.get_event_loop().run_until_complete(gate("bash", {}))
+        observation = self.loop.run_until_complete(gate("bash", {}))
         self.assertIsNotNone(observation)
 
     def test_compose_gates_suite_blocks_before_approval(self):
@@ -363,7 +458,7 @@ class GateOrderTest(unittest.TestCase):
             return None
 
         composed = compose_gates(make_suite_gate(binding), inner)
-        loop = asyncio.get_event_loop()
+        loop = self.loop
         observation = loop.run_until_complete(composed("bash", {}))
         self.assertIsNotNone(observation)
         self.assertEqual(calls, [])

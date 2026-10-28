@@ -383,8 +383,6 @@ def _agentic_message_content(content) -> str:
             if isinstance(block, dict):
                 if block.get("type") == "text":
                     parts.append(str(block.get("text", "")))
-                elif block.get("type") == "thinking":
-                    parts.append(str(block.get("thinking", "")))
         return "\n".join(p for p in parts if p)
     return "" if content is None else str(content)
 
@@ -437,6 +435,8 @@ def _agentic_out_text(content) -> str:
         return content
     if isinstance(content, list):
         return "".join(_agentic_out_text(c) for c in content)
+    if getattr(content, "type", None) != "text":
+        return ""
     # MediaContent dataclass: .object.data holds the payload
     obj = getattr(content, "object", None)
     data = getattr(obj, "data", None) if obj is not None else None
@@ -488,7 +488,10 @@ async def agentic_chat_completions(
         service.system_app.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create(),
-        auto_convert_message=True,
+        # Native tool conversations already have provider-compatible order.
+        # The scene converter moves the user message after tool results,
+        # making completed tasks look like fresh requests to the model.
+        auto_convert_message=False,
     )
 
     if not stream:
@@ -509,6 +512,11 @@ async def agentic_chat_completions(
                     "message": {
                         "role": "assistant",
                         "content": _agentic_out_text(out.content),
+                        **(
+                            {"reasoning_content": out.thinking_text}
+                            if out.thinking_text
+                            else {}
+                        ),
                         **({"tool_calls": out.tool_calls} if out.tool_calls else {}),
                     },
                     "finish_reason": (out.finish_reason or "stop"),
@@ -523,6 +531,7 @@ async def agentic_chat_completions(
         # Worker-stream ModelOutput carries CUMULATIVE text/tool_calls;
         # OpenAI stream chunks must carry incremental deltas, so diff here.
         prev_text = ""
+        prev_thinking = ""
         prev_tool_args: dict = {}
         seen_tool_names: set = set()
         async for out in llm_client.generate_stream(request):
@@ -539,6 +548,14 @@ async def agentic_chat_completions(
             prev_text = full_text
             if inc_text:
                 delta["content"] = inc_text
+            full_thinking = out.thinking_text or ""
+            if full_thinking.startswith(prev_thinking):
+                inc_thinking = full_thinking[len(prev_thinking) :]
+            else:
+                inc_thinking = full_thinking
+            prev_thinking = full_thinking
+            if inc_thinking:
+                delta["reasoning_content"] = inc_thinking
             tool_frags = []
             for tc_idx, tc in enumerate(getattr(out, "tool_calls", None) or []):
                 if not isinstance(tc, dict):
