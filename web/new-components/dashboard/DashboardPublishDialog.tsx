@@ -6,7 +6,7 @@ import {
 } from '@/new-components/dashboard/dashboard-i18n';
 import { CheckCircleFilled, CopyOutlined, FileImageOutlined, SyncOutlined } from '@ant-design/icons';
 import { Alert, App, Button, Input, Modal, Popconfirm } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 import styles from './DashboardPublishDialog.module.css';
 
 export type DashboardPublishMode = 'live' | 'snapshot';
@@ -19,17 +19,20 @@ export interface DashboardPublishedLinks {
 
 export default function DashboardPublishDialog({
   dashboardId,
+  themeStyle,
   busy,
   onPublish,
   onClose,
 }: {
   dashboardId: string;
+  themeStyle?: CSSProperties;
   busy: boolean;
   onPublish: (mode: DashboardPublishMode) => Promise<DashboardPublishedLinks | undefined>;
   onClose: () => void;
 }) {
   useDashboardTranslation();
   const { message } = App.useApp();
+  const modeGroupId = useId();
   const [mode, setMode] = useState<DashboardPublishMode>('snapshot');
   const [status, setStatus] = useState<DashboardLiveShareStatus | null>(null);
   const [result, setResult] = useState<DashboardPublishedLinks | null>(null);
@@ -79,6 +82,7 @@ export default function DashboardPublishDialog({
   return (
     <Modal
       open
+      style={themeStyle}
       title={result ? dt('发布完成') : dt('发布看板')}
       width={620}
       onCancel={onClose}
@@ -158,20 +162,33 @@ export default function DashboardPublishDialog({
                 },
               ] as const
             ).map(option => (
-              <button
+              <label
                 key={option.id}
-                type='button'
-                role='radio'
-                aria-checked={mode === option.id}
-                disabled={busy || revoking}
-                onClick={() => setMode(option.id)}
                 className={styles.option}
+                data-checked={mode === option.id}
+                data-disabled={busy || revoking}
               >
-                <span className={styles.icon}>{option.icon}</span>
+                <input
+                  type='radio'
+                  name={modeGroupId}
+                  value={option.id}
+                  checked={mode === option.id}
+                  disabled={busy || revoking}
+                  onChange={() => setMode(option.id)}
+                  aria-label={option.title}
+                  aria-describedby={`${modeGroupId}-${option.id}-description`}
+                  className={styles.optionInput}
+                />
+                <span className={styles.icon} aria-hidden='true'>
+                  {option.icon}
+                </span>
                 <strong>{option.title}</strong>
-                <p>{option.description}</p>
+                <p id={`${modeGroupId}-${option.id}-description`}>{option.description}</p>
                 <small>{option.detail}</small>
-              </button>
+                <span className={styles.optionAction} aria-hidden='true'>
+                  {mode === option.id ? dt('已选择') : dt('点击选择')}
+                </span>
+              </label>
             ))}
           </div>
           {mode === 'live' && status?.active && (

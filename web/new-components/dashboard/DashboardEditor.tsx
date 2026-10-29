@@ -4664,6 +4664,7 @@ export default function DashboardEditor({
         {publishPanelOpen && (
           <DashboardPublishDialog
             dashboardId={record.id}
+            themeStyle={interfaceThemeVariables(editorTheme)}
             busy={publishing}
             onPublish={handlePublish}
             onClose={() => setPublishPanelOpen(false)}

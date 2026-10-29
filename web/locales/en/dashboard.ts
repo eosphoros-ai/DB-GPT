@@ -1146,6 +1146,8 @@ const DashboardEn: Record<string, string> = {
   '选择访客看到的数据如何更新。发布前会保存草稿并检查查询与筛选。':
     "Choose how visitors' data updates. The draft, queries, and filters are saved and checked before publication.",
   发布数据方式: 'Published data mode',
+  点击选择: 'Click to select',
+  已选择: 'Selected',
   '适合日常看板。数据变化自动呈现，无需重复发布。':
     'For everyday dashboards. Data updates appear automatically without republishing.',
   '页面打开时，每分钟检查': 'Checks every minute while the page is open',
