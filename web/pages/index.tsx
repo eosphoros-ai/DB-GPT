@@ -82,6 +82,11 @@ import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
+import {
+  querySourcesFromExecution,
+  semanticReadGapsFromExecution,
+  semanticSourcesFromExecution,
+} from '@/utils/semantic-provenance';
 import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
@@ -4794,6 +4799,15 @@ const Playground: NextPage = () => {
                               (!!round.viewMsg?.thinking && !!roundAssistantText)
                             }
                             citationIndexes={roundCitations.map(citation => citation.index)}
+                            semanticSources={semanticSourcesFromExecution(
+                              execution?.steps ?? [],
+                              execution?.outputs ?? {},
+                            )}
+                            querySources={querySourcesFromExecution(execution?.steps ?? [], execution?.outputs ?? {})}
+                            semanticReadGaps={semanticReadGapsFromExecution(
+                              execution?.steps ?? [],
+                              execution?.outputs ?? {},
+                            )}
                             reportId={round.viewMsg?.reportId}
                             reportRunId={round.viewMsg?.reportRunId}
                             onReportClick={() => {
@@ -6543,6 +6557,7 @@ const Playground: NextPage = () => {
                             key={`${activeSuite?.name}-${idx}-${q.text}`}
                             role='button'
                             tabIndex={0}
+                            aria-label={q.title || q.text}
                             onClick={() => handleSuiteQuestionClick(q)}
                             onKeyDown={event => {
                               if (event.key === 'Enter' || event.key === ' ') {
@@ -6550,37 +6565,44 @@ const Playground: NextPage = () => {
                                 handleSuiteQuestionClick(q);
                               }
                             }}
-                            className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfe0ff] transition-all duration-300'
+                            className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-sm hover:border-[#cfe0ff] transition-colors duration-200'
                           >
                             <div className='flex items-start gap-3'>
-                              <div className='w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 bg-[#e8f4ff] dark:bg-[#0d1b2e]'>
+                              <div
+                                aria-hidden='true'
+                                className='w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-[#e8f4ff] dark:bg-[#0d1b2e]'
+                              >
                                 {activeSuite?.icon || '🧩'}
                               </div>
                               <div className='flex-1 min-w-0'>
-                                <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                                  {q.text}
+                                <h3 className='line-clamp-2 pr-3 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                                  {q.title || q.text}
                                 </h3>
-                                {q.command && (
-                                  <div className='mb-2 text-xs text-green-700 dark:text-green-300'>
-                                    {t('suite_command_label', {
-                                      command:
-                                        activeSuite?.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command)
-                                          ?.display || q.command,
-                                    })}
-                                  </div>
-                                )}
                                 {q.hint && (
-                                  <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>{q.hint}</p>
+                                  <p className='text-xs text-gray-500 dark:text-gray-400 truncate' title={q.hint}>
+                                    {q.hint}
+                                  </p>
                                 )}
-                                <div className='mt-3 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400'>
-                                  <DatabaseOutlined />
-                                  <span className='truncate'>
-                                    {t('suite_database_label', {
-                                      name: q.database_name || selectedDb?.db_name || t('suite_database_choose'),
-                                    })}
-                                  </span>
-                                </div>
                               </div>
+                            </div>
+                            <div className='mt-3 flex min-w-0 items-center gap-3 text-[11px]'>
+                              {q.command && (
+                                <span className='shrink-0 rounded-md bg-green-50 px-2 py-0.5 font-mono text-green-700 dark:bg-green-900/20 dark:text-green-300'>
+                                  {activeSuite?.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command)
+                                    ?.display || q.command}
+                                </span>
+                              )}
+                              <span
+                                className='flex min-w-0 items-center gap-1.5 text-gray-400 dark:text-gray-500'
+                                title={t('suite_database_label', {
+                                  name: q.database_name || selectedDb?.db_name || t('suite_database_choose'),
+                                })}
+                              >
+                                <DatabaseOutlined aria-hidden='true' />
+                                <span className='truncate'>
+                                  {q.database_name || selectedDb?.db_name || t('suite_database_choose')}
+                                </span>
+                              </span>
                             </div>
                             <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
                               <RightOutlined className='text-xs text-gray-400' />

@@ -11,6 +11,7 @@ import {
   getSemanticCoverage,
   getSemanticEntries,
   getSemanticExamples,
+  getSemanticMetricVersion,
   getSemanticMetrics,
   getSemanticRelations,
   getSemanticRules,
@@ -25,29 +26,35 @@ import {
   postSemanticDrafts,
   postSemanticSync,
 } from '@/client/api/semantic';
+import { SemanticSourceDetail } from '@/new-components/chat/content/SemanticProvenance';
 import ConstructLayout from '@/new-components/layout/Construct';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import type { SemanticSource } from '@/utils/semantic-provenance';
+import {
+  ApartmentOutlined,
+  ArrowLeftOutlined,
+  BookOutlined,
+  CheckCircleOutlined,
+  DatabaseOutlined,
+  FileTextOutlined,
+  FunctionOutlined,
+  PlusOutlined,
+  RightOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+  SyncOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
-import { Button, Modal, Select, Space, Statistic, Table, Tabs, Tag, Typography, message } from 'antd';
+import { Button, Drawer, Empty, Input, Modal, Select, Space, Table, Typography, message } from 'antd';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
-
-const { Title, Text } = Typography;
-
-const STATUS_COLOR: Record<string, string> = {
-  activated: 'green',
-  not_activated: 'orange',
-  published: 'green',
-  draft: 'orange',
-  stale: 'red',
-  rejected: 'default',
-  active: 'green',
-  inactive: 'default',
-  deleted: 'red',
-};
+import { useRef, useState, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import styles from './semantic.module.css';
 
 const SemanticCenter = () => {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const label = (key: string, values?: Record<string, unknown>): string => String(t(`semantic_center.${key}`, values));
   const dsId = router.query.ds ? Number(router.query.ds) : null;
 
   const [spaces, setSpaces] = useState<SemanticSpace[]>([]);
@@ -60,10 +67,137 @@ const SemanticCenter = () => {
   const [relations, setRelations] = useState<SemanticRelation[]>([]);
   const [rules, setRules] = useState<SemanticRule[]>([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [busy, setBusy] = useState<string | null>(null);
+  const busyRef = useRef(false);
   const [activateId, setActivateId] = useState<number | null>(null);
   const [sampling, setSampling] = useState('42');
   const [runDrafts, setRunDrafts] = useState('no');
   const [embedding, setEmbedding] = useState('bge-large-zh');
+  const [citedMetric, setCitedMetric] = useState<SemanticSource | null>(null);
+  const [metricLoading, setMetricLoading] = useState(false);
+  const [metricOpen, setMetricOpen] = useState(false);
+  const [metricError, setMetricError] = useState(false);
+  const metricRequest = useRef(0);
+  const tabKeys = ['catalog', 'entries', 'metrics', 'examples', 'relations', 'rules'] as const;
+  const activeTab =
+    typeof router.query.tab === 'string' && (tabKeys as readonly string[]).includes(router.query.tab)
+      ? (router.query.tab as (typeof tabKeys)[number])
+      : 'catalog';
+  const statusLabel = (status: string) => label(`status_labels.${status}`, { defaultValue: status });
+  const typeLabel = (value: string) => label(`type_labels.${value}`, { defaultValue: value });
+  const sourceLabel = (value: string) => label(`source_labels.${value}`, { defaultValue: value });
+  const statusBadge = (status: string) => (
+    <span className={styles.status} data-status={status}>
+      {statusLabel(status)}
+    </span>
+  );
+  const filtered = <T extends object>(rows: T[]) =>
+    rows.filter(
+      row =>
+        (statusFilter === 'all' || ('status' in row && row.status === statusFilter)) &&
+        (!search.trim() ||
+          Object.values(row).some(
+            value => typeof value === 'string' && value.toLowerCase().includes(search.trim().toLowerCase()),
+          )),
+    );
+  const runAction = async (key: string, action: () => Promise<void>) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(key);
+    try {
+      await action();
+    } finally {
+      busyRef.current = false;
+      setBusy(null);
+    }
+  };
+  const tableProps = {
+    rowKey: 'id',
+    loading,
+    className: styles.table,
+    scroll: { x: 900 },
+    pagination: { pageSize: 10, showSizeChanger: false, hideOnSinglePage: true },
+    locale: {
+      emptyText: (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={label(search || statusFilter !== 'all' ? 'no_results' : 'empty')}
+        />
+      ),
+    },
+  };
+  const stats = (items: { title: string; value: number; suffix?: string }[], overview = false) => (
+    <div className={`${styles.stats} ${overview ? styles.statsOverview : ''}`}>
+      {items.map(item => (
+        <div className={styles.stat} key={item.title}>
+          <div className={styles.statLabel}>{item.title}</div>
+          <div className={styles.statValue}>
+            {loading ? '—' : item.value}
+            <span className={styles.statSuffix}>{item.suffix}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+  const expandedText = (title: string, text?: string) => (
+    <div className={styles.expanded}>
+      <div className={styles.muted}>{title}</div>
+      <pre>{text || '—'}</pre>
+    </div>
+  );
+  const switchTab = (tab: string) => {
+    setSearch('');
+    setStatusFilter('all');
+    void router.replace({ pathname: router.pathname, query: { ds: dsId, tab } }, undefined, { shallow: true });
+  };
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (!offset && event.key !== 'Home' && event.key !== 'End') return;
+    event.preventDefault();
+    const next =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabKeys.length - 1
+          : (index + offset + tabKeys.length) % tabKeys.length;
+    switchTab(tabKeys[next]);
+    document.getElementById(`semantic-tab-${tabKeys[next]}`)?.focus();
+  };
+
+  const openMetric = async (metricId: number, version: number) => {
+    if (!dsId || !Number.isSafeInteger(version) || version < 1) return;
+    const requestId = ++metricRequest.current;
+    setMetricOpen(true);
+    setMetricLoading(true);
+    setMetricError(false);
+    setCitedMetric(null);
+    const [error, response] = await apiInterceptors(getSemanticMetricVersion(dsId, metricId, version));
+    if (requestId !== metricRequest.current) return;
+    if (!error && response?.metric) {
+      const row = response.metric;
+      setCitedMetric({
+        key: `${response.conn_id}:metric:${row.id}:${row.version}`,
+        kind: 'metric',
+        connId: response.conn_id,
+        dsId: response.ds_id,
+        id: row.id,
+        name: row.metric_name,
+        version: row.version,
+        snapshot: row,
+      });
+    } else setMetricError(true);
+    setMetricLoading(false);
+  };
+
+  useAsyncEffect(async () => {
+    const id = Number(router.query.metric);
+    const version = Number(router.query.version);
+    if (dsId && Number.isSafeInteger(id) && id > 0 && Number.isSafeInteger(version) && version > 0) {
+      await openMetric(id, version);
+    }
+  }, [dsId, router.query.metric, router.query.version]);
 
   const loadSpaces = async () => {
     setLoading(true);
@@ -74,14 +208,16 @@ const SemanticCenter = () => {
 
   const loadDetail = async (id: number) => {
     setLoading(true);
-    const [, sp] = await apiInterceptors(getSemanticSpace(id));
-    const [, cov] = await apiInterceptors(getSemanticCoverage(id));
-    const [, tb] = await apiInterceptors(getSemanticTables(id));
-    const [, en] = await apiInterceptors(getSemanticEntries(id));
-    const [, me] = await apiInterceptors(getSemanticMetrics(id));
-    const [, ex] = await apiInterceptors(getSemanticExamples(id));
-    const [, re] = await apiInterceptors(getSemanticRelations(id));
-    const [, ru] = await apiInterceptors(getSemanticRules(id));
+    const [[, sp], [, cov], [, tb], [, en], [, me], [, ex], [, re], [, ru]] = await Promise.all([
+      apiInterceptors(getSemanticSpace(id)),
+      apiInterceptors(getSemanticCoverage(id)),
+      apiInterceptors(getSemanticTables(id)),
+      apiInterceptors(getSemanticEntries(id)),
+      apiInterceptors(getSemanticMetrics(id)),
+      apiInterceptors(getSemanticExamples(id)),
+      apiInterceptors(getSemanticRelations(id)),
+      apiInterceptors(getSemanticRules(id)),
+    ]);
     setSpace(sp);
     setCoverage(cov);
     setTables(tb ?? []);
@@ -99,50 +235,60 @@ const SemanticCenter = () => {
   }, [dsId]);
 
   const doBackfill = async () => {
-    const [, res] = await apiInterceptors(postSemanticBackfill());
-    message.success(`回填完成：同步 ${res?.synced?.length ?? 0} 个连接，失败 ${res?.failed?.length ?? 0}`);
+    const [error, res] = await apiInterceptors(postSemanticBackfill());
+    if (error) return;
+    message.success(label('backfill_done', { count: res?.synced?.length ?? 0, failed: res?.failed?.length ?? 0 }));
     await loadSpaces();
   };
 
   const doSync = async (id: number) => {
-    const [, report] = await apiInterceptors(postSemanticSync(id));
-    message.success(`同步完成：新增表 ${report?.tables_added ?? 0}，删除 ${report?.tables_deleted ?? 0}`);
+    const [error, report] = await apiInterceptors(postSemanticSync(id));
+    if (error) return;
+    message.success(label('sync_done', { added: report?.tables_added ?? 0, deleted: report?.tables_deleted ?? 0 }));
     if (dsId) await loadDetail(id);
     else await loadSpaces();
   };
 
   const doActivate = async () => {
     if (activateId == null) return;
-    const [, res] = await apiInterceptors(
+    const [error, res] = await apiInterceptors(
       postSemanticActivate(activateId, {
         sampling_limit: sampling === 'all' ? 9999 : Number(sampling),
         run_draft_generation: runDrafts === 'yes',
         embedding_model: embedding,
       }),
     );
-    message.success(`已激活，白名单 ${res?.whitelist ?? 0} 表`);
+    if (error) return;
+    message.success(label('activate_done', { count: res?.whitelist ?? 0 }));
     setActivateId(null);
     if (dsId) await loadDetail(activateId);
     else await loadSpaces();
   };
 
   const doDrafts = async (id: number) => {
-    const [, res] = await apiInterceptors(postSemanticDrafts(id));
+    const [error, res] = await apiInterceptors(postSemanticDrafts(id));
+    if (error) return;
     message.success(
-      `草稿生成：标注 +${res?.entries?.column_entries ?? 0} 列 / +${res?.entries?.table_entries ?? 0} 表，指标 +${res?.metrics?.metrics ?? 0}`,
+      label('drafts_done', {
+        columns: res?.entries?.column_entries ?? 0,
+        tables: res?.entries?.table_entries ?? 0,
+        metrics: res?.metrics?.metrics ?? 0,
+      }),
     );
     await loadDetail(id);
   };
 
   const review = async (entryId: number, action: 'confirm' | 'reject') => {
-    const [, res] = await apiInterceptors(postEntryReview(entryId, { action }));
-    message.success(`条目 ${entryId} → ${res?.status}`);
+    const [error] = await apiInterceptors(postEntryReview(entryId, { action }));
+    if (error) return;
+    message.success(label('review_done'));
     if (dsId) await loadDetail(dsId);
   };
 
   const publish = async (metricId: number) => {
-    const [, res] = await apiInterceptors(postMetricPublish(metricId, { change_note: 'publish via UI' }));
-    message.success(`指标已发布 v${res?.version}`);
+    const [error, res] = await apiInterceptors(postMetricPublish(metricId, { change_note: 'publish via UI' }));
+    if (error) return;
+    message.success(label('publish_done', { version: res?.version }));
     if (dsId) await loadDetail(dsId);
   };
 
@@ -154,93 +300,191 @@ const SemanticCenter = () => {
   if (!dsId) {
     return (
       <ConstructLayout>
-        <div className='p-6'>
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>语义中心</Title>
-            <Button size='small' onClick={doBackfill}>登记存量连接</Button>
-          </Space>
-          <Text type='secondary'>
-            每个数据源连接自动创建一个语义空间（L1 元数据自动同步、只读）；“激活治理”后点亮标注/指标/样例/规则与检索消费。
-          </Text>
-          <Table
-            rowKey='id'
-            loading={loading}
-            className='mt-4'
-            dataSource={spaces}
-            columns={[
-              { title: '空间', dataIndex: 'space_name' },
-              { title: '来源连接', dataIndex: 'conn_id' },
-              {
-                title: '状态',
-                dataIndex: 'status',
-                render: (s: string) => <Tag color={STATUS_COLOR[s] ?? 'default'}>{s}</Tag>,
-              },
-              { title: '表数', dataIndex: 'table_count' },
-              { title: 'chunks', dataIndex: 'chunk_count' },
-              { title: 'embedding', dataIndex: 'embedding_model' },
-              {
-                title: '操作',
-                render: (_, row: SemanticSpace) => (
-                  <Space>
-                    <Button size='small' type='primary' onClick={() => router.push(`/construct/semantic?ds=${row.id}`)}>
-                      进入
-                    </Button>
-                    <Button size='small' onClick={() => doSync(row.id)}>
-                      同步
-                    </Button>
-                    {row.status === 'not_activated' && (
-                      <Button size='small' type='default' onClick={() => setActivateId(row.id)}>
-                        激活治理
-                      </Button>
-                    )}
-                  </Space>
-                ),
-              },
-            ]}
-          />
-          <Modal
-            title='激活治理'
-            open={activateId != null}
-            onOk={doActivate}
-            onCancel={() => setActivateId(null)}
-            okText='确认激活'
-          >
-            <Space direction='vertical' className='w-full'>
-              <div>
-                采样范围：
-                <Select
-                  value={sampling}
-                  onChange={setSampling}
-                  options={[
-                    { value: '42', label: '高频 top 42 表（推荐）' },
-                    { value: 'all', label: '全表（分批）' },
-                  ]}
+        <div className={styles.page}>
+          <div className={styles.content}>
+            <header className={styles.header}>
+              <div className={styles.heading}>
+                <span className={styles.emblem}>
+                  <ApartmentOutlined />
+                </span>
+                <div>
+                  <h1 className={styles.title}>{label('title')}</h1>
+                  <p className={styles.subtitle}>{label('subtitle')}</p>
+                </div>
+              </div>
+              <Button
+                icon={<PlusOutlined />}
+                loading={busy === 'backfill'}
+                disabled={!!busy}
+                onClick={() => runAction('backfill', doBackfill)}
+              >
+                {label('register')}
+              </Button>
+            </header>
+            {stats(
+              [
+                { title: label('total_spaces'), value: spaces.length },
+                { title: label('activated_spaces'), value: spaces.filter(s => s.status === 'activated').length },
+                { title: label('table_count'), value: spaces.reduce((sum, s) => sum + (s.table_count ?? 0), 0) },
+              ],
+              true,
+            )}
+            <section className={styles.panel}>
+              <div className={styles.toolbar}>
+                <div>
+                  <h2 className={styles.sectionTitle}>
+                    {label('spaces')} <span className={styles.count}>{spaces.length}</span>
+                  </h2>
+                  <p className={styles.subtitle}>{label('spaces_hint')}</p>
+                </div>
+                <Input
+                  className={styles.search}
+                  prefix={<SearchOutlined className={styles.muted} />}
+                  placeholder={label('search', { name: label('spaces') })}
+                  aria-label={label('search', { name: label('spaces') })}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  allowClear
                 />
               </div>
-              <div>
-                立即跑 LLM 草稿生成：
-                <Select
-                  value={runDrafts}
-                  onChange={setRunDrafts}
-                  options={[
-                    { value: 'no', label: '暂不跑' },
-                    { value: 'yes', label: '跑（消耗 token）' },
-                  ]}
-                />
+              <Table
+                {...tableProps}
+                dataSource={filtered(spaces)}
+                columns={[
+                  {
+                    title: label('spaces'),
+                    dataIndex: 'space_name',
+                    width: 280,
+                    render: (_: string, row: SemanticSpace) => (
+                      <div className={styles.name}>
+                        <span className={styles.nameIcon}>
+                          <DatabaseOutlined />
+                        </span>
+                        <div>
+                          <Button
+                            type='link'
+                            style={{ padding: 0 }}
+                            onClick={() => router.push(`/construct/semantic?ds=${row.id}`)}
+                          >
+                            {row.conn_name || row.conn_id}
+                          </Button>
+                          <div className={styles.muted}>{row.db_type.toUpperCase()}</div>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: label('status'),
+                    dataIndex: 'status',
+                    render: statusBadge,
+                  },
+                  {
+                    title: label('table_count'),
+                    dataIndex: 'table_count',
+                    width: 80,
+                    render: (v?: number) => <span className={styles.nameText}>{v ?? '—'}</span>,
+                  },
+                  {
+                    title: label('embedding'),
+                    dataIndex: 'embedding_model',
+                    render: (v?: string) => <span className={styles.mono}>{v || '—'}</span>,
+                  },
+                  {
+                    title: label('synced'),
+                    dataIndex: 'last_sync_at',
+                    render: (v?: string) => (
+                      <span className={styles.muted}>
+                        {v && Number.isFinite(Date.parse(v))
+                          ? new Date(v).toLocaleString(i18n.language.startsWith('en') ? 'en-US' : 'zh-CN', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : label('never_synced')}
+                      </span>
+                    ),
+                  },
+                  {
+                    title: label('operations'),
+                    width: 260,
+                    render: (_, row: SemanticSpace) => (
+                      <Space size={4}>
+                        <Button type='link' onClick={() => router.push(`/construct/semantic?ds=${row.id}`)}>
+                          {label('open')} <RightOutlined />
+                        </Button>
+                        <Button
+                          type='text'
+                          icon={<SyncOutlined />}
+                          disabled={!!busy}
+                          loading={busy === `sync-${row.id}`}
+                          onClick={() => runAction(`sync-${row.id}`, () => doSync(row.id))}
+                        >
+                          {label('sync')}
+                        </Button>
+                        {row.status === 'not_activated' && (
+                          <Button type='link' onClick={() => setActivateId(row.id)}>
+                            {label('activate')}
+                          </Button>
+                        )}
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </section>
+            <Modal
+              rootClassName={styles.dialog}
+              title={label('activate')}
+              open={activateId != null}
+              onOk={() => runAction('activate', doActivate)}
+              onCancel={() => setActivateId(null)}
+              okText={label('activate_confirm')}
+              cancelText={label('cancel')}
+              confirmLoading={busy === 'activate'}
+            >
+              <p className={styles.modalHint}>{label('activation_hint')}</p>
+              <div className={styles.modalFields}>
+                <div>
+                  <label id='semantic-sampling'>{label('sample')}</label>
+                  <Select
+                    aria-labelledby='semantic-sampling'
+                    value={sampling}
+                    onChange={setSampling}
+                    options={[
+                      { value: '42', label: label('sample_top') },
+                      { value: 'all', label: label('sample_all') },
+                    ]}
+                  />
+                </div>
+                <div>
+                  <label id='semantic-generate'>{label('generate')}</label>
+                  <Select
+                    aria-labelledby='semantic-generate'
+                    value={runDrafts}
+                    onChange={setRunDrafts}
+                    options={[
+                      { value: 'no', label: label('generate_no') },
+                      { value: 'yes', label: label('generate_yes') },
+                    ]}
+                  />
+                </div>
+                <div>
+                  <label id='semantic-embedding'>{label('embedding')}</label>
+                  <Select
+                    aria-labelledby='semantic-embedding'
+                    value={embedding}
+                    onChange={setEmbedding}
+                    options={[
+                      { value: 'bge-large-zh', label: 'bge-large-zh' },
+                      { value: 'text-embedding-v3', label: 'text-embedding-v3' },
+                    ]}
+                  />
+                  <p className={styles.modalHint}>{label('embedding_hint')}</p>
+                </div>
               </div>
-              <div>
-                embedding 模型（换则全量重建）：
-                <Select
-                  value={embedding}
-                  onChange={setEmbedding}
-                  options={[
-                    { value: 'bge-large-zh', label: 'bge-large-zh' },
-                    { value: 'text-embedding-v3', label: 'text-embedding-v3' },
-                  ]}
-                />
-              </div>
-            </Space>
-          </Modal>
+            </Modal>
+          </div>
         </div>
       </ConstructLayout>
     );
@@ -249,55 +493,98 @@ const SemanticCenter = () => {
   const tabItems = [
     {
       key: 'catalog',
-      label: '① 元数据目录',
+      label: label('catalog'),
+      icon: <DatabaseOutlined />,
+      count: tables.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={tables}
+          {...tableProps}
+          dataSource={filtered(tables)}
+          expandable={{
+            rowExpandable: row => !!row.table_comment,
+            expandedRowRender: row => expandedText(label('description'), row.table_comment),
+          }}
           columns={[
-            { title: '表', dataIndex: 'table_name' },
-            { title: 'comment', dataIndex: 'table_comment' },
-            { title: '类型', dataIndex: 'table_type' },
             {
-              title: '白名单',
-              dataIndex: 'is_whitelisted',
-              render: (v: boolean) => (v ? <Tag color='green'>是</Tag> : <Tag>否</Tag>),
+              title: label('table'),
+              dataIndex: 'table_name',
+              width: 240,
+              render: (v: string) => <span className={styles.nameText}>{v}</span>,
             },
-            { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
+            { title: label('description'), dataIndex: 'table_comment', ellipsis: true },
+            { title: label('type'), dataIndex: 'table_type', width: 110, render: typeLabel },
+            {
+              title: label('whitelist'),
+              dataIndex: 'is_whitelisted',
+              width: 120,
+              render: (v: boolean) => (
+                <span className={styles.status} data-status={v ? 'active' : 'inactive'}>
+                  {label(v ? 'yes' : 'no')}
+                </span>
+              ),
+            },
+            { title: label('status'), dataIndex: 'status', width: 120, render: statusBadge },
           ]}
         />
       ),
     },
     {
       key: 'entries',
-      label: `② 语义标注${coverage?.entries?.draft ? ` (${coverage.entries.draft} 待审)` : ''}`,
+      label: label('entries'),
+      icon: <BookOutlined />,
+      count: entries.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={entries}
+          {...tableProps}
+          dataSource={filtered(entries)}
+          expandable={{
+            rowExpandable: row => !!row.entry_comment || !!row.synonyms,
+            expandedRowRender: row => (
+              <>
+                {expandedText(label('description'), row.entry_comment)}
+                {row.synonyms && expandedText(label('aliases'), row.synonyms)}
+              </>
+            ),
+          }}
           columns={[
-            { title: '类型', dataIndex: 'entry_type' },
-            { title: '名称', dataIndex: 'entry_name' },
-            { title: '描述', dataIndex: 'entry_comment', ellipsis: true },
-            { title: '来源', dataIndex: 'provenance' },
             {
-              title: '置信度',
+              title: label('name'),
+              dataIndex: 'entry_name',
+              width: 180,
+              render: (v?: string) => <span className={styles.nameText}>{v || '—'}</span>,
+            },
+            { title: label('description'), dataIndex: 'entry_comment', ellipsis: true },
+            { title: label('type'), dataIndex: 'entry_type', width: 90, render: typeLabel },
+            { title: label('source'), dataIndex: 'provenance', width: 100, render: sourceLabel },
+            {
+              title: label('confidence'),
               dataIndex: 'confidence',
+              width: 90,
               render: (v?: number) => (v != null ? v.toFixed(2) : '-'),
             },
-            { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
+            { title: label('status'), dataIndex: 'status', width: 120, render: statusBadge },
             {
-              title: '操作',
+              title: label('operations'),
+              width: 180,
               render: (_, row: SemanticEntry) =>
                 row.status === 'draft' || row.status === 'stale' ? (
                   <Space>
-                    <Button size='small' type='primary' onClick={() => review(row.id, 'confirm')}>
-                      确认发布
+                    <Button
+                      type='link'
+                      icon={<CheckCircleOutlined />}
+                      disabled={!!busy}
+                      loading={busy === `review-${row.id}`}
+                      onClick={() => runAction(`review-${row.id}`, () => review(row.id, 'confirm'))}
+                    >
+                      {label('approve')}
                     </Button>
-                    <Button size='small' danger onClick={() => review(row.id, 'reject')}>
-                      驳回
+                    <Button
+                      type='text'
+                      danger
+                      disabled={!!busy}
+                      onClick={() => runAction(`review-${row.id}`, () => review(row.id, 'reject'))}
+                    >
+                      {label('reject')}
                     </Button>
                   </Space>
                 ) : null,
@@ -308,24 +595,63 @@ const SemanticCenter = () => {
     },
     {
       key: 'metrics',
-      label: '③ 指标口径',
+      label: label('metrics'),
+      icon: <FunctionOutlined />,
+      count: metrics.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={metrics}
+          {...tableProps}
+          dataSource={filtered(metrics)}
+          expandable={{
+            rowExpandable: row => !!row.formula,
+            expandedRowRender: row => expandedText(label('formula'), row.formula),
+          }}
           columns={[
-            { title: '指标', dataIndex: 'metric_name' },
-            { title: '公式', dataIndex: 'formula', ellipsis: true },
-            { title: '类型', dataIndex: 'metric_type' },
-            { title: '版本', dataIndex: 'version' },
-            { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
             {
-              title: '操作',
+              title: label('metrics'),
+              dataIndex: 'metric_name',
+              width: 250,
+              render: (name: string, row: SemanticMetric) =>
+                row.status === 'published' && row.publish_version ? (
+                  <Button
+                    type='link'
+                    style={{ padding: 0, fontWeight: 500 }}
+                    onClick={() => openMetric(row.id, row.publish_version!)}
+                  >
+                    {name}
+                  </Button>
+                ) : (
+                  name
+                ),
+            },
+            {
+              title: label('formula'),
+              dataIndex: 'formula',
+              ellipsis: true,
+              render: (v?: string) => <span className={styles.mono}>{v || '—'}</span>,
+            },
+            { title: label('type'), dataIndex: 'metric_type', width: 110, render: typeLabel },
+            {
+              title: label('version'),
+              dataIndex: 'version',
+              width: 90,
+              render: (v: number, row: SemanticMetric) => (
+                <span className={styles.mono}>v{row.status === 'published' ? (row.publish_version ?? v) : v}</span>
+              ),
+            },
+            { title: label('status'), dataIndex: 'status', width: 110, render: statusBadge },
+            {
+              title: label('operations'),
+              width: 90,
               render: (_, row: SemanticMetric) =>
                 row.status === 'draft' ? (
-                  <Button size='small' type='primary' onClick={() => publish(row.id)}>
-                    发布
+                  <Button
+                    type='link'
+                    disabled={!!busy}
+                    loading={busy === `publish-${row.id}`}
+                    onClick={() => runAction(`publish-${row.id}`, () => publish(row.id))}
+                  >
+                    {label('approve')}
                   </Button>
                 ) : null,
             },
@@ -335,60 +661,113 @@ const SemanticCenter = () => {
     },
     {
       key: 'examples',
-      label: '④ 样例库',
+      label: label('examples'),
+      icon: <FileTextOutlined />,
+      count: examples.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={examples}
+          {...tableProps}
+          dataSource={filtered(examples)}
+          expandable={{
+            expandedRowRender: row => (
+              <>
+                {expandedText(label('question'), row.question)}
+                {expandedText('SQL', row.sql_text)}
+              </>
+            ),
+          }}
           columns={[
-            { title: '问题', dataIndex: 'question', ellipsis: true },
-            { title: 'SQL', dataIndex: 'sql_text', ellipsis: true },
-            { title: '来源', dataIndex: 'source' },
-            { title: '使用次数', dataIndex: 'use_count' },
-            { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
+            { title: label('question'), dataIndex: 'question', ellipsis: true, width: 300 },
+            {
+              title: 'SQL',
+              dataIndex: 'sql_text',
+              ellipsis: true,
+              render: (v?: string) => <span className={styles.mono}>{v || '—'}</span>,
+            },
+            { title: label('source'), dataIndex: 'source', width: 110, render: sourceLabel },
+            { title: label('uses'), dataIndex: 'use_count', width: 100 },
+            { title: label('status'), dataIndex: 'status', width: 120, render: statusBadge },
           ]}
         />
       ),
     },
     {
       key: 'relations',
-      label: '⑤ 关系/血缘',
+      label: label('relations'),
+      icon: <ApartmentOutlined />,
+      count: relations.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={relations}
+          {...tableProps}
+          dataSource={filtered(relations)}
+          expandable={{
+            rowExpandable: row => !!row.join_condition,
+            expandedRowRender: row => expandedText(label('join'), row.join_condition),
+          }}
           columns={[
-            { title: '左表id', dataIndex: 'left_table_id' },
-            { title: '左列id', dataIndex: 'left_column_id' },
-            { title: '右表id', dataIndex: 'right_table_id' },
-            { title: '右列id', dataIndex: 'right_column_id' },
-            { title: '类型', dataIndex: 'relation_type' },
-            { title: 'join 条件', dataIndex: 'join_condition', ellipsis: true },
-            { title: '置信度', dataIndex: 'confidence' },
+            {
+              title: label('left_table'),
+              dataIndex: 'left_table_id',
+              width: 150,
+              render: (v?: number) => tables.find(table => table.id === v)?.table_name ?? v ?? '—',
+            },
+            { title: label('left_field'), dataIndex: 'left_column_id', width: 120 },
+            {
+              title: label('right_table'),
+              dataIndex: 'right_table_id',
+              width: 150,
+              render: (v?: number) => tables.find(table => table.id === v)?.table_name ?? v ?? '—',
+            },
+            { title: label('right_field'), dataIndex: 'right_column_id', width: 120 },
+            { title: label('type'), dataIndex: 'relation_type', width: 130 },
+            {
+              title: label('join'),
+              dataIndex: 'join_condition',
+              ellipsis: true,
+              render: (v?: string) => <span className={styles.mono}>{v || '—'}</span>,
+            },
+            { title: label('confidence'), dataIndex: 'confidence', width: 90 },
           ]}
         />
       ),
     },
     {
       key: 'rules',
-      label: '⑥ 规则护栏',
+      label: label('rules'),
+      icon: <SafetyCertificateOutlined />,
+      count: rules.length,
       children: (
         <Table
-          rowKey='id'
-          size='small'
-          dataSource={rules}
+          {...tableProps}
+          dataSource={filtered(rules)}
+          expandable={{
+            rowExpandable: row => !!row.rule_definition,
+            expandedRowRender: row => expandedText(label('description'), row.rule_definition),
+          }}
           columns={[
-            { title: '规则', dataIndex: 'rule_name' },
-            { title: '类型', dataIndex: 'rule_type' },
-            { title: '优先级', dataIndex: 'priority' },
-            { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
             {
-              title: '操作',
+              title: label('rules'),
+              dataIndex: 'rule_name',
+              render: (v?: string) => <span className={styles.nameText}>{v || '—'}</span>,
+            },
+            { title: label('type'), dataIndex: 'rule_type', width: 160 },
+            { title: label('priority'), dataIndex: 'priority', width: 100 },
+            { title: label('status'), dataIndex: 'status', width: 140, render: statusBadge },
+            {
+              title: label('operations'),
+              width: 110,
               render: (_, row: SemanticRule) => (
-                <Button size='small' onClick={() => toggleRule(row.id, row.status === 'active' ? 'inactive' : 'active')}>
-                  {row.status === 'active' ? '停用' : '启用'}
+                <Button
+                  type='text'
+                  disabled={!!busy}
+                  loading={busy === `rule-${row.id}`}
+                  onClick={() =>
+                    runAction(`rule-${row.id}`, () =>
+                      toggleRule(row.id, row.status === 'active' ? 'inactive' : 'active'),
+                    )
+                  }
+                >
+                  {label(row.status === 'active' ? 'disable' : 'enable')}
                 </Button>
               ),
             },
@@ -397,36 +776,162 @@ const SemanticCenter = () => {
       ),
     },
   ];
+  const activeItem = tabItems.find(item => item.key === activeTab)!;
+  const activeRows = { catalog: tables, entries, metrics, examples, relations, rules }[activeTab] as (
+    | SemanticTable
+    | SemanticEntry
+    | SemanticMetric
+    | SemanticExample
+    | SemanticRelation
+    | SemanticRule
+  )[];
+  const statuses = Array.from(new Set(activeRows.flatMap(row => ('status' in row ? [row.status] : []))));
+  const resultCount = filtered(activeRows).length;
 
   return (
     <ConstructLayout>
-      <div className='p-6'>
-        <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/construct/semantic')}>
-            空间列表
-          </Button>
-          <Title level={4} style={{ margin: 0 }}>
-            {space?.space_name ?? `space#${dsId}`}
-          </Title>
-          <Tag color={STATUS_COLOR[space?.status ?? '']}>{space?.status}</Tag>
-          <Button size='small' onClick={() => doSync(dsId)}>
-            同步
-          </Button>
-          <Button size='small' onClick={() => doDrafts(dsId)}>
-            生成草稿
-          </Button>
-        </Space>
-        {coverage && (
-          <Space size='large' className='mt-4 mb-2'>
-            <Statistic title='表' value={coverage.tables} />
-            <Statistic title='白名单' value={coverage.whitelisted} />
-            <Statistic title='已标注表' value={coverage.tables_annotated} />
-            <Statistic title='覆盖率' value={coverage.coverage_pct} suffix='%' />
-            <Statistic title='待审标注' value={coverage.entries?.draft ?? 0} />
-            <Statistic title='已发布指标' value={coverage.metrics?.published ?? 0} />
-          </Space>
-        )}
-        <Tabs items={tabItems} />
+      <div className={styles.page}>
+        <div className={styles.content}>
+          <div className={styles.back}>
+            <Button
+              type='text'
+              icon={<ArrowLeftOutlined />}
+              onClick={() => {
+                setSearch('');
+                setStatusFilter('all');
+                router.push('/construct/semantic');
+              }}
+            >
+              {label('back')}
+            </Button>
+          </div>
+          <header className={styles.header}>
+            <div className={styles.heading}>
+              <span className={styles.emblem}>
+                <DatabaseOutlined />
+              </span>
+              <div>
+                <div className={styles.titleRow}>
+                  <h1 className={styles.title}>{space?.conn_name || space?.conn_id || `#${dsId}`}</h1>
+                  {space && statusBadge(space.status)}
+                </div>
+                <p className={styles.subtitle}>
+                  {label('title')}
+                  {space && <> · {space.db_type.toUpperCase()}</>}
+                </p>
+              </div>
+            </div>
+            <div className={styles.actions}>
+              <Button
+                icon={<SyncOutlined />}
+                loading={busy === 'sync'}
+                disabled={!!busy}
+                onClick={() => runAction('sync', () => doSync(dsId))}
+              >
+                {label('sync')}
+              </Button>
+              <Button
+                type='primary'
+                icon={<ThunderboltOutlined />}
+                loading={busy === 'drafts'}
+                disabled={!!busy}
+                onClick={() => runAction('drafts', () => doDrafts(dsId))}
+              >
+                {label('drafts')}
+              </Button>
+            </div>
+          </header>
+          {coverage &&
+            stats([
+              { title: label('table_count'), value: coverage.tables },
+              { title: label('whitelist'), value: coverage.whitelisted },
+              { title: label('annotated'), value: coverage.tables_annotated },
+              { title: label('coverage'), value: coverage.coverage_pct, suffix: '%' },
+              { title: label('pending'), value: coverage.entries?.draft ?? 0 },
+              { title: label('published'), value: coverage.metrics?.published ?? 0 },
+            ])}
+          <section className={styles.panel}>
+            <nav className={styles.nav} role='tablist' aria-label={label('title')}>
+              {tabItems.map((item, index) => (
+                <button
+                  key={item.key}
+                  type='button'
+                  role='tab'
+                  id={`semantic-tab-${item.key}`}
+                  aria-selected={item.key === activeTab}
+                  aria-controls='semantic-tab-panel'
+                  tabIndex={item.key === activeTab ? 0 : -1}
+                  onClick={() => switchTab(item.key)}
+                  onKeyDown={event => onTabKeyDown(event, index)}
+                  className={styles.tab}
+                >
+                  <span aria-hidden='true'>{item.icon}</span>
+                  {item.label}
+                  <span className={styles.count}>{item.count}</span>
+                </button>
+              ))}
+            </nav>
+            <div className={styles.toolbar}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  {activeItem.label} <span className={styles.count}>{label('results', { count: resultCount })}</span>
+                </h2>
+                <p className={styles.subtitle}>{label(`${activeTab}_hint`)}</p>
+              </div>
+              <div className={styles.tools}>
+                <Input
+                  className={styles.search}
+                  prefix={<SearchOutlined className={styles.muted} />}
+                  placeholder={label('search', { name: activeItem.label })}
+                  aria-label={label('search', { name: activeItem.label })}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  allowClear
+                />
+                {statuses.length > 0 && (
+                  <Select
+                    className={styles.statusFilter}
+                    aria-label={label('status')}
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                      { value: 'all', label: label('all_status') },
+                      ...statuses.map(status => ({ value: status, label: statusLabel(status) })),
+                    ]}
+                  />
+                )}
+                {(search || statusFilter !== 'all') && (
+                  <Button
+                    type='text'
+                    onClick={() => {
+                      setSearch('');
+                      setStatusFilter('all');
+                    }}
+                  >
+                    {label('clear')}
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div role='tabpanel' id='semantic-tab-panel' aria-labelledby={`semantic-tab-${activeTab}`}>
+              {activeItem.children}
+            </div>
+          </section>
+          <Drawer
+            rootClassName={styles.dialog}
+            open={metricOpen}
+            loading={metricLoading}
+            onClose={() => {
+              metricRequest.current += 1;
+              setMetricOpen(false);
+            }}
+            title={citedMetric?.name ?? label('metric_drawer')}
+            width='min(640px, 100vw)'
+          >
+            {citedMetric && <SemanticSourceDetail key={citedMetric.key} source={citedMetric} />}
+            {metricError && <Typography.Text type='warning'>{label('metric_error')}</Typography.Text>}
+          </Drawer>
+        </div>
       </div>
     </ConstructLayout>
   );

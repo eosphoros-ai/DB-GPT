@@ -52,7 +52,7 @@ export const ChatZh: Resources['translation'] = {
   composer_view_skills: '查看技能',
   composer_suites_empty: '暂无已启用的专家套件',
   suite_questions_empty: '该套件暂无推荐问题',
-  suite_usage_hint: '点击示例自动带入指令 → 确认数据库 → 发送；也可自行选择快捷命令并输入问题',
+  suite_usage_hint: '点击示例，确认问题后发送',
   suite_command_label: '指令：{{command}}',
   suite_command_choose: '选择指令',
   suite_command_bound: '指令 {{command}} · 知识技能 {{skill}} 已加载',

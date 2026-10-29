@@ -1,10 +1,10 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
-import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
 import type { SuiteMessageReference } from '@/types/suite';
 import type { ITaskflowArtifact } from '@/types/taskflow';
+import type { QuerySource, SemanticReadGap, SemanticSource } from '@/utils/semantic-provenance';
 import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
 import { envelopeReadableText } from '@/utils/tool-envelope';
 import {
@@ -45,6 +45,7 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ObservationFormatter from './ObservationFormatter';
+import SemanticProvenance from './SemanticProvenance';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
 /** Strip markdown syntax for the "copy as plain text" action. */
@@ -201,6 +202,9 @@ export interface ManusLeftPanelProps {
   taskPlan?: TaskItem[];
   /** Citation indexes that are valid for this answer. */
   citationIndexes?: number[];
+  semanticSources?: SemanticSource[];
+  querySources?: QuerySource[];
+  semanticReadGaps?: SemanticReadGap[];
   /** Open the references panel from the answer footer. */
   onReferencesClick?: () => void;
   /** Persisted evidence report associated with this completed answer. */
@@ -1065,6 +1069,9 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedConnectors,
   taskPlan,
   citationIndexes = [],
+  semanticSources = [],
+  querySources = [],
+  semanticReadGaps = [],
   onReferencesClick,
   reportId,
   reportRunId,
@@ -1217,7 +1224,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
         {/* Truncated assistant response */}
-        {displayAssistantText && (
+        {(displayAssistantText || semanticSources.length > 0) && (
           <div className='text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed'>
             {displayAssistantText.slice(0, 150)}
             {displayAssistantText.length > 150 ? '...' : ''}
@@ -1403,11 +1410,12 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             }
           >
             <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-              {isAssistantStreaming ? (
-                <span className='whitespace-pre-wrap break-words'>{displayAssistantText}</span>
-              ) : (
-                <MarkdownContext>{displayAssistantText}</MarkdownContext>
-              )}
+              <SemanticProvenance
+                content={displayAssistantText}
+                sources={semanticSources}
+                streaming={isAssistantStreaming}
+                mode='answer'
+              />
             </div>
             {!isAssistantStreaming && displayAssistantText && (
               <div className='mt-2 -ml-1.5 flex items-center'>
@@ -1496,6 +1504,17 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
         {dashboardSlot}
+        {(semanticSources.length > 0 || querySources.length > 0 || semanticReadGaps.length > 0) && (
+          <div className='px-1'>
+            <SemanticProvenance
+              content={displayAssistantText}
+              sources={semanticSources}
+              querySources={querySources}
+              readGaps={semanticReadGaps}
+              streaming={isAssistantStreaming}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

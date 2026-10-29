@@ -206,6 +206,25 @@ async def list_metrics(ds_id: int, status: Optional[str] = Query(default=None)):
     return Result.succ(get_semantic_service().list_metrics(ds_id, status=status))
 
 
+@router.get("/v1/semantic/spaces/{ds_id}/metrics/{metric_id}/versions/{version}")
+async def get_published_metric_version(ds_id: int, metric_id: int, version: int):
+    """Resolve a cited version within its space, without falling back to a draft."""
+    from dbgpt_serve.semantic.reader import SemanticReader
+
+    service = get_semantic_service()
+    space = service.get_space(ds_id)
+    if not space:
+        raise HTTPException(status_code=404, detail="semantic space not found")
+    if version < 1:
+        raise HTTPException(status_code=400, detail="version must be positive")
+    result = SemanticReader(space["conn_id"], service).get_metric(
+        metric_id=metric_id, version=version
+    )
+    if result["status"] != "ok":
+        raise HTTPException(status_code=404, detail=result["status"])
+    return Result.succ(result)
+
+
 @router.post("/v1/semantic/spaces/{ds_id}/metrics")
 async def create_metric(ds_id: int, payload: Dict[str, Any] = Body(...)):
     metric = get_semantic_service().create_metric(

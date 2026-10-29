@@ -105,13 +105,16 @@ export interface SemanticCoverage {
 /** Semantic center (S9 client). */
 export const getSemanticSpaces = () => GET<null, SemanticSpace[]>('/api/v1/semantic/spaces');
 
-export const getSemanticSpace = (id: number) =>
-  GET<null, SemanticSpace>(`/api/v1/semantic/spaces/${id}`);
+export const getSemanticSpace = (id: number) => GET<null, SemanticSpace>(`/api/v1/semantic/spaces/${id}`);
 
 export const postSemanticActivate = (
   id: number,
   data: { sampling_limit?: number; run_draft_generation?: boolean; embedding_model?: string },
-) => POST<typeof data, { ds_id: number; status: string; whitelist: number }>(`/api/v1/semantic/spaces/${id}/activate`, data);
+) =>
+  POST<typeof data, { ds_id: number; status: string; whitelist: number }>(
+    `/api/v1/semantic/spaces/${id}/activate`,
+    data,
+  );
 
 export const postSemanticBackfill = () =>
   POST<null, { synced: string[]; failed: string[] }>('/api/v1/semantic/spaces/backfill');
@@ -132,8 +135,7 @@ export const postSemanticSync = (id: number, data?: { db_name?: string }) =>
 export const getSemanticCoverage = (id: number) =>
   GET<null, SemanticCoverage>(`/api/v1/semantic/spaces/${id}/coverage`);
 
-export const getSemanticTables = (id: number) =>
-  GET<null, SemanticTable[]>(`/api/v1/semantic/spaces/${id}/tables`);
+export const getSemanticTables = (id: number) => GET<null, SemanticTable[]>(`/api/v1/semantic/spaces/${id}/tables`);
 
 export const getSemanticColumns = (tableId: number, dsId: number) =>
   GET<{ ds_id: number }, SemanticColumn[]>(`/api/v1/semantic/tables/${tableId}/columns`, {
@@ -155,6 +157,11 @@ export const getSemanticMetrics = (id: number, status?: string) =>
     status,
   });
 
+export const getSemanticMetricVersion = (dsId: number, metricId: number, version: number) =>
+  GET<null, { conn_id: string; ds_id: number; metric: Record<string, any> }>(
+    `/api/v1/semantic/spaces/${dsId}/metrics/${metricId}/versions/${version}`,
+  );
+
 export const postMetricPublish = (metricId: number, data?: { change_note?: string }) =>
   POST<typeof data, { metric_id: number; version: number }>(`/api/v1/semantic/metrics/${metricId}/publish`, data ?? {});
 
@@ -164,8 +171,7 @@ export const getSemanticExamples = (id: number) =>
 export const getSemanticRelations = (id: number) =>
   GET<null, SemanticRelation[]>(`/api/v1/semantic/spaces/${id}/relations`);
 
-export const getSemanticRules = (id: number) =>
-  GET<null, SemanticRule[]>(`/api/v1/semantic/spaces/${id}/rules`);
+export const getSemanticRules = (id: number) => GET<null, SemanticRule[]>(`/api/v1/semantic/spaces/${id}/rules`);
 
 export const postRuleStatus = (ruleId: number, status: string) =>
   POST<{ status: string }, { rule_id: number; status: string }>(`/api/v1/semantic/rules/${ruleId}/status`, {

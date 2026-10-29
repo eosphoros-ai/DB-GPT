@@ -167,7 +167,8 @@ class SemanticSyncService:
             name = str(col.get("name"))
             ctype = str(col.get("type") or "")
             comment = col.get("comment")
-            is_pk = bool(col.get("is_in_primary_key"))
+            # SQLite/SQLAlchemy uses primary_key; other connectors normalize it.
+            is_pk = bool(col.get("is_in_primary_key", col.get("primary_key", False)))
             column = existing.get(name)
             if column is None:
                 column = SemColumnEntity(

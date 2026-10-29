@@ -89,18 +89,44 @@
     },
     "recommended_questions": [
       {
-        "text": "查询上月各区域销售额",
-        "text_en": "Query last month's sales by region",
-        "hint_en": "Aggregate by region with month-over-month changes",
-        "command": "/nl2sql",
-        "hint": "按 region 汇总，含环比"
+        "title": "语义中心：净实收取数",
+        "title_en": "Semantic Center: net receipts",
+        "text": "查询2026年1月净实收并按获客来源拆分。先从语义中心读取到账日期、来源的业务定义和净实收最新已发布口径，只统计租户1的真实有效订单，分别按支付时间、退款时间归属月份，避免多笔支付与退款关联造成金额放大。输出SQL、金额（元）和口径引用。",
+        "text_en": "Query January 2026 net receipts by acquisition source. First read the published business definitions of receipt date and source, then the latest published net receipts definition from Semantic Center. Include only tenant 1's real eligible orders, attribute payments and refunds to their own event months, and prevent fanout from multiple payments and refunds. Return SQL, amounts in CNY and metric citations.",
+        "hint": "模拟电商 · 业务别名、指标口径与防重复汇总",
+        "hint_en": "Mock commerce · business aliases, metric definitions and safe aggregation",
+        "database_name": "Semantic_Commerce_Case",
+        "command": "/nl2sql"
       },
       {
-        "text": "上个月华东区的有效GMV",
-        "text_en": "Query last month's valid GMV in East China",
-        "hint_en": "Use the v2 metric definition and inject default filters",
+        "title": "语义中心：口径与血缘对照",
+        "title_en": "Semantic Center: definitions and lineage",
+        "text": "对比2026年1月的净实收、净实收_含运费对照和有效GMV。先读取各指标已发布定义，解释时间归属、运费和退款规则的差异，再说明指标来自哪些表字段、退运费变更影响哪些已登记指标。区分指标依赖、表关联和视图加工血缘，对没有证据的调度任务明确说明缺失。输出取数SQL、结果与引用。",
+        "text_en": "Compare January 2026 net receipts, the freight-inclusive comparison metric and valid GMV. Read their published definitions first; explain event dates, freight and refund rules, source fields, and the recorded impact of changes to refunded freight. Distinguish metric dependencies, table relationships and SQL view lineage; explicitly identify missing scheduler evidence. Return SQL, results and citations.",
+        "hint": "模拟电商 · 指标差异、字段依赖与血缘证据",
+        "hint_en": "Mock commerce · metric differences, field dependencies and lineage evidence",
+        "database_name": "Semantic_Commerce_Case",
+        "command": "/nl2sql"
+      },
+      {
+        "title": "语义中心：订单汇总防放大",
+        "title_en": "Semantic Center: prevent join fanout",
+        "text": "查询订单1在2026年1月的含运费净实收。先从语义中心读取净实收_含运费对照的已发布指标口径，以及商品、支付和退款字段的业务语义与元数据；依据已登记指标字段依赖说明来源。比较先按订单汇总再关联与直接关联商品、支付、退款明细的金额，解释为什么直接JOIN会放大。输出只读取数SQL、金额（元）、指标版本和引用来源。",
+        "text_en": "Query order 1's freight-inclusive net receipts for January 2026. First read the published freight-inclusive comparison metric and the business meanings and metadata of item, payment and refund fields from Semantic Center. Trace recorded metric field dependencies. Compare aggregation by order before joins with directly joining item, payment and refund rows; explain fanout. Return read-only SQL, CNY amounts, metric versions and sources.",
+        "hint_en": "Mock commerce · published definitions, field meanings and join evidence",
+        "database_name": "Semantic_Commerce_Case",
         "command": "/nl2sql",
-        "hint": "指标 v2 口径 + 默认过滤自动注入"
+        "hint": "模拟电商 · 业务口径、字段语义与JOIN证据"
+      },
+      {
+        "title": "语义中心：跨月收支归属",
+        "title_en": "Semantic Center: cross-month attribution",
+        "text": "核对订单3、订单4的2026年1月有效GMV与净实收，并说明订单1的2月退款是否影响1月。先从语义中心读取有效GMV、净实收和净实收_含运费对照的已发布指标定义，读取下单日期、到账日期、退款日期与退运费字段的业务语义；按指标登记的字段依赖展示血缘，分别使用下单月、支付月和退款月过滤。输出只读取数SQL、金额（元）、指标版本与引用来源。",
+        "text_en": "Check January 2026 valid GMV and net receipts for orders 3 and 4, and whether order 1's February refund affects January. First read the published valid GMV, net receipts and freight-inclusive comparison definitions from Semantic Center, plus the business meanings of order, payment and refund dates and refunded freight. Show recorded field dependencies and apply order, payment and refund months separately. Return read-only SQL, CNY amounts, metric versions and sources.",
+        "hint_en": "Mock commerce · event dates, metric differences and field lineage",
+        "database_name": "Semantic_Commerce_Case",
+        "command": "/nl2sql",
+        "hint": "模拟电商 · 时间归属、指标差异与字段血缘"
       },
       {
         "text": "统计 Top10 客户 GMV 及环比",

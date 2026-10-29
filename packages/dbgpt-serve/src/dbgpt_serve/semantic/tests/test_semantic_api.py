@@ -15,6 +15,48 @@ from dbgpt_serve.semantic.tests.test_semantic_phase12 import (
 P = "/api/v1/semantic"
 
 
+def test_cited_metric_version_is_immutable_and_scoped(client):
+    from dbgpt_serve.semantic.models import SemMetricEntity
+    from dbgpt_serve.semantic.publisher import LoggingSink, SemanticPublisher
+    from dbgpt_serve.semantic.service import SemanticService
+
+    ds_id = (
+        SemanticSyncService()
+        .ensure_space("cited_api_conn", "citation case", "sqlite")
+        .id
+    )
+    service = SemanticService(publisher=SemanticPublisher(LoggingSink()))
+    metric = service.create_metric(
+        ds_id,
+        {
+            "metric_name": "cited_version_case",
+            "formula": "SUM(amount)",
+            "metric_definition": (
+                '{"unit":"CNY","lineage":{"sources":["orders.amount"]}}'
+            ),
+        },
+    )
+    service.publish_metric(metric.id)
+    session = service._metric_dao.get_raw_session()
+    try:
+        row = session.get(SemMetricEntity, metric.id)
+        row.formula = "UNPUBLISHED"
+        session.commit()
+    finally:
+        session.close()
+    url = f"{P}/spaces/{ds_id}/metrics/{metric.id}/versions"
+    response = client.get(f"{url}/1")
+    assert response.status_code == 200
+    assert response.json()["data"]["metric"]["formula"] == "SUM(amount)"
+    assert client.get(f"{url}/99").status_code == 404
+    assert client.get(f"{url}/0").status_code == 400
+    other = SemanticSyncService().ensure_space("citation_other", "other", "sqlite")
+    assert (
+        client.get(f"{P}/spaces/{other.id}/metrics/{metric.id}/versions/1").status_code
+        == 404
+    )
+
+
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
     path = tmp_path_factory.mktemp("sem_api") / "sem.db"

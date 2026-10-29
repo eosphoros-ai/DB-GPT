@@ -44,8 +44,7 @@ export const ChatEn = {
   composer_view_skills: 'View skills',
   composer_suites_empty: 'No enabled expert suites',
   suite_questions_empty: 'No recommended questions for this suite yet',
-  suite_usage_hint:
-    'Pick an example to select its command → Confirm the database → Send; or choose a command and enter a question',
+  suite_usage_hint: 'Pick an example, review the question, then send',
   suite_command_label: 'Command: {{command}}',
   suite_command_choose: 'Choose a command',
   suite_command_bound: 'Command {{command}} · Skill {{skill}} loaded',
