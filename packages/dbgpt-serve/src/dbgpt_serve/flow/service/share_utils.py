@@ -106,11 +106,16 @@ async def _parse_flow_from_zip_file(
     from dbgpt.util.dbgpts.loader import _load_flow_package_from_zip_path
 
     filename = file.filename
-    if not filename.endswith(".zip"):
+    if not filename or not filename.endswith(".zip"):
         raise ValueError("Uploaded file must be a ZIP file")
+    filename = os.path.basename(filename)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         zip_path = os.path.join(temp_dir, filename)
+        # Keep the resolved path inside the temp dir.
+        real_temp = os.path.realpath(temp_dir)
+        if not os.path.realpath(zip_path).startswith(real_temp + os.sep):
+            raise ValueError(f"invalid filename: {filename}")
 
         # Save uploaded file to temporary directory
         async with aiofiles.open(zip_path, "wb") as out_file:
