@@ -176,26 +176,42 @@ class ConnectConfigDao(BaseDao):
         """Update db connect info."""
         old_db_conf = self.get_db_config(db_name)
         if old_db_conf:
+            session = self.get_raw_session()
             try:
-                session = self.get_raw_session()
                 if not db_path:
                     update_statement = text(
-                        f"UPDATE connect_config set db_type='{db_type}', "
-                        f"db_host='{db_host}', db_port={db_port}, db_user='{db_user}', "
-                        f"db_pwd='{db_pwd}', comment='{comment}' where "
-                        f"db_name='{db_name}'"
+                        "UPDATE connect_config set db_type=:db_type, "
+                        "db_host=:db_host, db_port=:db_port, db_user=:db_user, "
+                        "db_pwd=:db_pwd, comment=:comment where db_name=:db_name"
                     )
+                    params = {
+                        "db_type": db_type,
+                        "db_host": db_host,
+                        "db_port": db_port,
+                        "db_user": db_user,
+                        "db_pwd": db_pwd,
+                        "comment": comment,
+                        "db_name": db_name,
+                    }
                 else:
                     update_statement = text(
-                        f"UPDATE connect_config set db_type='{db_type}', "
-                        f"db_path='{db_path}', comment='{comment}' where "
-                        f"db_name='{db_name}'"
+                        "UPDATE connect_config set db_type=:db_type, "
+                        "db_path=:db_path, comment=:comment where db_name=:db_name"
                     )
-                session.execute(update_statement)
+                    params = {
+                        "db_type": db_type,
+                        "db_path": db_path,
+                        "comment": comment,
+                        "db_name": db_name,
+                    }
+                session.execute(update_statement, params)
                 session.commit()
-                session.close()
             except Exception as e:
+                session.rollback()
                 logger.warning("edit db connect info error！" + str(e))
+                raise
+            finally:
+                session.close()
             return True
         raise ValueError(f"{db_name} not have config info!")
 
@@ -233,16 +249,26 @@ class ConnectConfigDao(BaseDao):
     def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""
         session = self.get_raw_session()
+        params: Dict[str, Any] = {}
         if db_name and user_id:
-            sql = f"SELECT * FROM connect_config where (user_id='{user_id}' or user_id='' or user_id IS NULL) and db_name='{db_name}'"  # noqa
+            sql = (
+                "SELECT * FROM connect_config where (user_id=:user_id "
+                "or user_id='' or user_id IS NULL) and db_name=:db_name"
+            )
+            params = {"user_id": user_id, "db_name": db_name}
         elif user_id:
-            sql = f"SELECT * FROM connect_config where user_id='{user_id}' or user_id='' or user_id IS NULL"  # noqa
+            sql = (
+                "SELECT * FROM connect_config where user_id=:user_id "
+                "or user_id='' or user_id IS NULL"
+            )
+            params = {"user_id": user_id}
         elif db_name:
-            sql = f"SELECT * FROM connect_config where  db_name='{db_name}'"  # noqa
+            sql = "SELECT * FROM connect_config where db_name=:db_name"
+            params = {"db_name": db_name}
         else:
-            sql = f"SELECT * FROM connect_config"  # noqa
+            sql = "SELECT * FROM connect_config"
 
-        result = session.execute(text(sql))
+        result = session.execute(text(sql), params)
         fields = [field[0] for field in result.cursor.description]  # type: ignore
         data = []
         for row in result.cursor.fetchall():  # type: ignore
