@@ -54,6 +54,63 @@ def test_composer_mode_routes_implicit_dashboard_requests(
     )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("prompt", "ext_info", "expected_message"),
+    [
+        ("请生成销售看板", {}, "请选择可用数据源"),
+        (
+            "Create a sales dashboard",
+            {"locale": "en"},
+            "Choose an available data source",
+        ),
+        (
+            "展示年度收入",
+            {"skill_name": "dashboard-builder"},
+            "请选择可用数据源",
+        ),
+        (
+            "展示年度收入",
+            {"creation_mode": "dashboard"},
+            "请选择可用数据源",
+        ),
+    ],
+)
+async def test_missing_dashboard_source_stops_before_model_initialization(
+    monkeypatch, prompt, ext_info, expected_message
+) -> None:
+    from dbgpt.agent import claude_skill
+    from dbgpt.agent.resource import manage
+    from dbgpt.model.cluster.client import DefaultLLMClient
+
+    monkeypatch.setattr(claude_skill, "load_skills_from_dir", lambda *a, **k: None)
+    monkeypatch.setattr(
+        claude_skill, "get_registry", lambda: SimpleNamespace(list_skills=lambda: [])
+    )
+    monkeypatch.setattr(
+        manage,
+        "get_resource_manager",
+        lambda _: SimpleNamespace(_type_to_resources={}),
+    )
+
+    def forbidden_model(*args, **kwargs):
+        raise AssertionError("Missing source must be handled before model startup")
+
+    monkeypatch.setattr(DefaultLLMClient, "__init__", forbidden_model)
+    dialogue = SimpleNamespace(
+        user_input=prompt,
+        ext_info=ext_info,
+        user_name="alice",
+        conv_uid="missing-source",
+    )
+    events = [
+        _decode_sse_event(event)
+        async for event in agentic_data_api._react_agent_stream_impl(dialogue)
+    ]
+    assert [event["type"] for event in events] == ["final", "done"]
+    assert expected_message in events[0]["content"]
+
+
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
     class _FailingStorageConversation:
         def add_view_message(self, payload: str) -> None:

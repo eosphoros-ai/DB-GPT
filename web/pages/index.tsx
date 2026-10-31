@@ -47,6 +47,16 @@ import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCa
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import {
+  applyDashboardGenerationToMessages,
+  createDashboardGenerationEventGate,
+} from '@/new-components/dashboard/dashboard-generation-state';
+import { dashboardGenerationFromHistoryRef } from '@/new-components/dashboard/dashboard-history-recovery';
+import { dashboardText as dt } from '@/new-components/dashboard/dashboard-i18n';
+import { DASHBOARD_INTERNAL_SKILLS, dashboardTemplateEntry } from '@/new-components/dashboard/dashboard-template-entry';
+import DashboardGenerationCard, {
+  type DashboardGenerationState,
+} from '@/new-components/dashboard/DashboardGenerationCard';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
@@ -120,6 +130,11 @@ const generateUUID = () => {
 
 const cleanFinalContent = (text: string): string => {
   let cleaned = text.replace(/\\n/g, '\n').trim();
+  // Actions come from structured dashboard events, never from model prose.
+  cleaned = cleaned.replace(
+    /\[\[(?:confirm-dashboard|revise-dashboard-plan):[^\]]+\]\]/g,
+    dt('请使用看板计划卡片操作'),
+  );
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
   // Strip raw ReAct prefixes that may leak from the backend
@@ -208,6 +223,7 @@ interface ChatMessage {
   citations?: AgentCitation[];
   reportId?: string;
   reportRunId?: string;
+  dashboardGenerations?: DashboardGenerationState[];
 }
 
 interface ExecutionStep {
@@ -560,18 +576,35 @@ const EXAMPLE_CARDS = [
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
     skillName: 'skill-creator',
   },
+  {
+    id: 'ecommerce_dashboard',
+    icon: '🧩',
+    title: '电商经营分析看板',
+    description: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
+    query:
+      '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
+    dbName: 'Olist_Ecommerce',
+    skillName: 'dashboard-builder',
+    color: 'from-indigo-500/10 to-sky-500/10',
+    borderColor: 'border-indigo-200/60 dark:border-indigo-800/40',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
+  },
 ];
 
 const Playground: NextPage = () => {
   const router = useRouter();
+  const templateEntry = dashboardTemplateEntry(router.query);
+  const initializedTemplate = useRef<string | null>(null);
+  const [selectedDashboardTemplate, setSelectedDashboardTemplate] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
-  const { model, modelList, setModel } = useContext(ChatContext);
+  const { model, modelList, modelListLoading, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
   const sendInFlightRef = useRef(false);
 
   // Selection State
+  const [isDatabaseRequiredOpen, setIsDatabaseRequiredOpen] = useState(false);
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
   const [isKnowledgeModalOpen, setIsKnowledgeModalOpen] = useState(false);
 
@@ -991,6 +1024,7 @@ const Playground: NextPage = () => {
     setConversationId(null);
     setQuery('');
     setLoading(false);
+    setSelectedDashboardTemplate(null);
     setHistoryLoading(false);
     setQueuedSendAfterUpload(false);
     setIsFileDragActive(false);
@@ -1021,6 +1055,7 @@ const Playground: NextPage = () => {
     setSelectedKnowledge(null);
     setSelectedSkill(null);
     setSelectedConnectors([]);
+    setIsDatabaseRequiredOpen(false);
     setIsDbModalOpen(false);
     setIsKnowledgeModalOpen(false);
     setIsSkillPanelOpen(false);
@@ -1162,7 +1197,7 @@ const Playground: NextPage = () => {
       const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
       // ctx-axios interceptor returns response.data directly
       if (response?.success && Array.isArray(response.data)) {
-        return response.data.map((item: any) => ({
+        const skills = response.data.map((item: any) => ({
           id: String(item.id || item.name),
           name: normalizeText(item.name),
           description: normalizeText(item.description),
@@ -1180,6 +1215,7 @@ const Playground: NextPage = () => {
                       ? '💬'
                       : '⚡',
         })) as Skill[];
+        return skills.filter(skill => !DASHBOARD_INTERNAL_SKILLS.has(skill.name));
       }
       return [];
     } catch (e) {
@@ -1211,6 +1247,22 @@ const Playground: NextPage = () => {
       resetTaskSession();
     }
   }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const entry = dashboardTemplateEntry(router.query);
+    const key = entry ? `${router.query.template || router.query.skill}` : null;
+    if (!key) {
+      initializedTemplate.current = null;
+      return;
+    }
+    if (!entry || initializedTemplate.current === key || router.query.id) return;
+    initializedTemplate.current = key;
+    resetTaskSession();
+    setSelectedDashboardTemplate(entry.selection);
+    setSelectedSkill({ id: 'dashboard-builder', name: 'dashboard-builder', description: '', type: 'official' });
+    setQuery(entry.prompt);
+  }, [router.isReady, router.query, resetTaskSession]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1910,16 +1962,35 @@ const Playground: NextPage = () => {
     overrideDb?: DataSource | null,
     explicitLegacyFile?: LegacyServerFile | null,
     overrideKnowledge?: KnowledgeSpace | null,
+    overrideDashboardTemplate?: string | null,
   ) => {
     const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     const effectiveKnowledge = overrideKnowledge !== undefined ? overrideKnowledge : selectedKnowledge;
+    const effectiveDashboardTemplate =
+      overrideDashboardTemplate !== undefined ? overrideDashboardTemplate : selectedDashboardTemplate;
+    const dashboardContinuation = /^\[\[(?:confirm-dashboard|revise-dashboard-plan):/.test(inputQuery.trim());
+    if (
+      effectiveSkill?.name === 'dashboard-builder' &&
+      !dashboardContinuation &&
+      !effectiveDb &&
+      !hasSessionFileDrafts &&
+      !hasLegacyFile &&
+      !explicitLegacyFile
+    ) {
+      setIsDatabaseRequiredOpen(true);
+      return;
+    }
     // A browser tab can retain a model name from an older backend config.
     // Only send a model currently advertised by the server. The first
     // advertised model is also the normal ChatContext default.
+    if (modelListLoading) {
+      message.info(dt('正在加载可用模型…'));
+      return;
+    }
     const effectiveModel = modelList.includes(model) ? model : modelList[0];
     if (!effectiveModel) {
-      message.error('当前服务未配置可用模型，请先在服务端配置并启动模型');
+      message.error(dt('暂无可用模型，请检查模型服务后重试。'));
       return;
     }
     if (
@@ -2078,6 +2149,10 @@ const Playground: NextPage = () => {
     const baseExtInfo: Record<string, any> = {
       locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
+      ...(effectiveSkill?.name === 'dashboard-builder' ? { creation_mode: 'dashboard' } : {}),
+      ...(effectiveSkill?.name === 'dashboard-builder' && effectiveDashboardTemplate
+        ? { dashboard_template: effectiveDashboardTemplate }
+        : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
       ...(effectiveKnowledge
         ? { knowledge_space_name: effectiveKnowledge.name, knowledge_space_id: effectiveKnowledge.id }
@@ -2155,6 +2230,7 @@ const Playground: NextPage = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
+      const acceptDashboardEvent = createDashboardGenerationEventGate();
 
       const processEvent = (raw: string) => {
         if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
@@ -2166,6 +2242,15 @@ const Playground: NextPage = () => {
           payload = JSON.parse(data);
         } catch (_err) {
           return;
+        }
+        if (typeof payload.type === 'string' && payload.type.startsWith('dashboard.')) {
+          if (acceptDashboardEvent(payload)) {
+            setMessages(previous => applyDashboardGenerationToMessages(previous, responseId, payload));
+          }
+          return;
+        }
+        if (payload.type === 'error') {
+          throw new Error(payload.message || payload.error || dt('生成失败，请重试'));
         }
         if (payload.type === 'context.status') {
           const budget = Number(payload.budget ?? 0);
@@ -2551,6 +2636,7 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
+      if (buffer.trim()) processEvent(buffer);
     } catch (err: any) {
       if (err?.name === 'AbortError' || controller.signal.aborted) {
         // User-initiated stop (stop button, or the conversation-switch effect
@@ -2600,6 +2686,25 @@ const Playground: NextPage = () => {
       }
       if (taskEpochRef.current === taskEpoch) {
         setLoading(false);
+        setMessages(previous =>
+          previous.map(msg =>
+            msg.id !== responseId
+              ? msg
+              : {
+                  ...msg,
+                  thinking: false,
+                  dashboardGenerations: msg.dashboardGenerations?.map(state =>
+                    state.status === 'planning' || state.status === 'generating'
+                      ? {
+                          ...state,
+                          status: 'failed',
+                          errorMessage: dt('生成已中断，已完成的计划或草稿仍保留，请重试。'),
+                        }
+                      : state,
+                  ),
+                },
+          ),
+        );
       }
     }
   };
@@ -2677,6 +2782,10 @@ const Playground: NextPage = () => {
 
       // Auto-select skill if example specifies one
       let exampleSkill: Skill | null = null;
+      if (example.skillName === 'dashboard-builder') {
+        exampleSkill = { id: 'dashboard-builder', name: 'dashboard-builder', description: '', type: 'official' };
+        setSelectedSkill(exampleSkill);
+      }
       if (example.skillName && skillsList) {
         const matched = skillsList.find(s => s.name === example.skillName);
         if (matched) {
@@ -2728,7 +2837,8 @@ const Playground: NextPage = () => {
       // No other browser event can interleave between this ref write and the
       // synchronous acquisition at the start of handleStart.
       exampleRunInFlightRef.current = false;
-      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile, exampleKnowledge);
+      setSelectedDashboardTemplate(null);
+      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile, exampleKnowledge, null);
     } catch (err: unknown) {
       if (taskEpochRef.current !== taskEpoch) return;
       message.destroy('example-loading');
@@ -2906,6 +3016,9 @@ const Playground: NextPage = () => {
             citations: historyAnswer.citations,
             reportId: historyAnswer.reportId,
             reportRunId: historyAnswer.reportRunId,
+            dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
+              .map(dashboardGenerationFromHistoryRef)
+              .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
             order: msg.order,
             thinking: false,
             taskPlan: Array.isArray(payload.task_plan)
@@ -3123,6 +3236,13 @@ const Playground: NextPage = () => {
 
           {/* From Task Banner - shown when navigating from a scheduled task */}
           {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
+          {templateEntry && selectedDashboardTemplate && !messages.length && (
+            <Alert
+              type='info'
+              showIcon
+              message={dt('已选择模板：{{name}}。请选择数据后发送需求。', { name: dt(templateEntry.title) })}
+            />
+          )}
 
           {/* Chat Messages or Hero Section */}
           {/* When from_task mode and loading history, show loading spinner instead of Hero */}
@@ -3160,171 +3280,215 @@ const Playground: NextPage = () => {
                     const roundCitations = round.viewMsg?.citations || [];
 
                     return (
-                      <ManusLeftPanel
-                        key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
-                        sections={sections}
-                        subAgentSlot={
-                          execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
-                            <SubAgentSection
-                              subAgents={execution.subAgents}
-                              artifactCount={execution.subAgentArtifacts}
-                              activeSubAgentId={
-                                isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
-                                  ? activeSubAgent.agentId
-                                  : null
-                              }
-                              onSubAgentClick={agentId => {
-                                if (round.viewMsg?.id) {
-                                  setActiveViewMsgId(round.viewMsg.id);
-                                  setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                      <div key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
+                        <ManusLeftPanel
+                          sections={sections}
+                          subAgentSlot={
+                            execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                              <SubAgentSection
+                                subAgents={execution.subAgents}
+                                artifactCount={execution.subAgentArtifacts}
+                                activeSubAgentId={
+                                  isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                    ? activeSubAgent.agentId
+                                    : null
                                 }
-                                setRightPanelView('execution');
-                                setRightPanelCollapsed(false);
-                              }}
-                            />
-                          ) : undefined
-                        }
-                        activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
-                        onStepClick={(stepId, _sectionId) => {
-                          if (round.viewMsg?.id) {
-                            setActiveViewMsgId(round.viewMsg.id);
-                            setSelectedStepId(stepId);
-                            // Clicking a main-agent step exits the sub-agent
-                            // process view, so the right panel shows this step.
-                            setActiveSubAgent(null);
-                            setRightPanelView('execution');
-                            setRightPanelCollapsed(false);
-                            setExecutionMap(prev => ({
-                              ...prev,
-                              [round.viewMsg!.id!]: {
-                                ...prev[round.viewMsg!.id!],
-                                activeStepId: stepId,
-                              },
-                            }));
+                                onSubAgentClick={agentId => {
+                                  if (round.viewMsg?.id) {
+                                    setActiveViewMsgId(round.viewMsg.id);
+                                    setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                  }
+                                  setRightPanelView('execution');
+                                  setRightPanelCollapsed(false);
+                                }}
+                              />
+                            ) : undefined
                           }
-                        }}
-                        isWorking={isWorking}
-                        userQuery={round.humanMsg?.context}
-                        attachedFiles={round.humanMsg?.attachedFiles}
-                        attachedKnowledge={round.humanMsg?.attachedKnowledge}
-                        attachedSkill={round.humanMsg?.attachedSkill}
-                        attachedDb={round.humanMsg?.attachedDb}
-                        taskPlan={round.viewMsg?.taskPlan}
-                        attachedConnectors={round.humanMsg?.attachedConnectors}
-                        assistantText={roundAssistantText}
-                        isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
-                        citationIndexes={roundCitations.map(citation => citation.index)}
-                        reportId={round.viewMsg?.reportId}
-                        reportRunId={round.viewMsg?.reportRunId}
-                        onReportClick={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setActiveSubAgent(null);
-                          setRightPanelView('report');
-                          setRightPanelCollapsed(false);
-                        }}
-                        onReferencesClick={
-                          roundCitations.length > 0
-                            ? () => {
-                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                setSelectedCitationIndex(roundCitations[0].index);
-                                setRightPanelView('references');
-                                setRightPanelCollapsed(false);
-                              }
-                            : undefined
-                        }
-                        modelName={round.viewMsg?.model_name || model}
-                        stepThoughts={stepThoughts}
-                        artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
-                        onArtifactClick={artifact => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          if (artifact.type === 'html') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
-                          } else if (artifact.type === 'code' && artifact.stepId) {
-                            setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
-                            if (round.viewMsg?.id && execution) {
+                          activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
+                          onStepClick={(stepId, _sectionId) => {
+                            if (round.viewMsg?.id) {
+                              setActiveViewMsgId(round.viewMsg.id);
+                              setSelectedStepId(stepId);
+                              // Clicking a main-agent step exits the sub-agent
+                              // process view, so the right panel shows this step.
+                              setActiveSubAgent(null);
+                              setRightPanelView('execution');
+                              setRightPanelCollapsed(false);
                               setExecutionMap(prev => ({
                                 ...prev,
                                 [round.viewMsg!.id!]: {
                                   ...prev[round.viewMsg!.id!],
-                                  activeStepId: artifact.stepId!,
+                                  activeStepId: stepId,
                                 },
                               }));
                             }
-                          } else if (artifact.type === 'file') {
-                            // Image file artifacts: preview instead of download
-                            if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                          }}
+                          isWorking={isWorking}
+                          userQuery={round.humanMsg?.context}
+                          attachedFiles={round.humanMsg?.attachedFiles}
+                          attachedKnowledge={round.humanMsg?.attachedKnowledge}
+                          attachedSkill={round.humanMsg?.attachedSkill}
+                          attachedDb={round.humanMsg?.attachedDb}
+                          taskPlan={round.viewMsg?.taskPlan}
+                          attachedConnectors={round.humanMsg?.attachedConnectors}
+                          assistantText={roundAssistantText}
+                          isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
+                          citationIndexes={roundCitations.map(citation => citation.index)}
+                          reportId={round.viewMsg?.reportId}
+                          reportRunId={round.viewMsg?.reportRunId}
+                          onReportClick={() => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setActiveSubAgent(null);
+                            setRightPanelView('report');
+                            setRightPanelCollapsed(false);
+                          }}
+                          onReferencesClick={
+                            roundCitations.length > 0
+                              ? () => {
+                                  if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                  setSelectedCitationIndex(roundCitations[0].index);
+                                  setRightPanelView('references');
+                                  setRightPanelCollapsed(false);
+                                }
+                              : undefined
+                          }
+                          modelName={round.viewMsg?.model_name || model}
+                          stepThoughts={stepThoughts}
+                          artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
+                          onArtifactClick={artifact => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            if (artifact.type === 'html') {
+                              setPreviewArtifact(artifact as Artifact);
+                              setRightPanelView('html-preview');
+                            } else if (artifact.type === 'code' && artifact.stepId) {
+                              setSelectedStepId(artifact.stepId);
+                              setRightPanelView('execution');
+                              if (round.viewMsg?.id && execution) {
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: {
+                                    ...prev[round.viewMsg!.id!],
+                                    activeStepId: artifact.stepId!,
+                                  },
+                                }));
+                              }
+                            } else if (artifact.type === 'file') {
+                              // Image file artifacts: preview instead of download
+                              if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                                setPreviewArtifact(artifact as Artifact);
+                                setRightPanelView('image-preview');
+                              } else {
+                                downloadArtifact(artifact as Artifact);
+                              }
+                            } else if (artifact.type === 'image') {
                               setPreviewArtifact(artifact as Artifact);
                               setRightPanelView('image-preview');
-                            } else {
-                              downloadArtifact(artifact as Artifact);
                             }
-                          } else if (artifact.type === 'image') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
-                          }
-                        }}
-                        onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
-                        onViewAllFiles={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('files');
-                        }}
-                        isCollapsed={isCurrentRoundCollapsed}
-                        onExpand={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                        }}
-                        createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
-                        onSkillCardClick={_skillName => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('skill-preview');
-                          // Find the package_skill step and select it so right panel shows SkillCardRenderer
-                          if (execution) {
-                            const skillStep = execution.steps.find((s: ExecutionStep) => {
-                              if (s.action !== 'shell_interpreter') return false;
-                              const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                              const inputHas =
-                                s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
-                              const outputTexts = (execution.outputs[s.id] || []).map(o => String(o.content)).join(' ');
-                              const outputHas =
-                                outputTexts.includes('package_skill') ||
-                                outputTexts.includes('init_skill') ||
-                                outputTexts.includes('Successfully packaged');
-                              return detailHas || inputHas || outputHas;
-                            });
-                            if (skillStep) {
-                              setSelectedStepId(skillStep.id);
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
-                              }));
+                          }}
+                          onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
+                          onViewAllFiles={() => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            setRightPanelView('files');
+                          }}
+                          isCollapsed={isCurrentRoundCollapsed}
+                          onExpand={() => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                          }}
+                          createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
+                          onSkillCardClick={_skillName => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            setRightPanelView('skill-preview');
+                            // Find the package_skill step and select it so right panel shows SkillCardRenderer
+                            if (execution) {
+                              const skillStep = execution.steps.find((s: ExecutionStep) => {
+                                if (s.action !== 'shell_interpreter') return false;
+                                const detailHas =
+                                  s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
+                                const inputHas =
+                                  s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
+                                const outputTexts = (execution.outputs[s.id] || [])
+                                  .map(o => String(o.content))
+                                  .join(' ');
+                                const outputHas =
+                                  outputTexts.includes('package_skill') ||
+                                  outputTexts.includes('init_skill') ||
+                                  outputTexts.includes('Successfully packaged');
+                                return detailHas || inputHas || outputHas;
+                              });
+                              if (skillStep) {
+                                setSelectedStepId(skillStep.id);
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
+                                }));
+                              }
                             }
-                          }
-                        }}
-                        onSkillDownload={async skillName => {
-                          try {
-                            const base = process.env.API_BASE_URL || '';
-                            const res = await fetch(
-                              `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
-                            );
-                            if (!res.ok) throw new Error('Download failed');
-                            const blob = await res.blob();
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${skillName}.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          } catch {
-                            // Download failed silently
-                          }
-                        }}
-                      />
+                          }}
+                          onSkillDownload={async skillName => {
+                            try {
+                              const base = process.env.API_BASE_URL || '';
+                              const res = await fetch(
+                                `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
+                              );
+                              if (!res.ok) throw new Error('Download failed');
+                              const blob = await res.blob();
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${skillName}.zip`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            } catch {
+                              // Download failed silently
+                            }
+                          }}
+                        />
+                        {round.viewMsg?.dashboardGenerations?.map((state, index) => (
+                          <div className='px-4 pb-4' key={state.dashboardId || state.sourceTurnId || index}>
+                            <DashboardGenerationCard
+                              state={state}
+                              busy={loading || !!router.query.from_task}
+                              onOpen={() => {
+                                if (state.dashboardId)
+                                  void router.push({
+                                    pathname: `/dashboards/${encodeURIComponent(state.dashboardId)}`,
+                                    query: state.assetState === 'saved' ? {} : { view: 'preview' },
+                                  });
+                              }}
+                              onConfirm={() => {
+                                if (state.confirmationPrompt)
+                                  void handleStart(
+                                    state.confirmationPrompt,
+                                    {
+                                      id: 'dashboard-builder',
+                                      name: 'dashboard-builder',
+                                      description: '',
+                                      type: 'official',
+                                    },
+                                    dataSources?.find(source => source.db_name === state.dataSourceId) || null,
+                                  );
+                              }}
+                              onRevise={() => {
+                                setSelectedSkill({
+                                  id: 'dashboard-builder',
+                                  name: 'dashboard-builder',
+                                  description: '',
+                                  type: 'official',
+                                });
+                                setSelectedDb(
+                                  dataSources?.find(source => source.db_name === state.dataSourceId) || null,
+                                );
+                                setQuery(`${state.revisionPrompt || ''} `);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     );
                   })}
                 </div>
@@ -4876,10 +5040,11 @@ const Playground: NextPage = () => {
                   </div>
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                     {EXAMPLE_CARDS.map(example => (
-                      <div
+                      <button
+                        type='button'
                         key={example.id}
                         onClick={() => handleExampleClick(example)}
-                        className={`group relative bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
+                        className={`group relative text-left bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
                       >
                         <div className='flex items-start gap-3'>
                           <div
@@ -4907,7 +5072,7 @@ const Playground: NextPage = () => {
                         <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
                           <RightOutlined className='text-xs text-gray-400' />
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -4930,12 +5095,27 @@ const Playground: NextPage = () => {
           )}
         </div>
 
+        <Modal
+          title={t('database_required_title')}
+          open={isDatabaseRequiredOpen}
+          onCancel={() => setIsDatabaseRequiredOpen(false)}
+          onOk={() => {
+            setIsDatabaseRequiredOpen(false);
+            setIsDbModalOpen(true);
+          }}
+          okText={t('select_database')}
+          cancelText={t('database_required_continue_editing')}
+          centered
+        >
+          <p>{t('database_required_description')}</p>
+        </Modal>
+
         {/* Database Selection Modal */}
         <Modal
           title={
             <div className='flex items-center gap-2'>
-              <DatabaseOutlined />
-              Select Data Source
+              <DatabaseOutlined aria-hidden />
+              {t('select_database')}
             </div>
           }
           open={isDbModalOpen}
@@ -4962,11 +5142,11 @@ const Playground: NextPage = () => {
                 />
               </List.Item>
             )}
-            locale={{ emptyText: 'No data sources found' }}
+            locale={{ emptyText: t('picker_database_empty') }}
           />
           <div className='mt-4 pt-4 border-t border-gray-100 text-center'>
             <Button type='dashed' block icon={<PlusOutlined />} onClick={() => router.push('/construct/database')}>
-              Add New Data Source
+              {t('add_database')}
             </Button>
           </div>
         </Modal>

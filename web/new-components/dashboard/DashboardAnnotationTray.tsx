@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { CommentOutlined, DeleteOutlined, EditOutlined, SendOutlined } from '@ant-design/icons';
 import { Badge, Button, Empty, Popover } from 'antd';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -30,6 +31,7 @@ export default function DashboardAnnotationTray({
   onRemove: (id: string) => void;
   onSend: () => void;
 }) {
+  useDashboardTranslation();
   const anchor = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointerId: number; start: Position; origin: Position; moved: boolean } | null>(null);
   const suppressClick = useRef(false);
@@ -92,7 +94,7 @@ export default function DashboardAnnotationTray({
         placement='top'
         overlayStyle={themeStyle}
         overlayInnerStyle={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
-        title='本次保存的批注'
+        title={dt('本次保存的批注')}
         content={
           <div className={styles.tray} data-testid='annotation-tray'>
             <div className={styles.trayList}>
@@ -106,7 +108,7 @@ export default function DashboardAnnotationTray({
                         <Button
                           type='text'
                           size='small'
-                          aria-label={`编辑 ${item.target.label} 批注`}
+                          aria-label={dt('编辑 {{value0}} 批注', { value0: item.target.label })}
                           icon={<EditOutlined />}
                           disabled={running}
                           onClick={() => {
@@ -118,7 +120,7 @@ export default function DashboardAnnotationTray({
                           type='text'
                           size='small'
                           danger
-                          aria-label={`删除 ${item.target.label} 批注`}
+                          aria-label={dt('删除 {{value0}} 批注', { value0: item.target.label })}
                           icon={<DeleteOutlined />}
                           disabled={running}
                           onClick={() => onRemove(item.id)}
@@ -128,23 +130,28 @@ export default function DashboardAnnotationTray({
                   </div>
                   <small>
                     {item.dashboardTitle} · {item.chartType} ·{' '}
-                    {item.state === 'saved' ? '已保存' : item.state === 'discussing' ? '对话中补充' : '已发送'}
+                    {item.state === 'saved'
+                      ? dt('已保存')
+                      : item.state === 'discussing'
+                        ? dt('对话中补充')
+                        : dt('已发送')}
                   </small>
                   <p>{item.content}</p>
                 </article>
               ))}
               {!saved.length && (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='在图表上保存批注，会自动记录到这里' />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={dt('在图表上保存批注，会自动记录到这里')} />
               )}
             </div>
             <Button
               type='primary'
-              aria-label={`一起发送给 AI（${draftCount} 条）`}
+              aria-label={dt('一起发送给 AI（{{value0}} 条）', { value0: draftCount })}
               icon={<SendOutlined />}
               disabled={!draftCount || running}
               onClick={onSend}
             >
-              一起发送给 AI（{draftCount} 条）
+              {dt('一起发送给 AI（')}
+              {draftCount} {dt('条）')}
             </Button>
           </div>
         }
@@ -153,7 +160,7 @@ export default function DashboardAnnotationTray({
           className={styles.trayButton}
           data-testid='annotation-tray-trigger'
           data-dragging={dragging}
-          title='点击查看批注；拖动可移动位置，Alt + 方向键微调'
+          title={dt('点击查看批注；拖动可移动位置，Alt + 方向键微调')}
           onPointerDown={event => {
             if (event.button !== 0 || !event.isPrimary) return;
             const rect = anchor.current!.getBoundingClientRect();
@@ -223,11 +230,11 @@ export default function DashboardAnnotationTray({
             remember(next);
             onOpenChange(false);
           }}
-          aria-label={`本次批注 ${saved.length} 条`}
+          aria-label={dt('本次批注 {{value0}} 条', { value0: saved.length })}
           aria-expanded={open}
           icon={<CommentOutlined />}
         >
-          批注 <Badge count={saved.length} showZero color='var(--app-accent)' />
+          {dt('批注')} <Badge count={saved.length} showZero color='var(--app-accent)' />
         </Button>
       </Popover>
     </div>,

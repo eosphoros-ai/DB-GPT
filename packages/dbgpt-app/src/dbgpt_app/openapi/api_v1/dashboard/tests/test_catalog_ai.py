@@ -243,9 +243,64 @@ async def test_reference_positions_cannot_override_the_template_layout(mapped_so
 
 
 @pytest.mark.asyncio
-async def test_holiday_adaptation_preserves_all_33_months_and_series(mapped_source):
+async def test_template_examples_produce_valid_kpi_trend_and_donut_queries(
+    mapped_source,
+):
+    service, _, _ = mapped_source
+
+    class ExampleModel:
+        async def generate(self, request):
+            examples = json.loads(request.messages[1].content)["widget_examples"]
+            for widget in examples:
+                widget["query"]["sql"] = (
+                    "SELECT SUM(net) AS value FROM transactions"
+                    if widget["type"] == "kpi"
+                    else "SELECT market AS category, SUM(net) AS value "
+                    "FROM transactions GROUP BY market ORDER BY market"
+                )
+            return SimpleNamespace(
+                error_code=0,
+                text=json.dumps(
+                    {
+                        "title": "交易数据预览",
+                        "changes": ["使用真实交易字段，filters 为空。"],
+                        "widgets": examples,
+                        "filters": [],
+                    }
+                ),
+            )
+
+    result = await adapt_template(
+        service,
+        "voice-observatory",
+        "alice",
+        TemplateAdaptRequest(data_source_id="renamed", model="test"),
+        ExampleModel(),
+    )
+    assert result["validation"]["widgets"] == 8
+    assert all(
+        not item["error"] and item["rows"]
+        for item in result["snapshot"]["widgets"].values()
+    )
+    assert result["snapshot"]["widgets"]["interaction"]["rows"] == [
+        ["North", 85.0],
+        ["South", 65.0],
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "month_count,series_count,row_budget", [(33, 2, 24), (143, 5, 500), (300, 5, 2000)]
+)
+async def test_holiday_adaptation_preserves_complete_multiseries_history(
+    mapped_source, month_count, series_count, row_budget
+):
     service, path, mapping = mapped_source
-    months = [f"{2023 + i // 12}-{i % 12 + 1:02d}" for i in range(33)]
+    original = preview_template(
+        service, "holiday-sales", "renamed", "alice", mapping("holiday-sales")
+    )
+    months = [f"{2023 + i // 12}-{i % 12 + 1:02d}" for i in range(month_count)]
+    markets = [f"Store {i}" for i in range(series_count)]
     with sqlite3.connect(path) as conn:
         conn.execute("DELETE FROM transactions")
         conn.executemany(
@@ -253,13 +308,17 @@ async def test_holiday_adaptation_preserves_all_33_months_and_series(mapped_sour
             [
                 (f"{i}-{market}", f"{month}-01", i + 1, market, "A", "a", 2)
                 for i, month in enumerate(months)
-                for market in ("North", "South")
+                for market in markets
             ],
         )
-    original = preview_template(
-        service, "holiday-sales", "renamed", "alice", mapping("holiday-sales")
+    payload = plan(original)
+    trend_widget = next(w for w in payload["widgets"] if w["id"] == "trend")
+    trend_widget["query"]["max_rows"] = row_budget
+    trend_widget["query"]["sql"] = trend_widget["query"]["sql"].removesuffix(
+        " LIMIT 120"
     )
-    model = Model([plan(original)])
+    trend_widget["publication"]["max_output_rows"] = 5000
+    model = Model([payload])
     result = await adapt_template(
         service,
         "holiday-sales",
@@ -269,9 +328,9 @@ async def test_holiday_adaptation_preserves_all_33_months_and_series(mapped_sour
     )
     trend = result["snapshot"]["widgets"]["trend"]
     assert len(model.calls) == 1
-    assert len(trend["rows"]) == 66
+    assert len(trend["rows"]) == month_count * series_count
     assert list(dict.fromkeys(row[0] for row in trend["rows"])) == months
-    assert {row[1] for row in trend["rows"]} == {"North", "South"}
+    assert {row[1] for row in trend["rows"]} == set(markets)
     assert not trend["truncated"]
     # Creating the exact preview revalidates it; long time axes must pass here too.
     record = create_adapted_template(

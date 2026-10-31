@@ -4,14 +4,20 @@ import { DashboardFilters, DashboardRenderer } from '@/new-components/dashboard'
 import DashboardDataFreshness from '@/new-components/dashboard/DashboardDataFreshness';
 import styles from '@/new-components/dashboard/DashboardWorkspace.module.css';
 import { dashboardThemeCssVariables, resolveDashboardTheme } from '@/new-components/dashboard/dashboard-appearance';
+import {
+  dashboardDateLocale,
+  dashboardText as dt,
+  useDashboardTranslation,
+} from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardSnapshot, PublicDashboardSnapshot } from '@/types/dashboard';
 import { FilterOutlined, LockOutlined } from '@ant-design/icons';
 import { Alert, ConfigProvider, Spin, theme as antdTheme } from 'antd';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DashboardSharePage() {
+  useDashboardTranslation();
   const router = useRouter();
   const token = typeof router.query.token === 'string' ? router.query.token : null;
   const [published, setPublished] = useState<PublicDashboardSnapshot | null>(null);
@@ -22,12 +28,19 @@ export default function DashboardSharePage() {
   const [unsupportedWidgetIds, setUnsupportedWidgetIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [filterError, setFilterError] = useState<string | null>(null);
-  const requestSequence = useRef(0);
 
   useEffect(() => {
     if (!token) return;
+    let active = true;
+    setPublished(null);
+    setSnapshot(null);
+    setError(null);
+    setFilterError(null);
+    setFilterTouched(false);
+    setFiltering(false);
     getPublicDashboard(token)
       .then(response => {
+        if (!active) return;
         const next = response.data.data;
         setPublished(next);
         setSnapshot(next.snapshot);
@@ -39,31 +52,39 @@ export default function DashboardSharePage() {
             : [],
         );
       })
-      .catch(reason => setError(reason instanceof Error ? reason.message : '分享链接无效或已失效'));
+      .catch(reason => {
+        if (active) setError(reason instanceof Error ? reason.message : dt('分享链接无效或已失效'));
+      });
+    return () => {
+      active = false;
+    };
   }, [token]);
 
   useEffect(() => {
     if (!token || !published || !filterTouched) return;
-    const sequence = ++requestSequence.current;
+    let active = true;
     const timer = window.setTimeout(() => {
       setFiltering(true);
       setFilterError(null);
       filterPublicDashboard(token, filters)
         .then(response => {
-          if (sequence !== requestSequence.current) return;
+          if (!active) return;
           setSnapshot(response.data.data.snapshot);
           setFilterError(response.data.data.refresh_error || null);
           setUnsupportedWidgetIds(response.data.data.unsupported_widget_ids);
         })
         .catch(reason => {
-          if (sequence !== requestSequence.current) return;
-          setFilterError(reason instanceof Error ? reason.message : '发布快照筛选失败');
+          if (!active) return;
+          setFilterError(reason instanceof Error ? reason.message : dt('发布快照筛选失败'));
         })
         .finally(() => {
-          if (sequence === requestSequence.current) setFiltering(false);
+          if (active) setFiltering(false);
         });
     }, 180);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      active = false;
+    };
   }, [filterTouched, filters, published, token]);
 
   useEffect(() => {
@@ -85,7 +106,7 @@ export default function DashboardSharePage() {
   if (error)
     return (
       <div className={styles.pageState}>
-        <Alert type='error' showIcon message='无法打开分享看板' description={error} />
+        <Alert type='error' showIcon message={dt('无法打开分享看板')} description={error} />
       </div>
     );
   if (!published)
@@ -93,7 +114,7 @@ export default function DashboardSharePage() {
       <div className={styles.pageState}>
         <div className='flex items-center gap-2 text-sm text-[var(--app-muted)]'>
           <Spin size='large' />
-          <span>正在读取已发布快照…</span>
+          <span>{dt('正在读取已发布快照…')}</span>
         </div>
       </div>
     );
@@ -144,26 +165,26 @@ export default function DashboardSharePage() {
                 <h1 className={styles.publicTitle}>{schema.dashboard.title}</h1>
                 <span className={styles.snapshotTag}>
                   {published.data_mode === 'live'
-                    ? '持续更新'
+                    ? dt('持续更新')
                     : published.is_latest_link
-                      ? '最新版公开链接'
-                      : '历史快照'}
+                      ? dt('最新版公开链接')
+                      : dt('历史快照')}
                 </span>
               </div>
               <p className={styles.publicDescription}>{schema.dashboard.description}</p>
             </div>
           </div>
           <div className={styles.publicMetaRow}>
-            <span>发布版本 {published.published_revision}</span>
-            <span>粒度：{schema.metric_context.grain || '未说明'}</span>
+            <span>{dt('发布版本 {{value0}}', { value0: published.published_revision })}</span>
+            <span>{dt('粒度：{{grain}}', { grain: schema.metric_context.grain || dt('未说明') })}</span>
             <DashboardDataFreshness schema={schema} snapshot={snapshot} />
-            <span>{new Date(published.published_at).toLocaleString()}</span>
+            <span>{new Date(published.published_at).toLocaleString(dashboardDateLocale())}</span>
           </div>
         </header>
-        <section className={`${styles.filterBar} ${styles.publicFilterBar}`} aria-label='分享页筛选条'>
+        <section className={`${styles.filterBar} ${styles.publicFilterBar}`} aria-label={dt('分享页筛选条')}>
           <div className={styles.filterTitle}>
             <FilterOutlined className={styles.filterTitleIcon} />
-            全局筛选
+            {dt('全局筛选')}
           </div>
           <div className={styles.filterBody}>
             <DashboardFilters
@@ -183,7 +204,7 @@ export default function DashboardSharePage() {
           </div>
           <div className={styles.filterActions}>
             <span className={styles.liveBadge}>
-              <span className={styles.liveDot} /> {published.data_mode === 'live' ? '每分钟更新' : '快照联动'}
+              <span className={styles.liveDot} /> {published.data_mode === 'live' ? dt('每分钟更新') : dt('快照联动')}
             </span>
           </div>
         </section>
@@ -194,8 +215,8 @@ export default function DashboardSharePage() {
                 {filtering && <Spin size='small' />}
                 <span>
                   {published.data_mode === 'live'
-                    ? '布局与查询固定，数据持续更新。筛选会联动本次刷新后的数据。'
-                    : '可调整筛选条件；结果只在发布时冻结的数据集上计算，不会连接生产数据库。'}
+                    ? dt('布局与查询固定，数据持续更新。筛选会联动本次刷新后的数据。')
+                    : dt('可调整筛选条件；结果只在发布时冻结的数据集上计算，不会连接生产数据库。')}
                 </span>
               </div>
             )}
@@ -203,26 +224,27 @@ export default function DashboardSharePage() {
               <Alert
                 type='warning'
                 showIcon
-                message='这个发布版本不能完整响应筛选'
-                description={`以下组件发布时没有冻结筛选数据，只能保持当时的结果：${unsupportedWidgetIds.join(
-                  '、',
-                )}。请让看板所有者完成发布筛选配置后重新发布一个新版本。`}
+                message={dt('这个发布版本不能完整响应筛选')}
+                description={dt(
+                  '以下组件发布时没有冻结筛选数据，只能保持当时的结果：{{widgets}}。请让看板所有者完成发布筛选配置后重新发布一个新版本。',
+                  { widgets: unsupportedWidgetIds.join(', ') },
+                )}
               />
             )}
             {!!filterError && (
               <Alert
                 type='error'
                 showIcon
-                message={published.data_mode === 'live' ? '数据更新暂时不可用' : '筛选发布快照失败'}
-                description={`${filterError}。已保留上一次成功显示的结果。`}
+                message={published.data_mode === 'live' ? dt('数据更新暂时不可用') : dt('筛选发布快照失败')}
+                description={dt('{{error}}。已保留上一次成功显示的结果。', { error: filterError })}
               />
             )}
             <DashboardRenderer schema={schema} snapshot={snapshot} />
             <footer className={styles.snapshotNotice}>
               <LockOutlined />
               {published.data_mode === 'live'
-                ? '只读持续更新分享 · 数据由发布者授权查询 · 每分钟最多更新一次；原数据库新增或修改后会在这里体现。'
-                : '这是发布时保存的只读数据快照；打开此页面不会连接或查询原始数据库。'}
+                ? dt('只读持续更新分享 · 数据由发布者授权查询 · 每分钟最多更新一次；原数据库新增或修改后会在这里体现。')
+                : dt('这是发布时保存的只读数据快照；打开此页面不会连接或查询原始数据库。')}
             </footer>
           </div>
         </main>

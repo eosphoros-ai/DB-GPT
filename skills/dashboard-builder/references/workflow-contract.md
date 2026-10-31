@@ -16,7 +16,8 @@ Natural-language goal
   -> sql_query (minimal discovery)
   -> plan_dashboard (no SQL)
   -> user confirmation
-  -> create_dashboard_draft (parameterized SQL, at most two widgets per staged call)
+  -> create_dashboard_draft (parameterized SQL, up to four widgets per staged call;
+     at most two with filters or after a truncated payload)
   -> repair_dashboard_draft (failed widgets only, when needed)
   -> recoverable draft in the current task
 ```

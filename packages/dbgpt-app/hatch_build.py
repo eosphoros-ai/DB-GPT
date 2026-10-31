@@ -35,17 +35,8 @@ _SKILLS_MAP = {
         "financial-report-analyzer",
         "walmart-sales-analyzer",
         "agent-browser",
+        # Includes internal dashboard skills and their reference resources.
         "dashboard-builder",
-        "dashboard-collaboration",
-        "dashboard-chart-configuration",
-        "dashboard-filter-configuration",
-        "antv-g2-chart",
-        "datapulse-viz-design",
-        "nexusai-viz-design",
-        "learnhub-viz-design",
-        "brutal-viz-design",
-        "pawspa-viz-design",
-        "serenityspa-viz-design",
     ]
 }
 

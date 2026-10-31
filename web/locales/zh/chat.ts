@@ -234,6 +234,10 @@ export const ChatZh: Resources['translation'] = {
   example_fin_report_query:
     '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
   example_create_sql_skill_title: '创建SQL分析技能',
+  example_ecommerce_dashboard_title: '电商经营分析看板',
+  example_ecommerce_dashboard_desc: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
+  example_ecommerce_dashboard_query:
+    '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
   example_create_sql_skill_desc: '使用skill-creator创建一个实用的SQL数据分析技能',
   example_create_sql_skill_query:
     '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
@@ -376,6 +380,10 @@ export const ChatZh: Resources['translation'] = {
   select_skill: '选择技能',
   skill_selected: '技能：{{name}}',
   select_database: '选择数据库',
+  database_required_title: '请先选择数据库',
+  database_required_description:
+    '当前看板还没有可用数据。请选择一个数据库，或上传 CSV / Excel 文件后再发送。已输入的内容会保留。',
+  database_required_continue_editing: '继续编辑',
   database_selected: '数据库：{{name}}',
   select_knowledge: '选择知识库',
   knowledge_selected: '知识库：{{name}}',
