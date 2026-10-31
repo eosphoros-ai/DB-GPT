@@ -5,6 +5,7 @@ const path = require("path");
 
 // Next.js 16 uses a config option for static export instead of `next export`.
 const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
+const apiBaseUrl = (process.env.API_BASE_URL || "http://127.0.0.1:5670").replace(/\/+$/, "");
 
 const nextConfig = {
   // Chart extensions require G2 from CommonJS. Bundle page dependencies so
@@ -35,13 +36,13 @@ const nextConfig = {
           return [
             {
               source: '/api/v1/:path*',
-              destination: 'http://127.0.0.1:5670/api/v1/:path*',
+              destination: `${apiBaseUrl}/api/v1/:path*`,
             },
           ];
         },
       }),
   env: {
-    API_BASE_URL: "http://127.0.0.1:5670",
+    API_BASE_URL: apiBaseUrl,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GET_USER_URL: process.env.GET_USER_URL,
@@ -51,7 +52,15 @@ const nextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   skipTrailingSlashRedirect: true,
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Fast Refresh can reach CommonJS helpers and regenerator nested under transpiled packages.
+      // Its injected import.meta needs an auto parser despite Babel's package type.
+      config.module.rules.push({
+        test: /[\\/]node_modules[\\/]@babel[\\/]runtime[\\/](?:helpers[\\/][^\\/]+|regenerator[\\/]index)\.js$/,
+        type: 'javascript/auto',
+      });
+    }
     // transpilePackages still selects CommonJS entries that require ESM-only dependencies.
     config.resolve.alias = {
       ...config.resolve.alias,

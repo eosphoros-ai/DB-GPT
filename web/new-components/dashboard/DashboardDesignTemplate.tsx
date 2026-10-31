@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
 import SkillPreview from '@/new-components/skills/SkillPreview';
 import { ArrowRightOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
@@ -15,6 +16,7 @@ export default function DashboardDesignTemplate({
   favorite: boolean;
   onFavorite: () => void;
 }) {
+  useDashboardTranslation();
   const design = ADAPTED_SKILLS[name];
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -24,7 +26,6 @@ export default function DashboardDesignTemplate({
       query: {
         creation_mode: 'dashboard',
         skill: name,
-        skill_prompt: `${design.prompt} 请创建原生可编辑数据看板。先结合我选择的数据源规划指标和筛选条件，所有数值来自实际查询。`,
       },
     });
   return (
@@ -34,16 +35,19 @@ export default function DashboardDesignTemplate({
           type='button'
           className={styles.cover}
           onClick={() => setOpen(true)}
-          aria-label={`预览模板 ${design.title}`}
+          aria-label={dt('预览模板 {{value0}}', { value0: dt(design.title) })}
         >
           <SkillPreview name={name} />
-          <span className={styles.designLabel}>风格示意</span>
-          <span className={styles.coverAction}>查看风格</span>
+          <span className={styles.designLabel}>{dt('风格示意')}</span>
+          <span className={styles.coverAction}>{dt('查看风格')}</span>
         </button>
         <button
           type='button'
           className={styles.favorite}
-          aria-label={`${favorite ? '取消收藏' : '收藏'}模板 ${design.title}`}
+          aria-label={dt('{{value0}}模板 {{value1}}', {
+            value0: favorite ? dt('取消收藏') : dt('收藏'),
+            value1: dt(design.title),
+          })}
           aria-pressed={favorite}
           onClick={onFavorite}
         >
@@ -51,34 +55,34 @@ export default function DashboardDesignTemplate({
         </button>
         <div className={styles.cardTitle}>
           <button type='button' onClick={() => setOpen(true)}>
-            {design.title}
+            {dt(design.title)}
           </button>
         </div>
-        <p className={styles.description}>{design.description}</p>
+        <p className={styles.description}>{dt(design.description)}</p>
         <div className={styles.meta}>
-          <span>风格技能 · 连接数据后生成</span>
-          <button type='button' onClick={use} aria-label={`使用模板 ${design.title}`}>
-            使用 <ArrowRightOutlined />
+          <span>{dt('风格技能 · 连接数据后生成')}</span>
+          <button type='button' onClick={use} aria-label={dt('使用模板 {{value0}}', { value0: dt(design.title) })}>
+            {dt('使用')} <ArrowRightOutlined />
           </button>
         </div>
       </article>
       <Modal
         open={open}
-        title={design.title}
+        title={dt(design.title)}
         onCancel={() => setOpen(false)}
         width={800}
         footer={
           <Button type='primary' onClick={use}>
-            选择数据并创建看板
+            {dt('选择数据并创建看板')}
           </Button>
         }
       >
         <div className={styles.designPreview}>
           <SkillPreview name={name} />
         </div>
-        <p className='mt-4 text-[var(--app-muted)]'>{design.description}</p>
+        <p className='mt-4 text-[var(--app-muted)]'>{dt(design.description)}</p>
         <p className='mt-2 text-xs text-[var(--app-muted)]'>
-          上方为风格示意。创建时使用你选择的数据，保留指标的真实口径与单位。
+          {dt('上方为风格示意。创建时使用你选择的数据，保留指标的真实口径与单位。')}
         </p>
       </Modal>
     </>

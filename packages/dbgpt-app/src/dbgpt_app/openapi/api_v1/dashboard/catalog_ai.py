@@ -168,13 +168,36 @@ def validate_adaptation_promises(schema):
     changes = [str(item) for item in adaptation.get("changes", [])]
 
     def positive_filter_clause(text):
-        for clause in re.split(r"[。；;\n]", text):
-            if re.search(
-                r"(?:不需要|无需|不要|不添加|取消|删除|未添加|未新增|未配置|无法添加|没有添加).{0,20}(?:筛选|filter)",
+        mention = r"(?:筛选(?:器)?|\bfilters?\b)"
+        contrast = r"但是|但|不过|然而|而是|\b(?:but|however|instead)\b"
+        action = (
+            r"添加|新增|增加|提供|配置|保留|需要|支持|\b(?:add|keep|need|provide)\b"
+        )
+        # A negation also covers its list items, including an "包括..." clause.
+        # Stop at a new request or contrast instead of discarding the sentence.
+        negation = (
+            r"(?:(?:不需要|无需|不要|取消|删除|无法添加|(?:不|未|没有)"
+            r"(?:添加|新增|增加|配置|提供|启用|设置|保留))"
+            rf"(?:(?!(?:{contrast}|[。；;，,\n])).){{0,20}}?"
+            r"|\b(?:no|without)\s+(?:global\s+)?)"
+        )
+        continuation = (
+            r"(?:\s*(?:[，,、（(]|以及|包括|包含|例如|比如|和|与|及|或|"
+            r"\b(?:and|or|including)\b)\s*"
+            rf"(?:(?!(?:{contrast}|{action}|[。；;，,\n])).){{0,24}}?{mention})*"
+        )
+        text = re.sub(negation + mention + continuation, "", text, flags=re.I)
+        for clause in re.split(r"[。；;，,\n]", text):
+            # Reporting an empty filters array is not a claim to provide filters.
+            # Remove only that statement so a separate request in the same clause
+            # (e.g. "filters=[], but add a status filter") is still checked.
+            clause = re.sub(
+                r"\bfilters?\s*(?:[=:：]\s*\[\s*\]|(?:为|保持|留)?\s*空(?:数组)?"
+                r"|(?:is|are|remains?)\s+empty\b)",
+                "",
                 clause,
-                re.I,
-            ):
-                continue
+                flags=re.I,
+            )
             if re.search(
                 r"筛选器|全局筛选|(?:添加|新增|增加|提供|配置|保留|需要|支持).{0,24}筛选|\bfilters?\b",
                 clause,
@@ -385,6 +408,8 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
         example["encoding"] = (
             {"value": "value"}
             if metric
+            else {"category": "category", "color": "category", "angle": "value"}
+            if widget.type.value == "pie"
             else {"columns": ["category", "value"]}
             if widget.type.value == "table"
             else {"x": "category", "y": "value"}
@@ -429,7 +454,8 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
         "须精确对应 SQL 别名。\n字段 type 使用 string/numb"
         "er/date/datetime/boolean/unknown。\n所有 query.da"
         "ta_source_id 必须为所选数据源。\nquery.max_rows "
-        "不超过 500；SQL 聚合及 LIMIT 应保证不截断。\nenco"
+        "默认 1000，完整的多系列时间趋势可按需提高到 5000；"
+        "SQL 聚合及 LIMIT 应保证不截断。\nenco"
         "ding 仅引用输出别名。组件 type 仅可为 kpi,line,b"
         "ar,pie,table。\npresentation.visualization 可用 k"
         "pi,line,area,column,bar,stacked_column,\npie,donu"
@@ -479,8 +505,14 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
         "lds，不是 KPI 的最终 group_by 或 output_columns"
         "。\n正确顺序是先对冻结原料按 channel 筛选，再把剩"
         "下的 amount 聚合成一个 value；不是为 KPI 按 chan"
-        "nel 分组。\n分类图的 group_by 写分类字段，output_"
-        "columns 同时包含分类和度量字段。明细表用 row_mod"
+        "nel 分组。\n分类图的 group_by 必须使用组件输出的分类别名。"
+        "例如组件输出 category/value，冻结查询必须先用 SELECT "
+        "payment_type AS category, amount FROM payments，"
+        "publication.query.output_fields 声明 category/amount，"
+        'group_by=["category"]，measures 将 amount 聚合为 value，'
+        'output_columns=["category","value"]。不能 group_by='
+        '["payment_type"] 却 output_columns=["category","value"]；'
+        "output_columns 仅选择输出字段，不负责重命名。明细表用 row_mod"
         "e=true、measures=[]、output_columns 为实际展示列"
         "。\n大表先按所有筛选字段与图表维度汇总到可控粒度"
         "；不能用 LIMIT 截断冻结数据。若无法保证完整冻结"
@@ -550,8 +582,10 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
                     widget.style = original.style.copy()
                     widget.presentation.colors = original.presentation.colors.copy()
                 widget.query.timeout_seconds = 20
-                # A guessed small limit (e.g. 24 months) must not discard valid history.
-                widget.query.max_rows = 500
+                # Use the shared query default as a floor; multi-series history
+                # may need more rows. The schema still enforces the 5000-row cap
+                # and validation rejects truncated results, including filters.
+                widget.query.max_rows = max(1000, widget.query.max_rows)
             schema.metadata.compatibility = {
                 **reference.metadata.compatibility,
                 "catalog_template_id": template_id,

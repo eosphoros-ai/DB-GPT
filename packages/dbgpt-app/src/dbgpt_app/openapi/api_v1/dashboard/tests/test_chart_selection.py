@@ -12,6 +12,7 @@ from dbgpt_app.openapi.api_v1.dashboard.chart_selection import (
 from dbgpt_app.openapi.api_v1.dashboard.planner import DashboardPlannerService
 from dbgpt_app.openapi.api_v1.dashboard.schemas import (
     DashboardPlan,
+    DashboardQueryDraftRequest,
     DashboardSchemaV1,
     WidgetQueryResult,
     collect_schema_issues,
@@ -19,6 +20,86 @@ from dbgpt_app.openapi.api_v1.dashboard.schemas import (
 from dbgpt_app.openapi.api_v1.dashboard.service import DashboardService
 
 from .test_service import FakeConnector, FakeDao
+
+
+def store_plan_and_query(dimensions=None, *, reversed_axes=True):
+    plan = DashboardPlan.model_validate(
+        {
+            "title": "Store sales",
+            "business_theme": "Retail",
+            "metrics": ["sales"],
+            "widgets": [
+                {
+                    "id": "stores",
+                    "type": "bar",
+                    "title": "Sales by store",
+                    "business_question": "Which stores contribute most?",
+                    "metric": "sales",
+                    "dimensions": dimensions if dimensions is not None else ["Store"],
+                }
+            ],
+        }
+    )
+    query = DashboardQueryDraftRequest.model_validate(
+        {
+            "widgets": [
+                {
+                    "widget_id": "stores",
+                    "sql": "SELECT store, sales FROM sales",
+                    "output_fields": [
+                        {"name": "store", "type": "integer"},
+                        {"name": "sales", "type": "number"},
+                    ],
+                    "encoding": (
+                        {"x": "sales", "y": "store"}
+                        if reversed_axes
+                        else {"x": "store", "y": "sales"}
+                    ),
+                }
+            ]
+        }
+    )
+    return plan, query
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reversed_axes", [False, True])
+async def test_numeric_store_id_remains_category_in_saved_generated_chart(
+    reversed_axes,
+):
+    approved, request = store_plan_and_query(reversed_axes=reversed_axes)
+    original = request.model_dump()
+    service = DashboardService(
+        dao=FakeDao(), connector_resolver=lambda _: FakeConnector()
+    )
+    record, results = await DashboardPlannerService(service).create_draft(
+        plan=approved,
+        query_request=request,
+        data_source_id="sales",
+        owner_id="alice",
+        conversation_id="axes",
+        prompt="Compare sales by store",
+        model_name="offline",
+    )
+    widget = record.schema_payload.widgets[0]
+    assert widget.encoding.x == "store"
+    assert widget.encoding.y == "sales"
+    assert widget.query.sql == original["widgets"][0]["sql"]
+    assert not widget.error
+    assert results["stores"].rows == [[1, 100.0], [2, 120.0]]
+    assert request.model_dump() == original
+
+
+@pytest.mark.parametrize("dimensions", [[], ["region"], ["store", "sales"]])
+def test_chart_axes_are_not_guessed_without_one_matching_confirmed_dimension(
+    dimensions,
+):
+    approved, request = store_plan_and_query(dimensions)
+    widget = DashboardPlannerService._normalized_widget(
+        approved.widgets[0], request.widgets[0], "sales"
+    )
+    assert widget.encoding.x == "sales"
+    assert widget.encoding.y == "store"
 
 
 def plan(count=None, dimensions=None):

@@ -2,6 +2,9 @@
 
 import re
 
+import pytest
+
+from dbgpt.agent.expand.actions.tool_action import run_tool
 from dbgpt.agent.resource import ToolPack
 from dbgpt_app.openapi.api_v1.dashboard.schemas import (
     DashboardPlan,
@@ -10,6 +13,7 @@ from dbgpt_app.openapi.api_v1.dashboard.schemas import (
 from dbgpt_app.openapi.api_v1.tools.dashboard import make_dashboard_planner_tools
 from dbgpt_app.openapi.api_v1.tools.dashboard_contracts import (
     describe_registered_tools,
+    make_dashboard_tool_pack,
     validation_model_contracts,
 )
 
@@ -42,6 +46,104 @@ def test_read_only_inventory_does_not_advertise_generation():
     assert "load_dashboard_draft" in description
     assert "create_dashboard_draft:" not in description
     assert "DashboardQueryDraftRequest =" not in description
+    assert "load_dashboard_style:" not in description
+
+
+def test_style_tool_loads_internal_reference_and_preserves_user_selection():
+    state = {}
+    tools = make_dashboard_planner_tools(
+        react_state=state,
+        database_connector=None,
+        database_name=None,
+        owner_id="alice",
+        user_prompt="Build a marketing dashboard",
+        model_name="test",
+        stream_callback=None,
+        gallery_template="catalog:store-marketing",
+    )
+    style = next(item for item in tools if item.__name__ == "load_dashboard_style")
+    assert state["dashboard_gallery_context"]["skill"] == "dashboard-design"
+    assert "Keep the user's selected" in style(
+        selection="design:serenityspa-viz-design"
+    )
+    assert state["dashboard_gallery_context"]["selection"] == "catalog:store-marketing"
+
+
+def test_style_tool_can_choose_a_reference_for_a_text_request():
+    state = {}
+    tools = make_dashboard_planner_tools(
+        react_state=state,
+        database_connector=None,
+        database_name=None,
+        owner_id="alice",
+        user_prompt="Use a marketing style",
+        model_name="test",
+        stream_callback=None,
+    )
+    style = next(item for item in tools if item.__name__ == "load_dashboard_style")
+    assert "catalog:store-marketing" in style()
+    style(selection="catalog:store-marketing")
+    assert state["dashboard_gallery_context"]["selection"] == "catalog:store-marketing"
+    assert "could not be loaded" in style(selection="../../private")
+    state["dashboard_record_id"] = "saved-plan"
+    assert "persisted dashboard style" in style(selection="design:pawspa-viz-design")
+
+
+@pytest.mark.asyncio
+async def test_text_request_can_call_style_tool_through_actual_capability_pack():
+    state = {}
+    prompt = "Use a marketing style"
+    tools = make_dashboard_planner_tools(
+        state, None, None, "alice", prompt, "test", None
+    )
+    pack = make_dashboard_tool_pack(tools, prompt)
+    inventory = await run_tool("load_dashboard_style", {}, pack)
+    assert inventory.is_exe_success
+    assert "catalog:store-marketing" in inventory.content
+    selected = await run_tool(
+        "load_dashboard_style", {"selection": "catalog:store-marketing"}, pack
+    )
+    assert selected.is_exe_success
+    assert state["dashboard_gallery_context"]["selection"] == "catalog:store-marketing"
+    assert state["dashboard_gallery_context"]["widgets"]
+
+
+@pytest.mark.asyncio
+async def test_exact_display_name_loads_style_without_a_discovery_round():
+    state = {}
+    prompt = "请用海报式营销样式生成看板"
+    tools = make_dashboard_planner_tools(
+        state, None, None, "alice", prompt, "test", None
+    )
+    pack = make_dashboard_tool_pack(tools, prompt)
+    result = await run_tool("load_dashboard_style", {"selection": "海报式营销"}, pack)
+    assert result.is_exe_success
+    assert state["dashboard_gallery_context"]["selection"] == "design:brutal-viz-design"
+    assert state["dashboard_gallery_context"]["widgets"]
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "[[confirm-dashboard:saved]]",
+        "[[revise-dashboard-plan:saved]]",
+        "[[modify-dashboard:saved]]",
+        "[[dashboard-annotation:saved:annotation]]",
+    ],
+)
+def test_later_phases_cannot_replace_the_saved_style(prompt):
+    tools = make_dashboard_planner_tools(
+        {},
+        None,
+        None,
+        "alice",
+        prompt,
+        "test",
+        None,
+        gallery_template="design:pawspa-viz-design",
+    )
+    pack = make_dashboard_tool_pack(tools, prompt)
+    assert "load_dashboard_style" not in {item.name for item in pack.sub_resources}
 
 
 def test_generated_shapes_preserve_required_fields_enums_and_nested_contracts():

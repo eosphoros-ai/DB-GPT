@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardRecord, DashboardSelectionTarget, DashboardTargetResolution } from '@/types/dashboard';
 import { AimOutlined, DeleteOutlined, EditOutlined, SendOutlined } from '@ant-design/icons';
 import { Alert, Button, Empty, Input, Spin } from 'antd';
@@ -23,6 +24,7 @@ export default function DashboardAssistantPanel({
   onResolveReference,
   onSubmit,
 }: DashboardAssistantPanelProps) {
+  useDashboardTranslation();
   const [reference, setReference] = useState('');
   const [resolving, setResolving] = useState(false);
   const [running, setRunning] = useState(false);
@@ -45,12 +47,12 @@ export default function DashboardAssistantPanel({
         const target: DashboardSelectionTarget = resolution.target;
         onDraftsChange(current => [...current, { ...makeDashboardAnnotationDraft(target), content }]);
         setReference('');
-        setNotice('已加入待发送批注；发送时自动识别意图，修改会先返回预览提案。');
+        setNotice(dt('已加入待发送批注；发送时自动识别意图，修改会先返回预览提案。'));
       } else {
-        setError(resolution.question || '请点选图表或说出完整标题，以确定批注对象。');
+        setError(resolution.question || dt('请点选图表或说出完整标题，以确定批注对象。'));
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '无法解析目标，请点选图表');
+      setError(reason instanceof Error ? reason.message : dt('无法解析目标，请点选图表'));
     } finally {
       busyRef.current = false;
       setResolving(false);
@@ -64,15 +66,15 @@ export default function DashboardAssistantPanel({
     setRunning(true);
     setError('');
     setNotice('');
-    setStatus('正在识别批注意图…');
+    setStatus(dt('正在识别批注意图…'));
     try {
       await onSubmit(submitted, setStatus);
       onDraftsChange(current =>
         current.filter(item => !submitted.some(done => done.id === item.id && done.content === item.content)),
       );
-      setNotice('本批批注已交给 AI。修改会返回预览提案，解释与分析会返回说明。');
+      setNotice(dt('本批批注已交给 AI。修改会返回预览提案，解释与分析会返回说明。'));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '批注发送失败，请重试');
+      setError(reason instanceof Error ? reason.message : dt('批注发送失败，请重试'));
     } finally {
       busyRef.current = false;
       setRunning(false);
@@ -83,9 +85,9 @@ export default function DashboardAssistantPanel({
   return (
     <div className='flex h-full min-h-0 flex-col' data-testid='dashboard-assistant-panel'>
       <div className='border-b border-[var(--app-border)] pb-3'>
-        <div className='text-sm font-semibold text-[var(--app-text)]'>待发送批注</div>
+        <div className='text-sm font-semibold text-[var(--app-text)]'>{dt('待发送批注')}</div>
         <p className='mt-1 text-xs leading-5 text-[var(--app-muted)]'>
-          在图表上添加批注，最后一起发送。直接描述要求，AI 会判断是修改、解释还是分析。
+          {dt('在图表上添加批注，最后一起发送。直接描述要求，AI 会判断是修改、解释还是分析。')}
         </p>
       </div>
       <div className='min-h-0 flex-1 space-y-3 overflow-y-auto py-3'>
@@ -111,7 +113,7 @@ export default function DashboardAssistantPanel({
                 size='small'
                 type='text'
                 icon={<EditOutlined />}
-                aria-label={'编辑 ' + item.target.label + ' 批注'}
+                aria-label={dt('编辑 ') + item.target.label + dt(' 批注')}
                 disabled={running}
                 onClick={() => (onEditDraft ? onEditDraft(item) : setEditingId(editingId === item.id ? null : item.id))}
               />
@@ -120,7 +122,7 @@ export default function DashboardAssistantPanel({
                 type='text'
                 danger
                 icon={<DeleteOutlined />}
-                aria-label={'删除 ' + item.target.label + ' 批注'}
+                aria-label={dt('删除 ') + item.target.label + dt(' 批注')}
                 disabled={running}
                 onClick={() => onDraftsChange(current => current.filter(draft => draft.id !== item.id))}
               />
@@ -129,7 +131,7 @@ export default function DashboardAssistantPanel({
               <Input.TextArea
                 autoFocus
                 autoSize={{ minRows: 3, maxRows: 8 }}
-                aria-label='编辑批注内容'
+                aria-label={dt('编辑批注内容')}
                 value={item.content}
                 disabled={running}
                 onChange={event =>
@@ -141,13 +143,13 @@ export default function DashboardAssistantPanel({
               />
             ) : (
               <p className='mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-[var(--app-muted)]'>
-                {item.content || '尚未填写要求'}
+                {item.content || dt('尚未填写要求')}
               </p>
             )}
           </div>
         ))}
         {!drafts.length && (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='点击图表的批注按钮，添加第一条要求' />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={dt('点击图表的批注按钮，添加第一条要求')} />
         )}
         {notice && (
           <p className='text-xs leading-5 text-[var(--app-muted)]' role='status'>
@@ -160,22 +162,22 @@ export default function DashboardAssistantPanel({
             <span>{status}</span>
           </div>
         )}
-        {!available && <Alert type='warning' showIcon message='请在有编辑权限的看板中添加 AI 批注' />}
+        {!available && <Alert type='warning' showIcon message={dt('请在有编辑权限的看板中添加 AI 批注')} />}
         {error && (
           <Alert
             type='warning'
             showIcon
-            message='批注尚未发送'
+            message={dt('批注尚未发送')}
             description={<span className='whitespace-pre-wrap'>{error}</span>}
           />
         )}
       </div>
       <details className='mb-3 rounded-lg border border-[var(--app-border)] p-3' data-testid='natural-target-input'>
-        <summary className='cursor-pointer text-xs text-[var(--app-muted)]'>也可以用文字指定图表</summary>
+        <summary className='cursor-pointer text-xs text-[var(--app-muted)]'>{dt('也可以用文字指定图表')}</summary>
         <Input.TextArea
           className='mt-3'
           autoSize={{ minRows: 2, maxRows: 4 }}
-          placeholder='例如：右边的收入趋势图改成柱状图'
+          placeholder={dt('例如：右边的收入趋势图改成柱状图')}
           value={reference}
           disabled={!available || resolving || running}
           onChange={event => setReference(event.target.value)}
@@ -188,7 +190,7 @@ export default function DashboardAssistantPanel({
           disabled={!available || !reference.trim() || running}
           onClick={resolveReference}
         >
-          加入待发送批注
+          {dt('加入待发送批注')}
         </Button>
       </details>
       <Button
@@ -198,10 +200,12 @@ export default function DashboardAssistantPanel({
         disabled={!available || resolving || !drafts.some(item => item.content.trim())}
         onClick={submit}
       >
-        发送给 AI（{drafts.filter(item => item.content.trim()).length} 条）
+        {dt('发送给 AI（')}
+        {drafts.filter(item => item.content.trim()).length} {dt('条）')}
       </Button>
       <div className='mt-2 truncate text-xs text-[var(--app-muted)]' title={record.schema.dashboard.title}>
-        当前看板：{record.schema.dashboard.title}
+        {dt('当前看板：')}
+        {record.schema.dashboard.title}
       </div>
     </div>
   );

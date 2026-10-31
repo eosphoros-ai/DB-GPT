@@ -1,5 +1,6 @@
 import { saveDashboardCover } from '@/client/api/dashboard';
 import { interfaceThemeVariables } from '@/lib/interface-tokens';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardRecord, DashboardSnapshot } from '@/types/dashboard';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -17,6 +18,7 @@ export default function DashboardCoverCapture({
   snapshot: DashboardSnapshot;
   onComplete?: (image: string | null, error?: string) => void;
 }) {
+  useDashboardTranslation();
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const [finished, setFinished] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -34,7 +36,7 @@ export default function DashboardCoverCapture({
             node instanceof HTMLLinkElement
               ? new Promise<void>((resolve, reject) => {
                   clone.onload = () => resolve();
-                  clone.onerror = () => reject(new Error('预览样式加载失败'));
+                  clone.onerror = () => reject(new Error(dt('预览样式加载失败')));
                 })
               : Promise.resolve();
           doc.head.appendChild(clone);
@@ -42,7 +44,7 @@ export default function DashboardCoverCapture({
         });
         await Promise.race([
           Promise.all(loads),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('预览样式加载超时，请重试')), 15000)),
+          new Promise((_, reject) => setTimeout(() => reject(new Error(dt('预览样式加载超时，请重试'))), 15000)),
         ]);
         // Give charts one complete layout/paint after fonts and styles settle.
         await doc.fonts.ready;
@@ -51,7 +53,7 @@ export default function DashboardCoverCapture({
         const image = await captureDashboardCover(root.current);
         if (!active) return;
         const response = await saveDashboardCover(record.id, record.current_revision, image);
-        if (!response.data.success) throw new Error(response.data.err_msg || '预览保存失败');
+        if (!response.data.success) throw new Error(response.data.err_msg || dt('预览保存失败'));
         if (active) {
           setFinished(true);
           onComplete?.(image);
@@ -59,7 +61,7 @@ export default function DashboardCoverCapture({
       } catch (e) {
         if (active) {
           setFinished(true);
-          onComplete?.(null, e instanceof Error ? e.message : '预览生成失败');
+          onComplete?.(null, e instanceof Error ? e.message : dt('预览生成失败'));
         }
       }
     }, 700);
@@ -71,7 +73,7 @@ export default function DashboardCoverCapture({
   if (finished) return null;
   return (
     <iframe
-      title='生成看板预览'
+      title={dt('生成看板预览')}
       aria-hidden='true'
       tabIndex={-1}
       style={{ position: 'fixed', left: -20000, top: 0, width: 1200, height: 1000, border: 0, pointerEvents: 'none' }}
