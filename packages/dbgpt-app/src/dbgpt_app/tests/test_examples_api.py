@@ -1,4 +1,5 @@
 import pytest
+from fastapi import HTTPException
 
 from dbgpt_serve.utils.auth import UserRequest
 
@@ -75,13 +76,72 @@ async def test_use_example_file_accepts_plain_name(tmp_path, monkeypatch):
     assert target_path.read_text(encoding="utf-8") == "value\n1\n"
 
 
+@pytest.mark.parametrize("user_id", ["../../bob", "a/b", "..", r"..\bob", "bob/.."])
 @pytest.mark.asyncio
-async def test_use_example_file_rejects_traversal_user_id(tmp_path, monkeypatch):
+async def test_use_example_file_rejects_traversal_user_id(
+    tmp_path, monkeypatch, user_id
+):
+    examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await examples_api.use_example_file(
+            "test_example", UserRequest(user_id=user_id)
+        )
+
+    assert exc_info.value.status_code == 400
+    assert not (tmp_path / "python_uploads").exists()
+    assert not (tmp_path.parent / "bob" / "report.csv").exists()
+
+
+@pytest.mark.parametrize("user_id", [None, "", "   "])
+@pytest.mark.asyncio
+async def test_use_example_file_defaults_empty_user_id(tmp_path, monkeypatch, user_id):
     examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
 
     result = await examples_api.use_example_file(
-        "test_example", UserRequest(user_id="../../bob")
+        "test_example", UserRequest(user_id=user_id)
     )
 
-    assert result.success is False
-    assert not (tmp_path.parent / "bob" / "report.csv").exists()
+    target_path = tmp_path / "python_uploads" / "default" / "report.csv"
+    assert result.success is True
+    assert result.data == target_path.as_posix()
+    assert target_path.read_text(encoding="utf-8") == "value\n1\n"
+
+
+@pytest.mark.asyncio
+async def test_use_example_file_accepts_plain_user_id(tmp_path, monkeypatch):
+    examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
+
+    result = await examples_api.use_example_file(
+        "test_example", UserRequest(user_id="user-1")
+    )
+
+    target_path = tmp_path / "python_uploads" / "user-1" / "report.csv"
+    assert result.success is True
+    assert result.data == target_path.as_posix()
+    assert target_path.read_text(encoding="utf-8") == "value\n1\n"
+
+
+@pytest.mark.asyncio
+async def test_use_example_route_rejects_traversal_user_id(tmp_path, monkeypatch):
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
+    examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
+    app = FastAPI()
+    app.include_router(examples_api.router)
+    app.dependency_overrides[examples_api.get_user_from_headers] = lambda: UserRequest(
+        user_id="../../poc"
+    )
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/v1/examples/use", json={"example_id": "test_example"}
+        )
+
+    assert response.status_code == 400
+    assert "Invalid user_id" in response.json()["detail"]
+    assert not (tmp_path / "python_uploads").exists()
+    assert not (tmp_path.parent / "poc" / "report.csv").exists()
