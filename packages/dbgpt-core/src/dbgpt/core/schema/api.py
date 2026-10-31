@@ -9,6 +9,12 @@ from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 
 from .types import ChatCompletionMessageParam
 
+# The values chat/completions allows; a proxied model may stop for a tool call or
+# a content filter, not only for "stop" or "length".
+FinishReason = Literal[
+    "stop", "length", "tool_calls", "content_filter", "function_call"
+]
+
 T = TypeVar("T")
 
 
@@ -109,7 +115,7 @@ class ChatCompletionResponseStreamChoice(BaseModel):
 
     index: int = Field(..., description="Choice index")
     delta: DeltaMessage = Field(..., description="Delta message")
-    finish_reason: Optional[Literal["stop", "length"]] = Field(
+    finish_reason: Optional[FinishReason] = Field(
         None, description="Finish reason"
     )
 
@@ -143,7 +149,7 @@ class ChatCompletionResponseChoice(BaseModel):
 
     index: int = Field(..., description="Choice index")
     message: ChatMessage = Field(..., description="Chat message")
-    finish_reason: Optional[Literal["stop", "length"]] = Field(
+    finish_reason: Optional[FinishReason] = Field(
         None, description="Finish reason"
     )
 
@@ -385,7 +391,7 @@ class CompletionResponseChoice(BaseModel):
     index: int = Field(..., description="Choice index")
     text: str = Field(..., description="Text")
     logprobs: Optional[LogProbs] = Field(None, description="Logprobs")
-    finish_reason: Optional[Literal["stop", "length"]] = Field(
+    finish_reason: Optional[FinishReason] = Field(
         None, description="The reason the model stopped generating tokens."
     )
 
@@ -416,7 +422,7 @@ class CompletionResponseStreamChoice(BaseModel):
     index: int = Field(..., description="Choice index")
     text: str = Field(..., description="Text")
     logprobs: Optional[LogProbs] = Field(None, description="Logprobs")
-    finish_reason: Optional[Literal["stop", "length"]] = Field(
+    finish_reason: Optional[FinishReason] = Field(
         None, description="The reason the model stopped generating tokens."
     )
 
