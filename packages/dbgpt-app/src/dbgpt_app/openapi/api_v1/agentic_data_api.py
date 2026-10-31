@@ -276,6 +276,30 @@ async def _resolve_model_context_tokens(
     return None
 
 
+def _agentic_max_new_tokens(dialogue_value: Optional[int]) -> int:
+    """Completion budget: UI value wins when larger, else env > TOML > 16384."""
+    default = 16384
+    raw = os.getenv("DBGPT_AGENTIC_MAX_NEW_TOKENS", "").strip()
+    if raw:
+        try:
+            default = max(1024, int(raw))
+        except ValueError:
+            logger.warning(
+                "Invalid DBGPT_AGENTIC_MAX_NEW_TOKENS=%r; using %s", raw, default
+            )
+    else:
+        try:
+            _app_cfg = CFG.SYSTEM_APP.config.configs.get("app_config")
+            _web_cfg = getattr(getattr(_app_cfg, "service", None), "web", None)
+            _agent_ctx = getattr(_web_cfg, "agent_context", None)
+            _cfg_val = getattr(_agent_ctx, "max_new_tokens", None)
+            if isinstance(_cfg_val, int) and _cfg_val > 0:
+                default = _cfg_val
+        except Exception:
+            logger.debug("Failed to read agent_context.max_new_tokens; using 16384")
+    return max(dialogue_value or 0, default)
+
+
 async def _load_context_budget_config(
     llm_client: Any = None,
     model_name: Optional[str] = None,
@@ -3396,6 +3420,7 @@ async def _react_agent_stream_impl(
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
+        max_new_tokens=_agentic_max_new_tokens(dialogue.max_new_tokens),
     )
 
     # file_ids requests use the public manifest block; legacy file_path and

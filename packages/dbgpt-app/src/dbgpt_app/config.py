@@ -322,6 +322,16 @@ class AgentContextParameters(BaseParameters):
             )
         },
     )
+    max_new_tokens: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Per-LLM-call completion budget (max_tokens) for the agentic "
+                "ReAct flow. The DBGPT_AGENTIC_MAX_NEW_TOKENS environment "
+                "variable overrides this value."
+            )
+        },
+    )
 
     def __post_init__(self):
         if self.max_context_tokens is None or self.max_context_tokens <= 0:
