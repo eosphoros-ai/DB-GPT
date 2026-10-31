@@ -15,7 +15,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 
 ## Highlights
 
-- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Keenable Search, and DeepWiki.
+- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Keenable Search, DeepWiki, and deed.page.
 - **Custom MCP servers** — Connect any SSE or Streamable HTTP MCP endpoint with your own auth.
 - **Per-conversation selection** — Choose which connectors to attach in the composer; the agent's prompt stays focused and token-efficient.
 - **Human-in-the-loop confirmation** — Write actions (create / update / delete) pop a confirmation dialog before they run.
@@ -57,10 +57,11 @@ A connector lives in one of three states:
 | Tavily | Search | Streamable HTTP | LLM-optimized web search, returns Markdown |
 | Keenable Search | Search | Streamable HTTP | Web search and page fetch; works without an account or API key |
 | DeepWiki | Dev Tools | Streamable HTTP | AI reading & Q&A over any GitHub repo |
+| deed.page | Dev Tools | Streamable HTTP | Publish an HTML report or a folder as a public web page; update, roll back, delete |
 
 ## Managing connectors
 
-Open the **Connectors** page to see every template and custom server as a card. Each card shows the icon, name, a `Template` / `Custom` badge, its category, the `MCP / SSE` (or Streamable HTTP) transport, and a short description. Use the search box and the **All / Active / Inactive / Needs attention** tabs to filter.
+Open the **Connectors** page to see every template and custom server as a card. Each card shows the icon, name, a `Template` / `Custom` badge, its category, its transport (`MCP / SSE` or `MCP / Streamable HTTP`, taken from the instance's own setting or the template's default), and a short description. Use the search box and the **All / Active / Inactive / Needs attention** tabs to filter.
 
 <p align="center">
   <img src={'/img/mcp/mcp_list.png'} width="800px" />
@@ -95,6 +96,15 @@ Keenable Search is a hosted MCP server for web search and page fetching. It does
 2. Set **Streamable HTTP Endpoint URL** to `https://api.keenable.ai/mcp`.
 3. Leave **Auth type** as `none`. To use an API key instead, choose `bearer` and paste the key into the token field (it is sent as `Authorization: Bearer <key>`).
 4. Save. The connector exposes two read-only tools, `search_web_pages` and `fetch_page_content`, so no confirmation dialog is involved.
+
+### Example: activate deed.page
+
+deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call without a token returns an owner token, and it is shown only once. Store it securely right away: every owner-scoped tool, including `update_site`, `delete_site`, `restore_version`, `set_site_access`, and `set_listing`, needs that token as a tool argument. deed.page keeps only a hash of the token, so a lost token cannot be restored unless you attached a recovery email beforehand; without it you can no longer update or delete those sites. Anyone holding the token controls the owner's sites; if it leaks, rotate it with `rotate_token` or revoke it with `revoke_token`.
+
+1. On the **deed.page** card, click **Activate**.
+2. Set **Streamable HTTP Endpoint URL** to `https://deed.page/mcp`.
+3. Leave **Auth type** as `none`.
+4. Save. All six site-changing tools (`publish_site`, `update_site`, `restore_version`, `delete_site`, `set_site_access`, and `set_listing`) and the two token-changing tools (`rotate_token` and `revoke_token`) ask for confirmation first; published content is public by default.
 
 ### Inspect the tools
 

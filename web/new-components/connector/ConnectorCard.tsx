@@ -38,6 +38,13 @@ interface TemplateCardProps {
 
 type ConnectorCardProps = InstanceCardProps | TemplateCardProps;
 
+// Metadata-row label per MCP transport. Keys match the backend transport values
+// (`sse` / `streamable_http`); anything unknown falls back to the SSE label.
+const TRANSPORT_LABELS: Record<string, string> = {
+  sse: 'MCP / SSE',
+  streamable_http: 'MCP / Streamable HTTP',
+};
+
 /* ------------------------------------------------------------------ */
 /* Brand tokens — each connector type gets a unique gradient + emoji  */
 /* fallback. Keeps cards instantly recognizable in a dense grid.      */
@@ -107,6 +114,13 @@ const BRAND_TOKENS: Record<string, BrandToken> = {
     icon: <BookOutlined />,
     gradient: 'from-amber-500 to-orange-600',
     shadow: 'group-hover:ring-amber-200',
+  },
+  deedpage: {
+    // deed.page mark (red seal), contributed by the deed.page team for this
+    // template. White tile like the other real logos; red ring echoes #9c2a1c.
+    logo: '/icons/connectors/deedpage.svg',
+    gradient: 'from-red-700 to-red-900',
+    shadow: 'group-hover:ring-red-200',
   },
   custom_mcp: {
     // ApiOutlined matches the sidebar "连接器管理" entry and the page hero —
@@ -204,6 +218,18 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
     ? props.template.category
     : (props.catalogEntry?.category ?? (props.connector.connector_type === 'custom_mcp' ? 'custom' : 'project'));
 
+  // Transport precedence: the instance's own config.transport (set in the form),
+  // then the catalog default from /types, then the SSE label.
+  const transport = isTemplate
+    ? props.template.transport
+    : ((props.connector.config?.transport as string | undefined) ?? props.catalogEntry?.transport);
+  // Own-key lookup so a config value like "__proto__" cannot resolve to an
+  // inherited property and bypass the fallback.
+  const transportLabel =
+    typeof transport === 'string' && Object.prototype.hasOwnProperty.call(TRANSPORT_LABELS, transport)
+      ? TRANSPORT_LABELS[transport]
+      : TRANSPORT_LABELS.sse;
+
   // All instance cards are clickable — the whole card surface opens the tools
   // modal. Built-in templates (github / feishu / yuque / dingtalk) now follow
   // the same unified MCP path as custom_mcp, so there's no longer a reason to
@@ -280,7 +306,7 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
             <div className='flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 leading-none'>
               <span>{t(`connector.category.${category}`, category)}</span>
               <span className='text-gray-300 dark:text-gray-600'>·</span>
-              <span>MCP / SSE</span>
+              <span>{transportLabel}</span>
               {isTemplate && (props.instanceCount ?? 0) > 0 && (
                 <>
                   <span className='text-gray-300 dark:text-gray-600'>·</span>

@@ -184,6 +184,7 @@ async def list_connector_types() -> Result[List[Dict[str, Any]]]:
                 description=entry.description,
                 icon=entry.icon,
                 category=entry.category,
+                transport=entry.mcp_server.transport,
                 is_custom=False,
                 auth_fields=_CUSTOM_MCP_OPTION.auth_fields,
             )
