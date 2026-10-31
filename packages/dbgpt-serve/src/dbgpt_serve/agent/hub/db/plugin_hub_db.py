@@ -101,7 +101,6 @@ class PluginHubDao(BaseDao):
     ) -> list[PluginHubEntity]:
         session = self.get_raw_session()
         plugin_hubs = session.query(PluginHubEntity)
-        all_count = plugin_hubs.count()
 
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
@@ -116,6 +115,7 @@ class PluginHubDao(BaseDao):
                 PluginHubEntity.storage_channel == query.storage_channel
             )
 
+        all_count = plugin_hubs.count()
         plugin_hubs = plugin_hubs.order_by(PluginHubEntity.id.desc())
         plugin_hubs = plugin_hubs.offset((page - 1) * page_size).limit(page_size)
         result = plugin_hubs.all()
