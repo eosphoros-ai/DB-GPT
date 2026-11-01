@@ -168,6 +168,19 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         except Exception:
             return False
 
+    def _is_nested_in(self, inner: str, outer: str, source: str) -> bool:
+        """Whether ``inner`` is a span inside ``outer`` in ``source``."""
+        if not inner or not outer:
+            return False
+        outer_start = source.find(outer)
+        inner_start = source.find(inner)
+        return (
+            outer_start != -1
+            and inner_start != -1
+            and inner_start >= outer_start
+            and inner_start + len(inner) <= outer_start + len(outer)
+        )
+
     def _extract_json(self, s):
         try:
             # Get the dual-mode analysis first and get the maximum result
@@ -186,7 +199,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
                 )
                 if (
                     other_json
-                    and other_json not in temp_json
+                    and not self._is_nested_in(other_json, temp_json, s)
                     and self._is_parsable_json(other_json)
                 ):
                     # The string-aware scan can lengthen a fragment, so the

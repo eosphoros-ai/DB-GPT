@@ -141,3 +141,10 @@ def test_parse_prompt_response_keeps_array_tie_breaker():
     parser = _parser()
     text = "Result: {\"a\":1}; answer: [1,2,3]"
     assert parser.parse_prompt_response(text) == "[1,2,3]"
+
+
+def test_parse_prompt_response_promotes_independent_duplicate():
+    """An identical fragment outside the invalid container is still promoted."""
+    parser = _parser()
+    text = 'Result: {"ok": true} [ {"ok": true}, invalid ]'
+    assert parser.parse_prompt_response(text) == '{"ok": true}'
