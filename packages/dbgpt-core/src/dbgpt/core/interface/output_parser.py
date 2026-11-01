@@ -153,8 +153,17 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
     def _is_parsable_json(self, fragment: str) -> bool:
         if not fragment:
             return False
+        # parse_prompt_response normalizes newlines after extracting, so a
+        # candidate has to be judged the same way to stay compatible.
+        normalized = (
+            fragment.strip()
+            .replace("\\r\\n", " ")
+            .replace("\r\n", " ")
+            .replace("\\n", " ")
+            .replace("\n", " ")
+        )
         try:
-            json.loads(self._illegal_json_ends(fragment))
+            json.loads(self._illegal_json_ends(normalized))
             return True
         except Exception:
             return False
@@ -164,16 +173,27 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             # Get the dual-mode analysis first and get the maximum result
             temp_json_simple = self._json_interception(s)
             temp_json_array = self._json_interception(s, True)
-            candidates = [temp_json_simple, temp_json_array]
-            parsable = [c for c in candidates if self._is_parsable_json(c)]
-            if parsable:
-                # The string-aware scan can lengthen a fragment, so the longest
-                # candidate is no longer necessarily the one that parses.
-                temp_json = max(parsable, key=len)
-            elif len(temp_json_simple) > len(temp_json_array):
+            if len(temp_json_simple) > len(temp_json_array):
                 temp_json = temp_json_simple
             else:
                 temp_json = temp_json_array
+
+            if not self._is_parsable_json(temp_json):
+                other_json = (
+                    temp_json_simple
+                    if temp_json is temp_json_array
+                    else temp_json_array
+                )
+                if (
+                    other_json
+                    and other_json not in temp_json
+                    and self._is_parsable_json(other_json)
+                ):
+                    # The string-aware scan can lengthen a fragment, so the
+                    # longest candidate is no longer always the parsable one.
+                    # A fragment nested inside the longer one stays rejected:
+                    # returning it would silently drop the enclosing content.
+                    temp_json = other_json
 
             if not temp_json:
                 temp_json = self._json_interception(s)

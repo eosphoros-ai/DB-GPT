@@ -113,3 +113,31 @@ def test_parse_prompt_response_prefers_a_parsable_fragment():
     parser = _parser()
     text = 'Result: [ "a]b" oops ] {"ok": true}'
     assert parser.parse_prompt_response(text) == '{"ok": true}'
+
+
+def test_parse_prompt_response_keeps_literal_newline_object():
+    """A candidate is validated with the same normalization as downstream.
+
+    ``parse_prompt_response`` replaces newlines after extracting, so an object
+    holding a real newline still parses; the parsable-candidate check must not
+    drop it in favour of a nested array.
+    """
+    parser = _parser()
+    text = 'Result: {"sql": "SELECT\n1", "columns": ["x"]}'
+    assert parser.parse_prompt_response(text) == (
+        '{"sql": "SELECT 1", "columns": ["x"]}'
+    )
+
+
+def test_parse_prompt_response_does_not_promote_nested_fragment():
+    """An invalid array must not be replaced by an object nested inside it."""
+    parser = _parser()
+    text = 'Result: [{"sql":"SELECT 1"},{"sql": invalid}]'
+    assert parser.parse_prompt_response(text) == text[len("Result: ") :]
+
+
+def test_parse_prompt_response_keeps_array_tie_breaker():
+    """Equal-length candidates still resolve to the array, as before."""
+    parser = _parser()
+    text = "Result: {\"a\":1}; answer: [1,2,3]"
+    assert parser.parse_prompt_response(text) == "[1,2,3]"
