@@ -33,7 +33,15 @@ The script returns a large block of `text` content containing two parts:
 
 ### Step 2: Generate Insights & Display Report (Inject into Template)
 
-Read the "Statistical Summary" obtained in Step 1, and reason about the business significance or patterns behind the data. Then use the `html_interpreter` tool to load the template and inject data.
+Read the "Statistical Summary" obtained in Step 1, and reason about the business significance or patterns behind the data. Then call `generate_report` once with the requested title, analysis dimensions, and recommendations. The dedicated report agent selects this skill's template, writes the insights, binds the captured statistics, and renders the report. The lead agent must not assemble template data or call `html_interpreter` itself. Continue only if `generate_report` requests a specific missing calculation; do not rerun the completed analyzer.
+
+```json
+{
+  "instructions": "Generate a complete interactive analysis report covering data quality, numerical distributions, categorical structure, correlations, trends, anomalies, business implications, and recommendations. Distinguish observed evidence from possible explanations."
+}
+```
+
+The rules and placeholder reference below describe the internal template contract used by the report agent, not additional tool calls for the lead agent. Captured chart data is injected by the engine. A local unavailable prose value is marked with a source notice and does not block the complete report; an invalid source identity, missing required section, or invalid chart/table still requires correction within the report generation call.
 
 **Critical Rules (Must Follow):**
 

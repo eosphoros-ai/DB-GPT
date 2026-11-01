@@ -27,6 +27,7 @@ import json
 import logging
 import re
 import time
+from contextlib import nullcontext
 from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.expand.actions.react_action import Terminate
@@ -34,9 +35,17 @@ from dbgpt.agent.resource import ToolPack, tool
 from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.core import PromptTemplate
+from dbgpt.core.interface.report_capture import (
+    bind_artifact_sink,
+    get_current_artifact_sink,
+)
 
 from .react_tools import make_react_tools
-from .result import attach_agent_attribution, extract_subagent_result
+from .result import (
+    SubagentArtifactSink,
+    attach_agent_attribution,
+    extract_subagent_result,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -286,12 +295,43 @@ def _filter_readonly_connector_tools(
     return readonly
 
 
-def _build_sub_prompt(goal: str, extra_context: Optional[str]) -> PromptTemplate:
+def _build_sub_prompt(
+    goal: str, extra_context: Optional[str], language: str = "zh"
+) -> PromptTemplate:
     """Build the sub-agent system prompt from goal + optional context."""
     ctx_block = ""
     if extra_context and extra_context.strip():
         ctx_block = f"\n## Shared context from the lead agent\n{extra_context}\n"
     text = _SUB_AGENT_PROMPT_TEMPLATE.format(goal=goal, extra_context=ctx_block)
+    if language == "en":
+        text += (
+            "\n## Language\n"
+            "The user's interface and question are English. Write every user-visible "
+            "text in English: thought, action intention, step titles, status messages, "
+            "and the final result. Do not switch to Chinese because SQL results or "
+            "knowledge-base text are Chinese. Keep SQL identifiers, field names, and "
+            "quoted source text unchanged.\n"
+        )
+    status_prefix = (
+        "Status: completed / partially completed / failed"
+        if language == "en"
+        else "状态: 完成 / 部分完成 / 失败"
+    )
+    text += (
+        "\n## Result handoff\n"
+        f"Terminate with a concise result beginning with {status_prefix}. "
+        "Summarize every requested deliverable, completed findings and missing work. "
+        "Use the injected database dialect and schema; do not guess tables or query "
+        "information_schema on SQLite. Never return raw reasoning or "
+        "only the last "
+        "query."
+        " Stay within the assigned deliverables and time window. Do not add payment "
+        "analysis or a full-database quality audit unless assigned. Limit validation "
+        "to the keys, denominators and missing values that affect the "
+        "requested metrics. "
+        "For SQLite, inspect EXPLAIN QUERY PLAN before an expensive correlated query "
+        "if its lookup key is not indexed; never resubmit unchanged timeout SQL."
+    )
     return PromptTemplate(template=text, input_variables=[], template_format="jinja2")
 
 
@@ -300,6 +340,7 @@ async def build_sub_react_agent(
     sub_index: int,
     *,
     parent_conv_id: str,
+    language: str = "zh",
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
@@ -350,7 +391,7 @@ async def build_sub_react_agent(
         plans_memory=DefaultGptsPlansMemory(),
         message_memory=MetaDbGptsMessageMemory(),
     )
-    sub_gpt_memory.init(sub_conv_id, enable_vis_message=False)
+    sub_gpt_memory.init(sub_conv_id, enable_vis_message=False, publish_messages=False)
     sub_agent_memory = AgentMemory(gpts_memory=sub_gpt_memory)
 
     # (4) Independent tool set — factory rebuilds the 8 tools capturing
@@ -383,7 +424,7 @@ async def build_sub_react_agent(
         conv_id=sub_conv_id,
         gpts_app_code="react_agent_sub",
         gpts_app_name="ReAct-Sub",
-        language="zh",
+        language=language,
         enable_context_management=True,
     )
 
@@ -393,7 +434,7 @@ async def build_sub_react_agent(
         .bind(sub_agent_memory)
         .bind(sub_llm_config)
         .bind(sub_tool_pack)
-        .bind(_build_sub_prompt(sub_goal, extra_context))
+        .bind(_build_sub_prompt(sub_goal, extra_context, language))
         .build()
     )
     return sub_agent, sub_conv_id, sub_state
@@ -487,9 +528,11 @@ an execution mechanism after decomposition, not a decomposition tool.
 def make_dispatch_tool(
     *,
     parent_conv_id: str,
+    language: str = "zh",
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_context: str = "",
     knowledge_resources: Any = None,
     connector_tool_extras: Optional[List[Any]] = None,
     connector_manager: Any = None,
@@ -527,6 +570,7 @@ def make_dispatch_tool(
     # ``sub_0`` working directory (cross-batch artifact leak) and the frontend
     # ``subAgents[agent_id]`` map would overwrite the earlier row.
     _dispatch_counter = 0
+    shared_database_context = database_context
 
     @tool(
         description=(
@@ -539,7 +583,7 @@ def make_dispatch_tool(
         )
     )
     async def dispatch_parallel_tasks(tasks: list) -> str:
-        nonlocal _dispatch_counter
+        nonlocal _dispatch_counter, shared_database_context
         if not isinstance(tasks, list) or not tasks:
             return json.dumps(
                 {
@@ -562,6 +606,23 @@ def make_dispatch_tool(
         _dispatch_counter += 1
         batch_id = _dispatch_counter
 
+        if database_connector is not None and not shared_database_context:
+            try:
+                schema = await asyncio.to_thread(
+                    database_connector.get_table_info_no_throw
+                )
+                shared_database_context = str(schema)
+            except Exception as error:
+                shared_database_context = (
+                    f"Schema unavailable: {error}. Inspect schema before analysis."
+                )
+        dialect = str(getattr(database_connector, "dialect", "unknown"))
+        database_prompt = (
+            f"Database dialect: {dialect}\n{shared_database_context}"
+            if database_connector is not None
+            else ""
+        )
+
         async def run_one(idx: int, t: dict) -> dict:
             started_at = time.monotonic()
             agent_id = f"sub_d{batch_id}_{idx}"
@@ -570,6 +631,14 @@ def make_dispatch_tool(
             ) or f"子任务{idx + 1}"
             goal = (t.get("goal") if isinstance(t, dict) else None) or ""
             extra = t.get("context") if isinstance(t, dict) else None
+            extra = "\n".join(part for part in (database_prompt, extra) if part)
+            parent_sink = get_current_artifact_sink()
+            child_sink = (
+                SubagentArtifactSink(parent_sink, agent_id, title)
+                if parent_sink is not None
+                else None
+            )
+            sub_state = {}
             await emit_event(
                 {
                     "type": "agent.start",
@@ -580,11 +649,13 @@ def make_dispatch_tool(
                     "batch_id": batch_id,
                 }
             )
+            cancelled = False
             try:
                 agent, _cid, sub_state = await build_sub_react_agent(
                     goal,
                     idx,
                     parent_conv_id=parent_conv_id,
+                    language=language,
                     llm_client=llm_client,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,
@@ -593,6 +664,7 @@ def make_dispatch_tool(
                     extra_context=extra,
                     batch_id=batch_id,
                 )
+                sub_state["_report_artifact_sink"] = child_sink
                 from dbgpt.agent import AgentMessage
 
                 # Forward the sub-agent's CONFIRMED tool actions (not raw token
@@ -617,6 +689,9 @@ def make_dispatch_tool(
                         return
                     ao = payload.get("action_output") or {}
                     if ao.get("terminate"):
+                        sub_state["_sub_terminated"] = bool(
+                            ao.get("is_exe_success", True)
+                        )
                         return
                     action = ao.get("action")
                     if not action or action.lower() == "terminate":
@@ -666,35 +741,50 @@ def make_dispatch_tool(
                             step_event["sql"] = sql
                     await emit_event(step_event)
 
-                reply = await asyncio.wait_for(
-                    agent.generate_reply(
-                        received_message=AgentMessage(content=goal),
-                        sender=agent,
-                        stream_callback=_sub_stream_callback,
-                    ),
-                    timeout=_SUBAGENT_TIMEOUT,
-                )
+                with (
+                    bind_artifact_sink(child_sink)
+                    if child_sink is not None
+                    else nullcontext()
+                ):
+                    reply = await asyncio.wait_for(
+                        agent.generate_reply(
+                            received_message=AgentMessage(content=goal),
+                            sender=agent,
+                            stream_callback=_sub_stream_callback,
+                        ),
+                        timeout=_SUBAGENT_TIMEOUT,
+                    )
+                if not reply.success:
+                    sub_state["_sub_failure_reason"] = (
+                        reply.get_dict_context().get("execution_error")
+                        or "子任务未完成"
+                    )
                 r = extract_subagent_result(reply, sub_state, title, "done")
+            except asyncio.CancelledError:
+                cancelled = True
+                sub_state["_sub_failure_reason"] = (
+                    "上级任务取消或运行期限已到；已保留完成产物"
+                )
+                r = extract_subagent_result(None, sub_state, title, "failed")
             except asyncio.TimeoutError:
-                r = {
-                    "title": title,
-                    "status": "timeout",
-                    "result": f"子任务超时（{_SUBAGENT_TIMEOUT}s）",
-                    "artifacts": [],
-                }
+                sub_state["_sub_failure_reason"] = f"子任务超时（{_SUBAGENT_TIMEOUT}s）"
+                r = extract_subagent_result(None, sub_state, title, "timeout")
             except Exception as e:  # single failure must not break the batch
                 logger.warning("sub-agent %d failed: %s", idx, e, exc_info=True)
-                r = {
-                    "title": title,
-                    "status": "failed",
-                    "result": f"执行失败: {e}",
-                    "artifacts": [],
-                }
+                sub_state["_sub_failure_reason"] = f"执行失败: {e}"
+                r = extract_subagent_result(None, sub_state, title, "failed")
             # Stamp the source agent on every artifact so the frontend can
             # count/label per sub-agent (aggregate-card row + files-tab tag).
             attach_agent_attribution(r.get("artifacts", []), agent_id, title)
             r["agent_id"] = agent_id
             r["agent_name"] = title
+            # Publish each child's artifacts before finishing it. A cancelled
+            # batch never reaches gather's return, but its completed work must
+            # still be available in the UI and persisted history.
+            if r.get("artifacts"):
+                await emit_event(
+                    {"type": "subagent.artifacts", "items": r["artifacts"]}
+                )
             result_summary = str(r.get("result") or "")
             if len(result_summary) > _SUBAGENT_RESULT_SUMMARY_MAX_CHARS:
                 result_summary = (
@@ -708,27 +798,35 @@ def make_dispatch_tool(
                     "batch_id": batch_id,
                     "status": r["status"],
                     "result": result_summary,
+                    "artifact_ids": r.get("artifact_ids", []),
                     "elapsed_ms": int((time.monotonic() - started_at) * 1000),
                 }
             )
+            if cancelled:
+                raise asyncio.CancelledError
             return r
 
         results = await asyncio.gather(*[run_one(i, t) for i, t in enumerate(accepted)])
 
-        # Artifacts go to the frontend out-of-band — NOT into the lead context.
-        # Each item already carries its source agent_id / agent_name (stamped
-        # above), so the frontend can do per-row counting and "by <agent>" labels.
-        all_artifacts = [a for r in results for a in r.get("artifacts", [])]
-        if all_artifacts:
-            await emit_event({"type": "subagent.artifacts", "items": all_artifacts})
-
         # Only the compressed text conclusions are relayed to the lead LLM.
         summary = "\n\n".join(
-            f"### {r['title']} [{r['status']}]\n{r['result']}" for r in results
+            f"### {r['title']} [{r['status']}]\n"
+            f"{str(r['result'])[:_SUBAGENT_RESULT_SUMMARY_MAX_CHARS]}\n"
+            f"真实产物 ID: {', '.join(r.get('artifact_ids', [])) or '无'}\n"
+            "未完成原因: "
+            f"""{
+                r.get("failure_reason")
+                or (
+                    "无"
+                    if r["status"] == "done"
+                    else "子任务未提交完整交付，请只补充缺失项"
+                )
+            }"""
+            for r in results
         )
         if dropped > 0:
             summary += (
-                f"\n\n⚠️ 另有 {dropped} 个子任务因超过并发上限未执行，"
+                f"\n\n[提示] 另有 {dropped} 个子任务因超过并发上限未执行，"
                 f"请在下一轮再次调用 dispatch_parallel_tasks 处理。"
             )
         return json.dumps(

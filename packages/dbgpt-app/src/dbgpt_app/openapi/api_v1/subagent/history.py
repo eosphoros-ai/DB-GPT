@@ -150,6 +150,16 @@ def _new_agent(agent_id: str, event: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _copy_artifact(raw_artifact: Dict[str, Any]) -> Optional[Dict[str, str]]:
+    artifact_id = _bounded_text(raw_artifact.get("artifact_id"), 200)
+    if artifact_id:
+        return {
+            "type": _bounded_text(raw_artifact.get("type"), 32) or "file",
+            "artifact_id": artifact_id,
+            "title": _bounded_text(
+                raw_artifact.get("name") or raw_artifact.get("title"), _MAX_NAME_CHARS
+            )
+            or artifact_id,
+        }
     raw_url = raw_artifact.get("url")
     if (
         not isinstance(raw_url, str)
@@ -239,7 +249,9 @@ def update_subagent_history(
 
     status = str(event.get("status") or "done")
     agent["status"] = (
-        status if status in {"running", "done", "timeout", "failed"} else "done"
+        status
+        if status in {"running", "done", "partial", "timeout", "failed"}
+        else "failed"
     )
     result = _bounded_text(event.get("result"), _MAX_RESULT_CHARS)
     if result:

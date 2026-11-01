@@ -81,6 +81,7 @@ export const DELETE = <Params = any, Response = any, D = any>(
 
 export * from './app';
 export * from './chat';
+export * from './dashboard';
 export * from './evaluate';
 export * from './flow';
 export * from './knowledge';

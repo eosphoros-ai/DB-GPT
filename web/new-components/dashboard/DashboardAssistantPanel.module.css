@@ -1,0 +1,237 @@
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+}
+.messages {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 2px 16px;
+}
+.empty {
+  padding: 24px 6px;
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.empty strong {
+  color: var(--app-text);
+  font-size: 15px;
+}
+.empty p {
+  margin: 10px 0 16px;
+}
+.userMessage,
+.assistantMessage {
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  margin: 0 0 18px;
+}
+.userMessage {
+  border-radius: 12px;
+  background: var(--app-surface-muted);
+  padding: 12px;
+}
+.assistantMessage {
+  padding: 0 4px;
+}
+.author {
+  font-size: 11px;
+  color: var(--app-muted);
+  margin-bottom: 5px;
+}
+.assistantMessage p,
+.userMessage p {
+  margin: 6px 0;
+  white-space: pre-wrap;
+}
+.assistantMessage ul,
+.assistantMessage ol {
+  padding-left: 20px;
+}
+.assistantMessage pre {
+  overflow: auto;
+  padding: 8px;
+  background: var(--app-surface-muted);
+}
+.status {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--app-muted);
+  align-items: center;
+}
+.composer {
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--app-surface);
+  flex-shrink: 0;
+}
+.attachments {
+  margin: 8px;
+  border: 1px solid var(--app-border);
+  border-radius: 9px;
+  background: var(--app-surface-muted);
+}
+.attachmentHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+.attachmentHeading button {
+  color: var(--app-accent);
+}
+.attachmentList {
+  max-height: min(230px, 26vh);
+  overflow: auto;
+}
+.attachment {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border-top: 1px solid var(--app-border);
+}
+.attachmentContent {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+}
+.attachmentContent strong,
+.attachmentContent small,
+.attachmentContent span {
+  display: block;
+}
+.attachmentContent strong {
+  font-weight: 600;
+  line-height: 1.5;
+}
+.attachmentContent small {
+  color: var(--app-muted);
+  font-size: 10px;
+  margin: 3px 0;
+}
+.attachmentContent span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.6;
+}
+.messageAttachments {
+  margin-top: 10px;
+  border-top: 1px solid var(--app-border);
+  padding-top: 8px;
+}
+.messageAttachments summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.messageAttachments button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-left: 2px solid var(--app-accent);
+  margin: 10px 0;
+  padding-left: 9px;
+}
+.messageAttachments strong,
+.messageAttachments small,
+.messageAttachments span {
+  display: block;
+}
+.messageAttachments small {
+  color: var(--app-muted);
+}
+.messageAttachments span {
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.composer textarea {
+  border: 0;
+  box-shadow: none !important;
+  background: transparent;
+  font-size: 13px;
+}
+.composerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px 10px;
+}
+.composerActions span {
+  font-size: 10px;
+  color: var(--app-muted);
+}
+.trayAnchor {
+  position: fixed;
+  z-index: 1010;
+  bottom: 20px;
+  right: 24px;
+}
+.trayButton {
+  box-shadow: var(--app-shadow);
+  border-radius: 24px;
+  color: var(--app-text);
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.trayButton[data-dragging='true'] {
+  cursor: grabbing;
+}
+.tray {
+  width: min(360px, calc(100vw - 48px));
+  max-height: min(600px, 72vh);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.trayList {
+  overflow: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.annotation {
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12px;
+}
+.annotationHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.annotationHeader strong {
+  flex: 1;
+  min-width: 0;
+}
+.annotation p {
+  margin-top: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.annotation small {
+  display: block;
+  color: var(--app-muted);
+  margin-top: 5px;
+}

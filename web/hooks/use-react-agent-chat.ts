@@ -34,6 +34,8 @@ export interface StreamingTurn {
   parts: MessagePart[];
   finalContent: string;
   citations: AgentCitation[];
+  reportId?: string;
+  reportRunId?: string;
   isWorking: boolean;
   startTime: number;
   endTime?: number;
@@ -137,6 +139,8 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
         parts,
         finalContent,
         citations: finalAnswer.citations,
+        reportId: finalAnswer.reportId,
+        reportRunId: finalAnswer.reportRunId,
         isWorking,
         currentStatus,
         thinkingContent,
@@ -273,6 +277,8 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
           time_stamp: Date.now(),
           thinking: false,
           citations: finalAnswer.citations,
+          reportId: finalAnswer.reportId,
+          reportRunId: finalAnswer.reportRunId,
         };
         const finalHistory: ChatHistoryResponse = [
           ...currentHistory,

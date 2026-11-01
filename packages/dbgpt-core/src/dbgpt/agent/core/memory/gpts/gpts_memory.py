@@ -59,9 +59,15 @@ class GptsMemory:
         enable_vis_message: bool = True,
         history_messages: Optional[List[GptsMessage]] = None,
         start_round: int = 0,
+        publish_messages: bool = True,
     ):
         """Gpt memory init."""
-        self.channels[conv_id] = asyncio.Queue()
+        # Callback-driven endpoints have no consumer for this legacy stream.
+        # Do not accumulate a complete history snapshot for every model token.
+        if publish_messages:
+            self.channels[conv_id] = asyncio.Queue()
+        else:
+            self.channels.pop(conv_id, None)
         self.enable_vis_map[conv_id] = enable_vis_message
         self.messages_cache[conv_id] = history_messages if history_messages else []
         self.start_round_map[conv_id] = start_round
@@ -77,7 +83,7 @@ class GptsMemory:
     def clear(self, conv_id: str):
         """Clear gpt memory."""
         # clear last message queue
-        queue = self.channels.pop(conv_id)  # noqa
+        queue = self.channels.pop(conv_id, None)  # noqa
         del queue
         # clear messages cache'
         if self.messages_cache.get(conv_id):
@@ -95,6 +101,8 @@ class GptsMemory:
     async def push_message(self, conv_id: str, temp_msg: Optional[str] = None):
         """Push conversation message."""
         queue = self.queue(conv_id)
+        if queue is None:
+            return
         enable_vis_tag = self.enable_vis_message(conv_id=conv_id)
         if enable_vis_tag:
             # 如果有临时消息内容需要push 拼接再最末尾，否则直接从短期记忆中发布最后消息
@@ -116,8 +124,8 @@ class GptsMemory:
     async def complete(self, conv_id: str):
         """Complete conversation message."""
         queue = self.queue(conv_id)
-
-        await queue.put("[DONE]")
+        if queue is not None:
+            await queue.put("[DONE]")
 
     async def append_message(self, conv_id: str, message: GptsMessage):
         """Append message."""

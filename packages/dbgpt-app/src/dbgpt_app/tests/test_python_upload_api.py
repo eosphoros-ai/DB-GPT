@@ -1,8 +1,13 @@
+import asyncio
 import io
+import sqlite3
+import threading
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
+from httpx import ASGITransport, AsyncClient
 
 from dbgpt_serve.utils.auth import UserRequest
 
@@ -13,6 +18,7 @@ class FakeUploadFile:
         self.content_type = "text/x-python"
         self._buffer = io.BytesIO(content)
         self.read_calls = []
+        self.read_sizes = self.read_calls
 
     async def read(self, size: int = -1) -> bytes:
         self.read_calls.append(size)
@@ -401,3 +407,469 @@ async def test_python_file_upload_rejects_symlinked_upload_root(tmp_path, monkey
 
     assert exc_info.value.status_code == 400
     assert not (outside_dir / "alice" / "inside.py").exists()
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_keeps_batch_together(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    registrations = []
+    registered_datasets = []
+    monkeypatch.setattr(
+        python_upload_api,
+        "_register_uploaded_dataset",
+        lambda database_name, database_path, user_id: registrations.append(
+            (database_name, database_path, user_id)
+        ),
+    )
+
+    class FakeDataset:
+        def __init__(self, values):
+            self._values = values
+
+        def public_dict(self):
+            return {
+                "dataset_id": self._values["dataset_id"],
+                "conversation_id": self._values["conversation_id"],
+                "database_name": self._values["database_name"],
+                "database_type": "sqlite",
+                "files": [
+                    {key: value for key, value in item.items() if key != "stored_path"}
+                    for item in self._values["files"]
+                ],
+                "tables": [
+                    table for item in self._values["files"] for table in item["tables"]
+                ],
+                "relationship_candidates": self._values["relationships"],
+            }
+
+    class FakeDatasetService:
+        def register_ready(self, **values):
+            registered_datasets.append(values)
+            return FakeDataset(values)
+
+        def delete_registry_record(self, dataset_id, owner_id):
+            return True
+
+    monkeypatch.setattr(
+        python_upload_api,
+        "_get_uploaded_dataset_service",
+        lambda: FakeDatasetService(),
+    )
+
+    # A second coroutine must advance while real parsing/materialization runs.
+    materialize = python_upload_api.materialize_uploaded_dataset
+    started = threading.Event()
+    heartbeat = threading.Event()
+
+    def materialize_with_heartbeat(*args, **kwargs):
+        started.set()
+        assert heartbeat.wait(2), "Materialization blocked the event loop"
+        return materialize(*args, **kwargs)
+
+    async def serve_another_request():
+        while not started.is_set():
+            await asyncio.sleep(0)
+        heartbeat.set()
+
+    monkeypatch.setattr(
+        python_upload_api, "materialize_uploaded_dataset", materialize_with_heartbeat
+    )
+    concurrent_request = asyncio.create_task(serve_another_request())
+
+    result = await python_upload_api.python_files_upload(
+        [
+            FakeUploadFile("orders.csv", b"order_id,customer_id\n1,10\n"),
+            FakeUploadFile("customers.csv", b"customer_id,city\n10,Hangzhou\n"),
+        ],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    await concurrent_request
+    assert result.success is True
+    paths = [Path(item["stored_path"]) for item in registered_datasets[0]["files"]]
+    assert [path.name for path in paths] == ["orders.csv", "customers.csv"]
+    assert paths[0].parent == paths[1].parent
+    assert paths[0].parent.name.startswith("batch-")
+    assert paths[0].read_bytes() == b"order_id,customer_id\n1,10\n"
+    assert paths[1].read_bytes() == b"customer_id,city\n10,Hangzhou\n"
+    assert result.data["database_type"] == "sqlite"
+    assert registered_datasets[0]["database_path"].is_file()
+    assert [item["table_name"] for item in result.data["tables"]] == [
+        "orders",
+        "customers",
+    ]
+    assert result.data["relationship_candidates"] == [
+        {
+            "column": "customer_id",
+            "left_table": "orders",
+            "right_table": "customers",
+            "sample_distinct_overlap": 1,
+            "status": "candidate_only",
+        }
+    ]
+    assert len(registrations) == 1
+    assert registrations[0][0] == result.data["database_name"]
+    assert registrations[0][1] == registered_datasets[0]["database_path"]
+    assert registrations[0][2] == "alice"
+    assert result.data["conversation_id"] == "conversation-1"
+    assert "file_paths" not in result.data
+    assert "database_path" not in result.data
+    assert all("stored_path" not in item for item in result.data["files"])
+
+
+@pytest.mark.asyncio
+async def test_large_batch_upload_keeps_http_heartbeat_responsive(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    registered = []
+
+    def register_ready(**values):
+        registered.append(values)
+        return SimpleNamespace(public_dict=lambda: {"dataset_id": values["dataset_id"]})
+
+    monkeypatch.setattr(
+        python_upload_api, "_register_uploaded_dataset", lambda *args: None
+    )
+    monkeypatch.setattr(
+        python_upload_api,
+        "_get_uploaded_dataset_service",
+        lambda: SimpleNamespace(register_ready=register_ready),
+    )
+    app = FastAPI()
+    app.include_router(python_upload_api.router)
+    app.dependency_overrides[python_upload_api.get_user_from_headers] = lambda: (
+        UserRequest(user_id="alice")
+    )
+
+    @app.get("/heartbeat")
+    async def heartbeat():
+        return {"ok": True}
+
+    row_count = 99_510
+    payload = b"order_id,customer_id,note\n" + b"".join(
+        f"{index:06d},10,{'x' * 89}\n".encode() for index in range(row_count)
+    )
+    assert 9.48 < len(payload) / (1024 * 1024) < 9.50
+    loop = asyncio.get_running_loop()
+    ticks = []
+    finished = asyncio.Event()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+
+        async def poll_heartbeat():
+            while not finished.is_set():
+                response = await client.get("/heartbeat")
+                assert response.json() == {"ok": True}
+                ticks.append(loop.time())
+                await asyncio.sleep(0.025)
+
+        polling = asyncio.create_task(poll_heartbeat())
+        await asyncio.sleep(0)
+        try:
+            response = await client.post(
+                "/v1/python/files/upload",
+                data={"conv_uid": "heartbeat-conversation"},
+                files=[
+                    ("files", ("orders.csv", payload, "text/csv")),
+                    (
+                        "files",
+                        (
+                            "customers.csv",
+                            b"customer_id,city\n10,Hangzhou\n",
+                            "text/csv",
+                        ),
+                    ),
+                ],
+            )
+        finally:
+            ticks.append(loop.time())
+            finished.set()
+            await polling
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert len(ticks) >= 3
+    max_gap = max(later - earlier for earlier, later in zip(ticks, ticks[1:]))
+    print(
+        f"CSV bytes={len(payload)}, heartbeat samples={len(ticks)}, "
+        f"max gap={max_gap:.3f}s"
+    )
+    assert max_gap < 1.0, f"Upload stalled the shared event loop for {max_gap:.3f}s"
+    with sqlite3.connect(registered[0]["database_path"]) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == row_count
+        )
+    assert registered[0]["relationships"][0]["column"] == "customer_id"
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rejects_duplicate_names(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+
+    result = await python_upload_api.python_files_upload(
+        [
+            FakeUploadFile("orders.csv", b"first"),
+            FakeUploadFile("ORDERS.CSV", b"second"),
+        ],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert "Duplicate filename" in result.err_msg
+    user_dir = tmp_path / "python_uploads" / "alice"
+    assert not user_dir.exists() or list(user_dir.iterdir()) == []
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_enforces_count_file_and_batch_limits(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    monkeypatch.setattr(python_upload_api, "_MAX_BATCH_FILES", 1)
+    too_many = await python_upload_api.python_files_upload(
+        [FakeUploadFile("a.csv", b"a\n1\n"), FakeUploadFile("b.csv", b"b\n1\n")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+    assert too_many.success is False
+    assert "maximum 1" in too_many.err_msg
+
+    monkeypatch.setattr(python_upload_api, "_MAX_BATCH_FILES", 16)
+    monkeypatch.setattr(python_upload_api, "_MAX_FILE_BYTES", 4)
+    oversized_file = FakeUploadFile("a.csv", b"12345")
+    too_large = await python_upload_api.python_files_upload(
+        [oversized_file],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+    assert too_large.success is False
+    assert "File exceeds" in too_large.err_msg
+    assert oversized_file.read_sizes == [5]
+
+    monkeypatch.setattr(python_upload_api, "_MAX_FILE_BYTES", 10)
+    monkeypatch.setattr(python_upload_api, "_MAX_BATCH_BYTES", 6)
+    batch_too_large = await python_upload_api.python_files_upload(
+        [FakeUploadFile("a.csv", b"1234"), FakeUploadFile("b.csv", b"5678")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+    assert batch_too_large.success is False
+    assert "Batch exceeds" in batch_too_large.err_msg
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rejects_unsupported_type_and_missing_conversation(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    unsupported = await python_upload_api.python_files_upload(
+        [FakeUploadFile("report.pdf", b"not-a-table")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+    assert unsupported.success is False
+    assert "Unsupported tabular file type" in unsupported.err_msg
+
+    missing_conversation = await python_upload_api.python_files_upload(
+        [FakeUploadFile("orders.csv", b"order_id\n1\n")],
+        "",
+        UserRequest(user_id="alice"),
+    )
+    assert missing_conversation.success is False
+    assert "conversation id" in missing_conversation.err_msg
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rejects_path_filename(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+
+    result = await python_upload_api.python_files_upload(
+        [FakeUploadFile("../orders.csv", b"order_id\n1\n")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert "path separators" in result.err_msg
+    assert not (tmp_path / "orders.csv").exists()
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rolls_back_partial_batch(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+
+    result = await python_upload_api.python_files_upload(
+        [
+            FakeUploadFile("orders.csv", b"order_id\n1\n"),
+            FakeUploadFile("customers.csv", b""),
+        ],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    user_dir = tmp_path / "python_uploads" / "alice"
+    assert user_dir.exists()
+    assert list(user_dir.iterdir()) == []
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rolls_back_when_registration_fails(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+
+    def fail_registration(database_name, database_path, user_id):
+        raise RuntimeError("metadata storage unavailable")
+
+    monkeypatch.setattr(
+        python_upload_api, "_register_uploaded_dataset", fail_registration
+    )
+
+    result = await python_upload_api.python_files_upload(
+        [FakeUploadFile("orders.csv", b"order_id\n1\n")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert "metadata storage unavailable" in result.err_msg
+    user_dir = tmp_path / "python_uploads" / "alice"
+    assert user_dir.exists()
+    assert list(user_dir.iterdir()) == []
+
+
+@pytest.mark.asyncio
+async def test_python_files_upload_rolls_back_datasource_when_registry_fails(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    registered = []
+    unregistered = []
+    monkeypatch.setattr(
+        python_upload_api,
+        "_register_uploaded_dataset",
+        lambda database_name, database_path, user_id: registered.append(database_name),
+    )
+    monkeypatch.setattr(
+        python_upload_api,
+        "_unregister_uploaded_dataset",
+        lambda database_name: unregistered.append(database_name),
+    )
+
+    class FailingRegistry:
+        def register_ready(self, **values):
+            raise RuntimeError("registry unavailable")
+
+    monkeypatch.setattr(
+        python_upload_api,
+        "_get_uploaded_dataset_service",
+        lambda: FailingRegistry(),
+    )
+
+    result = await python_upload_api.python_files_upload(
+        [FakeUploadFile("orders.csv", b"order_id\n1\n")],
+        "conversation-1",
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert "registry unavailable" in result.err_msg
+    assert unregistered == registered
+    user_dir = tmp_path / "python_uploads" / "alice"
+    assert user_dir.exists()
+    assert list(user_dir.iterdir()) == []
+
+
+def test_register_uploaded_dataset_rolls_back_metadata_after_cache_failure(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+    from dbgpt_serve.datasource.manages import ConnectorManager
+
+    class FakeStorage:
+        def __init__(self):
+            self.records = {}
+            self.deleted = []
+
+        def get_by_names(self, database_name):
+            return self.records.get(database_name)
+
+        def add_file_db(
+            self, database_name, database_type, database_path, comment, user_id
+        ):
+            self.records[database_name] = {
+                "db_type": database_type,
+                "file_path": database_path,
+                "comment": comment,
+                "user_id": user_id,
+            }
+
+        def delete_db(self, database_name):
+            self.deleted.append(database_name)
+            self.records.pop(database_name, None)
+
+    class FakeManager:
+        def __init__(self):
+            self.storage = FakeStorage()
+            self.invalidations = 0
+
+        def invalidate_connector(self, database_name):
+            self.invalidations += 1
+            if self.invalidations == 1:
+                raise RuntimeError("cache unavailable")
+
+    manager = FakeManager()
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    monkeypatch.setattr(ConnectorManager, "get_instance", lambda system_app: manager)
+
+    with pytest.raises(RuntimeError, match="cache unavailable"):
+        python_upload_api._register_uploaded_dataset(
+            "upload_alice_123", tmp_path / "dataset.sqlite", "alice"
+        )
+
+    assert manager.storage.records == {}
+    assert manager.storage.deleted == ["upload_alice_123"]
+    assert manager.invalidations == 2

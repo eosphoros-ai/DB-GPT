@@ -583,6 +583,8 @@ const sidebars = {
   ],
 
   sidebarApplication: [
+    { type: "doc", id: "application/dashboard/walmart" },
+    { type: "doc", id: "application/dashboard/apple" },
     {
       type: "category",
       label: "MCP Connectors",
@@ -740,6 +742,7 @@ const sidebars = {
       items: [
         { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
         { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+        { type: "doc", id: "design/traceable_analysis_report" },
       ],
     },
     {
@@ -836,6 +839,7 @@ const sidebars = {
   ],
 
   sidebarDevelopmentGuide: [
+    { type: "doc", id: "design/dashboard" },
     {
       type: "category",
       label: "Agents",

@@ -4,7 +4,7 @@ These wrap the generic kb_ls, kb_glob, kb_grep, kb_cat, and kb_semantic_search
 tools so that `knowledge_id` is pre-bound and the LLM does not need to provide it.
 """
 
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.resource.tool.base import tool
 
@@ -49,7 +49,7 @@ def make_kb_glob(knowledge_id: str):
     return _kb_glob
 
 
-def make_kb_grep(knowledge_id: str):
+def make_kb_grep(knowledge_id: str, report_state: Optional[Dict[str, Any]] = None):
     """Create a kb_grep tool bound to a specific knowledge space."""
 
     @tool(
@@ -70,17 +70,20 @@ def make_kb_grep(knowledge_id: str):
     ) -> str:
         from dbgpt_serve.rag.tools.kb_file_tools import kb_grep as _impl
 
-        return await _impl(
+        result = await _impl(
             knowledge_id=knowledge_id,
             query=query,
             path=path,
             file_pattern=file_pattern,
         )
+        if report_state is not None:
+            report_state["_report_knowledge_search_attempted"] = True
+        return result
 
     return _kb_grep
 
 
-def make_kb_cat(knowledge_id: str):
+def make_kb_cat(knowledge_id: str, report_state: Optional[Dict[str, Any]] = None):
     """Create a kb_cat tool bound to a specific knowledge space."""
 
     @tool(
@@ -90,27 +93,38 @@ def make_kb_cat(knowledge_id: str):
             "Use this after kb_ls or kb_glob to read a file you found. "
             'Parameters: {{"path": "file path like src/main.py", '
             '"start_line": "start line number (optional, default 1)", '
-            '"end_line": "end line number (optional, 0 = to end)"}}'
+            '"end_line": "end line number (optional, 0 = to end)", '
+            '"chunk_id": "optional source chunk ID from retrieval"}} '
+            "Report evidence preserves each source chunk separately. Read a specific "
+            "chunk_id to inspect the governing rule before binding it to a "
+            "report block."
         ),
     )
     async def _kb_cat(
         path: str,
         start_line: int = 1,
         end_line: int = 0,
+        chunk_id: str = "",
     ) -> str:
         from dbgpt_serve.rag.tools.kb_file_tools import kb_cat as _impl
 
-        return await _impl(
+        result = await _impl(
             knowledge_id=knowledge_id,
             path=path,
             start_line=start_line,
             end_line=end_line,
+            chunk_id=chunk_id,
         )
+        if report_state is not None:
+            report_state["_report_knowledge_search_attempted"] = True
+        return result
 
     return _kb_cat
 
 
-def make_kb_semantic_search(knowledge_id: str):
+def make_kb_semantic_search(
+    knowledge_id: str, report_state: Optional[Dict[str, Any]] = None
+):
     """Create a semantic_search tool bound to a specific knowledge space."""
 
     @tool(
@@ -133,11 +147,16 @@ def make_kb_semantic_search(knowledge_id: str):
             kb_semantic_search as _impl,
         )
 
-        return await _impl(
+        result = await _impl(
             knowledge_id=knowledge_id,
             query=query,
             top_k=top_k,
         )
+        if report_state is not None and not result.startswith(
+            "Semantic search failed:"
+        ):
+            report_state["_report_knowledge_search_attempted"] = True
+        return result
 
     return _semantic_search
 
@@ -290,7 +309,9 @@ def make_kb_wiki_tools(knowledge_id: str) -> List:
     return _make_kb_wiki_tools(knowledge_id)
 
 
-def make_kb_tools(knowledge_id: str) -> List:
+def make_kb_tools(
+    knowledge_id: str, report_state: Optional[Dict[str, Any]] = None
+) -> List:
     """Create all knowledge base tools bound to a specific space.
 
     Returns a list of tool instances:
@@ -309,9 +330,9 @@ def make_kb_tools(knowledge_id: str) -> List:
     return [
         make_kb_ls(knowledge_id),
         make_kb_glob(knowledge_id),
-        make_kb_grep(knowledge_id),
-        make_kb_cat(knowledge_id),
-        make_kb_semantic_search(knowledge_id),
+        make_kb_grep(knowledge_id, report_state),
+        make_kb_cat(knowledge_id, report_state),
+        make_kb_semantic_search(knowledge_id, report_state),
         *_make_kb_wiki_tools(knowledge_id),
         make_kb_codegraph_explore(knowledge_id),
         make_kb_codegraph_call_chain(knowledge_id),

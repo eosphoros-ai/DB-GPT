@@ -1,0 +1,73 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  color: var(--cohort-text, var(--app-text));
+}
+.scroll {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  border-radius: 8px;
+}
+.scroll:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -2px;
+}
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: 12px;
+}
+.table th {
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+  padding: 10px 8px;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--cohort-card, var(--app-surface));
+  z-index: 2;
+}
+.table tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--cohort-card, var(--app-surface));
+  z-index: 1;
+  text-align: left;
+}
+.size {
+  text-align: right;
+  padding: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.cell {
+  min-width: 70px;
+  height: 46px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.cell strong {
+  display: block;
+  font-size: 12px;
+}
+.cell span {
+  display: block;
+  font-size: 12px;
+}
+.cell[data-observed='false'] {
+  color: var(--cohort-muted, var(--app-muted));
+  background: var(--cohort-card, var(--app-surface));
+}
+.note {
+  color: var(--cohort-muted, var(--app-muted));
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+}

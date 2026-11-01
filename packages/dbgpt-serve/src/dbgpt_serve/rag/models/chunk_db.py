@@ -103,6 +103,49 @@ class DocumentChunkDao(BaseDao):
         session.close()
         return result
 
+    def search_document_chunks(
+        self, document_id: int, keyword: str, page: int = 1, page_size: int = 1000
+    ):
+        """Return only chunks whose content contains ``keyword``.
+
+        SQLite's built-in lower/LIKE only fold ASCII. Register Python's lower
+        on this connection to preserve kb_grep's Unicode substring semantics
+        without returning nonmatching bodies to the application.
+        """
+        session = self.get_raw_session()
+        try:
+            content = func.lower(DocumentChunkEntity.content)
+            if session.get_bind().dialect.name == "sqlite":
+                connection = session.connection().connection.driver_connection
+                connection.create_function(
+                    "dbgpt_lower", 1, lambda value: (value or "").lower()
+                )
+                content = func.dbgpt_lower(DocumentChunkEntity.content)
+            return (
+                session.query(DocumentChunkEntity)
+                .filter(DocumentChunkEntity.document_id == document_id)
+                .filter(content.contains(keyword.lower(), autoescape=True))
+                .order_by(DocumentChunkEntity.id.asc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+                .all()
+            )
+        finally:
+            session.close()
+
+    def get_document_chunk_identities(self, document_id: int):
+        """Load source order/IDs without transferring document bodies."""
+        session = self.get_raw_session()
+        try:
+            return (
+                session.query(DocumentChunkEntity.id, DocumentChunkEntity.meta_info)
+                .filter(DocumentChunkEntity.document_id == document_id)
+                .order_by(DocumentChunkEntity.id.asc())
+                .all()
+            )
+        finally:
+            session.close()
+
     def get_chunks_with_questions(self, query: DocumentChunkEntity, document_ids=None):
         session = self.get_raw_session()
         document_chunks = session.query(DocumentChunkEntity)

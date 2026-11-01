@@ -528,6 +528,9 @@ class KnowledgeService:
             f"{len(chunk_docs)}"
         )
         try:
+            from dbgpt_serve.rag.chunk_metadata import prepare_document_chunks
+
+            prepare_document_chunks(chunk_docs, doc)
             with root_tracer.start_span(
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
@@ -539,13 +542,14 @@ class KnowledgeService:
                 doc.vector_ids = ",".join(vector_ids)
             logger.info(f"async document embedding, success:{doc.doc_name}")
             # save chunk details
+            prepare_document_chunks(chunk_docs, doc, vector_ids)
             chunk_entities = [
                 DocumentChunkEntity(
                     doc_name=doc.doc_name,
                     doc_type=doc.doc_type,
                     document_id=doc.id,
                     content=chunk_doc.content,
-                    meta_info=str(chunk_doc.metadata),
+                    meta_info=json.dumps(chunk_doc.metadata, ensure_ascii=False),
                     gmt_created=datetime.now(),
                     gmt_modified=datetime.now(),
                 )

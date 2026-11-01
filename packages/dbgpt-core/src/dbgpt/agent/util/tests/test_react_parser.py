@@ -2,7 +2,29 @@
 Unit tests for the ReActOutputParser using pytest.
 """
 
-from ..react_parser import ReActOutputParser
+import pytest
+
+from ..react_parser import ReActOutputParser, extract_terminate_output
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '{"output": "最终结果"}',
+        "{'result': '最终结果'}",
+        {"final_answer": "最终结果"},
+        "最终结果",
+        'Action: terminate\nAction Input: {"output": "最终结果"}',
+    ],
+)
+def test_extract_termination_aliases(content):
+    assert extract_terminate_output(content) == "最终结果"
+
+
+def test_termination_preserves_json_answer_and_code_examples():
+    content = "Here is an example:\n```text\nAction: sql_query\n```"
+    assert extract_terminate_output({"output": content}) == content
+    assert extract_terminate_output({"output": '{"count": 3}'}) == '{"count": 3}'
 
 
 class TestReActOutputParser:

@@ -103,7 +103,7 @@ const SubAgentSection: React.FC<SubAgentSectionProps> = ({
 
   const doneCount = rows.filter(r => r.status !== 'running').length;
   const allDone = doneCount === rows.length;
-  const anyFailed = rows.some(r => r.status === 'failed' || r.status === 'timeout');
+  const anyFailed = rows.some(r => r.status === 'failed' || r.status === 'timeout' || r.status === 'partial');
 
   return (
     <div className='mt-3 mb-4 px-1'>

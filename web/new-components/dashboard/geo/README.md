@@ -1,0 +1,3 @@
+Map geometry and country labels: [Natural Earth, admin 0 countries, 1:110m](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson), downloaded 2026-09-15. [Public domain terms](https://www.naturalearthdata.com/about/terms-of-use/).
+
+Projected once using Natural Earth projection into an 800 × 420 viewBox. Paths are rounded to two decimal places; label points identify countries, not customer locations. Antarctica is omitted. Country aliases include English, Chinese and ISO codes. The dashboard reports unmatched names explicitly. Revenue and other measures come exclusively from the selected query, not this map asset.

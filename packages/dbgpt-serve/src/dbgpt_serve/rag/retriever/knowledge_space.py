@@ -1,4 +1,3 @@
-import ast
 import json
 import logging
 from typing import Any, List, Optional
@@ -14,6 +13,7 @@ from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt_ext.rag.retriever.doc_tree import TreeNode
+from dbgpt_serve.rag.chunk_metadata import KnowledgeChunkResolver, parse_chunk_metadata
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from dbgpt_serve.rag.retriever.qa_retriever import QARetriever
 from dbgpt_serve.rag.retriever.retriever_chain import RetrieverChain
@@ -125,7 +125,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             List[Chunk]: list of chunks
         """
         candidates = self._retriever_chain.retrieve(query=query, filters=filters)
-        return candidates
+        return self._resolve_source_chunks(candidates)
 
     def _retrieve_with_score(
         self,
@@ -146,9 +146,17 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         candidates_with_scores = self._retriever_chain.retrieve_with_scores(
             query, score_threshold, filters
         )
+        return self._resolve_source_chunks(candidates_with_scores)
+
+    def _resolve_source_chunks(self, candidates):
+        resolver = KnowledgeChunkResolver(self._space.name)
+        for chunk in candidates:
+            chunk.metadata = resolver.resolve(chunk)
+            if chunk.metadata.get("chunk_id"):
+                chunk.chunk_id = str(chunk.metadata["chunk_id"])
         from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
 
-        return apply_wiki_boost(candidates_with_scores)
+        return apply_wiki_boost(candidates)
 
     async def _aretrieve(
         self, query: str, filters: Optional[MetadataFilters] = None
@@ -183,25 +191,13 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         """
         if self._retrieve_mode == RetrieverStrategy.SEMANTIC.value:
             logger.info("Starting Semantic retrieval")
-            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
-
-            return apply_wiki_boost(
-                await self.semantic_retrieve(query, score_threshold, filters)
-            )
+            candidates = await self.semantic_retrieve(query, score_threshold, filters)
         elif self._retrieve_mode == RetrieverStrategy.KEYWORD.value:
             logger.info("Starting Full Text retrieval")
-            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
-
-            return apply_wiki_boost(
-                await self.full_text_retrieve(query, self._top_k, filters)
-            )
+            candidates = await self.full_text_retrieve(query, self._top_k, filters)
         elif self._retrieve_mode == RetrieverStrategy.Tree.value:
             logger.info("Starting Doc Tree retrieval")
-            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
-
-            return apply_wiki_boost(
-                await self.tree_index_retrieve(query, self._top_k, filters)
-            )
+            candidates = await self.tree_index_retrieve(query, self._top_k, filters)
         elif self._retrieve_mode == RetrieverStrategy.HYBRID.value:
             logger.info("Starting Hybrid retrieval")
             tasks = []
@@ -223,9 +219,10 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             candidates = semantic_candidates + full_text_candidates + tree_candidates
             # Remove duplicates
             unique_candidates = {chunk.content: chunk for chunk in candidates}
-            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
-
-            return apply_wiki_boost(list(unique_candidates.values()))
+            candidates = list(unique_candidates.values())
+        else:
+            return []
+        return self._resolve_source_chunks(candidates)
 
     async def semantic_retrieve(
         self,
@@ -304,7 +301,12 @@ class KnowledgeSpaceRetriever(BaseRetriever):
                 chunks = [
                     Chunk(
                         content=chunk_res.content,
-                        metadata=ast.literal_eval(chunk_res.meta_info),
+                        chunk_id=str(chunk_res.id),
+                        metadata={
+                            **parse_chunk_metadata(chunk_res.meta_info),
+                            "document_id": doc_res.id,
+                            "chunk_db_id": chunk_res.id,
+                        },
                     )
                     for chunk_res in chunks_res
                 ]

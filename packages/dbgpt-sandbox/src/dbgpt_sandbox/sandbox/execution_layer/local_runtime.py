@@ -4,10 +4,12 @@
 
 import asyncio
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import psutil
@@ -20,6 +22,23 @@ from .base import (
     SessionConfig,
 )
 from .utils import PathUtils, ProcessManager, SecurityUtils
+
+
+def _bash_executable() -> str:
+    """Use native Git Bash for Windows paths instead of the WSL launcher."""
+    if os.name == "nt":
+        git = shutil.which("git")
+        if git:
+            location = Path(git).resolve().parent
+            for directory in (
+                location,
+                location.parent / "bin",
+                location.parent / "usr/bin",
+            ):
+                executable = directory / "bash.exe"
+                if executable.is_file():
+                    return str(executable)
+    return shutil.which("bash") or "bash"
 
 
 class LocalSandboxSession(SandboxSession):
@@ -204,7 +223,7 @@ class LocalSandboxSession(SandboxSession):
                 f"cd {os.path.dirname(code_file)} && rustc {filename} \
                   -o program && ./program",
             ],
-            "bash": ["bash", code_file],
+            "bash": [_bash_executable(), Path(code_file).as_posix()],
         }
 
         return commands.get(self.config.language, ["cat", code_file])
@@ -213,13 +232,28 @@ class LocalSandboxSession(SandboxSession):
         """在资源限制下运行命令"""
         process = None
         try:
+            environment = dict(os.environ, **self.config.environment_vars)
+            if (
+                self.config.language == "python"
+                and "PYTHONPATH" not in self.config.environment_vars
+            ):
+                # Source launches can prepend a worktree to sys.path without
+                # changing PYTHONPATH. Keep the child on that same installation;
+                # an editable install in another checkout has a different store.
+                environment["PYTHONPATH"] = os.pathsep.join(
+                    dict.fromkeys(
+                        os.path.abspath(path)
+                        for path in sys.path
+                        if isinstance(path, str)
+                    )
+                )
             # 启动进程
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.work_dir,
-                env=dict(os.environ, **self.config.environment_vars),
+                env=environment,
             )
 
             # 记录进程 PID
@@ -323,7 +357,7 @@ class LocalRuntime(SandboxRuntime):
             "c": ["gcc", "--version"],
             "go": ["go", "version"],
             "rust": ["rustc", "--version"],
-            "bash": ["bash", "--version"],
+            "bash": [_bash_executable(), "--version"],
         }
 
         for lang, cmd in language_commands.items():

@@ -14,6 +14,7 @@ Covers:
 import importlib
 import io
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -968,8 +969,14 @@ def test_legacy_resolve_rejects_dot_dot_traversal(tmp_path, file_path):
 def test_legacy_resolve_rejects_windows_separators_with_400(tmp_path, file_path):
     _write_legacy_file(tmp_path, OWNER)
 
+    candidate = file_path.format(base=tmp_path)
+    if os.name == "nt" and os.path.isabs(candidate):
+        assert _resolve(tmp_path, OWNER, candidate) == str(
+            (tmp_path / "python_uploads" / OWNER / "report.csv").resolve()
+        )
+        return
     with pytest.raises(_attachment_input_error()) as exc_info:
-        _resolve(tmp_path, OWNER, file_path.format(base=tmp_path))
+        _resolve(tmp_path, OWNER, candidate)
 
     assert exc_info.value.status_code == 400
     assert exc_info.value.code == "INVALID_FILE_PATH"
@@ -1153,7 +1160,7 @@ async def test_chat_react_agent_rejects_arbitrary_legacy_path(tmp_path, monkeypa
 
 
 @pytest.mark.asyncio
-async def test_chat_react_agent_rejects_windows_legacy_path_with_400(
+async def test_chat_react_agent_handles_native_windows_legacy_paths(
     tmp_path, monkeypatch
 ):
     from dbgpt_app.openapi.api_v1 import agentic_data_api
@@ -1162,6 +1169,17 @@ async def test_chat_react_agent_rejects_windows_legacy_path_with_400(
         agentic_data_api, "_legacy_upload_base_dir", lambda: str(tmp_path)
     )
     _write_legacy_file(tmp_path, OWNER)
+    if os.name == "nt":
+        dialogue = _dialogue(
+            {"file_path": str(tmp_path / "python_uploads" / OWNER / "report.csv")}
+        )
+        assert (
+            await agentic_data_api._open_turn_attachments(
+                dialogue, UserRequest(user_id=OWNER)
+            )
+            is None
+        )
+        return
 
     with pytest.raises(HTTPException) as exc_info:
         await agentic_data_api.chat_react_agent(
@@ -1204,6 +1222,9 @@ async def test_chat_react_agent_closes_attachments_when_stream_response_init_fai
             raise RuntimeError("stream init exploded")
         return real_streaming_response(*args, **kwargs)
 
+    monkeypatch.setattr(
+        agentic_data_api, "_AgentStreamingResponse", flaky_streaming_response
+    )
     monkeypatch.setattr(agentic_data_api, "StreamingResponse", flaky_streaming_response)
 
     response = await agentic_data_api.chat_react_agent(
@@ -1243,6 +1264,9 @@ async def test_chat_knowledge_agent_closes_attachments_exactly_once_when_stream_
             raise RuntimeError("stream init exploded")
         return real_streaming_response(*args, **kwargs)
 
+    monkeypatch.setattr(
+        agentic_data_api, "_AgentStreamingResponse", flaky_streaming_response
+    )
     monkeypatch.setattr(agentic_data_api, "StreamingResponse", flaky_streaming_response)
 
     response = await agentic_data_api.chat_knowledge_agent(

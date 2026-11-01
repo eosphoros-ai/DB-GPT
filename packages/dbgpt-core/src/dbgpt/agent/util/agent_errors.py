@@ -29,6 +29,9 @@ class ErrorCategory(str, enum.Enum):
     PERMISSION_DENIED = "permission_denied"
     RETRYABLE = "retryable"
     FATAL = "fatal"
+    MODEL = "model"
+    CONTEXT = "context"
+    VALIDATION = "validation"
 
 
 # (category, keyword markers) — first match wins, checked case-insensitively.
@@ -110,3 +113,12 @@ def format_fail_reason(category: ErrorCategory, message: Optional[str]) -> str:
     """
     reason = message or "an unknown error occurred"
     return f"[{category.value}] {reason}"
+
+
+__all__ = [
+    "ErrorCategory",
+    "classify_agent_error",
+    "format_fail_reason",
+    "is_retryable",
+    "should_failover_model",
+]

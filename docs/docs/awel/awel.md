@@ -30,7 +30,7 @@ This layer of chain computing also supports distribution, supporting a set of ch
 The DSL layer provides a set of standard structured representation languages, which can complete the operations of AgentFream and operators by writing DSL statements, making it more deterministic to write large model applications around data, avoiding the uncertainty of writing in natural language, and making it easier to write around data. Application programming with large models becomes deterministic application programming.
 
 ## Examples
-The preliminary version of AWEL has alse been released, and we have provided some built-in usage examples.
+The preliminary version of AWEL has also been released, and we have provided some built-in usage examples.
 
 ## Operators
 

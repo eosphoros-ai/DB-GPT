@@ -58,6 +58,10 @@ class ScheduledRunDao(BaseDao[ScheduledRunEntity, Dict[str, Any], Dict[str, Any]
             "result_summary": entity.result_summary,
             "error_message": entity.error_message,
             "output_conv_uid": entity.output_conv_uid,
+            "output_resource_id": entity.output_resource_id,
+            "attempt_count": entity.attempt_count,
+            "result_json": entity.result_json,
+            "idempotency_key": entity.idempotency_key,
         }
 
     def list_by_task_id(

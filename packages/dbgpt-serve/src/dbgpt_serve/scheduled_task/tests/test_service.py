@@ -831,3 +831,20 @@ async def test_create_file_ids_without_session_id_fails(
     assert registry.copy_calls == []
     scheduler_mock.add_job.assert_not_awaited()
     assert await service.list_tasks() == []
+
+
+@pytest.mark.asyncio
+async def test_create_task_persists_uploaded_dataset_resource_binding(
+    service: ScheduledTaskService,
+):
+    created = await service.create_task(
+        _make_create_request(),
+        owner_id="alice",
+        resource_type="uploaded_dataset",
+        resource_id="dataset-1",
+    )
+
+    row = service._task_dao.get_one({"task_id": created.task_id})
+    assert row["owner_id"] == "alice"
+    assert row["resource_type"] == "uploaded_dataset"
+    assert row["resource_id"] == "dataset-1"

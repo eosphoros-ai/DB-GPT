@@ -5,10 +5,10 @@ import json
 import math
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 FINAL_PROTOCOL_VERSION = 2
-MAX_CITATIONS = 10
+MAX_CITATIONS = 50
 MAX_CITATION_CHARS = 2_000
 MAX_TOTAL_CITATION_CHARS = 12_000
 MIN_CITATION_CHARS = 10
@@ -29,12 +29,14 @@ _SEMANTIC_RESULT_PATTERN = re.compile(
     r"(?:^|\n)---\s*\n"
     r"###\s+Result\s+\d+"
     r"(?:\s+\(score:\s*([^\)]+)\))?"
-    r"\s+\[([^\]\n]*)\]\s*\n"
+    r"\s+\[([^\]\n]*)\](?:[ \t]+chunk_id=([^\s]+))?[ \t]*\r?\n"
     r"([\s\S]*?)"
     r"(?=\n---\s*\n###\s+Result\s+\d+|\Z)",
     flags=re.IGNORECASE,
 )
-_GREP_FILE_PATTERN = re.compile(r"(?m)^(\S[^\r\n]*):\r?\n(?=[ \t]+\d+:\s)")
+_GREP_FILE_PATTERN = re.compile(
+    r"(?m)^(\S[^\r\n]*):\r?\n(?=[ \t]+(?:\d+:\s|chunk_id=))"
+)
 _NUMBERED_CHUNK_PATTERN = re.compile(r"(?m)^\[(\d+)\]\s*")
 
 
@@ -49,10 +51,12 @@ class AgentCitation:
     score: Optional[float] = None
     path: Optional[str] = None
     url: Optional[str] = None
+    artifact_id: Optional[str] = None
+    locator: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the citation using the version 2 wire field names."""
-        return {
+        value = {
             "index": self.index,
             "id": self.id,
             "sourceName": self.source_name,
@@ -61,6 +65,11 @@ class AgentCitation:
             "path": self.path,
             "url": self.url,
         }
+        if self.artifact_id:
+            value["artifactId"] = self.artifact_id
+        if self.locator:
+            value["locator"] = self.locator
+        return value
 
 
 @dataclass(frozen=True)
@@ -69,13 +78,22 @@ class AgentFinalAnswer:
 
     content: str
     citations: Tuple[AgentCitation, ...] = ()
+    report_id: Optional[str] = None
+    report_run_id: Optional[str] = None
+    report_status: Optional[Literal["ready", "unconfirmed"]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize fields shared by SSE and conversation history."""
-        return {
+        value = {
             "content": self.content,
             "citations": [citation.to_dict() for citation in self.citations],
         }
+        if self.report_id and self.report_run_id:
+            value["report_id"] = self.report_id
+            value["report_run_id"] = self.report_run_id
+        if self.report_status:
+            value["report_status"] = self.report_status
+        return value
 
     def to_sse_payload(self) -> Dict[str, Any]:
         """Serialize a complete version 2 final SSE event."""
@@ -94,6 +112,8 @@ class _CitationDraft:
     score: Optional[float] = None
     path: Optional[str] = None
     url: Optional[str] = None
+    artifact_id: Optional[str] = None
+    locator: Optional[Dict[str, Any]] = None
 
 
 def strip_legacy_references(content: Any) -> str:
@@ -152,6 +172,38 @@ class FinalAnswerAssembler:
         for draft in drafts:
             self._append(draft)
 
+    def observe_artifacts(self, artifacts, *, preferred_ids=()) -> None:
+        """Use the same captured knowledge slices as the report, including subagents."""
+        preferred = set(preferred_ids)
+        for artifact in sorted(
+            artifacts, key=lambda item: item.artifact_id not in preferred
+        ):
+            if (
+                artifact.type != "reference"
+                or getattr(artifact, "reference_type", None) != "knowledge"
+                or artifact.status != "succeeded"
+            ):
+                continue
+            locator = dict(artifact.locator or {})
+            chunk_id = locator.get("chunk_id")
+            if not chunk_id or locator.get("document_id") is None:
+                continue
+            uri = artifact.uri or ""
+            self._append(
+                _CitationDraft(
+                    source_name=artifact.source_name
+                    or locator.get("path")
+                    or str(chunk_id),
+                    excerpt=artifact.excerpt or "",
+                    citation_id=str(chunk_id),
+                    score=artifact.score,
+                    path=locator.get("path"),
+                    url=uri if uri.startswith(("https://", "http://")) else None,
+                    artifact_id=artifact.artifact_id,
+                    locator=locator,
+                )
+            )
+
     def finalize(self, content: Any) -> AgentFinalAnswer:
         """Build a final answer whose content never contains legacy metadata."""
         citations = tuple(
@@ -163,6 +215,8 @@ class FinalAnswerAssembler:
                 score=draft.score,
                 path=draft.path,
                 url=draft.url,
+                artifact_id=draft.artifact_id,
+                locator=draft.locator,
             )
             for index, draft in enumerate(self._drafts, start=1)
         )
@@ -190,7 +244,18 @@ class FinalAnswerAssembler:
         if len(excerpt) < MIN_CITATION_CHARS:
             return
 
-        key = (source_name, path or "", excerpt)
+        source_identity = (
+            json.dumps(
+                {
+                    key: (draft.locator or {}).get(key)
+                    for key in ("knowledge_id", "space_id", "document_id", "chunk_id")
+                },
+                sort_keys=True,
+            )
+            if draft.locator
+            else ""
+        )
+        key = (source_identity or source_name, path or "", excerpt)
         if key in self._deduplication_keys:
             return
         self._deduplication_keys.add(key)
@@ -202,6 +267,8 @@ class FinalAnswerAssembler:
                 score=_coerce_score(draft.score),
                 path=path,
                 url=url,
+                artifact_id=draft.artifact_id,
+                locator=draft.locator,
             )
         )
         self._total_excerpt_chars += len(excerpt)
@@ -332,6 +399,9 @@ def _adapt_explicit_citations(
                 score=item.get("score", item.get("recall_score")),
                 path=str(path) if path else None,
                 url=str(raw_url) if raw_url else None,
+                locator=item.get("locator")
+                if isinstance(item.get("locator"), dict)
+                else None,
             )
         )
     return drafts
@@ -356,6 +426,38 @@ def _adapt_kb_cat(
         return []
     if not text.startswith(f"{path} ("):
         return []
+    ranges = re.findall(
+        r"(?m)^\s+chunk_id=(\S+) chunk_index=(\d+) lines=(\d+)-(\d+)\s*$",
+        text,
+    )
+    if ranges:
+        read_lines = [
+            (int(match.group(1)), match.group(2))
+            for match in re.finditer(r"(?m)^\s+(\d+) \| ([^\r\n]*)", text)
+        ]
+        drafts = []
+        for chunk_id, chunk_index, first, last in ranges:
+            selected = [
+                (n, line) for n, line in read_lines if int(first) <= n <= int(last)
+            ]
+            if not selected:
+                continue
+            drafts.append(
+                _CitationDraft(
+                    source_name=path,
+                    path=path,
+                    citation_id=chunk_id,
+                    excerpt="\n".join(line for _, line in selected),
+                    locator={
+                        "chunk_id": chunk_id,
+                        "chunk_index": int(chunk_index),
+                        "path": path,
+                        "read_start_line": selected[0][0],
+                        "read_end_line": selected[-1][0],
+                    },
+                )
+            )
+        return drafts
     return [_CitationDraft(source_name=path, excerpt=text, path=path)]
 
 
@@ -387,6 +489,29 @@ def _adapt_kb_grep(
             matches[position + 1].start() if position + 1 < len(matches) else len(text)
         )
         excerpt = text[match.end() : end].strip()
+        chunk_matches = list(
+            re.finditer(r"(?m)^\s*chunk_id=(\S+) line=(\d+): ([^\r\n]*)", excerpt)
+        )
+        if chunk_matches:
+            by_chunk: Dict[str, List[Any]] = {}
+            for chunk_match in chunk_matches:
+                chunk_id, line, content = chunk_match.groups()
+                by_chunk.setdefault(chunk_id, []).append((int(line), content))
+            for chunk_id, lines in by_chunk.items():
+                drafts.append(
+                    _CitationDraft(
+                        source_name=path,
+                        path=path,
+                        citation_id=chunk_id,
+                        excerpt="\n".join(content for _, content in lines),
+                        locator={
+                            "chunk_id": chunk_id,
+                            "path": path,
+                            "matched_lines": [line for line, _ in lines],
+                        },
+                    )
+                )
+            continue
         if path and excerpt:
             drafts.append(
                 _CitationDraft(
@@ -421,7 +546,7 @@ def _adapt_semantic_search(
 
     drafts: List[_CitationDraft] = []
     for match in _SEMANTIC_RESULT_PATTERN.finditer(text):
-        score_text, path, excerpt = match.groups()
+        score_text, path, chunk_id, excerpt = match.groups()
         path = path.strip()
         excerpt = excerpt.strip()
         if excerpt:
@@ -431,6 +556,8 @@ def _adapt_semantic_search(
                     excerpt=excerpt,
                     score=_coerce_score(score_text),
                     path=path or None,
+                    citation_id=chunk_id,
+                    locator={"chunk_id": chunk_id, "path": path} if chunk_id else None,
                 )
             )
     return drafts

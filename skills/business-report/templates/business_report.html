@@ -1,0 +1,140 @@
+{%- set spec = template_data.get('REPORT_SPEC', {}) -%}
+{%- set sections = spec.get('sections', []) -%}
+{%- set chart_error_prefix = 'Chart rendering failed: ' if spec.get('language') == 'en' else '图表绘制失败：' -%}
+{%- macro ref(node, cls='') -%}
+{%- if node is mapping and node.get('artifact_id') -%}
+<span{% if cls %} class="{{ cls }}"{% endif %} data-dbgpt-artifacts="{{ node.artifact_id }}"{% if node.selectors %} data-dbgpt-artifact-selectors='{{ node.selectors|tojson }}'{% endif %}{% if node.get('proposal') %} data-dbgpt-value-role="proposal"{% endif %} data-dbgpt-evidence-label="{{ node.value }}">{{ node.value }}</span>
+{%- else -%}{{ node }}{%- endif -%}
+{%- endmacro -%}
+{%- macro parts(seq) -%}
+{%- for item in seq or [] -%}{{ ref(item) }}{%- endfor -%}
+{%- endmacro -%}
+{%- macro kpi_grid(items) -%}
+{%- if items -%}
+<div class="kpis">
+{%- for item in items %}
+<div class="kpi"><div class="lbl">{{ item.get('label', '') }}</div><div class="val">{% if item.get('unit') %}<span class="unit">{{ item.unit }}</span> {% endif %}{{ ref(item.get('ref'), 'metric-value') }}</div>{% if item.get('hint') %}<div class="sub">{{ item.hint }}</div>{% endif %}</div>
+{%- endfor %}
+</div>
+{%- endif -%}
+{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="{{ 'en' if spec.get('language') == 'en' else 'zh-CN' }}">
+<head>
+<meta charset="utf-8">
+<title>{{ spec.get('title', 'Analysis Report') }}</title>
+<style>
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;background:#f5f7fa;color:#1f2937;line-height:1.7}
+.page{max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+header{background:linear-gradient(135deg,#0f766e,#0ea5e9);color:#fff;border-radius:14px;padding:28px 32px;margin-bottom:24px}
+header h1{margin:0 0 8px;font-size:26px}
+header p{margin:0;opacity:.92;font-size:14px}
+section{background:#fff;border-radius:12px;padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+h2{font-size:19px;margin:0 0 14px;padding-left:10px;border-left:4px solid #0ea5e9}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.kpi{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 16px}
+.kpi .lbl{font-size:12px;color:#0369a1;margin-bottom:6px}
+.kpi .val{font-size:22px;font-weight:700;color:#0c4a6e}
+.kpi .sub{font-size:11px;color:#64748b;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th,td{padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{background:#f1f5f9;font-weight:600;color:#334155}
+tr:hover td{background:#f8fafc}
+figure{margin:14px 0;text-align:center}
+figure img{max-width:100%;border-radius:8px;border:1px solid #e2e8f0}
+figcaption{font-size:12px;color:#64748b;margin-top:6px}
+.note{background:#fffbeb;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;font-size:13px;margin:12px 0}
+ul,ol{margin:8px 0;padding-left:22px;font-size:13px}
+li{margin-bottom:6px}
+.rec{background:#f0fdf4;border-left:4px solid #22c55e;border-radius:6px;padding:12px 16px;list-style:none}
+.rec h4{margin:0 0 6px;font-size:14px;color:#15803d}
+.rec p{margin:4px 0;font-size:13px}
+.rec.p0{border-left-color:#ef4444}.rec.p0 h4{color:#b91c1c}
+.rec.p1{border-left-color:#f59e0b}.rec.p1 h4{color:#b45309}
+ol.recs{padding-left:0}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+<h1>{{ spec.get('title', 'Analysis Report') }}</h1>
+{%- if spec.get('subtitle') %}<p>{{ spec.subtitle }}</p>{%- endif %}
+{%- if spec.get('scope') %}<p>{{ spec.scope }}</p>{%- endif %}
+</header>
+
+{%- if spec.get('kpis') %}
+<section>{{ kpi_grid(spec.kpis) }}</section>
+{%- endif %}
+
+{%- for s in sections %}
+<section>
+{%- if s.get('heading') %}<h2>{{ s.heading }}</h2>{%- endif %}
+{%- if s.get('kpis') %}{{ kpi_grid(s.kpis) }}{%- endif %}
+{%- if s.get('chart') %}{% set c = s.chart %}
+<figure data-dbgpt-artifacts="{{ (c.get('refs') or [])|join(',') }}" data-dbgpt-evidence-label="{{ c.get('caption', '') }}">
+{%- if c.get('img') %}<img src="{{ c.img }}" alt="{{ c.get('caption', '') }}" data-dbgpt-artifacts="{{ (c.get('refs') or [])|join(',') }}" data-dbgpt-evidence-label="{{ c.get('caption', '') }}">
+{%- endif %}
+{%- if c.get('renderer') == 'echarts' %}<div class="chart-host" style="height:{{ c.get('height', 380) }}px" id="{{ c.get('host_id') }}" data-dbgpt-chart-renderer="echarts"{% if c.get('chart_id') %} data-dbgpt-chart-id="{{ c.chart_id }}"{% endif %} data-dbgpt-artifacts="{{ (c.get('refs') or [])|join(',') }}"{% if c.get('source_selectors') or (c.get('producer') and c.get('producer').get('selectors')) %} data-dbgpt-artifact-selectors='{{ (c.get('source_selectors') or c.get('producer').get('selectors'))|tojson }}'{% endif %}{% if c.get('producer') %} data-dbgpt-chart-option='{{ c.get("option", c.producer.raw)|tojson }}' data-dbgpt-chart-maps='{{ c.get("maps", {})|tojson }}'{% endif %} data-dbgpt-evidence-label="{{ c.get('caption', '') }}"></div>
+{%- endif %}
+{%- if c.get('caption') %}<figcaption>{{ c.caption }}</figcaption>{%- endif %}
+</figure>
+{%- endif %}
+{%- if s.get('table') %}{% set t = s.table %}
+<table data-dbgpt-artifacts="{{ t.get('artifact_id', '') }}" data-dbgpt-evidence-label="{{ t.get('label', s.get('heading', '')) }}">
+<thead><tr>{% for column in t.get('columns', []) %}<th>{{ ref(column) }}</th>{% endfor %}</tr></thead>
+<tbody>
+{%- for row in t.get('rows', []) %}
+<tr>{% for cell in row %}<td>{{ ref(cell) }}</td>{% endfor %}</tr>
+{%- endfor %}
+</tbody>
+</table>
+{%- endif %}
+{%- for paragraph in s.get('intro', []) %}<p>{{ parts(paragraph) }}</p>{%- endfor %}
+{%- if s.get('bullets') %}
+<ul>
+{%- for bullet in s.bullets %}<li>{{ parts(bullet) }}</li>{%- endfor %}
+</ul>
+{%- endif %}
+{%- if s.get('recommendations') %}
+<ol class="recs">
+{%- for item in s.recommendations %}
+<li class="rec {{ item.get('cls', '') }}"><h4>{{ item.get('badge', '') }} ｜ {{ item.get('title', '') }}</h4>
+{%- for line in item.get('lines', []) %}<p><b>{{ line.get('label', '') }}</b>{{ parts(line.get('parts', [])) }}</p>{%- endfor %}
+</li>
+{%- endfor %}
+</ol>
+{%- endif %}
+{%- if s.get('list') %}
+<ul>
+{%- for item in s.list %}<li>{{ parts(item) }}</li>{%- endfor %}
+</ul>
+{%- endif %}
+{%- if s.get('note') %}{% set n = s.note %}
+<div class="note"{% if n.get('ref') %} data-dbgpt-artifacts="{{ n.get('ref').artifact_id }}"{% if n.get('ref').get('selectors') %} data-dbgpt-artifact-selectors='{{ n.get('ref').get('selectors')|tojson }}'{% endif %} data-dbgpt-evidence-label="{{ n.get('label', '') }}"{% endif %}>{% if n.get('label') %}<b>{{ n.label }}</b>{% endif %}{{ parts(n.get('parts', [])) }}</div>
+{%- endif %}
+</section>
+{%- endfor %}
+
+</div>
+{% if sections|selectattr('chart', 'defined')|selectattr('chart.renderer', 'defined')|selectattr('chart.renderer', 'equalto', 'echarts')|list %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+document.querySelectorAll('[data-dbgpt-chart-option]').forEach(function(host) {
+    try {
+        const option = JSON.parse(host.getAttribute('data-dbgpt-chart-option'));
+        const maps = JSON.parse(host.getAttribute('data-dbgpt-chart-maps') || '{}');
+        Object.entries(maps).forEach(function(entry) { echarts.registerMap(entry[0], entry[1]); });
+        const chart = echarts.init(host);
+        chart.setOption(typeof option === 'string' ? JSON.parse(option) : option);
+        window.addEventListener('resize', function() { chart.resize(); });
+    } catch (error) {
+        host.setAttribute('data-dbgpt-chart-error', String(error.message || error));
+        host.textContent = {{ chart_error_prefix|tojson }} + (error.message || error);
+        console.error(error);
+    }
+});
+</script>
+{% endif %}
+</body>
+</html>

@@ -1,5 +1,6 @@
 """Tool resource pack module."""
 
+import asyncio
 import logging
 import os
 import ssl
@@ -171,6 +172,7 @@ class ToolPack(ResourcePack):
 
     def _get_call_args(self, arguments: Dict[str, Any], tl: BaseTool) -> Dict[str, Any]:
         """Get the call arguments."""
+        tl.validate_call_args(arguments)
         # Delete non-defined parameters
         diff_args = list(set(arguments.keys()).difference(set(tl.args.keys())))
         for arg_name in diff_args:
@@ -237,8 +239,9 @@ class ToolPack(ResourcePack):
             if tl.is_async:
                 return await tl.async_execute(**arguments)
             else:
-                # TODO: Execute in a separate executor
-                return tl.execute(**arguments)
+                # Preserve ContextVars (including evidence capture) while keeping
+                # blocking tools off the event loop shared by concurrent agents.
+                return await asyncio.to_thread(tl.execute, **arguments)
         except Exception as e:
             raise ToolExecutionException(f"Execution error: {str(e)}")
 

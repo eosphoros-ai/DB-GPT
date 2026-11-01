@@ -1,6 +1,8 @@
 """QuestionManager — pending question state with asyncio.Event."""
 
 import asyncio
+import copy
+import itertools
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -29,6 +31,7 @@ class PendingQuestion:
     request_id: str
     conv_id: str
     questions: List[dict]  # raw dicts from LLM JSON for easy serialization
+    sequence: int = 0
     event: asyncio.Event = field(default_factory=asyncio.Event)
     answers: Optional[List[List[str]]] = None
     rejected: bool = False
@@ -47,6 +50,7 @@ class QuestionManager:
 
     def __init__(self) -> None:
         self._pending: Dict[str, PendingQuestion] = {}
+        self._sequence = itertools.count(1)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -66,7 +70,14 @@ class QuestionManager:
         request_id: Optional[str] = None,
     ) -> PendingQuestion:
         rid = request_id or self._new_id()
-        pq = PendingQuestion(request_id=rid, conv_id=conv_id, questions=questions)
+        if rid in self._pending:
+            raise ValueError("Question request_id already exists")
+        pq = PendingQuestion(
+            request_id=rid,
+            conv_id=conv_id,
+            questions=copy.deepcopy(questions),
+            sequence=next(self._sequence),
+        )
         self._pending[rid] = pq
         logger.info("QuestionManager.create: request_id=%s, n=%d", rid, len(questions))
         return pq
@@ -75,7 +86,17 @@ class QuestionManager:
         pq = self._pending.get(request_id)
         if not pq:
             raise KeyError(f"No pending question: {request_id}")
-        pq.answers = answers
+        if pq.event.is_set():
+            raise ValueError("Question has already been resolved")
+        if not isinstance(answers, list) or len(answers) != len(pq.questions):
+            raise ValueError("Answers must preserve every original question index")
+        if any(
+            not isinstance(row, list)
+            or any(not isinstance(value, str) for value in row)
+            for row in answers
+        ):
+            raise ValueError("Answers must be arrays of strings")
+        pq.answers = copy.deepcopy(answers)
         pq.event.set()
         logger.info("QuestionManager.reply: request_id=%s answered", request_id)
 
@@ -83,6 +104,8 @@ class QuestionManager:
         pq = self._pending.get(request_id)
         if not pq:
             raise KeyError(f"No pending question: {request_id}")
+        if pq.event.is_set():
+            raise ValueError("Question has already been resolved")
         pq.rejected = True
         pq.event.set()
         logger.info("QuestionManager.reject: request_id=%s rejected", request_id)
@@ -99,6 +122,7 @@ class QuestionManager:
                         "request_id": pq.request_id,
                         "conv_id": pq.conv_id,
                         "questions": pq.questions,
+                        "sequence": pq.sequence,
                     }
                 )
         return result

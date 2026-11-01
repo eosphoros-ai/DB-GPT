@@ -14,14 +14,18 @@ export interface AgentCitation {
   score?: number;
   path?: string;
   url?: string;
+  artifactId?: string;
+  locator?: Record<string, unknown>;
 }
 
 export interface AgentFinalAnswer {
   content: string;
   citations: AgentCitation[];
+  reportId?: string;
+  reportRunId?: string;
 }
 
-const MAX_CITATIONS = 10;
+const MAX_CITATIONS = 50;
 const MAX_SOURCE_NAME_LENGTH = 512;
 const MAX_EXCERPT_LENGTH = 2_000;
 const MAX_TOTAL_EXCERPT_LENGTH = 12_000;
@@ -106,6 +110,8 @@ function normalizeCitation(
     ...(score !== undefined && { score }),
     ...(path && { path }),
     ...(url && { url }),
+    ...(typeof value.artifactId === 'string' && { artifactId: value.artifactId }),
+    ...(isRecord(value.locator) && { locator: value.locator }),
   };
 }
 
@@ -268,10 +274,13 @@ export function decodeFinalEvent(payload: unknown): AgentFinalAnswer {
   const rawContent = typeof payload === 'string' ? payload : typeof record?.content === 'string' ? record.content : '';
   const legacy = splitLegacyReferences(rawContent);
   const structured = normalizeStructuredCitations(record?.citations);
+  const reportId = optionalString(record?.report_id, 128);
+  const reportRunId = optionalString(record?.report_run_id, 64);
 
   return {
     content: legacy.content,
     citations: structured.length > 0 ? structured : legacy.citations,
+    ...(reportId && reportRunId && { reportId, reportRunId }),
   };
 }
 
@@ -296,6 +305,8 @@ export function decodeHistoryAnswer(payload: unknown): AgentFinalAnswer {
   return decodeFinalEvent({
     content: typeof value.final_content === 'string' ? value.final_content : value.content,
     citations: value.citations,
+    report_id: value.report_id,
+    report_run_id: value.report_run_id,
   });
 }
 

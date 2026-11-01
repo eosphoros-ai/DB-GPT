@@ -686,6 +686,13 @@ async def test_scheduled_task_freezes_then_replays_immutable_inputs(env, monkeyp
         run_files = env.registry.list_files(
             owner_id=OWNER, session_id=payload["conv_uid"]
         )
+        if (
+            payload is not captured_payloads[-1]
+            and payload["conv_uid"] != captured_payloads[-1]["conv_uid"]
+        ):
+            # Upstream reclaims the prior run's blobs; public history remains.
+            assert run_files == []
+            continue
         assert {f.file_id for f in run_files} == set(fresh_ids)
         expected_sha = {
             hashlib.sha256(content).hexdigest()
@@ -748,6 +755,7 @@ async def test_public_share_redacts_v2_input_files(env, monkeypatch):
         dao=ServeDao(ConversationConfig()),
         get_history_messages=lambda request: state["history"],
     )
+    conversation_service.get = lambda request: conversation_service.dao.get_one(request)
     # Seed the conversation row used by the share ownership check.
     with share_dao.session() as session:
         session.add(

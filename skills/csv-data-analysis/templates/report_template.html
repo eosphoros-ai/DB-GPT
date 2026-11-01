@@ -224,6 +224,7 @@
             font-size: 12px;
             color: var(--ink-500);
         }
+        .chart-evidence { margin: 0; min-width: 0; }
         .chart-box {
             border: 1px solid rgba(226, 232, 240, 0.9);
             background: #fff;
@@ -362,6 +363,20 @@
     <meta id="report-lang" data-lang="{{LANG}}">
 </head>
 <body>
+    {% set report_data = template_data.get('CHART_DATA_JSON', {}) %}
+    {% set overview = report_data.get('overview', {}) %}
+    {% set anomaly = report_data.get('anomaly_overview', {}) %}
+    {% macro source(path, label) -%}
+        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":{{ path|tojson }}}}'
+        data-dbgpt-evidence-label="{{ label }}"
+    {%- endmacro %}
+    {% macro datum(value, path, suffix='') -%}
+        {% if value is none or value == '' %}--{% else %}<span {{ source(path, path|join(' / ')) }}>{{ value|round(2) if value is number else value }}{{ suffix }}</span>{% endif %}
+    {%- endmacro %}
+    {% macro metric(label, value, path, hint, suffix='') -%}
+        <div class="metric-item" {% if value is not none and value != '' %}{{ source(path, label) }}{% endif %}><div class="label">{{ label }}</div><div class="value">{{ datum(value, path, suffix) }}</div><div class="hint">{{ hint }}</div></div>
+    {%- endmacro %}
     <div class="page">
         <section class="hero">
             <div class="hero-grid">
@@ -369,32 +384,38 @@
                     <h1>{{REPORT_TITLE}}</h1>
                     <p class="subtitle">{{REPORT_SUBTITLE}}</p>
                 </div>
-                <div class="summary-grid" id="hero-summary-grid">
+                <div class="summary-grid" id="hero-summary-grid"
+                    data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                    data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+                    data-dbgpt-evidence-label="数据概览">
                     <div class="summary-card">
                         <div class="label">数据规模</div>
-                        <div class="value" id="hero-rows">--</div>
+                        <div class="value" id="hero-rows">{{ datum(overview.get('rows'), ['overview','rows'], ' 行') }}</div>
                         <div class="desc">样本量与字段规模</div>
                     </div>
                     <div class="summary-card">
                         <div class="label">完整度</div>
-                        <div class="value" id="hero-completeness">--</div>
+                        <div class="value" id="hero-completeness">{{ datum(overview.get('completeness_pct'), ['overview','completeness_pct'], '%') }}</div>
                         <div class="desc">缺失与重复情况</div>
                     </div>
                     <div class="summary-card">
                         <div class="label">核心指标</div>
-                        <div class="value" id="hero-metric">--</div>
+                        <div class="value" id="hero-metric">{{ datum(report_data.get('primary_metric'), ['primary_metric']) }}</div>
                         <div class="desc">自动识别的主分析指标</div>
                     </div>
                     <div class="summary-card">
                         <div class="label">异动差距</div>
-                        <div class="value" id="hero-gap">--</div>
+                        <div class="value" id="hero-gap">{{ datum(anomaly.get('gap'), ['anomaly_overview','gap']) }}</div>
                         <div class="desc">高低分组差异概览</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="section">
+        <section class="section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="报告摘要与统计指标">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#1d4ed8;">01</div>
@@ -406,11 +427,21 @@
             </div>
             <div class="board">
                 <div class="prose">{{EXEC_SUMMARY}}</div>
-                <div class="metric-row" id="overview-metrics" style="margin-top:14px;"></div>
+                <div class="metric-row" id="overview-metrics" style="margin-top:14px;">
+                    {{ metric('样本行数', overview.get('rows'), ['overview','rows'], '总记录数') }}
+                    {{ metric('字段数量', overview.get('cols'), ['overview','cols'], '总列数') }}
+                    {{ metric('完整率', overview.get('completeness_pct'), ['overview','completeness_pct'], '缺失越低越好', '%') }}
+                    {{ metric('重复记录', overview.get('duplicate_rows'), ['overview','duplicate_rows'], '重复行检查') }}
+                    {{ metric('内存占用', overview.get('memory_kb'), ['overview','memory_kb'], '数据量级', ' KB') }}
+                    {{ metric('主分析指标', report_data.get('primary_metric'), ['primary_metric'], '后续异动分析基准') }}
+                </div>
             </div>
         </section>
 
-        <section class="section" id="quality-section">
+        <section class="section" id="quality-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="数据质量检查">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#0f766e;">02</div>
@@ -423,16 +454,29 @@
             <div class="board grid-2">
                 <div class="panel">
                     <div class="panel-title">字段缺失率分布</div>
-                    <div class="chart-box" id="missing-rate-chart" style="height: 320px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["data_quality"]}}'
+                        data-dbgpt-block-id="csv-missing-rate-chart" data-dbgpt-evidence-label="字段缺失率">
+                        <div class="chart-box" id="missing-rate-chart" style="height: 320px;"></div>
+                    </figure>
                 </div>
                 <div class="panel">
                     <div class="panel-title">字段类型结构</div>
-                    <div class="chart-box" id="dtype-chart" style="height: 320px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["data_quality", "dtype_summary"]}}'
+                        data-dbgpt-block-id="csv-dtype-chart" data-dbgpt-evidence-label="字段类型分布">
+                        <div class="chart-box" id="dtype-chart" style="height: 320px;"></div>
+                    </figure>
                 </div>
             </div>
         </section>
 
-        <section class="section" id="distribution-section">
+        <section class="section" id="distribution-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="数值指标分布">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#2563eb;">03</div>
@@ -443,7 +487,16 @@
                 </div>
             </div>
             <div class="board">
-                <div id="distribution-charts" class="grid-2"></div>
+                <div id="distribution-charts" class="grid-2">
+                    {% for column in template_data.CHART_DATA_JSON.get("distributions", {}) or {} %}
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["distributions",{{ column|tojson }}]}}'
+                        data-dbgpt-block-id="csv-distribution-{{ loop.index0 }}" data-dbgpt-evidence-label="数值分布：{{ column }}">
+                        <div class="chart-box" id="distribution-chart-{{ loop.index0 }}" data-dbgpt-chart-key="{{ column }}" style="height: 290px;"></div>
+                    </figure>
+                    {% endfor %}
+                </div>
                 <div class="insight-box">
                     <div class="insight-label">Distribution Insights</div>
                     <div class="prose">{{DISTRIBUTION_INSIGHTS}}</div>
@@ -451,7 +504,10 @@
             </div>
         </section>
 
-        <section class="section" id="feature-section">
+        <section class="section" id="feature-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="分类结构与排名">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#d97706;">04</div>
@@ -464,7 +520,16 @@
             <div class="board grid-2">
                 <div class="panel">
                     <div class="panel-title">分类维度结构</div>
-                    <div id="categorical-charts" class="grid-2"></div>
+                    <div id="categorical-charts" class="grid-2">
+                        {% for column in template_data.CHART_DATA_JSON.get("categories", {}) or {} %}
+                        <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["categories",{{ column|tojson }}]}}'
+                            data-dbgpt-block-id="csv-categorical-{{ loop.index0 }}" data-dbgpt-evidence-label="分类结构：{{ column }}">
+                            <div class="chart-box" id="categorical-chart-{{ loop.index0 }}" data-dbgpt-chart-key="{{ column }}" style="height: 300px;"></div>
+                        </figure>
+                        {% endfor %}
+                    </div>
                     <div class="insight-box">
                         <div class="insight-label">Categorical Insights</div>
                         <div class="prose">{{CATEGORICAL_INSIGHTS}}</div>
@@ -473,15 +538,37 @@
                 <div class="panel">
                     <div class="panel-title">Top / Bottom 排名特征</div>
                     <div class="grid-2">
-                        <div class="chart-box" id="top5-chart" style="height: 300px;"></div>
-                        <div class="chart-box" id="bottom5-chart" style="height: 300px;"></div>
+                        {% if template_data.CHART_DATA_JSON.get("top_bottom", {}).get("top5") %}
+<figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["top_bottom", "top5"]}}'
+                            data-dbgpt-block-id="csv-top5-chart" data-dbgpt-evidence-label="Top 5 排名">
+                            <div class="chart-box" id="top5-chart" style="height: 300px;"></div>
+                        </figure>
+{% endif %}
+                        {% if template_data.CHART_DATA_JSON.get("top_bottom", {}).get("bottom5") %}
+<figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["top_bottom", "bottom5"]}}'
+                            data-dbgpt-block-id="csv-bottom5-chart" data-dbgpt-evidence-label="Bottom 5 排名">
+                            <div class="chart-box" id="bottom5-chart" style="height: 300px;"></div>
+                        </figure>
+{% endif %}
                     </div>
-                    <div class="chart-box" id="segment-comparison-chart" style="height: 310px; margin-top: 12px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["segment_comparison"]}}'
+                        data-dbgpt-block-id="csv-segment-comparison-chart" data-dbgpt-evidence-label="分组对比">
+                        <div class="chart-box" id="segment-comparison-chart" style="height: 310px; margin-top: 12px;"></div>
+                    </figure>
                 </div>
             </div>
         </section>
 
-        <section class="section" id="relation-section">
+        <section class="section" id="relation-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="相关性与异常值">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#be123c;">05</div>
@@ -496,8 +583,18 @@
                     <div class="panel">
                         <div class="panel-title">相关性与散点关系</div>
                         <div class="grid-2">
-                            <div class="chart-box" id="correlation-chart" style="height: 420px;"></div>
-                            <div class="chart-box" id="scatter-chart" style="height: 420px;"></div>
+                            <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                                data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                                data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["correlations"]}}'
+                                data-dbgpt-block-id="csv-correlation-chart" data-dbgpt-evidence-label="相关性">
+                                <div class="chart-box" id="correlation-chart" style="height: 420px;"></div>
+                            </figure>
+                            <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                                data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                                data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["scatter"]}}'
+                                data-dbgpt-block-id="csv-scatter-chart" data-dbgpt-evidence-label="散点关系">
+                                <div class="chart-box" id="scatter-chart" style="height: 420px;"></div>
+                            </figure>
                         </div>
                         <div class="insight-box">
                             <div class="insight-label">Correlation Insights</div>
@@ -506,14 +603,31 @@
                     </div>
                     <div class="panel" id="boxplot-section">
                         <div class="panel-title">异常值与箱线分布</div>
-                        <div id="outlier-summary" style="margin-bottom: 12px;"></div>
-                        <div class="chart-box" id="boxplot-chart" style="height: 420px;"></div>
+                        <div id="outlier-summary" style="margin-bottom: 12px;">
+                            <div class="outlier-grid">
+                            {% for column, outlier in report_data.get('outliers', {}).items() %}
+                                <div class="outlier-item" {{ source(['outliers',column], '异常值：' ~ column) }}>
+                                    <div class="col-name">{{ datum(column, ['outliers',column]) }}</div>
+                                    <div class="count">{{ datum(outlier.get('count'), ['outliers',column,'count']) }} ({{ datum(outlier.get('pct'), ['outliers',column,'pct'], '%') }})</div>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        </div>
+                        <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["box_plots"]}}'
+                            data-dbgpt-block-id="csv-boxplot-chart" data-dbgpt-evidence-label="箱线分布">
+                            <div class="chart-box" id="boxplot-chart" style="height: 420px;"></div>
+                        </figure>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="section" id="anomaly-section">
+        <section class="section" id="anomaly-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="异动概览与时间序列">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#6d28d9;">06</div>
@@ -526,12 +640,29 @@
             <div class="board grid-2">
                 <div class="panel">
                     <div class="panel-title">异动概览指标</div>
-                    <div class="metric-row" id="anomaly-metrics"></div>
-                    <div class="chart-box" id="anomaly-band-chart" style="height: 300px; margin-top: 12px;"></div>
+                    <div class="metric-row" id="anomaly-metrics">
+                        {{ metric('核心指标', anomaly.get('metric'), ['anomaly_overview','metric'], '自动识别') }}
+                        <div class="metric-item"><div class="label">均值 / 中位数</div><div class="value">{{ datum(anomaly.get('mean'), ['anomaly_overview','mean']) }} / {{ datum(anomaly.get('median'), ['anomaly_overview','median']) }}</div><div class="hint">中心位置</div></div>
+                        <div class="metric-item"><div class="label">P10 / P90</div><div class="value">{{ datum(anomaly.get('q10'), ['anomaly_overview','q10']) }} / {{ datum(anomaly.get('q90'), ['anomaly_overview','q90']) }}</div><div class="hint">分位带</div></div>
+                        {{ metric('高低组差距', anomaly.get('gap'), ['anomaly_overview','gap'], '高位组均值 - 低位组均值') }}
+                        {{ metric('异常值占比', anomaly.get('outlier_pct'), ['anomaly_overview','outlier_pct'], '主指标异常比例', '%') }}
+                        <div class="metric-item"><div class="label">组别规模</div><div class="value">{{ datum(anomaly.get('top_group_size'), ['anomaly_overview','top_group_size']) }} / {{ datum(anomaly.get('bottom_group_size'), ['anomaly_overview','bottom_group_size']) }}</div><div class="hint">高位组 / 低位组</div></div>
+                    </div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["anomaly_overview"]}}'
+                        data-dbgpt-block-id="csv-anomaly-band-chart" data-dbgpt-evidence-label="异动区间">
+                        <div class="chart-box" id="anomaly-band-chart" style="height: 300px; margin-top: 12px;"></div>
+                    </figure>
                 </div>
                 <div class="panel">
                     <div class="panel-title">时间/序列视角（如适用）</div>
-                    <div class="chart-box" id="time-series-chart" style="height: 300px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["time_series"]}}'
+                        data-dbgpt-block-id="csv-time-series-chart" data-dbgpt-evidence-label="时间序列">
+                        <div class="chart-box" id="time-series-chart" style="height: 300px;"></div>
+                    </figure>
                     <div class="insight-box">
                         <div class="insight-label">Time Series / Anomaly Insights</div>
                         <div class="prose">{{TIME_SERIES_INSIGHTS}}</div>
@@ -540,7 +671,10 @@
             </div>
         </section>
 
-        <section class="section" id="driver-section">
+        <section class="section" id="driver-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="驱动维度与归因线索">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#0ea5e9;">07</div>
@@ -553,16 +687,33 @@
             <div class="board grid-2">
                 <div class="panel">
                     <div class="panel-title">主要驱动维度排序</div>
-                    <div class="chart-box" id="driver-chart" style="height: 360px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["driver_analysis"]}}'
+                        data-dbgpt-block-id="csv-driver-chart" data-dbgpt-evidence-label="驱动维度">
+                        <div class="chart-box" id="driver-chart" style="height: 360px;"></div>
+                    </figure>
                 </div>
                 <div class="panel">
                     <div class="panel-title">归因线索摘要</div>
-                    <div class="signal-list" id="driver-signal-list"></div>
+                    <div class="signal-list" id="driver-signal-list">
+                        {% for item in report_data.get('driver_analysis', {}).get('items', [])[:5] %}
+                        {% set item_path = ['driver_analysis','items',loop.index0] %}
+                        <div class="signal-item" {{ source(item_path, '驱动因素：' ~ item.get('name', '')) }}>
+                            <div><div class="name">{{ datum(item.get('name'), item_path + ['name']) }}</div>
+                            <div class="meta">相关系数 {{ datum(item.get('corr'), item_path + ['corr']) }} · 高位组均值 {{ datum(item.get('top_mean'), item_path + ['top_mean']) }} · 低位组均值 {{ datum(item.get('bottom_mean'), item_path + ['bottom_mean']) }} · 组间差异强度 {{ datum(item.get('gap_ratio'), item_path + ['gap_ratio']) }}</div></div>
+                            <div class="badge">{{ datum(item.get('score'), item_path + ['score']) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="section" id="stats-section">
+        <section class="section" id="stats-section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="统计明细">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#047857;">08</div>
@@ -572,19 +723,40 @@
                     </div>
                 </div>
             </div>
-            <div class="board grid-2" id="stats-layout">
+            {% set has_radar = (report_data.get('numeric_cols', [])|length >= 3 and report_data.get('distributions', {}).values()|selectattr('counts', 'defined')|selectattr('counts')|list|length >= 3) %}
+            <div class="board{% if has_radar %} grid-2{% endif %}" id="stats-layout">
+                {% if has_radar %}
                 <div class="panel">
                     <div class="panel-title">特征轮廓雷达</div>
-                    <div class="chart-box" id="radar-chart" style="height: 340px;"></div>
+                    <figure class="chart-evidence" data-dbgpt-chart-renderer="echarts"
+                        data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+                        data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON","path":["distributions"]}}'
+                        data-dbgpt-block-id="csv-radar-chart" data-dbgpt-evidence-label="特征轮廓">
+                        <div class="chart-box" id="radar-chart" style="height: 340px;"></div>
+                    </figure>
                 </div>
+                {% endif %}
                 <div class="panel">
                     <div class="panel-title">统计摘要表</div>
-                    <div id="stats-table-container" style="overflow-x:auto;"></div>
+                    <div id="stats-table-container" style="overflow-x:auto;">
+                        {% set stats = report_data.get('stats_table', {}) %}
+                        {% if stats.get('rows') %}
+                        <table class="data-table" {{ source(['stats_table'], '统计摘要表') }}>
+                            <thead><tr>{% for header in stats.get('headers', []) %}<th>{{ header }}</th>{% endfor %}</tr></thead>
+                            <tbody>{% for row in stats.get('rows', []) %}{% set row_index = loop.index0 %}
+                                <tr>{% for cell in row %}<td{% if loop.index0 > 0 %} class="num"{% endif %}>{{ datum(cell, ['stats_table','rows',row_index,loop.index0]) }}</td>{% endfor %}</tr>
+                            {% endfor %}</tbody>
+                        </table>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="section">
+        <section class="section"
+            data-dbgpt-artifacts="{{ARTIFACT_ID_CHART_DATA_JSON}}"
+            data-dbgpt-artifact-selectors='{"{{ARTIFACT_ID_CHART_DATA_JSON}}":{"field":"CHART_DATA_JSON"}}'
+            data-dbgpt-evidence-label="基于统计结果的总结与建议">
             <div class="section-head">
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#1e40af;">09</div>
@@ -648,7 +820,12 @@
         var TT = { backgroundColor: "rgba(15,23,42,0.92)", borderWidth: 0, textStyle: { color: "#fff", fontSize: 12 } };
 
         function byId(id) { return document.getElementById(id); }
-        function hide(id) { var el = byId(id); if (el) el.style.display = "none"; }
+        function hide(id) {
+            var el = byId(id);
+            if (!el) return;
+            if (el.parentElement && el.parentElement.classList.contains("chart-evidence")) el = el.parentElement;
+            el.style.display = "none";
+        }
         function initChart(id) {
             var el = byId(id);
             if (!el) return null;
@@ -656,19 +833,6 @@
             charts.push(chart);
             return chart;
         }
-        function formatNum(value) {
-            if (value == null || value === "") return "--";
-            if (typeof value === "number") {
-                if (Math.abs(value) >= 1000) return value.toLocaleString();
-                return (Math.round(value * 100) / 100).toString();
-            }
-            return String(value);
-        }
-        function setText(id, value) {
-            var el = byId(id);
-            if (el) el.textContent = value;
-        }
-
         window.onload = function () {
             /* ── i18n: translate hardcoded titles/labels based on LANG ── */
             var langMeta = document.getElementById("report-lang");
@@ -814,7 +978,7 @@
                 });
 
                 /* panel titles */
-                document.querySelectorAll(".panel-title").forEach(function (el) {
+                document.querySelectorAll(".panel-title,.metric-item .label,.metric-item .hint").forEach(function (el) {
                     var zh = el.textContent.trim();
                     if (I18N[zh]) el.textContent = I18N[zh];
                 });
@@ -825,30 +989,7 @@
             }
             /* ── end i18n ── */
 
-            var overview = C.overview || {};
             var anomaly = C.anomaly_overview || {};
-            var primaryMetric = C.primary_metric || anomaly.metric || "--";
-            setText("hero-rows", overview.rows != null ? overview.rows.toLocaleString() + t("行") : "--");
-            setText("hero-completeness", overview.missing_pct != null ? (100 - overview.missing_pct).toFixed(1) + "%" : "--");
-            setText("hero-metric", primaryMetric || "--");
-            setText("hero-gap", anomaly.gap != null ? formatNum(anomaly.gap) : "--");
-
-            if (overview && Object.keys(overview).length > 0) {
-                var metricWrap = byId("overview-metrics");
-                if (metricWrap) {
-                    var cards = [
-                        { label: t("样本行数"), value: overview.rows != null ? overview.rows.toLocaleString() : "--", hint: t("总记录数") },
-                        { label: t("字段数量"), value: overview.cols != null ? overview.cols : "--", hint: t("总列数") },
-                        { label: t("完整率"), value: overview.missing_pct != null ? (100 - overview.missing_pct).toFixed(1) + "%" : "--", hint: t("缺失越低越好") },
-                        { label: t("重复记录"), value: overview.duplicate_rows != null ? overview.duplicate_rows : "--", hint: t("重复行检查") },
-                        { label: t("内存占用"), value: overview.memory_kb != null ? overview.memory_kb + " KB" : "--", hint: t("数据量级") },
-                        { label: t("主分析指标"), value: primaryMetric || "--", hint: t("后续异动分析基准") }
-                    ];
-                    metricWrap.innerHTML = cards.map(function (item) {
-                        return '<div class="metric-item"><div class="label">' + item.label + '</div><div class="value">' + item.value + '</div><div class="hint">' + item.hint + '</div></div>';
-                    }).join("");
-                }
-            }
 
             var dq = C.data_quality;
             if (dq && dq.columns && dq.columns.length > 0) {
@@ -886,13 +1027,10 @@
             if (dKeys.length > 0) {
                 var dc = byId("distribution-charts");
                 if (dc) {
-                    dKeys.forEach(function (col, idx) {
-                        var holder = document.createElement("div");
-                        holder.className = "chart-box";
-                        holder.style.height = "290px";
-                        dc.appendChild(holder);
-                        var chart = echarts.init(holder);
-                        charts.push(chart);
+                    Array.prototype.forEach.call(dc.querySelectorAll(".chart-box"), function (holder, idx) {
+                        var col = holder.getAttribute("data-dbgpt-chart-key");
+                        var chart = initChart(holder.id);
+                        if (!chart) return;
                         var item = dists[col];
                         chart.setOption({
                             title: { text: col, left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
@@ -912,13 +1050,10 @@
             if (catKeys.length > 0) {
                 var catWrap = byId("categorical-charts");
                 if (catWrap) {
-                    catKeys.forEach(function (col) {
-                        var holder = document.createElement("div");
-                        holder.className = "chart-box";
-                        holder.style.height = "300px";
-                        catWrap.appendChild(holder);
-                        var chart = echarts.init(holder);
-                        charts.push(chart);
+                    Array.prototype.forEach.call(catWrap.querySelectorAll(".chart-box"), function (holder) {
+                        var col = holder.getAttribute("data-dbgpt-chart-key");
+                        var chart = initChart(holder.id);
+                        if (!chart) return;
                         var values = C.categories[col].labels.map(function (label, i) {
                             return { name: label, value: C.categories[col].values[i] };
                         });
@@ -1010,18 +1145,7 @@
             }
 
             var bpKeys = C.box_plots ? Object.keys(C.box_plots) : [];
-            var outlierData = C.outliers || {};
             if (bpKeys.length > 0) {
-                var outlierWrap = byId("outlier-summary");
-                if (outlierWrap) {
-                    outlierWrap.innerHTML = '<div class="outlier-grid">' + bpKeys.map(function (col) {
-                        var o = outlierData[col] || { count: 0, pct: 0 };
-                        var bg = o.count > 0 ? '#fef2f2' : '#ecfdf5';
-                        var bc = o.count > 0 ? '#be123c' : '#047857';
-                        var tc = o.count > 0 ? '#9f1239' : '#065f46';
-                        return '<div class="outlier-item" style="background:' + bg + ';border-left-color:' + bc + '"><div class="col-name">' + col + '</div><div class="count" style="color:' + tc + '">' + o.count + ' <span style="font-size:12px;font-weight:600;color:#64748b;">(' + o.pct + '%)</span></div></div>';
-                    }).join('') + '</div>';
-                }
                 var boxChart = initChart("boxplot-chart");
                 if (boxChart) {
                     var boxData = [];
@@ -1046,20 +1170,6 @@
             }
 
             if (anomaly && anomaly.metric) {
-                var anomalyWrap = byId("anomaly-metrics");
-                if (anomalyWrap) {
-                    var anomalyCards = [
-                        { label: t("核心指标"), value: anomaly.metric, hint: t("自动识别") },
-                        { label: t("均值 / 中位数"), value: formatNum(anomaly.mean) + ' / ' + formatNum(anomaly.median), hint: t("中心位置") },
-                        { label: t("P10 / P90"), value: formatNum(anomaly.q10) + ' / ' + formatNum(anomaly.q90), hint: t("分位带") },
-                        { label: t("高低组差距"), value: formatNum(anomaly.gap), hint: t("高位组均值 - 低位组均值") },
-                        { label: t("异常值占比"), value: formatNum(anomaly.outlier_pct) + '%', hint: t("主指标异常比例") },
-                        { label: t("组别规模"), value: formatNum(anomaly.top_group_size) + ' / ' + formatNum(anomaly.bottom_group_size), hint: t("高位组 / 低位组") }
-                    ];
-                    anomalyWrap.innerHTML = anomalyCards.map(function (item) {
-                        return '<div class="metric-item"><div class="label">' + item.label + '</div><div class="value">' + item.value + '</div><div class="hint">' + item.hint + '</div></div>';
-                    }).join("");
-                }
                 var anomalyChart = initChart("anomaly-band-chart");
                 if (anomalyChart) {
                     anomalyChart.setOption({
@@ -1109,12 +1219,6 @@
                         series: [{ type: "bar", data: items.map(function (item) { return item.score; }).reverse(), barWidth: "56%", itemStyle: { borderRadius: [0, 6, 6, 0], color: "#0ea5e9" }, label: { show: true, position: "right", color: "#0369a1" } }]
                     });
                 }
-                var signalList = byId("driver-signal-list");
-                if (signalList) {
-                    signalList.innerHTML = driver.items.slice(0, 5).map(function (item) {
-                        return '<div class="signal-item"><div><div class="name">' + item.name + '</div><div class="meta">' + t('相关系数') + ' ' + item.corr + ' · ' + t('高位组均值') + ' ' + formatNum(item.top_mean) + ' · ' + t('低位组均值') + ' ' + formatNum(item.bottom_mean) + ' · ' + t('组间差异强度') + ' ' + formatNum(item.gap_ratio) + '</div></div><div class="badge">' + item.score + '</div></div>';
-                    }).join("");
-                }
             } else {
                 hide("driver-section");
             }
@@ -1124,7 +1228,10 @@
             if (radarChart && C.numeric_cols && C.numeric_cols.length >= 3 && C.distributions) {
                 var indicators = [];
                 var values = [];
-                C.numeric_cols.slice(0, 8).forEach(function (col) {
+                C.numeric_cols.filter(function (col) {
+                    var dist = C.distributions[col];
+                    return dist && dist.counts && dist.counts.length > 0;
+                }).slice(0, 8).forEach(function (col) {
                     var dist = C.distributions[col];
                     if (dist && dist.counts) {
                         var total = dist.counts.reduce(function (a, b) { return a + b; }, 0);
@@ -1150,20 +1257,7 @@
 
             var stats = C.stats_table;
             var tableWrap = byId("stats-table-container");
-            if (tableWrap && stats && stats.headers && stats.rows && stats.rows.length > 0) {
-                var html = '<table class="data-table"><thead><tr>';
-                stats.headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
-                html += '</tr></thead><tbody>';
-                stats.rows.forEach(function (row) {
-                    html += '<tr>';
-                    row.forEach(function (cell, idx) {
-                        html += '<td' + (idx === 0 ? '' : ' class="num"') + '>' + formatNum(cell) + '</td>';
-                    });
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-                tableWrap.innerHTML = html;
-            } else if (!radarOk) {
+            if (!(tableWrap && stats && stats.headers && stats.rows && stats.rows.length > 0) && !radarOk) {
                 hide("stats-section");
             }
         };

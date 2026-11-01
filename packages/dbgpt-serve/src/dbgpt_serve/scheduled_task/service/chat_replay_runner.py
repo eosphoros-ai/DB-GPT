@@ -36,21 +36,87 @@ from ..dao.run_dao import ScheduledRunDao
 from ..dao.task_dao import ScheduledTaskDao
 
 logger = logging.getLogger(__name__)
+_LEASE_RENEW_INTERVAL_SECONDS = 30
 
 
 # ── Module-level entry point for APScheduler ──────────────────────────
 
 
-async def run_scheduled_task(task_id: str) -> None:
-    """APScheduler job callback — creates a runner and delegates.
+async def run_scheduled_task(task_id: str, allow_disabled: bool = False) -> bool:
+    """APScheduler callback with a persistent lease and task-type dispatch.
 
     This **must** be a module-level function (not a bound method) so
     that APScheduler's SQLAlchemyJobStore can pickle the job state.
-    The runner is instantiated fresh on each invocation to avoid
-    holding stale SQLAlchemy sessions across runs.
+    The database lease prevents two scheduler instances from running the same
+    task concurrently.  The task type selects a chat or dashboard runner.
     """
-    runner = ChatReplayRunner()
-    await runner.replay_chat_task(task_id)
+    task_dao = ScheduledTaskDao()
+    task = task_dao.get_one({"task_id": task_id})
+    if task is None:
+        logger.warning("scheduled task %s no longer exists", task_id)
+        return False
+
+    lease_owner = uuid.uuid4().hex
+    try:
+        payload = json.loads(task.get("payload_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        payload = {}
+    timeout_seconds = int(payload.get("timeout_seconds") or 600)
+    max_attempts = int(payload.get("max_attempts") or 1)
+    retry_backoff = sum(min(2**attempt, 10) for attempt in range(max_attempts - 1))
+    lease_ttl = max(timeout_seconds * max_attempts + retry_backoff + 60, 120)
+    if not task_dao.try_acquire_lease(
+        task_id,
+        lease_owner,
+        ttl_seconds=lease_ttl,
+        require_enabled=not allow_disabled,
+    ):
+        logger.info("scheduled task %s already has an active execution lease", task_id)
+        return False
+
+    async def keep_lease():
+        while True:
+            await asyncio.sleep(min(_LEASE_RENEW_INTERVAL_SECONDS, lease_ttl / 3))
+            if not task_dao.renew_lease(task_id, lease_owner, ttl_seconds=lease_ttl):
+                raise RuntimeError(f"scheduled task {task_id} lost its execution lease")
+
+    execution = None
+    heartbeat = None
+    try:
+        if task.get("task_type") == "dashboard_refresh":
+            from .dashboard_refresh_runner import DashboardRefreshRunner
+
+            execution = asyncio.create_task(
+                DashboardRefreshRunner().refresh_dashboard_task(
+                    task_id, allow_disabled=allow_disabled
+                )
+            )
+        else:
+            execution = asyncio.create_task(
+                ChatReplayRunner().replay_chat_task(task_id)
+            )
+        heartbeat = asyncio.create_task(keep_lease())
+        done, _ = await asyncio.wait(
+            {execution, heartbeat}, return_when=asyncio.FIRST_COMPLETED
+        )
+        if heartbeat in done:
+            # A renewal error must stop execution just like a lost lease.
+            await heartbeat
+        await execution
+        return True
+    finally:
+        try:
+            if execution is not None:
+                if not execution.done():
+                    execution.cancel()
+                # Dashboard cancellation waits for its actual thread to exit.
+                # Keep renewing throughout that cleanup, including after timeout.
+                await asyncio.gather(execution, return_exceptions=True)
+        finally:
+            if heartbeat is not None:
+                heartbeat.cancel()
+                await asyncio.gather(heartbeat, return_exceptions=True)
+            task_dao.release_lease(task_id, lease_owner)
 
 
 def _default_session_file_registry():
@@ -98,9 +164,9 @@ class ChatReplayRunner:
     async def replay_chat_task(self, task_id: str) -> None:
         """Replay a chat task by task_id.
 
-        This is the callback invoked by the scheduler. It must never
-        raise an exception — all errors are caught and recorded in the
-        run table.
+        Execution errors are recorded in the run table. Cancellation also
+        records a terminal state, then propagates so the dispatcher can finish
+        shutdown or lease-loss cleanup.
 
         Args:
             task_id: The UUID of the scheduled task to replay.
@@ -133,8 +199,20 @@ class ChatReplayRunner:
             #    Use a fresh conv_uid so each run is its own dialog.
             payload = json.loads(task["payload_json"])
             payload["conv_uid"] = new_conv_uid
-            payload["user_name"] = task.get("user_name")
+            payload["user_name"] = task.get("owner_id") or task.get("user_name")
             payload.pop("version", None)  # internal field, not a ConversationVo key
+            if task.get("resource_type") == "uploaded_dataset":
+                ext_info = dict(payload.get("ext_info") or {})
+                ext_info["dataset_id"] = task.get("resource_id")
+                ext_info["dataset_replay_task_id"] = task_id
+                for unsafe_key in (
+                    "file_path",
+                    "file_paths",
+                    "database_name",
+                    "database_path",
+                ):
+                    ext_info.pop(unsafe_key, None)
+                payload["ext_info"] = ext_info
 
             # 3b. Payload v2: copy task-frozen files into this run's fresh
             #     session and swap in the fresh session-scoped IDs.
@@ -159,6 +237,9 @@ class ChatReplayRunner:
                     "output_conv_uid": new_conv_uid,
                 },
             )
+        except asyncio.CancelledError:
+            self._fail(run_id, "execution cancelled", new_conv_uid)
+            raise
         except asyncio.TimeoutError:
             logger.warning("scheduled task %s timed out", task_id)
             self._run_dao.update(

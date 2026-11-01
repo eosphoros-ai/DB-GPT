@@ -40,7 +40,7 @@ const previewClampStyle: CSSProperties = {
   WebkitLineClamp: 2,
 };
 
-const FALLBACK_HEADING_RE = /^#{2,4}\s+(.+?)\s+\[(done|running|timeout|failed)]\s*$/gim;
+const FALLBACK_HEADING_RE = /^#{2,4}\s+(.+?)\s+\[(done|partial|running|timeout|failed)]\s*$/gim;
 
 function readBalancedJson(source: string, start: number): string | null {
   if (source[start] !== '{') return null;
@@ -185,7 +185,7 @@ const TaskCard: React.FC<{
   const duration = formatDuration(task.elapsedMs);
   const isRunning = task.status === 'running';
   const hasDetails = Boolean(task.goal || safeResult || task.steps.length > 0);
-  const defaultOpen = isRunning || task.status === 'failed' || task.status === 'timeout';
+  const defaultOpen = isRunning || task.status === 'failed' || task.status === 'timeout' || task.status === 'partial';
   const subline = isRunning
     ? task.currentAction || t('parallel_tasks_preparing')
     : resultPreview || task.goal || t(`subagent_status_${task.status}`);
@@ -196,7 +196,7 @@ const TaskCard: React.FC<{
       className={classNames(
         'overflow-hidden rounded-xl border bg-white transition-colors dark:bg-[#191a1f]',
         task.status === 'failed' && 'border-red-200 dark:border-red-500/30',
-        task.status === 'timeout' && 'border-amber-200 dark:border-amber-500/30',
+        (task.status === 'timeout' || task.status === 'partial') && 'border-amber-200 dark:border-amber-500/30',
         task.status === 'running' && 'border-blue-200 shadow-sm dark:border-blue-500/30',
         task.status === 'done' && 'border-slate-200/80 dark:border-white/10',
       )}
@@ -341,7 +341,9 @@ const ParallelTasksPanel: React.FC<ParallelTasksPanelProps> = ({
   const total = tasks.length;
   const doneCount = tasks.filter(task => task.status === 'done').length;
   const runningCount = tasks.filter(task => task.status === 'running').length;
-  const attentionCount = tasks.filter(task => task.status === 'failed' || task.status === 'timeout').length;
+  const attentionCount = tasks.filter(
+    task => task.status === 'failed' || task.status === 'timeout' || task.status === 'partial',
+  ).length;
   const settledCount = total - runningCount;
   const isSummarizing = total > 0 && runningCount === 0 && status === 'running';
   const progress = total > 0 ? Math.round((settledCount / total) * 100) : 0;

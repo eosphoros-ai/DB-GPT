@@ -433,16 +433,33 @@ class SkillManager(BaseComponent):
             if output:
                 chunks.append({"output_type": "text", "content": output})
 
-            return json.dumps({"chunks": chunks}, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "chunks": chunks,
+                    "source_code": substituted_code,
+                    "language": language,
+                    "exit_code": result.exit_code,
+                    "success": result.exit_code == 0,
+                    "stdout": output,
+                    "stderr": error_output,
+                    "script_arguments": args,
+                },
+                ensure_ascii=False,
+            )
         except Exception as e:
             return json.dumps(
                 {
+                    "source_code": substituted_code,
+                    "language": language,
+                    "success": False,
+                    "exit_code": None,
+                    "error": str(e),
                     "chunks": [
                         {
                             "output_type": "text",
                             "content": f"Script execution failed: {str(e)}",
                         }
-                    ]
+                    ],
                 },
                 ensure_ascii=False,
             )
@@ -615,6 +632,7 @@ class SkillManager(BaseComponent):
         skill_name: str,
         resource_path: str,
         args: Optional[Dict[str, Any]] = None,
+        execute_scripts: bool = True,
     ) -> str:
         """Get a resource from a skill by path.
 
@@ -622,6 +640,7 @@ class SkillManager(BaseComponent):
         - If path starts with "scripts/" and ends with .py/.sh, execute the script
         - If path is an image file, return error (model doesn't support images)
         - Otherwise, read and return the file content
+        Set execute_scripts=False to inspect script source without executing it.
 
         Args:
             skill_name: The name of the skill.
@@ -697,7 +716,11 @@ class SkillManager(BaseComponent):
             )
 
         # Check if it's a script that needs execution
-        if resource_path.startswith("scripts/") and ext.lower() in {".py", ".sh"}:
+        if (
+            execute_scripts
+            and resource_path.startswith("scripts/")
+            and ext.lower() in {".py", ".sh"}
+        ):
             if self._should_reject_personal_skill_execution(skill_path):
                 return self._personal_skill_execution_denied_result(skill_name)
             return await self._execute_script_from_path(full_path, args or {})
@@ -944,6 +967,7 @@ __name__ = "__main__"
         script_file_name: str,
         args: Optional[Dict[str, Any]] = None,
         output_dir: Optional[str] = None,
+        argv: Optional[List[str]] = None,
     ) -> str:
         import asyncio
         import os
@@ -959,7 +983,9 @@ __name__ = "__main__"
                             "output_type": "text",
                             "content": f"Skill '{skill_name}' not found",
                         }
-                    ]
+                    ],
+                    "success": False,
+                    "error": f"Skill '{skill_name}' not found",
                 },
                 ensure_ascii=False,
             )
@@ -982,7 +1008,9 @@ __name__ = "__main__"
                             "output_type": "text",
                             "content": f"Script file '{script_file_name}' not found",
                         }
-                    ]
+                    ],
+                    "success": False,
+                    "error": f"Script file '{script_file_name}' not found",
                 },
                 ensure_ascii=False,
             )
@@ -990,12 +1018,24 @@ __name__ = "__main__"
         with open(script_path, "r", encoding="utf-8") as f:
             code = f.read()
 
-        adapted_args = self._adapt_args_for_script(code, args)
-        args_repr = repr(adapted_args)
+        # JSON-based skills keep their existing contract. CLI scripts receive
+        # separate arguments, without shell parsing (including paths with spaces).
+        if argv is not None:
+            if (
+                args
+                or not isinstance(argv, list)
+                or not all(isinstance(value, str) for value in argv)
+            ):
+                raise ValueError("Use either args (JSON) or argv (list of strings)")
+            adapted_args = {"argv": argv}
+            script_argv = [script_path, *argv]
+        else:
+            adapted_args = self._adapt_args_for_script(code, args)
+            script_argv = ["script", json.dumps(adapted_args)]
         wrapper_code = f"""import sys
 import json
 
-sys.argv = ["script", json.dumps({args_repr})]
+sys.argv = {script_argv!r}
 __name__ = "__main__"
 
 {code}
@@ -1005,20 +1045,14 @@ __name__ = "__main__"
             import sys
             import tempfile
 
-            _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+            from dbgpt.core.interface.report_capture import execution_output_files
 
             scripts_dir = os.path.dirname(script_path)
             # Use output_dir for subprocess cwd + image scanning;
             # fall back to the scripts directory.
             work_dir = output_dir or scripts_dir
             os.makedirs(work_dir, exist_ok=True)
-            # Snapshot existing images BEFORE execution
-            pre_existing_images: set = set()
-            for root, _dirs, files in os.walk(work_dir):
-                for fname in files:
-                    ext = os.path.splitext(fname)[1].lower()
-                    if ext in _IMAGE_EXTS:
-                        pre_existing_images.add(os.path.join(root, fname))
+            pre_existing_images = set(execution_output_files(work_dir, images=True))
             tmp_fd, tmp_path = tempfile.mkstemp(
                 suffix=".py", dir=scripts_dir, prefix="_skill_run_"
             )
@@ -1036,7 +1070,15 @@ __name__ = "__main__"
                     cwd=work_dir,
                     env=env,
                 )
-                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+                try:
+                    stdout, stderr = await asyncio.wait_for(
+                        proc.communicate(), timeout=120
+                    )
+                except (asyncio.TimeoutError, asyncio.CancelledError):
+                    if proc.returncode is None:
+                        proc.kill()
+                    await proc.communicate()
+                    raise
                 output_text = stdout.decode("utf-8", errors="replace")
                 error_text = stderr.decode("utf-8", errors="replace")
                 exit_code = proc.returncode or 0
@@ -1072,6 +1114,17 @@ __name__ = "__main__"
                 chunks.append(
                     {"output_type": "text", "content": f"Exit code: {exit_code}"}
                 )
+                if argv is None and "usage:" in (output_text + error_text).lower():
+                    chunks.append(
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "This script expects command-line arguments. "
+                                "Retry execute_skill_script_file with argv as a "
+                                "list of separate arguments instead of args."
+                            ),
+                        }
+                    )
             if not chunks:
                 chunks.append(
                     {
@@ -1079,21 +1132,23 @@ __name__ = "__main__"
                         "content": "Script executed successfully (no output)",
                     }
                 )
-            # Scan work_dir for NEW image files generated by this run.
-            # Return their absolute paths so the caller can copy them
-            # to the static serving directory.
-            for root, _dirs, files in os.walk(work_dir):
-                for fname in files:
-                    ext = os.path.splitext(fname)[1].lower()
-                    full_path = os.path.join(root, fname)
-                    if ext in _IMAGE_EXTS and full_path not in pre_existing_images:
-                        chunks.append(
-                            {
-                                "output_type": "image",
-                                "content": full_path,
-                            }
-                        )
-            return json.dumps({"chunks": chunks}, ensure_ascii=False)
+            for full_path in execution_output_files(work_dir, images=True):
+                if full_path not in pre_existing_images:
+                    chunks.append({"output_type": "image", "content": full_path})
+            return json.dumps(
+                {
+                    "chunks": chunks,
+                    "success": exit_code == 0,
+                    "exit_code": exit_code,
+                    "stderr": error_text,
+                    "source_code": code,
+                    "script_arguments": adapted_args,
+                    "error": (error_text.strip() or f"Exit code: {exit_code}")
+                    if exit_code
+                    else None,
+                },
+                ensure_ascii=False,
+            )
         except asyncio.TimeoutError:
             return json.dumps(
                 {
@@ -1102,7 +1157,13 @@ __name__ = "__main__"
                             "output_type": "text",
                             "content": "Script execution timed out (120s limit)",
                         }
-                    ]
+                    ],
+                    "success": False,
+                    "status": "timed_out",
+                    "source_code": code,
+                    "script_arguments": adapted_args,
+                    "exit_code": None,
+                    "error": "Script execution timed out (120s limit)",
                 },
                 ensure_ascii=False,
             )
@@ -1114,7 +1175,11 @@ __name__ = "__main__"
                             "output_type": "text",
                             "content": f"Script execution failed: {str(e)}",
                         }
-                    ]
+                    ],
+                    "success": False,
+                    "error": str(e),
+                    "source_code": code,
+                    "script_arguments": adapted_args,
                 },
                 ensure_ascii=False,
             )

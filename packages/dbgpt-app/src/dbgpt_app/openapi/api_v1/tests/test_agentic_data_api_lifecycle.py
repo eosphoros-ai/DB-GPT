@@ -15,6 +15,102 @@ def _decode_sse_event(event: str):
     return json.loads(event.removeprefix("data: ").strip())
 
 
+@pytest.mark.parametrize(
+    ("prompt", "expected"),
+    [
+        ("[[confirm-dashboard:dash_123]] confirm", "dash_123"),
+        ("[[revise-dashboard-plan:dash-456]] revise", "dash-456"),
+        ("[[modify-dashboard:dash789]] update", "dash789"),
+        (
+            "[[dashboard-annotation:dash_123:annotation_9]] propose",
+            "dash_123",
+        ),
+        ("please build a dashboard", None),
+    ],
+)
+def test_dashboard_workflow_marker_recovers_dashboard_id(prompt, expected) -> None:
+    assert agentic_data_api._dashboard_id_from_workflow_marker(prompt) == expected
+
+
+@pytest.mark.parametrize(
+    ("prompt", "creation_mode", "expected"),
+    [
+        ("只做一个年度收入表", "dashboard", True),
+        ("Show annual revenue", "dashboard", True),
+        ("Show annual revenue", "skill", False),
+        ("Show annual revenue", None, False),
+        ("Show annual revenue", "dashboards", False),
+        ("制作销售看板", None, True),
+        ("[[confirm-dashboard:dash_123]] confirm", "skill", True),
+        ("[[dashboard-annotation:dash_123:ann_9]] explain", None, True),
+    ],
+)
+def test_composer_mode_routes_implicit_dashboard_requests(
+    prompt, creation_mode, expected
+) -> None:
+    assert (
+        agentic_data_api._is_dashboard_workflow_request(prompt, creation_mode)
+        is expected
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("prompt", "ext_info", "expected_message"),
+    [
+        ("请生成销售看板", {}, "请选择可用数据源"),
+        (
+            "Create a sales dashboard",
+            {"locale": "en"},
+            "Choose an available data source",
+        ),
+        (
+            "展示年度收入",
+            {"skill_name": "dashboard-builder"},
+            "请选择可用数据源",
+        ),
+        (
+            "展示年度收入",
+            {"creation_mode": "dashboard"},
+            "请选择可用数据源",
+        ),
+    ],
+)
+async def test_missing_dashboard_source_stops_before_model_initialization(
+    monkeypatch, prompt, ext_info, expected_message
+) -> None:
+    from dbgpt.agent import claude_skill
+    from dbgpt.agent.resource import manage
+    from dbgpt.model.cluster.client import DefaultLLMClient
+
+    monkeypatch.setattr(claude_skill, "load_skills_from_dir", lambda *a, **k: None)
+    monkeypatch.setattr(
+        claude_skill, "get_registry", lambda: SimpleNamespace(list_skills=lambda: [])
+    )
+    monkeypatch.setattr(
+        manage,
+        "get_resource_manager",
+        lambda _: SimpleNamespace(_type_to_resources={}),
+    )
+
+    def forbidden_model(*args, **kwargs):
+        raise AssertionError("Missing source must be handled before model startup")
+
+    monkeypatch.setattr(DefaultLLMClient, "__init__", forbidden_model)
+    dialogue = SimpleNamespace(
+        user_input=prompt,
+        ext_info=ext_info,
+        user_name="alice",
+        conv_uid="missing-source",
+    )
+    events = [
+        _decode_sse_event(event)
+        async for event in agentic_data_api._react_agent_stream_impl(dialogue)
+    ]
+    assert [event["type"] for event in events] == ["final", "done"]
+    assert expected_message in events[0]["content"]
+
+
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
     class _FailingStorageConversation:
         def add_view_message(self, payload: str) -> None:
@@ -57,7 +153,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
@@ -87,7 +185,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
 async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
-    async def _failing_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _failing_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode, agent_task_holder
         if False:
             yield ""
@@ -119,7 +219,7 @@ async def test_runtime_failure_emits_structured_final_and_done(
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -157,7 +257,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)

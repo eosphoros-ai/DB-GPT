@@ -192,8 +192,12 @@ class DeepseekLLMClient(OpenAILLMClient):
         if not self._is_thinking_disabled(payload) or not output.has_thinking:
             return output
         text = output.text if output.has_text else ""
-        return ModelOutput.build(
+        return ModelOutput(
             text=text,
+            error_code=output.error_code,
+            tool_calls=output.tool_calls,
+            incremental=output.incremental,
+            model_context=output.model_context,
             usage=output.usage,
             finish_reason=output.finish_reason,
             metrics=output.metrics,

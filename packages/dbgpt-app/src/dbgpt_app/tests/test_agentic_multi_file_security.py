@@ -796,7 +796,7 @@ async def test_materialized_paths_stay_internal_until_share_boundary(
                 f"{marker!r} leaked into {surface}: {content[:300]}"
             )
     assert ctx.primary_local_path in prompt
-    assert ctx.primary_local_path in raw_history
+    assert json.dumps(ctx.primary_local_path)[1:-1] in raw_history
     assert record.file_id in prompt
     assert "confidential.csv" in prompt
 
@@ -861,7 +861,9 @@ def test_share_scrub_masks_traceback_paths_in_steps(env, monkeypatch):
 
     scrubbed = scrub_react_history_for_share(raw_history)
 
-    assert materialized in raw_history  # supply side keeps full fidelity
+    assert (
+        json.dumps(materialized)[1:-1] in raw_history
+    )  # supply side keeps full fidelity
     assert materialized not in scrubbed
     assert str(env.tmp_path) not in scrubbed
     assert "<server-path>" in scrubbed

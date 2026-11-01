@@ -1,8 +1,10 @@
 """Database resource module."""
 
+import asyncio
 import dataclasses
 import logging
 from concurrent.futures import Executor, ThreadPoolExecutor
+from threading import Event
 from typing import Any, Dict, Generic, List, Optional, Tuple, Union
 
 import cachetools
@@ -192,6 +194,46 @@ class RDBMSConnectorResource(DBResource[DBParameters]):
         columns = result_lst[0]
         values = result_lst[1:]
         return columns, values
+
+    async def query(self, sql: str, db: Optional[str] = None, timeout: float = 30):
+        """Bound queries while preserving each connector's ``run`` adapter.
+
+        Only the standard SQLite implementation uses query_ex for cooperative
+        cancellation. Other connectors do not share its session or row contract.
+        Their timeout bounds the await; driver execution may continue afterward.
+        """
+        cancelled = Event()
+        connector = self.connector
+        standard_sqlite = (
+            isinstance(connector, RDBMSConnector)
+            and type(connector).run is RDBMSConnector.run
+            and type(connector).query_ex is RDBMSConnector.query_ex
+            and connector.dialect == "sqlite"
+        )
+        if standard_sqlite:
+            execution = blocking_func_to_async(
+                self._executor,
+                connector.query_ex,
+                sql,
+                timeout=timeout,
+                cancel_event=cancelled,
+            )
+        else:
+            execution = blocking_func_to_async(
+                self._executor, self._sync_query, db=db or self._db_name, sql=sql
+            )
+        try:
+            return await asyncio.wait_for(
+                execution,
+                timeout=timeout,
+            )
+        except TimeoutError as error:
+            raise TimeoutError(
+                f"SQL_QUERY_TIMEOUT: query exceeded {timeout:g} seconds; "
+                "inspect the query plan and join indexes before changing the SQL"
+            ) from error
+        finally:
+            cancelled.set()
 
 
 class SQLiteDBResource(RDBMSConnectorResource):

@@ -109,6 +109,7 @@ class ScheduledTaskServe(BaseServe):
         self._service = ScheduledTaskService(
             scheduler=self._scheduler,
             runner_callable=run_scheduled_task,
+            session_file_registry_provider=self._get_session_file_registry,
         )
 
         init_endpoints(self._system_app, self._service)
@@ -168,6 +169,16 @@ class ScheduledTaskServe(BaseServe):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _get_session_file_registry(self):
+        # SessionFileServe can be registered after this component. Resolve at
+        # request time; task CRUD also works when scheduler execution is off.
+        from dbgpt_serve.session_file.serve import SessionFileServe
+
+        serve = self._system_app.get_component(
+            SessionFileServe.name, SessionFileServe, default_component=None
+        )
+        return serve.registry if serve is not None else None
 
     async def _recover_jobs_from_db(self) -> None:
         """Recover enabled tasks from DB and clean orphan scheduler jobs.

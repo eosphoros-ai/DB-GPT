@@ -90,7 +90,7 @@ uv sync --all-packages \
 
 ### Run Webserver
 
-To run DB-GPT with OpenAI proxy, you must provide the OpenAI API key in the `configs/dbgpt-proxy-openai.toml` configuration file or privide it in the environment variable with key `OPENAI_API_KEY`.
+To run DB-GPT with OpenAI proxy, you must provide the OpenAI API key in the `configs/dbgpt-proxy-openai.toml` configuration file or provide it in the environment variable with key `OPENAI_API_KEY`.
 
 ```toml
 # Model Configurations
@@ -262,7 +262,7 @@ After version 0.4.7, we removed the automatic generation of MySQL database Schem
 
 :::
 
-1. Frist, execute MySQL script to create database and tables.
+1. First, execute MySQL script to create database and tables.
 
 ```bash
 $ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql

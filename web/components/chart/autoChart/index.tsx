@@ -5,7 +5,7 @@ import { Advice, Advisor, Datum } from '@antv/ava';
 import { Chart, ChartRef } from '@berryv/g2-react';
 import { Button, Col, Empty, Row, Select, Space, Tooltip } from 'antd';
 import { compact, concat, uniq } from 'lodash';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { MutableRefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { downloadImage } from '../helpers/downloadChartImage';
 import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
 import { defaultAdvicesFilter } from './advisor/utils';
@@ -14,10 +14,61 @@ import { processNilData, sortData } from './charts/util';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 const { Option } = Select;
 
+/** Observe the existing G2 render promise; do not replace its renderer. */
+const ObservedChart = ({
+  options,
+  chartRef,
+  onObservation,
+}: {
+  options: Specification;
+  chartRef: MutableRefObject<ChartRef | undefined>;
+  onObservation: NonNullable<AutoChartProps['onRenderObservation']>;
+}) => {
+  const [ready, setReady] = useState(false);
+  const callback = useRef(onObservation);
+  callback.current = onObservation;
+  const onInit = useCallback(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const original = chart.render.bind(chart);
+    chart.render = (...args: Parameters<typeof original>) => {
+      const started = performance.now();
+      const finish = (error?: unknown) => {
+        let runtimeOptions: Record<string, unknown> | undefined;
+        try {
+          runtimeOptions = JSON.parse(JSON.stringify(chart.options()));
+        } catch {
+          /* Functions cannot be serialized. */
+        }
+        callback.current({
+          renderer: 'g2',
+          state: error ? 'failed' : 'rendered',
+          duration_ms: Math.max(0, Math.round(performance.now() - started)),
+          options: runtimeOptions,
+          ...(error ? { error: String(error).slice(0, 2000) } : {}),
+        });
+      };
+      try {
+        const result = original(...args);
+        void Promise.resolve(result).then(
+          () => finish(),
+          error => finish(error),
+        );
+        return result;
+      } catch (error) {
+        finish(error);
+        throw error;
+      }
+    };
+    setReady(true);
+  }, [chartRef]);
+  return <Chart ref={chartRef} onInit={onInit} options={ready ? options : undefined} />;
+};
+
 export const AutoChart = (props: AutoChartProps) => {
-  const { data: originalData, chartType, scopeOfCharts, ruleConfig } = props;
+  const { data: originalData, chartType, scopeOfCharts, ruleConfig, showControls = true, onRenderObservation } = props;
   // 处理空值数据 (为'-'的数据)
-  const data = processNilData(originalData) as Datum[];
+  const data = useMemo(() => processNilData(originalData) as Datum[], [originalData]);
   const { mode } = useContext(ChatContext);
 
   const [advisor, setAdvisor] = useState<Advisor>();
@@ -39,40 +90,43 @@ export const AutoChart = (props: AutoChartProps) => {
   }, [ruleConfig, scopeOfCharts]);
 
   /** 将 AVA 得到的图表推荐结果和模型的合并 */
-  const getMergedAdvices = (avaAdvices: Advice[]) => {
-    if (!advisor) return [];
-    const filteredAdvices = defaultAdvicesFilter({
-      advices: avaAdvices,
-    });
-    const allChartTypes = uniq(
-      compact(
-        concat(
-          chartType,
-          avaAdvices.map(item => item.type),
+  const getMergedAdvices = useCallback(
+    (avaAdvices: Advice[]) => {
+      if (!advisor) return [];
+      const filteredAdvices = defaultAdvicesFilter({
+        advices: avaAdvices,
+      });
+      const allChartTypes = uniq(
+        compact(
+          concat(
+            chartType,
+            avaAdvices.map(item => item.type),
+          ),
         ),
-      ),
-    );
-    const allAdvices = allChartTypes
-      .map(chartTypeItem => {
-        const avaAdvice = filteredAdvices.find(item => item.type === chartTypeItem);
-        // 如果在 AVA 推荐列表中，直接采用推荐列表中的结果
-        if (avaAdvice) {
-          return avaAdvice;
-        }
-        // 如果不在，则单独为其生成图表 spec
-        const dataAnalyzerOutput = advisor.dataAnalyzer.execute({ data });
-        if ('data' in dataAnalyzerOutput) {
-          const specGeneratorOutput = advisor.specGenerator.execute({
-            data: dataAnalyzerOutput.data,
-            dataProps: dataAnalyzerOutput.dataProps,
-            chartTypeRecommendations: [{ chartType: chartTypeItem, score: 1 }],
-          });
-          if ('advices' in specGeneratorOutput) return specGeneratorOutput.advices?.[0];
-        }
-      })
-      .filter(advice => advice?.spec) as Advice[];
-    return allAdvices;
-  };
+      );
+      const allAdvices = allChartTypes
+        .map(chartTypeItem => {
+          const avaAdvice = filteredAdvices.find(item => item.type === chartTypeItem);
+          // 如果在 AVA 推荐列表中，直接采用推荐列表中的结果
+          if (avaAdvice) {
+            return avaAdvice;
+          }
+          // 如果不在，则单独为其生成图表 spec
+          const dataAnalyzerOutput = advisor.dataAnalyzer.execute({ data });
+          if ('data' in dataAnalyzerOutput) {
+            const specGeneratorOutput = advisor.specGenerator.execute({
+              data: dataAnalyzerOutput.data,
+              dataProps: dataAnalyzerOutput.dataProps,
+              chartTypeRecommendations: [{ chartType: chartTypeItem, score: 1 }],
+            });
+            if ('advices' in specGeneratorOutput) return specGeneratorOutput.advices?.[0];
+          }
+        })
+        .filter(advice => advice?.spec) as Advice[];
+      return allAdvices;
+    },
+    [advisor, chartType, data],
+  );
 
   useEffect(() => {
     if (data && advisor) {
@@ -84,8 +138,14 @@ export const AutoChart = (props: AutoChartProps) => {
       const allAdvices = getMergedAdvices(avaAdvices);
       setAdvices(allAdvices);
       setRenderChartType(allAdvices[0]?.type as ChartType);
+      if (!allAdvices.length && onRenderObservation)
+        onRenderObservation({
+          renderer: 'g2',
+          state: 'not_rendered',
+          error: 'No applicable visualization specification',
+        });
     }
-  }, [JSON.stringify(data), advisor, chartType]);
+  }, [data, advisor, getMergedAdvices, onRenderObservation]);
 
   const visComponent = useMemo(() => {
     /* Advices exist, render the chart. */
@@ -108,6 +168,16 @@ export const AutoChart = (props: AutoChartProps) => {
           // 补充饼图的 tooltip title 展示
           spec.tooltip = { title: { field: spec.encode.color } };
         }
+        const options = { ...spec, autoFit: true, theme: mode, height: 300 };
+        if (onRenderObservation)
+          return (
+            <ObservedChart
+              key={chartTypeInput}
+              options={options}
+              chartRef={chartRef}
+              onObservation={onRenderObservation}
+            />
+          );
         return (
           <Chart
             key={chartTypeInput}
@@ -122,9 +192,10 @@ export const AutoChart = (props: AutoChartProps) => {
         );
       }
     }
-  }, [advices, mode, renderChartType]);
+  }, [advices, mode, renderChartType, onRenderObservation, advisor, data]);
 
   if (renderChartType) {
+    if (!showControls) return <div className='flex'>{visComponent}</div>;
     return (
       <div>
         <Row justify='space-between' className='mb-2'>

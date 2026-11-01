@@ -33,9 +33,14 @@ selecting the right ACTION from the ACTION SPACE as best as you can.
 _REACT_SYSTEM_TEMPLATE = """\
 You are a {{ role }}, {% if name %}named {{ name }}. {% endif %}\
 {{ goal }}
-task. For each step, you must output an Action; it cannot be empty. The maximum number \
-of steps you can take is {{ max_steps }}.
+task. The maximum number of steps you can take is {{ max_steps }}.
 Do not output an empty string!
+{% if native_function_calling %}
+# RESPONSE FORMAT #
+Use the supplied native functions for actions, with JSON arguments.
+Call a function to perform the next step; use intention/thought for a short explanation.
+When the task is complete, call terminate with the final answer in output.
+{% else %}
 {{ action_space }}
 # RESPONSE FORMAT #
 IMPORTANT:
@@ -66,6 +71,7 @@ Action: ...
 Action Input: ...
 Observation: ...(This is output provided by the external environment or Action output, \
 you are not allowed to generate it.)
+{% endif %}
 {% if task_progress %}
 {{ task_progress }}
 You MUST NOT repeat any action already listed above as ✅ completed.
@@ -77,8 +83,9 @@ Please answer in the same language as the user's question.
 The current time is: {{ now_time }}.
 """
 
-# Not needed additional user prompt template
-_REACT_USER_TEMPLATE = """"""
+# The first question-bearing memory fragment can be evicted during long tasks.
+# Keep the current objective outside the rolling tool-observation buffer.
+_REACT_USER_TEMPLATE = """Question: {{ question }}"""
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
@@ -160,6 +167,9 @@ class ReActAgent(ConversableAgent):
                 action_space.append(action.get_action_description())
             # self.actions
         reply_message.context = {
+            "native_function_calling": bool(
+                self.agent_context and self.agent_context.enable_native_function_calling
+            ),
             "max_steps": self.max_retry_count,
             "action_space": "\n".join(action_space),
             "action_space_names": ", ".join(action_space_names),

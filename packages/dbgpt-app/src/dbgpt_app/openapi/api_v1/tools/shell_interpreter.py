@@ -10,7 +10,7 @@ from dbgpt.agent.resource.tool.base import tool
 from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
 
 from ._execution import run_code
-from .code_interpreter import build_execution_env
+from .code_interpreter import build_execution_env, conversation_work_dir
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +34,9 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                 ensure_ascii=False,
             )
 
-        from dbgpt.configs.model_config import PILOT_PATH, SKILLS_DIR
+        from dbgpt.configs.model_config import SKILLS_DIR
 
-        cid = react_state.get("conv_id") or "default"
-        sandbox_work_dir = os.path.join(PILOT_PATH, "tmp", cid)
+        sandbox_work_dir = conversation_work_dir(react_state)
         os.makedirs(sandbox_work_dir, exist_ok=True)
 
         output_text = ""
@@ -93,7 +92,7 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
         if _is_skill_script and output_text.strip():
             import shutil
 
-            from dbgpt.configs.model_config import PILOT_PATH, STATIC_MESSAGE_IMG_PATH
+            from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
 
             IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 
@@ -139,8 +138,7 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                     except (json.JSONDecodeError, TypeError):
                         pass
 
-                    cid = react_state.get("conv_id") or "default"
-                    out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+                    out_dir = conversation_work_dir(react_state)
                     if os.path.isdir(out_dir):
                         for fname in os.listdir(out_dir):
                             ext = os.path.splitext(fname)[1].lower()

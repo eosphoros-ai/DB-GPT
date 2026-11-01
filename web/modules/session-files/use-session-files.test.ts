@@ -334,6 +334,28 @@ test('old closures never read stale state (prepare via a captured handle)', asyn
   assert.deepEqual([...snapshot.fileIds], ['sf_a']);
 });
 
+test('queued send includes the completed upload before React commits the rail', async () => {
+  const { api, result } = setup(makeFakeApi(), { batchReducerDispatch: true });
+  await result.current.addFiles([makeFile('sales.csv')], 'sess-1');
+  await flush();
+
+  const prepared = result.current.prepare('sess-1');
+  api.uploads[0].gate.resolve([snapOf('sf_sales', 'sales.csv', 1)]);
+  const snapshot = await prepared;
+  assert.deepEqual([...snapshot.fileIds], ['sf_sales']);
+  assert.deepEqual(extInfoForSend({}, snapshot).file_ids, ['sf_sales']);
+});
+
+test('queued send rejects an upload failure before React commits the rail', async () => {
+  const { api, result } = setup(makeFakeApi(), { batchReducerDispatch: true });
+  await result.current.addFiles([makeFile('sales.csv')], 'sess-1');
+  await flush();
+
+  const prepared = result.current.prepare('sess-1');
+  api.uploads[0].gate.reject(new Error('Upload failed'));
+  await assert.rejects(prepared, /SESSION_FILES_HARD_FAILURE/);
+});
+
 test('send snapshot stays immutable against caller mutation attempts', async () => {
   const { api, result } = setup();
   await result.current.addFiles([makeFile('a.csv')], 'sess-1');

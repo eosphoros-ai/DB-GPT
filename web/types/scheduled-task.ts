@@ -38,14 +38,25 @@ export type ChatReplayPayload = {
 };
 
 /** 创建定时任务请求。 */
+export type DashboardRefreshPayload = {
+  version?: number;
+  dashboard_id: string;
+  filters: Record<string, unknown>;
+  publish_after_refresh?: boolean;
+  timeout_seconds?: number;
+  max_attempts?: number;
+};
+
 export type CreateTaskRequest = {
   task_name: string;
   description?: string | null;
   cron_expression: string;
-  payload: ChatReplayPayload;
   /** 创建人显示名称(优先于鉴权 user_id) */
   creator_name?: string | null;
-};
+} & (
+  | { task_type?: 'chat_replay'; payload: ChatReplayPayload }
+  | { task_type: 'dashboard_refresh'; payload: DashboardRefreshPayload }
+);
 
 /** 更新定时任务请求(部分字段可选)。 */
 export type UpdateTaskRequest = {
@@ -64,23 +75,25 @@ export type ToggleTaskRequest = {
 };
 
 /** 执行状态枚举。 */
-export type ScheduledRunStatus = 'running' | 'success' | 'failed' | 'timeout';
+export type ScheduledRunStatus = 'running' | 'success' | 'partial_success' | 'failed' | 'timeout';
 
 /** 定时任务响应。 */
 export type TaskResponse = {
   task_id: string;
   task_name: string;
   description?: string | null;
-  task_type: string;
   cron_expression: string;
-  payload?: ChatReplayPayload | null;
   enabled: boolean;
   created_at?: string | null;
   updated_at?: string | null;
   user_name?: string | null;
+  owner_id?: string | null;
   sys_code?: string | null;
   next_run_time?: string | null;
-};
+} & (
+  | { task_type: 'chat_replay'; payload?: ChatReplayPayload | null }
+  | { task_type: 'dashboard_refresh'; payload: DashboardRefreshPayload }
+);
 
 /** 单次执行历史响应。 */
 export type RunResponse = {
@@ -92,4 +105,7 @@ export type RunResponse = {
   result_summary?: string | null;
   error_message?: string | null;
   output_conv_uid?: string | null;
+  output_resource_id?: string | null;
+  attempt_count?: number;
+  result?: Record<string, unknown> | null;
 };

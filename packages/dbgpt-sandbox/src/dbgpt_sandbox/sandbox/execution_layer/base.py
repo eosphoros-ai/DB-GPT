@@ -56,8 +56,8 @@ class SessionConfig:
     environment_vars: Dict[str, str] = None
     network_disabled: bool = False  # 是否禁用网络
     image: Optional[str] = None
-    # Agent tools synchronize a workspace and explicit input paths. Container
-    # paths stay identical to host paths, including paths inside files.json.
+    # Agent tools synchronize a workspace and explicit input paths.
+    # POSIX paths are preserved; Docker maps Windows paths and files.json.
     host_working_dir: Optional[str] = None
     input_files: List[str] = field(default_factory=list)
     # Legacy sessions keep their checks. Agent Python explicitly opts out:

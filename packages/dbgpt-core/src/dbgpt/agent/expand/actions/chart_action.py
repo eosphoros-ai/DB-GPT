@@ -2,16 +2,94 @@
 
 import json
 import logging
-from typing import List, Optional
+import re
+import time
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict, model_to_json
 from dbgpt.vis.tags.vis_chart import Vis, VisChart
 
+from ....core.interface.report_capture import (
+    capture_chart_execution,
+    capture_sql_execution,
+)
 from ...core.action.base import Action, ActionOutput
 from ...resource.base import AgentResource, ResourceType
 from ...resource.database import DBResource
 
 logger = logging.getLogger(__name__)
+
+
+def _native_vis_chart_spec(view: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Extract the structured native-chart payload from a VisChart response.
+
+    ``VisChart`` returns a fenced ``vis-db-chart`` block for the web client's
+    native renderer.  Capturing that JSON, rather than just the display type,
+    lets a persisted report replay the exact chart without an iframe or a
+    second chart-generation implementation.
+    """
+    if not view:
+        return None
+    match = re.search(r"```vis-db-chart\s*(\{.*?\})\s*```", view, re.DOTALL)
+    if match is None:
+        return None
+    try:
+        payload = json.loads(match.group(1))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("type"), str):
+        return None
+    return {"renderer": "vis-db-chart", **payload}
+
+
+def _elapsed_ms(started: float) -> int:
+    return max(0, int((time.perf_counter() - started) * 1000))
+
+
+def _capture_sql_dataframe(param: "SqlInput", db, data_df, duration_ms: int):
+    return capture_sql_execution(
+        sql=param.sql,
+        database=str(getattr(db, "_db_name", "")) or None,
+        duration_ms=duration_ms,
+        columns=[str(column) for column in data_df.columns],
+        rows=data_df.itertuples(index=False, name=None),
+        action="chart_action.query",
+        display_type=param.display_type,
+    )
+
+
+def _capture_sql_failure(param: "SqlInput", db, duration_ms: int, error: str):
+    return capture_sql_execution(
+        sql=param.sql,
+        database=str(getattr(db, "_db_name", "")) or None,
+        duration_ms=duration_ms,
+        error=error,
+        action="chart_action.query",
+        display_type=param.display_type,
+    )
+
+
+def _capture_chart_render(
+    param: "SqlInput",
+    sql_artifact_id: Optional[str],
+    duration_ms: int,
+    *,
+    view: Optional[str] = None,
+    error: Optional[str] = None,
+    spec: Optional[Dict[str, Any]] = None,
+):
+    if sql_artifact_id is None:
+        return None
+    return capture_chart_execution(
+        input_artifact_ids=[sql_artifact_id],
+        action="chart_action.render",
+        duration_ms=duration_ms,
+        error=error,
+        chart_type=param.display_type,
+        spec=spec or {"display_type": param.display_type},
+        output_inline=view,
+        media_type="application/vnd.dbgpt.vis+json",
+    )
 
 
 class SqlInput(BaseModel):
@@ -80,9 +158,39 @@ class ChartAction(Action[SqlInput]):
                 raise ValueError("The database resource is not found！")
 
             db = db_resources[0]
-            data_df = await db.query_to_df(param.sql)
-            view = await self.render_protocol.display(
-                chart=json.loads(model_to_json(param)), data_df=data_df
+            query_started = time.perf_counter()
+            try:
+                data_df = await db.query_to_df(param.sql)
+            except Exception as error:
+                _capture_sql_failure(
+                    param,
+                    db,
+                    _elapsed_ms(query_started),
+                    str(error) or type(error).__name__,
+                )
+                raise
+            sql_artifact_id = _capture_sql_dataframe(
+                param, db, data_df, _elapsed_ms(query_started)
+            )
+            render_started = time.perf_counter()
+            try:
+                view = await self.render_protocol.display(
+                    chart=json.loads(model_to_json(param)), data_df=data_df
+                )
+            except Exception as error:
+                _capture_chart_render(
+                    param,
+                    sql_artifact_id,
+                    _elapsed_ms(render_started),
+                    error=str(error) or type(error).__name__,
+                )
+                raise
+            _capture_chart_render(
+                param,
+                sql_artifact_id,
+                _elapsed_ms(render_started),
+                view=view,
+                spec=_native_vis_chart_spec(view),
             )
 
             param_dict = model_to_dict(param)

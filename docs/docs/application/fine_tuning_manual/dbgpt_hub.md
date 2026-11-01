@@ -1,6 +1,6 @@
 # Fine-Tuning use dbgpt_hub 
 
-The DB-GPT-Hub project has released a pip package to lower the threshold for Text2SQL training. In addition to fine-tuning through the scripts provided in the warehouse, you can alse use the Python package we provide 
+The DB-GPT-Hub project has released a pip package to lower the threshold for Text2SQL training. In addition to fine-tuning through the scripts provided in the warehouse, you can also use the Python package we provide 
 for fine-tuning.
 
 ## Install

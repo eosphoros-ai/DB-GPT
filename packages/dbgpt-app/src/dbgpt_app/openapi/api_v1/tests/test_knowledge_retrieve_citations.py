@@ -21,6 +21,7 @@ class _KnowledgeResource:
                 score=0.91,
                 metadata={
                     "doc_name": "annual-report.md",
+                    "chunk_index": 17,
                     "file_path": "reports/annual-report.md",
                     "url": "https://example.test/annual-report",
                 },
@@ -48,7 +49,8 @@ async def test_knowledge_retrieve_preserves_structured_citation_metadata() -> No
         {
             "id": "chunk-1",
             "sourceName": "annual-report.md",
-            "chunkIndex": 1,
+            "chunkIndex": 17,
+            "excerpt": "Revenue grew by 20 percent.",
             "score": 0.91,
             "path": "reports/annual-report.md",
             "url": "https://example.test/annual-report",
@@ -123,9 +125,35 @@ async def test_knowledge_retrieve_skips_empty_chunks_without_renumbering() -> No
         {
             "id": "chunk-real",
             "sourceName": "annual-report.md",
-            "chunkIndex": 2,
+            "chunkIndex": None,
+            "excerpt": "Revenue grew by 20 percent.",
             "score": 0.91,
             "path": None,
             "url": None,
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_knowledge_retrieve_preserves_zero_index_from_serialized_metadata() -> (
+    None
+):
+    class _FirstChunkResource:
+        async def retrieve(self, query: str):
+            return [
+                SimpleNamespace(
+                    chunk_id="first-chunk",
+                    chunk_name="First section",
+                    content="Original first section.",
+                    score=0.9,
+                    metadata=json.dumps({"doc_name": "report.md", "chunk_index": 0}),
+                )
+            ]
+
+    retrieve = make_knowledge_retrieve({}, [_FirstChunkResource()])
+    result = json.loads(await retrieve("first section"))
+
+    # Display rank is one-based; the document's stored chunk position is not.
+    assert result["chunks"][1]["content"] == "[1] Original first section."
+    assert result["citations"][0]["chunkIndex"] == 0
+    assert result["citations"][0]["excerpt"] == "Original first section."

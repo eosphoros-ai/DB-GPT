@@ -1,9 +1,10 @@
-import pandas as pd
-import numpy as np
-import os
 import json
-import warnings
+import os
 import sys
+import warnings
+
+import numpy as np
+import pandas as pd
 
 warnings.filterwarnings("ignore")
 
@@ -129,6 +130,7 @@ def analyze_csv(file_path):
             "cols": int(df.shape[1]),
             "missing_cells": missing_cells,
             "missing_pct": missing_pct,
+            "completeness_pct": round(100 - missing_pct, 2),
             "duplicate_rows": duplicate_rows,
             "memory_kb": round(df.memory_usage(deep=True).sum() / 1024, 1),
         }
@@ -620,7 +622,6 @@ def analyze_csv(file_path):
                 }
 
                 driver_items = []
-                metric_std = float(metric_series.std()) if len(metric_series) > 1 else 0
                 for col in numeric_cols:
                     if col == primary_metric:
                         continue
@@ -735,7 +736,13 @@ def analyze_csv(file_path):
             "==================================================",
             "【数据概览】",
             f"- 数据集尺寸: {overview['rows']} 行 × {overview['cols']} 列",
-            f"- 缺失值情况: 共有 {overview['missing_cells']} 个单元格缺失，整体数据完整率 {100 - overview['missing_pct']}%",
+            (
+                "- 缺失值情况: 共有 "
+                f"{overview['missing_cells']}"
+                " 个单元格缺失，整体数据完整率 "
+                f"{100 - overview['missing_pct']}"
+                "%"
+            ),
             f"- 重复行: {overview['duplicate_rows']} 行",
             f"- 内存占用: {overview['memory_kb']} KB",
             f"- 数值型列 ({len(numeric_cols)}): {', '.join(numeric_cols[:10])}",
@@ -767,7 +774,12 @@ def analyze_csv(file_path):
                 f"median={s['median']:.2f}, mean={s['mean']:.2f}, Q75={s['q75']:.2f}, "
                 f"P95={s['p95']:.2f}, max={s['max']:.2f}, std={s['std']:.2f}, "
                 f"CV={s['cv']}%({classify_cv(s['cv'])}), spread={s['spread']:.2f}, "
-                f"skew={s['skewness']}({classify_skewness(s['skewness'])}), kurtosis={s['kurtosis']}"
+                "skew="
+                f"{s['skewness']}"
+                "("
+                f"{classify_skewness(s['skewness'])}"
+                "), kurtosis="
+                f"{s['kurtosis']}"
             )
 
         if numeric_summary:
@@ -778,7 +790,16 @@ def analyze_csv(file_path):
             summary_lines.append("【波动性与偏态重点】")
             for col, s in volatile_cols:
                 summary_lines.append(
-                    f"- {col}: 波动等级={classify_cv(s['cv'])}, CV={s['cv']}%, 偏态={classify_skewness(s['skewness'])}"
+                    (
+                        "- "
+                        f"{col}"
+                        ": 波动等级="
+                        f"{classify_cv(s['cv'])}"
+                        ", CV="
+                        f"{s['cv']}"
+                        "%, 偏态="
+                        f"{classify_skewness(s['skewness'])}"
+                    )
                 )
 
         # 异常值摘要
@@ -801,27 +822,90 @@ def analyze_csv(file_path):
                 f"【Top 5 / Bottom 5 排名 (按 {top_bottom['rank_col']})】"
             )
             summary_lines.append(
-                f"  Top 5: {list(zip(top_bottom['top5']['labels'], top_bottom['top5']['values']))}"
+                (
+                    "  Top 5: "
+                    f"""{
+                        list(
+                            zip(
+                                top_bottom["top5"]["labels"],
+                                top_bottom["top5"]["values"],
+                            )
+                        )
+                    }"""
+                )
             )
             summary_lines.append(
-                f"  Bottom 5: {list(zip(top_bottom['bottom5']['labels'], top_bottom['bottom5']['values']))}"
+                (
+                    "  Bottom 5: "
+                    f"""{
+                        list(
+                            zip(
+                                top_bottom["bottom5"]["labels"],
+                                top_bottom["bottom5"]["values"],
+                            )
+                        )
+                    }"""
+                )
             )
             if ranking_signal:
                 summary_lines.append(
-                    f"  排名断层: Top5均值={ranking_signal['top_avg']}, Bottom5均值={ranking_signal['bottom_avg']}, 差值={ranking_signal['gap']}"
+                    (
+                        "  排名断层: Top5均值="
+                        f"{ranking_signal['top_avg']}"
+                        ", Bottom5均值="
+                        f"{ranking_signal['bottom_avg']}"
+                        ", 差值="
+                        f"{ranking_signal['gap']}"
+                    )
                 )
 
         if anomaly_overview:
             summary_lines.append("")
             summary_lines.append("【数据异动概述】")
             summary_lines.append(
-                f"- 核心分析指标: {anomaly_overview['metric']}，均值={anomaly_overview['mean']}，中位数={anomaly_overview['median']}，P10={anomaly_overview['q10']}，P90={anomaly_overview['q90']}"
+                (
+                    "- 核心分析指标: "
+                    f"{anomaly_overview['metric']}"
+                    "，均值="
+                    f"{anomaly_overview['mean']}"
+                    "，中位数="
+                    f"{anomaly_overview['median']}"
+                    "，P10="
+                    f"{anomaly_overview['q10']}"
+                    "，P90="
+                    f"{anomaly_overview['q90']}"
+                )
             )
             summary_lines.append(
-                f"- 高位组({anomaly_overview['top_group_size']}个样本)均值={anomaly_overview['top_group_mean']}，低位组({anomaly_overview['bottom_group_size']}个样本)均值={anomaly_overview['bottom_group_mean']}，差值={anomaly_overview['gap']}"
+                (
+                    "- 高位组("
+                    f"{anomaly_overview['top_group_size']}"
+                    "个样本)均值="
+                    f"{anomaly_overview['top_group_mean']}"
+                    "，低位组("
+                    f"{anomaly_overview['bottom_group_size']}"
+                    "个样本)均值="
+                    f"{anomaly_overview['bottom_group_mean']}"
+                    "，差值="
+                    f"{anomaly_overview['gap']}"
+                )
             )
             summary_lines.append(
-                f"- 主指标异常值数量={anomaly_overview['outlier_count']}，占比={anomaly_overview['outlier_pct']}%，分位带样本分布={list(zip(anomaly_overview['band_labels'], anomaly_overview['band_values']))}"
+                (
+                    "- 主指标异常值数量="
+                    f"{anomaly_overview['outlier_count']}"
+                    "，占比="
+                    f"{anomaly_overview['outlier_pct']}"
+                    "%，分位带样本分布="
+                    f"""{
+                        list(
+                            zip(
+                                anomaly_overview["band_labels"],
+                                anomaly_overview["band_values"],
+                            )
+                        )
+                    }"""
+                )
             )
 
         if driver_analysis.get("items"):
@@ -829,7 +913,22 @@ def analyze_csv(file_path):
             summary_lines.append("【归因分析线索】")
             for item in driver_analysis["items"][:5]:
                 summary_lines.append(
-                    f"- {item['name']}: 综合驱动分={item['score']}，与 {driver_analysis['metric']} 的相关系数={item['corr']}，高位组均值={item['top_mean']}，低位组均值={item['bottom_mean']}，组间差异强度={item['gap_ratio']}"
+                    (
+                        "- "
+                        f"{item['name']}"
+                        ": 综合驱动分="
+                        f"{item['score']}"
+                        "，与 "
+                        f"{driver_analysis['metric']}"
+                        " 的相关系数="
+                        f"{item['corr']}"
+                        "，高位组均值="
+                        f"{item['top_mean']}"
+                        "，低位组均值="
+                        f"{item['bottom_mean']}"
+                        "，组间差异强度="
+                        f"{item['gap_ratio']}"
+                    )
                 )
 
         summary_lines.append("")
@@ -837,7 +936,13 @@ def analyze_csv(file_path):
         for col, stats in cat_summary.items():
             summary_lines.append(
                 f"- {col}: 唯一值={stats['n_unique']}, 最常见={stats['top1']} "
-                f"(出现{stats['top1_count']}次, 占比{stats['top1_share']}%), 熵={stats['entropy']}, "
+                "(出现"
+                f"{stats['top1_count']}"
+                "次, 占比"
+                f"{stats['top1_share']}"
+                "%), 熵="
+                f"{stats['entropy']}"
+                ", "
                 f"Top3集中度={stats['top3_share']}%"
             )
 
@@ -848,12 +953,28 @@ def analyze_csv(file_path):
                 leaders = segment["leaders"][:3]
                 leader_text = "; ".join(
                     [
-                        f"{item['name']}(样本{item['count']}, 均值{item['mean']}, 总量{item['sum']})"
+                        (
+                            f"{item['name']}"
+                            "(样本"
+                            f"{item['count']}"
+                            ", 均值"
+                            f"{item['mean']}"
+                            ", 总量"
+                            f"{item['sum']}"
+                            ")"
+                        )
                         for item in leaders
                     ]
                 )
                 summary_lines.append(
-                    f"- 维度 {segment['dimension']} 对指标 {segment['metric']} 的高贡献分组: {leader_text}"
+                    (
+                        "- 维度 "
+                        f"{segment['dimension']}"
+                        " 对指标 "
+                        f"{segment['metric']}"
+                        " 的高贡献分组: "
+                        f"{leader_text}"
+                    )
                 )
 
         summary_lines.append("")
@@ -882,7 +1003,13 @@ def analyze_csv(file_path):
         if scatter:
             summary_lines.append("")
             summary_lines.append(
-                f"【散点图】已生成 {scatter['x_name']} vs {scatter['y_name']} 的散点图数据"
+                (
+                    "【散点图】已生成 "
+                    f"{scatter['x_name']}"
+                    " vs "
+                    f"{scatter['y_name']}"
+                    " 的散点图数据"
+                )
             )
 
         # 时间序列摘要
@@ -893,14 +1020,34 @@ def analyze_csv(file_path):
             )
             if time_series_diagnostics:
                 summary_lines.append(
-                    f"- 时间字段={time_series_diagnostics['date_col']}, 观测点={time_series_diagnostics['points']}, "
-                    f"起点={time_series_diagnostics['start']}, 终点={time_series_diagnostics['end']}, "
-                    f"整体变化={time_series_diagnostics['change_pct']}%, 斜率={time_series_diagnostics['slope']}, "
+                    "- 时间字段="
+                    f"{time_series_diagnostics['date_col']}"
+                    ", 观测点="
+                    f"{time_series_diagnostics['points']}"
+                    ", "
+                    "起点="
+                    f"{time_series_diagnostics['start']}"
+                    ", 终点="
+                    f"{time_series_diagnostics['end']}"
+                    ", "
+                    "整体变化="
+                    f"{time_series_diagnostics['change_pct']}"
+                    "%, 斜率="
+                    f"{time_series_diagnostics['slope']}"
+                    ", "
                     f"波动率={time_series_diagnostics['volatility_pct']}%"
                 )
                 summary_lines.append(
-                    f"- 峰值出现在 {time_series_diagnostics['peak_date']} ({time_series_diagnostics['peak_value']}), "
-                    f"谷值出现在 {time_series_diagnostics['trough_date']} ({time_series_diagnostics['trough_value']})"
+                    "- 峰值出现在 "
+                    f"{time_series_diagnostics['peak_date']}"
+                    " ("
+                    f"{time_series_diagnostics['peak_value']}"
+                    "), "
+                    "谷值出现在 "
+                    f"{time_series_diagnostics['trough_date']}"
+                    " ("
+                    f"{time_series_diagnostics['trough_value']}"
+                    ")"
                 )
             if time_series_multi:
                 extra_names = [ts_m["name"] for ts_m in time_series_multi]
@@ -911,7 +1058,10 @@ def analyze_csv(file_path):
             "请作为数据分析专家，基于以上【统计摘要】为用户撰写深度的数据分析见解（Insights）。每个模块尽量覆盖现象、可能原因、业务影响、行动建议四层内容，避免只重复统计值。"
         )
         summary_lines.append(
-            "注意：marker 中包裹的 CHART_DATA_JSON 会由后端自动注入模板，你无需手动传递。"
+            (
+                "注意：marker 中包裹的 CHART_DATA_JSON "
+                "会由后端自动注入模板，你无需手动传递。"
+            )
         )
         summary_lines.append("###CHART_DATA_JSON_START###")
         summary_lines.append(chart_data_json_str)
@@ -945,7 +1095,10 @@ def main():
             "chunks": [
                 {
                     "output_type": "text",
-                    "content": '使用方法: python csv_analyzer.py \'{"input_file": "data.csv"}\'',
+                    "content": (
+                        '使用方法: python csv_analyzer.py \'{"input_file": '
+                        '"data.csv"}\''
+                    ),
                 }
             ]
         }

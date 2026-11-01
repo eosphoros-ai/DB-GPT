@@ -14,7 +14,7 @@ import type {
   SubAgentStep,
 } from '@/types/subagent';
 
-const VALID_STATUS: SubAgentStatus[] = ['running', 'done', 'timeout', 'failed'];
+const VALID_STATUS: SubAgentStatus[] = ['running', 'done', 'partial', 'timeout', 'failed'];
 
 function coerceStatus(raw: unknown, fallback: SubAgentStatus): SubAgentStatus {
   return VALID_STATUS.includes(raw as SubAgentStatus) ? (raw as SubAgentStatus) : fallback;
@@ -113,11 +113,15 @@ export function restoreSubAgentStates(raw: unknown): Record<string, SubAgentStat
         (artifact: unknown) =>
           Boolean(artifact) &&
           typeof artifact === 'object' &&
-          Boolean(optionalString((artifact as Record<string, unknown>).url)),
+          Boolean(
+            optionalString((artifact as Record<string, unknown>).url) ||
+            optionalString((artifact as Record<string, unknown>).artifact_id),
+          ),
       )
       .map((artifact: Record<string, unknown>) => ({
         type: optionalString(artifact.type) || 'file',
-        url: optionalString(artifact.url)!,
+        url: optionalString(artifact.url),
+        artifact_id: optionalString(artifact.artifact_id),
         ...(optionalString(artifact.title) ? { title: optionalString(artifact.title) } : {}),
       }));
     const state: SubAgentState = {
@@ -177,23 +181,25 @@ export function buildSubAgentArtifacts(
   messageId: string,
   now: number = Date.now(),
 ): SubAgentArtifactRecord[] {
-  return items.map((item, idx) => {
-    const url = item.url || (typeof item.content === 'string' ? item.content : '') || '';
-    const fallbackName = url.split('/').pop() || `subagent-artifact-${idx}`;
-    const name = item.title || fallbackName;
-    const type = item.type === 'image' ? 'image' : item.type === 'html' ? 'html' : 'file';
-    return {
-      id: `${messageId}-subagent-${item.agent_id}-${idx}`,
-      type,
-      name,
-      content: url,
-      createdAt: now,
-      messageId,
-      stepId: item.agent_id,
-      sourceAgent: item.agent_name,
-      downloadable: true,
-    };
-  });
+  return items
+    .filter(item => item.url || item.content)
+    .map((item, idx) => {
+      const url = item.url || (typeof item.content === 'string' ? item.content : '') || '';
+      const fallbackName = url.split('/').pop() || `subagent-artifact-${idx}`;
+      const name = item.title || fallbackName;
+      const type = item.type === 'image' ? 'image' : item.type === 'html' ? 'html' : 'file';
+      return {
+        id: `${messageId}-subagent-${item.agent_id}-${idx}`,
+        type,
+        name,
+        content: url,
+        createdAt: now,
+        messageId,
+        stepId: item.agent_id,
+        sourceAgent: item.agent_name,
+        downloadable: true,
+      };
+    });
 }
 
 /**
@@ -265,6 +271,8 @@ export function parseSubAgentEvent(payload: any): SubAgentPartial | null {
           url: it.url,
           content: it.content,
           title: it.title,
+          artifact_id: it.artifact_id,
+          name: it.name,
           agent_id: it.agent_id,
           agent_name: String(it.agent_name || it.agent_id),
         }));

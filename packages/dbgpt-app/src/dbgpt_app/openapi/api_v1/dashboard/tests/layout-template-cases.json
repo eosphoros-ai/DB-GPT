@@ -1,0 +1,16 @@
+{
+  "widgets": [
+    {"id":"details","type":"table"},
+    {"id":"k1","type":"kpi"},
+    {"id":"k2","type":"kpi"},
+    {"id":"k3","type":"kpi"},
+    {"id":"k4","type":"kpi"},
+    {"id":"regions","type":"bar"},
+    {"id":"trend","type":"line"}
+  ],
+  "expected": {
+    "trend-focus": [["k1",0,0,3,3],["k2",3,0,3,3],["k3",6,0,3,3],["k4",9,0,3,3],["trend",0,3,8,7],["regions",8,3,4,7],["details",0,10,12,7]],
+    "metric-overview": [["k1",0,0,6,3],["k2",6,0,6,3],["k3",0,3,6,3],["k4",6,3,6,3],["regions",0,6,6,6],["trend",6,6,6,6],["details",0,12,12,7]],
+    "operations-detail": [["k1",0,0,3,3],["k2",3,0,3,3],["k3",6,0,3,3],["k4",9,0,3,3],["details",0,3,8,7],["regions",8,3,4,7],["trend",0,10,12,6]]
+  }
+}

@@ -2,6 +2,7 @@ import { ChatContext, ChatContextProvider } from '@/app/chat-context';
 import SideBar from '@/components/layout/side-bar';
 import { NewTaskProvider } from '@/modules/new-task';
 import FloatHelper from '@/new-components/layout/FloatHelper';
+import DashboardRouteFrame from '@/new-components/dashboard/DashboardRouteFrame';
 import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
@@ -15,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import '../app/i18n';
 import '../nprogress.css';
 import '../styles/globals.css';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 // import TopProgressBar from '@/components/layout/top-progress-bar';
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
@@ -86,16 +89,17 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
     handleAuth();
   }, []);
 
-  if (!isLogin && !router.pathname.startsWith('/share')) {
+  const isPublicShare = router.pathname.startsWith('/share') || router.pathname.startsWith('/dashboard-share');
+  if (!isLogin && !isPublicShare) {
     return null;
   }
 
   const renderContent = () => {
     // Hide sidebar for mobile, share pages, and task replay mode (from_task)
     const hideSidebar =
-      router.pathname.includes('mobile') || router.pathname.startsWith('/share') || !!router.query.from_task;
+      router.pathname.includes('mobile') || isPublicShare || !!router.query.from_task;
 
-    if (router.pathname.includes('mobile') || router.pathname.startsWith('/share')) {
+    if (router.pathname.includes('mobile') || isPublicShare) {
       return <>{children}</>;
     }
     return (
@@ -108,7 +112,9 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
             <SideBar />
           </div>
         )}
-        <div className='flex flex-col flex-1 relative overflow-hidden'>{children}</div>
+        <div className='flex flex-col flex-1 relative overflow-hidden'>
+          {router.pathname.startsWith('/dashboards') ? <DashboardRouteFrame>{children}</DashboardRouteFrame> : children}
+        </div>
         {!hideSidebar && <FloatHelper />}
       </div>
     );

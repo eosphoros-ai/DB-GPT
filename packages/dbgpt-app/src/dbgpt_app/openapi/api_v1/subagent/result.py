@@ -11,6 +11,9 @@ to the lead LLM contains only ``text_result``; ``artifacts`` are surfaced to
 the frontend and the final artifact aggregation only.
 """
 
+import json
+import re
+from dataclasses import replace
 from typing import Any, Dict, List
 
 from dbgpt.agent.util.react_parser import ReActOutputParser
@@ -40,7 +43,55 @@ def _extract_final_answer(text: str) -> str:
         # Result extraction is a presentation/safety improvement and must not
         # turn an otherwise successful sub-task into a failed dispatch.
         final_answer = None
-    return str(final_answer) if final_answer is not None else text
+    if final_answer is not None:
+        return str(final_answer)
+    # A malformed reasoning envelope must never become a purported summary.
+    cleaned = re.sub(
+        r"<vis-thinking\b[^>]*>.*?</vis-thinking>", "", text, flags=re.S | re.I
+    )
+    if cleaned != text:
+        try:
+            answer = parser.get_final_output(parser.parse(cleaned))
+            if answer is not None:
+                return str(answer)
+        except Exception:
+            pass
+    marker = re.search(r"(?:Final Answer|最终答案)\s*:\s*(.*)", cleaned, re.S | re.I)
+    if marker:
+        return marker.group(1).strip()
+    if re.search(r"(?:^|\n)(?:Thought|Action|Action Input)\s*:", cleaned, re.I):
+        return ""
+    try:
+        payload = json.loads(cleaned)
+        if isinstance(payload, dict) and "chunks" in payload:
+            return ""
+    except (ValueError, TypeError):
+        pass
+    return cleaned.strip()
+
+
+class SubagentArtifactSink:
+    """Attribute child captures while recording them in the parent's real sink."""
+
+    def __init__(self, parent, agent_id, agent_name):
+        self.parent = parent
+        self.context = replace(parent.context, task_id=agent_id)
+        self.agent_id = agent_id
+        self.agent_name = agent_name
+        self._ids = set()
+
+    def record(self, artifact):
+        attributed = artifact.model_copy(deep=True)
+        attributed.metadata.update(agent_id=self.agent_id, agent_name=self.agent_name)
+        self.parent.record(attributed)
+        self._ids.add(artifact.artifact_id)
+
+    def snapshot(self):
+        return [
+            artifact
+            for artifact in self.parent.snapshot()
+            if artifact.artifact_id in self._ids
+        ]
 
 
 def extract_subagent_result(
@@ -80,11 +131,65 @@ def extract_subagent_result(
         for url in (sub_state.get("generated_images") or [])
     ]
 
+    sink = sub_state.get("_report_artifact_sink")
+    captured = sink.snapshot() if sink is not None else []
+    successful = [a for a in captured if a.status == "succeeded"]
+    for artifact in successful:
+        artifacts.append(
+            {
+                "type": artifact.type,
+                "artifact_id": artifact.artifact_id,
+                "name": artifact.name or artifact.type,
+                "step_id": artifact.execution.step_id,
+            }
+        )
+    terminated = sub_state.get("_sub_terminated", False)
+    complete = bool(
+        reply is not None
+        and getattr(reply, "success", False)
+        and terminated
+        and text_result
+    )
+    declared_partial = bool(
+        re.search(r"(?:状态|status)\s*[:：]\s*(?:部分完成|partial)", text_result, re.I)
+    )
+    declared_failed = bool(
+        re.search(r"(?:状态|status)\s*[:：]\s*(?:失败|failed)", text_result, re.I)
+    )
+    if declared_failed:
+        status = "failed"
+    elif declared_partial or (not complete and successful):
+        status = "partial"
+    elif status == "done" and not complete:
+        status = "failed"
+    if not complete and not text_result:
+        summaries = []
+        for artifact in successful:
+            result = getattr(artifact, "result", None)
+            preview = result.inline if result is not None else None
+            if isinstance(preview, dict):
+                preview = {**preview, "rows": (preview.get("rows") or [])[:3]}
+            summaries.append(
+                f"{artifact.artifact_id} ({artifact.name or artifact.type}): "
+                + json.dumps(preview, ensure_ascii=False, default=str)[:800]
+            )
+        text_result = "子任务未提交完整结论，已保留以下执行产物：\n" + "\n".join(
+            summaries
+        )
+    artifact_ids = [artifact.artifact_id for artifact in successful]
+
     return {
         "title": title,
         "status": status,
         "result": text_result,
         "artifacts": artifacts,
+        "artifact_ids": artifact_ids,
+        "completion": "complete"
+        if status == "done"
+        else "partial"
+        if status == "partial"
+        else "failed",
+        "failure_reason": sub_state.get("_sub_failure_reason"),
     }
 
 

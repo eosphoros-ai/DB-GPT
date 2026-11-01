@@ -78,14 +78,20 @@ export interface UseSessionFiles {
 
 export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFiles {
   const { api, concurrency = MAX_UPLOAD_CONCURRENCY } = options;
-  const [state, dispatch] = useReducer(
+  const [state, dispatchReducer] = useReducer(
     reducerModule.sessionFilesReducer,
     undefined,
     reducerModule.initialSessionFilesState,
   );
 
   const stateRef = useRef(state);
-  stateRef.current = state;
+  // Queue completion and prepare() can run before React commits a batched
+  // render. Keep callback reads current so a queued send never loses a file
+  // (or overlooks its failure) while the attachment rail catches up.
+  const dispatch = useCallback((action: Parameters<typeof reducerModule.sessionFilesReducer>[1]) => {
+    stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
+    dispatchReducer(action);
+  }, []);
 
   const apiRef = useRef(api);
   apiRef.current = api;
@@ -163,7 +169,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
         // 'cancelled' results are already reflected by the cancel action.
       });
     },
-    [],
+    [dispatch],
   );
 
   const launchUpload = useCallback(
@@ -198,7 +204,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       });
       settleUpload(draft, sessionId, attempt, promise);
     },
-    [settleUpload],
+    [dispatch, settleUpload],
   );
 
   const ensureCapabilities = useCallback((): Promise<UploadCapabilities> => {
@@ -207,13 +213,12 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     if (!capabilitiesPromiseRef.current) {
       capabilitiesPromiseRef.current = apiRef.current.fetchCapabilities().then(result => {
         const action = { type: 'capabilities' as const, capabilities: result.capabilities, source: result.source };
-        stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
         dispatch(action);
         return result.capabilities;
       });
     }
     return capabilitiesPromiseRef.current;
-  }, []);
+  }, [dispatch]);
 
   const addFiles = useCallback(
     async (incoming: File[] | ArrayLike<File>, sessionId: string): Promise<void> => {
@@ -224,7 +229,6 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       if (stateRef.current.legacyFile) return;
       if (stateRef.current.sessionId !== sessionId) {
         const action = { type: 'bind_session' as const, sessionId };
-        stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
         dispatch(action);
       }
       const capabilities = await ensureCapabilities();
@@ -250,7 +254,6 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       const acceptedClientIds = new Set(
         projected.files.filter(draft => !existingClientIds.has(draft.clientId)).map(draft => draft.clientId),
       );
-      stateRef.current = projected;
       dispatch(action);
       for (const draft of drafts) {
         if (acceptedClientIds.has(draft.clientId)) {
@@ -261,77 +264,82 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     [dispatch, ensureCapabilities, launchUpload],
   );
 
-  const stageLegacyForSend = useCallback((file: LegacyServerFile, sessionId: string): StageLegacyForSendResult => {
-    if (!isValidLegacyFile(file)) {
-      return { ok: false, error: 'LEGACY_FILE_INVALID' };
-    }
-    if (!sessionId?.trim()) {
-      return { ok: false, error: 'SESSION_SCOPE_INVALID: a conversation id is required' };
-    }
+  const stageLegacyForSend = useCallback(
+    (file: LegacyServerFile, sessionId: string): StageLegacyForSendResult => {
+      if (!isValidLegacyFile(file)) {
+        return { ok: false, error: 'LEGACY_FILE_INVALID' };
+      }
+      if (!sessionId?.trim()) {
+        return { ok: false, error: 'SESSION_SCOPE_INVALID: a conversation id is required' };
+      }
 
-    const current = stateRef.current;
-    if (current.files.length > 0) {
-      // file_path and file_ids are mutually exclusive server-side.
-      return {
-        ok: false,
-        error: 'SESSION_FILES_MIXED_PROTOCOL: remove local uploads before staging a legacy example file',
-      };
-    }
-    if (current.legacyFile && !isSameLegacyFile(current.legacyFile, file)) {
-      return {
-        ok: false,
-        error: 'SESSION_FILES_LEGACY_CONFLICT: remove the staged example file before selecting another one',
-      };
-    }
+      const current = stateRef.current;
+      if (current.files.length > 0) {
+        // file_path and file_ids are mutually exclusive server-side.
+        return {
+          ok: false,
+          error: 'SESSION_FILES_MIXED_PROTOCOL: remove local uploads before staging a legacy example file',
+        };
+      }
+      if (current.legacyFile && !isSameLegacyFile(current.legacyFile, file)) {
+        return {
+          ok: false,
+          error: 'SESSION_FILES_LEGACY_CONFLICT: remove the staged example file before selecting another one',
+        };
+      }
 
-    // Project the exact reducer state synchronously and build the immutable
-    // send snapshot from that projection. React dispatch remains responsible
-    // only for committing the same state to the attachment rail.
-    let projected = current;
-    if (projected.sessionId !== sessionId) {
-      projected = reducerModule.sessionFilesReducer(projected, { type: 'bind_session', sessionId });
-    }
-    if (!projected.legacyFile) {
-      projected = reducerModule.sessionFilesReducer(projected, { type: 'set_legacy', file });
-    }
+      // Project the exact reducer state synchronously and build the immutable
+      // send snapshot from that projection. React dispatch remains responsible
+      // only for committing the same state to the attachment rail.
+      let projected = current;
+      if (projected.sessionId !== sessionId) {
+        projected = reducerModule.sessionFilesReducer(projected, { type: 'bind_session', sessionId });
+      }
+      if (!projected.legacyFile) {
+        projected = reducerModule.sessionFilesReducer(projected, { type: 'set_legacy', file });
+      }
 
-    // Keep callback reads authoritative during React's batched window. The
-    // queued reducer actions below commit the identical projection to the UI.
-    stateRef.current = projected;
+      if (current.sessionId !== sessionId) {
+        dispatch({ type: 'bind_session', sessionId });
+      }
+      if (!current.legacyFile) {
+        dispatch({ type: 'set_legacy', file });
+      }
 
-    if (current.sessionId !== sessionId) {
-      dispatch({ type: 'bind_session', sessionId });
-    }
-    if (!current.legacyFile) {
-      dispatch({ type: 'set_legacy', file });
-    }
-
-    return { ok: true, snapshot: reducerModule.buildSendSnapshot(projected, sessionId) };
-  }, []);
+      return { ok: true, snapshot: reducerModule.buildSendSnapshot(projected, sessionId) };
+    },
+    [dispatch],
+  );
 
   const clearLegacyFile = useCallback(() => {
     dispatch({ type: 'clear_legacy' });
-  }, []);
+  }, [dispatch]);
 
-  const remove = useCallback((clientId: string) => {
-    queueRef.current!.cancel(clientId);
-    attemptsRef.current.delete(clientId);
-    // Best-effort server delete for already-uploaded files. A missing/failed
-    // delete must not block the local card removal, but leaving the file on
-    // the server would let it resurrect on the next rehydrate and keep feeding
-    // the agent's file_ids.
-    const draft = stateRef.current.files.find(item => item.clientId === clientId);
-    const sessionId = stateRef.current.sessionId;
-    if (draft?.snapshot?.file_id && sessionId) {
-      void apiRef.current.deleteFile(sessionId, draft.snapshot.file_id).catch(() => undefined);
-    }
-    dispatch({ type: 'remove', clientId });
-  }, []);
+  const remove = useCallback(
+    (clientId: string) => {
+      queueRef.current!.cancel(clientId);
+      attemptsRef.current.delete(clientId);
+      // Best-effort server delete for already-uploaded files. A missing/failed
+      // delete must not block the local card removal, but leaving the file on
+      // the server would let it resurrect on the next rehydrate and keep feeding
+      // the agent's file_ids.
+      const draft = stateRef.current.files.find(item => item.clientId === clientId);
+      const sessionId = stateRef.current.sessionId;
+      if (draft?.snapshot?.file_id && sessionId) {
+        void apiRef.current.deleteFile(sessionId, draft.snapshot.file_id).catch(() => undefined);
+      }
+      dispatch({ type: 'remove', clientId });
+    },
+    [dispatch],
+  );
 
-  const cancel = useCallback((clientId: string) => {
-    queueRef.current!.cancel(clientId);
-    dispatch({ type: 'upload_cancelled', clientId, attempt: attemptsRef.current.get(clientId) ?? 0 });
-  }, []);
+  const cancel = useCallback(
+    (clientId: string) => {
+      queueRef.current!.cancel(clientId);
+      dispatch({ type: 'upload_cancelled', clientId, attempt: attemptsRef.current.get(clientId) ?? 0 });
+    },
+    [dispatch],
+  );
 
   const retryFailed = useCallback((): string[] => {
     const sessionId = stateRef.current.sessionId;
@@ -341,7 +349,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       if (sessionId) launchUpload(draft, sessionId);
     }
     return failed.map(draft => draft.clientId);
-  }, [launchUpload]);
+  }, [dispatch, launchUpload]);
 
   const prepare = useCallback(async (sessionId: string): Promise<SessionFilesSendSnapshot> => {
     const bound = stateRef.current.sessionId;
@@ -352,32 +360,33 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     return reducerModule.buildSendSnapshot(stateRef.current, sessionId);
   }, []);
 
-  const rehydrateFromServer = useCallback(async (sessionId: string): Promise<SessionFileSnapshot[]> => {
-    const generation = ++scopeGenerationRef.current;
-    queueRef.current!.cancelAll();
-    attemptsRef.current.clear();
-    const snapshots = await apiRef.current.listFiles(sessionId);
-    if (scopeGenerationRef.current !== generation) return snapshots;
-    const action = { type: 'rehydrate' as const, sessionId, snapshots };
-    stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
-    dispatch(action);
-    return snapshots;
-  }, []);
+  const rehydrateFromServer = useCallback(
+    async (sessionId: string): Promise<SessionFileSnapshot[]> => {
+      const generation = ++scopeGenerationRef.current;
+      queueRef.current!.cancelAll();
+      attemptsRef.current.clear();
+      const snapshots = await apiRef.current.listFiles(sessionId);
+      if (scopeGenerationRef.current !== generation) return snapshots;
+      const action = { type: 'rehydrate' as const, sessionId, snapshots };
+      dispatch(action);
+      return snapshots;
+    },
+    [dispatch],
+  );
 
   const clearTurn = useCallback(() => {
     queueRef.current!.cancelAll();
     attemptsRef.current.clear();
     dispatch({ type: 'clear_turn' });
-  }, []);
+  }, [dispatch]);
 
   const resetSession = useCallback(() => {
     scopeGenerationRef.current += 1;
     queueRef.current!.cancelAll();
     attemptsRef.current.clear();
     const action = { type: 'reset_session' as const };
-    stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
     dispatch(action);
-  }, []);
+  }, [dispatch]);
 
   return {
     files: state.files,

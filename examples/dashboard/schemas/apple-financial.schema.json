@@ -1,0 +1,293 @@
+{
+  "schema_version": "1.3",
+  "dashboard": {
+    "id": "apple-financial-demo",
+    "title": "Apple 财务分析看板",
+    "description": "基于 SEC Form 10-K 可追溯公开数据的财务案例，金额单位为百万美元。",
+    "data_source_id": "apple_financial_demo",
+    "status": "draft",
+    "theme": {}
+  },
+  "metric_context": {
+    "grain": "公司财政年度",
+    "time_range": "FY2022–FY2024",
+    "data_freshness": "2026-08-11 提取并固化的演示快照",
+    "source_notes": [
+      "Apple 2024 Form 10-K: https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+      "Apple 2023 Form 10-K: https://www.sec.gov/Archives/edgar/data/320193/000032019323000106/aapl-20230930.htm",
+      "全部金额为 USD millions；本案例用于产品演示，不构成投资建议。"
+    ]
+  },
+  "filters": [
+    {
+      "id": "year",
+      "type": "select",
+      "label": "截至财年",
+      "field": "fiscal_year",
+      "default": 2024,
+      "options": [
+        {"label": "FY2022", "value": 2022},
+        {"label": "FY2023", "value": 2023},
+        {"label": "FY2024", "value": 2024}
+      ]
+    },
+    {
+      "id": "products",
+      "type": "multi_select",
+      "label": "产品类别",
+      "field": "product",
+      "default": ["iPhone", "Mac", "iPad", "Wearables/Home/Accessories", "Services"],
+      "options": [
+        {"label": "iPhone", "value": "iPhone"},
+        {"label": "Mac", "value": "Mac"},
+        {"label": "iPad", "value": "iPad"},
+        {"label": "Wearables/Home/Accessories", "value": "Wearables/Home/Accessories"},
+        {"label": "Services", "value": "Services"}
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "id": "annual-revenue",
+      "type": "kpi",
+      "title": "年度收入",
+      "description": "所选财年的净销售额，单位：百万美元。",
+      "query": {
+        "data_source_id": "apple_financial_demo",
+        "sql": "SELECT revenue_usd_millions AS revenue FROM annual_financials WHERE fiscal_year = :year",
+        "filter_parameters": {"year": "year"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "revenue", "type": "number", "label": "收入（百万美元）", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 10,
+        "grain": "财政年度"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, revenue_usd_millions AS revenue FROM annual_financials ORDER BY fiscal_year",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "fiscal_year", "type": "integer", "nullable": false},
+            {"name": "revenue", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 100
+        },
+        "filter_fields": {"year": "fiscal_year"},
+        "group_by": [],
+        "measures": [{"source_field": "revenue", "output_field": "revenue", "aggregation": "first"}],
+        "output_columns": ["revenue"],
+        "row_mode": false,
+        "sort": [],
+        "max_output_rows": 10
+      },
+      "encoding": {"value": "revenue", "columns": []},
+      "style": {"prefix": "$", "suffix": "M", "precision": 0}
+    },
+    {
+      "id": "profit-trend",
+      "type": "line",
+      "title": "收入与利润趋势",
+      "description": "截至所选财年的收入、营业利润与净利润趋势。",
+      "query": {
+        "data_source_id": "apple_financial_demo",
+        "sql": "SELECT fiscal_year, 'Revenue' AS metric, revenue_usd_millions AS value FROM annual_financials WHERE fiscal_year <= :year UNION ALL SELECT fiscal_year, 'Operating income' AS metric, operating_income_usd_millions AS value FROM annual_financials WHERE fiscal_year <= :year UNION ALL SELECT fiscal_year, 'Net income' AS metric, net_income_usd_millions AS value FROM annual_financials WHERE fiscal_year <= :year ORDER BY fiscal_year, metric",
+        "filter_parameters": {"year": "year"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "fiscal_year", "type": "integer", "label": "财年", "nullable": false},
+          {"name": "metric", "type": "string", "label": "指标", "nullable": false},
+          {"name": "value", "type": "number", "label": "金额（百万美元）", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 100,
+        "grain": "财政年度和财务指标"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, 'Revenue' AS metric, revenue_usd_millions AS value FROM annual_financials UNION ALL SELECT fiscal_year, 'Operating income' AS metric, operating_income_usd_millions AS value FROM annual_financials UNION ALL SELECT fiscal_year, 'Net income' AS metric, net_income_usd_millions AS value FROM annual_financials ORDER BY fiscal_year, metric",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "fiscal_year", "type": "integer", "nullable": false},
+            {"name": "metric", "type": "string", "nullable": false},
+            {"name": "value", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 100
+        },
+        "filter_fields": {"year": {"field": "fiscal_year", "operator": "less_than_or_equal"}},
+        "group_by": ["fiscal_year", "metric"],
+        "measures": [{"source_field": "value", "output_field": "value", "aggregation": "first"}],
+        "output_columns": ["fiscal_year", "metric", "value"],
+        "row_mode": false,
+        "sort": [
+          {"field": "fiscal_year", "direction": "ascending"},
+          {"field": "metric", "direction": "ascending"}
+        ],
+        "max_output_rows": 100
+      },
+      "encoding": {"x": "fiscal_year", "y": "value", "series": "metric", "columns": []},
+      "style": {"smooth": false}
+    },
+    {
+      "id": "product-revenue",
+      "type": "bar",
+      "title": "产品收入结构",
+      "description": "比较所选财年各产品类别的收入。",
+      "query": {
+        "data_source_id": "apple_financial_demo",
+        "sql": "SELECT product, revenue_usd_millions AS revenue FROM product_revenue WHERE fiscal_year = :year AND product IN (:products) ORDER BY revenue DESC",
+        "filter_parameters": {"year": "year", "products": "products"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "product", "type": "string", "label": "产品", "nullable": false},
+          {"name": "revenue", "type": "number", "label": "收入（百万美元）", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 100,
+        "grain": "财政年度和产品"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, product, revenue_usd_millions AS revenue FROM product_revenue ORDER BY fiscal_year, product",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "fiscal_year", "type": "integer", "nullable": false},
+            {"name": "product", "type": "string", "nullable": false},
+            {"name": "revenue", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 100
+        },
+        "filter_fields": {"year": "fiscal_year", "products": "product"},
+        "group_by": ["product"],
+        "measures": [{"source_field": "revenue", "output_field": "revenue", "aggregation": "first"}],
+        "output_columns": ["product", "revenue"],
+        "row_mode": false,
+        "sort": [{"field": "revenue", "direction": "descending"}],
+        "max_output_rows": 100
+      },
+      "encoding": {"x": "product", "y": "revenue", "columns": []},
+      "style": {}
+    },
+    {
+      "id": "capital-structure",
+      "type": "pie",
+      "title": "资产资金来源结构",
+      "description": "负债与股东权益占总资产的比例。",
+      "query": {
+        "data_source_id": "apple_financial_demo",
+        "sql": "SELECT 'Liabilities' AS category, liabilities_usd_millions AS amount FROM annual_financials WHERE fiscal_year = :year UNION ALL SELECT 'Shareholders equity' AS category, equity_usd_millions AS amount FROM annual_financials WHERE fiscal_year = :year",
+        "filter_parameters": {"year": "year"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "category", "type": "string", "label": "类别", "nullable": false},
+          {"name": "amount", "type": "number", "label": "金额（百万美元）", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 10,
+        "grain": "资产结构类别"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, 'Liabilities' AS category, liabilities_usd_millions AS amount FROM annual_financials UNION ALL SELECT fiscal_year, 'Shareholders equity' AS category, equity_usd_millions AS amount FROM annual_financials ORDER BY fiscal_year, category",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "fiscal_year", "type": "integer", "nullable": false},
+            {"name": "category", "type": "string", "nullable": false},
+            {"name": "amount", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 100
+        },
+        "filter_fields": {"year": "fiscal_year"},
+        "group_by": ["category"],
+        "measures": [{"source_field": "amount", "output_field": "amount", "aggregation": "first"}],
+        "output_columns": ["category", "amount"],
+        "row_mode": false,
+        "sort": [{"field": "category", "direction": "ascending"}],
+        "max_output_rows": 10
+      },
+      "encoding": {"category": "category", "angle": "amount", "columns": []},
+      "style": {"innerRadius": 0.55}
+    },
+    {
+      "id": "financial-detail",
+      "type": "table",
+      "title": "核心财务指标明细",
+      "description": "保留图表背后的年度原始金额以便核对。",
+      "query": {
+        "data_source_id": "apple_financial_demo",
+        "sql": "SELECT fiscal_year, revenue_usd_millions, operating_income_usd_millions, net_income_usd_millions, assets_usd_millions, liabilities_usd_millions, equity_usd_millions FROM annual_financials WHERE fiscal_year <= :year ORDER BY fiscal_year DESC",
+        "filter_parameters": {"year": "year"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "fiscal_year", "type": "integer", "label": "财年", "nullable": false},
+          {"name": "revenue_usd_millions", "type": "number", "label": "收入", "nullable": false},
+          {"name": "operating_income_usd_millions", "type": "number", "label": "营业利润", "nullable": false},
+          {"name": "net_income_usd_millions", "type": "number", "label": "净利润", "nullable": false},
+          {"name": "assets_usd_millions", "type": "number", "label": "总资产", "nullable": false},
+          {"name": "liabilities_usd_millions", "type": "number", "label": "总负债", "nullable": false},
+          {"name": "equity_usd_millions", "type": "number", "label": "股东权益", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 100,
+        "grain": "财政年度"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, revenue_usd_millions, operating_income_usd_millions, net_income_usd_millions, assets_usd_millions, liabilities_usd_millions, equity_usd_millions FROM annual_financials ORDER BY fiscal_year DESC",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "fiscal_year", "type": "integer", "nullable": false},
+            {"name": "revenue_usd_millions", "type": "number", "nullable": false},
+            {"name": "operating_income_usd_millions", "type": "number", "nullable": false},
+            {"name": "net_income_usd_millions", "type": "number", "nullable": false},
+            {"name": "assets_usd_millions", "type": "number", "nullable": false},
+            {"name": "liabilities_usd_millions", "type": "number", "nullable": false},
+            {"name": "equity_usd_millions", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 100
+        },
+        "filter_fields": {"year": {"field": "fiscal_year", "operator": "less_than_or_equal"}},
+        "group_by": [],
+        "measures": [],
+        "output_columns": ["fiscal_year", "revenue_usd_millions", "operating_income_usd_millions", "net_income_usd_millions", "assets_usd_millions", "liabilities_usd_millions", "equity_usd_millions"],
+        "row_mode": true,
+        "sort": [{"field": "fiscal_year", "direction": "descending"}],
+        "max_output_rows": 100
+      },
+      "encoding": {"columns": ["fiscal_year", "revenue_usd_millions", "operating_income_usd_millions", "net_income_usd_millions", "assets_usd_millions", "liabilities_usd_millions", "equity_usd_millions"]},
+      "style": {"pageSize": 10}
+    }
+  ],
+  "layouts": {
+    "columns": 12,
+    "desktop": [
+      {"widget_id": "annual-revenue", "x": 0, "y": 0, "w": 4, "h": 3},
+      {"widget_id": "profit-trend", "x": 4, "y": 0, "w": 8, "h": 7},
+      {"widget_id": "product-revenue", "x": 0, "y": 7, "w": 6, "h": 7},
+      {"widget_id": "capital-structure", "x": 6, "y": 7, "w": 6, "h": 7},
+      {"widget_id": "financial-detail", "x": 0, "y": 14, "w": 12, "h": 8}
+    ],
+    "mobile_strategy": "stack"
+  },
+  "metadata": {
+    "conversation_id": null,
+    "agent": {"generated": false},
+    "compatibility": {"demo": "apple-financial", "data_kind": "public-sec-snapshot"}
+  }
+}
