@@ -150,12 +150,27 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             temp_json = temp_json.replace(illegal_json_end, " ]")
         return temp_json
 
+    def _is_parsable_json(self, fragment: str) -> bool:
+        if not fragment:
+            return False
+        try:
+            json.loads(self._illegal_json_ends(fragment))
+            return True
+        except Exception:
+            return False
+
     def _extract_json(self, s):
         try:
             # Get the dual-mode analysis first and get the maximum result
             temp_json_simple = self._json_interception(s)
             temp_json_array = self._json_interception(s, True)
-            if len(temp_json_simple) > len(temp_json_array):
+            candidates = [temp_json_simple, temp_json_array]
+            parsable = [c for c in candidates if self._is_parsable_json(c)]
+            if parsable:
+                # The string-aware scan can lengthen a fragment, so the longest
+                # candidate is no longer necessarily the one that parses.
+                temp_json = max(parsable, key=len)
+            elif len(temp_json_simple) > len(temp_json_array):
                 temp_json = temp_json_simple
             else:
                 temp_json = temp_json_array

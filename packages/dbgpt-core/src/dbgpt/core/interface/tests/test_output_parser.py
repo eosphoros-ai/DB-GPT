@@ -101,3 +101,15 @@ def test_parse_prompt_response_unterminated_input_is_returned_unchanged(text):
     parser = _parser()
     assert parser._json_interception(text) == ""
     assert parser.parse_prompt_response(text) == text
+
+
+def test_parse_prompt_response_prefers_a_parsable_fragment():
+    """A longer but unparsable array must not hide a valid object.
+
+    The array branch now ignores ``]`` inside strings, so its fragment can grow
+    past the object one, and ``_extract_json`` used to take the longest
+    candidate. That made previously-parsed outputs fail.
+    """
+    parser = _parser()
+    text = 'Result: [ "a]b" oops ] {"ok": true}'
+    assert parser.parse_prompt_response(text) == '{"ok": true}'
