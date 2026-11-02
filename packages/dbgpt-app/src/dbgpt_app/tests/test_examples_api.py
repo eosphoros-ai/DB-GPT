@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pytest
 from fastapi import HTTPException
 
@@ -145,3 +148,47 @@ async def test_use_example_route_rejects_traversal_user_id(tmp_path, monkeypatch
     assert "Invalid user_id" in response.json()["detail"]
     assert not (tmp_path / "python_uploads").exists()
     assert not (tmp_path.parent / "poc" / "report.csv").exists()
+
+
+@pytest.mark.asyncio
+async def test_use_example_route_rejects_symlinked_owner_root(tmp_path, monkeypatch):
+    """A symlinked owner root reaches the 400 mapping, not the 200 envelope.
+
+    The traversal-user-id route test is rejected by ``_resolve_user_id`` and so
+    never gets to the separate ``_resolve_upload_dir`` mapping. This one does.
+    Creating a real directory symlink needs privileges that are not available
+    everywhere, so only the ``os.path.islink`` predicate that the production
+    check calls is narrowed to the owner root; the ValueError still comes out of
+    ``python_upload_api._resolve_upload_dir`` itself.
+    """
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
+    examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
+    owner_root = tmp_path / "python_uploads" / "alice"
+
+    real_islink = os.path.islink
+
+    def islink(path):
+        return True if Path(path) == owner_root else real_islink(path)
+
+    monkeypatch.setattr(os.path, "islink", islink)
+
+    app = FastAPI()
+    app.include_router(examples_api.router)
+    app.dependency_overrides[examples_api.get_user_from_headers] = lambda: UserRequest(
+        user_id="alice"
+    )
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/v1/examples/use", json={"example_id": "test_example"}
+        )
+
+    assert response.status_code == 400, (
+        f"symlinked owner root returned {response.status_code}: {response.text}"
+    )
+    assert "owner upload root must not be a symlink" in response.json()["detail"]
+    assert not (owner_root / "report.csv").exists()
