@@ -17,6 +17,7 @@ const stages = ['读取财报', '分析财务数据', '核对结论', '生成报
 async function setup(page, history = []) {
   await page.addInitScript(() => {
     localStorage.setItem('__db_gpt_lng_key', 'zh');
+    localStorage.setItem('__db_gpt_timeline_view', 'on');
     localStorage.setItem('dbgpt-selected-model', 'synthetic-model');
     const originalFetch = window.fetch.bind(window);
     window.fetch = async (input, options) => {
@@ -263,3 +264,94 @@ test('keeps the report and progress accessible on a narrow viewport', async ({ p
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await page.screenshot({ path: test.info().outputPath('narrow-report.png'), fullPage: true, animations: 'disabled' });
 });
+
+test('conversation shows one draft card and a failed-step status after review fails', async ({ page }) => {
+  const reference = { ...(await start(page)), published: false };
+  const conversation = page.getByTestId('conversation-content');
+  await emit(page, [
+    { type: 'step.start', id: 'prepare', step: 1, title: 'prepare_financial_report' },
+    { type: 'step.meta', id: 'prepare', action: 'prepare_financial_report' },
+    { type: 'step.chunk', id: 'prepare', output_type: 'html', content: reference },
+    { type: 'step.chunk', id: 'prepare', output_type: 'html', content: reference },
+    { type: 'step.done', id: 'prepare', status: 'done' },
+  ]);
+  await expect(conversation.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+  await emit(page, [
+    { type: 'step.start', id: 'review', step: 2, title: 'review_financial_report' },
+    { type: 'step.meta', id: 'review', action: 'review_financial_report' },
+    { type: 'step.done', id: 'review', status: 'failed' },
+    {
+      type: 'plan.update',
+      tasks: stages.map((content, index) => ({
+        kind: 'financial-stage',
+        content,
+        priority: 'high',
+        status: index < 2 ? 'completed' : index === 2 ? 'error' : 'pending',
+      })),
+    },
+    { type: 'final', content: '合成复核失败，草稿已保留。' },
+    { type: 'done' },
+  ]);
+  await page.evaluate(() => window.financialTestStream.close());
+  const status = page.getByRole('status', { name: '执行状态', exact: true });
+  await expect(status).toContainText('已结束，部分步骤失败');
+  await expect(status.locator('.text-emerald-500')).toHaveCount(0);
+  await expect(conversation.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+  await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '下载', exact: true })).toHaveCount(1);
+  await page.screenshot({ path: test.info().outputPath('conversation-failed-review.png'), fullPage: true });
+  await page.getByRole('button', { name: '预览', exact: true }).click();
+  await expect(page.getByLabel('报告状态')).toBeVisible();
+});
+
+for (const withSteps of [true, false]) {
+  test(`conversation restores one saved report card with${withSteps ? '' : 'out'} tool history`, async ({ page }) => {
+    const sessionId = 'financial-failed-history';
+    const reference = {
+      kind: 'financial-report',
+      mode: 'comparison',
+      title,
+      sessionId,
+      runId: report.report.run.id,
+      revision: report.revision,
+      published: false,
+    };
+    await setup(page, [
+      { role: 'human', context: '合成历史恢复', order: 1 },
+      {
+        role: 'view',
+        order: 1,
+        context: JSON.stringify({
+          version: 2,
+          protocol_version: 2,
+          type: 'react-agent',
+          final_content: '合成任务失败，草稿保留。',
+          execution_status: 'failed',
+          financial_report: reference,
+          steps: withSteps
+            ? [
+                {
+                  id: 'prepare',
+                  title: 'prepare_financial_report',
+                  action: 'prepare_financial_report',
+                  status: 'done',
+                  outputs: [{ output_type: 'html', content: { ...reference, revision: 'old', title: '旧标题' } }],
+                },
+              ]
+            : [],
+        }),
+      },
+    ]);
+    await page.goto(`${baseURL}/?id=${sessionId}`);
+    await expect(page.getByTestId('conversation-content').getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+    await expect(page.getByText('旧标题.html', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
+    if (withSteps) {
+      const status = page.getByRole('status', { name: '执行状态', exact: true });
+      await expect(status).toContainText('执行失败');
+      await expect(status.locator('.text-emerald-500')).toHaveCount(0);
+    }
+    await page.getByRole('button', { name: '预览', exact: true }).click();
+    await expect(page.getByLabel('报告状态')).toBeVisible();
+  });
+}

@@ -32,6 +32,7 @@ export default defineConfig({
       './hooks/use-chat.question.test.tsx',
       './hooks/use-chat.failure.test.tsx',
       './utils/question-session.test.ts',
+      './utils/execution-status.test.ts',
       './utils/query-export.test.ts',
       './utils/suite-routing.test.ts',
       './utils/semantic-provenance.test.ts',

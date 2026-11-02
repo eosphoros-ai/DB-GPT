@@ -96,6 +96,7 @@ import type { SuiteCommand, SuiteItem, SuiteMessageReference, SuiteRecommendedQu
 import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
+import { executionStatus } from '@/utils/execution-status';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
@@ -127,6 +128,7 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
+  CloseCircleFilled,
   CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
@@ -141,6 +143,7 @@ import {
   InboxOutlined,
   LeftOutlined,
   LoadingOutlined,
+  PauseCircleOutlined,
   PieChartOutlined,
   PlusOutlined,
   ReadOutlined,
@@ -462,6 +465,7 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  executionStatus?: string;
   /** TaskFlow run metadata (set when this answer was produced by a task flow). */
   flowRun?: { label: string };
   /** Immutable server snapshots of every session file attached to this message. */
@@ -1475,7 +1479,8 @@ const Playground: NextPage = () => {
         s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
       ).length;
       const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
-      const running = exec.steps.some(s => s.status === 'running') || Boolean(msg.thinking);
+      const status = executionStatus(exec.steps, msg.thinking, msg.taskPlan, msg.executionStatus);
+      const running = status === 'running';
       const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
       const ends = exec.steps.map(s => s.endedAt).filter((v): v is number => typeof v === 'number');
       let dur = '';
@@ -1489,17 +1494,12 @@ const Playground: NextPage = () => {
       }
       return {
         running,
-        text: running
-          ? (t('agent_status_running', {
-              rounds,
-              calls: toolCalls,
-              dur: dur ? ` · ${dur}` : '',
-            }) as string)
-          : (t('agent_status_done', {
-              rounds,
-              calls: toolCalls,
-              dur: dur ? ` · ${dur}` : '',
-            }) as string),
+        status,
+        text: t(`agent_status_${status}`, {
+          rounds,
+          calls: toolCalls,
+          dur: dur ? ` · ${dur}` : '',
+        }) as string,
       };
     }
     return null;
@@ -3761,6 +3761,7 @@ const Playground: NextPage = () => {
                 reportId: finalAnswer.reportId,
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
+                executionStatus: payload.execution_status,
               };
             }),
           );
@@ -3843,6 +3844,7 @@ const Playground: NextPage = () => {
                 ...msg,
                 context: partial ? `${partial}\n\n_${stoppedMark}_` : `_${stoppedMark}_`,
                 thinking: false,
+                executionStatus: 'cancelled',
               };
             }),
           );
@@ -3857,6 +3859,7 @@ const Playground: NextPage = () => {
           if (lastMsg && lastMsg.role === 'view') {
             lastMsg.context = err?.message || 'Error occurred';
             lastMsg.thinking = false;
+            lastMsg.executionStatus = 'failed';
           }
           return newMessages;
         });
@@ -3889,6 +3892,7 @@ const Playground: NextPage = () => {
                 : {
                     ...item,
                     thinking: false,
+                    executionStatus: 'incomplete',
                     context:
                       item.context ||
                       (financialDelivery.current.hasPublished(responseId)
@@ -4455,6 +4459,7 @@ const Playground: NextPage = () => {
             reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
+            executionStatus: payload.execution_status,
             dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
               .map(dashboardGenerationFromHistoryRef)
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
@@ -4952,7 +4957,7 @@ const Playground: NextPage = () => {
               <div
                 className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 ${mobileFinancialPanel ? 'hidden' : 'flex'} flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
-                <div className='flex-1 min-h-0 overflow-y-auto'>
+                <div data-testid='conversation-content' className='flex-1 min-h-0 overflow-y-auto'>
                   <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                     {rounds.map((round, roundIndex) => {
                       const isLastRound = roundIndex === rounds.length - 1;
@@ -4991,14 +4996,23 @@ const Playground: NextPage = () => {
                           )
                         : [];
                       const roundArtifacts: StreamArtifact[] =
-                        useTimelineView && round.viewMsg?.id && execution && hasArtifactOutputs(execution)
-                          ? buildArtifactsFromExecution(
-                              round.viewMsg!.id,
-                              execution,
-                              undefined,
-                              undefined,
-                              round.viewMsg!.context,
-                            ).map(a => ({
+                        useTimelineView && round.viewMsg?.id
+                          ? mergeArtifacts([
+                              ...(execution && hasArtifactOutputs(execution)
+                                ? buildArtifactsFromExecution(
+                                    round.viewMsg.id,
+                                    execution,
+                                    undefined,
+                                    undefined,
+                                    round.viewMsg.context,
+                                  )
+                                : []),
+                              // Saved reports may outlive their tool steps. The
+                              // latest delivered/restored reference wins here.
+                              ...artifacts.filter(
+                                a => a.messageId === round.viewMsg?.id && isFinancialReportReference(a.content),
+                              ),
+                            ]).map(a => ({
                               id: a.id,
                               type: a.type,
                               name: a.name,
@@ -5256,49 +5270,25 @@ const Playground: NextPage = () => {
                       );
                     })}
                     {streamStatus && (
-                      <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
+                      <div
+                        role='status'
+                        aria-label={t('agent_execution_status')}
+                        className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'
+                      >
                         {streamStatus.running ? (
                           <LoadingOutlined spin className='text-blue-500' />
-                        ) : (
+                        ) : streamStatus.status === 'done' ? (
                           <CheckCircleFilled className='text-emerald-500' />
+                        ) : streamStatus.status === 'incomplete' ? (
+                          <PauseCircleOutlined className='text-slate-400' />
+                        ) : (
+                          <CloseCircleFilled
+                            className={streamStatus.status === 'failed' ? 'text-red-500' : 'text-amber-500'}
+                          />
                         )}
                         <span className='tabular-nums'>{streamStatus.text}</span>
                       </div>
                     )}
-                    {/* Conversation-completion artifact summary: deliverables
-                      produced across all rounds, surfaced again at the end so
-                      finished conversations keep a visible deliverable list
-                      (mid-stream cards stay where they were made). Charts are
-                      folded into the mosaic tile, scripts into process.
-                      Query cards are excluded: every round already renders
-                      its own (folded) query block, so repeating them here
-                      stacked each sql_query result a second time. */}
-                    {(() => {
-                      const surface = convArtifacts.filter(a => a.type !== 'summary' && a.type !== 'query');
-                      const finalCount = surface.filter(a => a.tier !== 'process').length;
-                      const hasCharts = surface.some(
-                        a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
-                      );
-                      if (finalCount === 0 && !hasCharts) return null;
-                      const lastViewId = [...messages].reverse().find(m => m.role === 'view')?.id;
-                      return (
-                        <div className='mt-4 mb-2'>
-                          {finalCount > 0 && (
-                            <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
-                              <InboxOutlined />
-                              <span>{t('conv_artifacts_title', '对话产物 · {{count}}', { count: finalCount })}</span>
-                            </div>
-                          )}
-                          <ArtifactCards
-                            artifacts={surface}
-                            onPreview={handlePreviewStreamArtifact}
-                            onSkillAdd={handleSkillAdd}
-                            onSkillDownload={handleSkillZipDownload}
-                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, lastViewId)}
-                          />
-                        </div>
-                      );
-                    })()}
                   </div>
                 </div>
 
