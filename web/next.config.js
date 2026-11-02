@@ -67,7 +67,7 @@ const nextConfig = {
       const shim = path.join(__dirname, 'scripts/react-refresh-loader-cjs-safe.js');
       const isRefreshLoader = u => {
         const loader = typeof u === 'string' ? u : u && u.loader;
-        return typeof loader === 'string' && loader.includes('@next/react-refresh-utils/dist/loader');
+        return typeof loader === 'string' && loader.replace(/\\/g, '/').includes('@next/react-refresh-utils/dist/loader');
       };
       const walk = rules => {
         for (const rule of rules || []) {
