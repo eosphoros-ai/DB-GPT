@@ -115,9 +115,7 @@ class ChatCompletionResponseStreamChoice(BaseModel):
 
     index: int = Field(..., description="Choice index")
     delta: DeltaMessage = Field(..., description="Delta message")
-    finish_reason: Optional[FinishReason] = Field(
-        None, description="Finish reason"
-    )
+    finish_reason: Optional[FinishReason] = Field(None, description="Finish reason")
 
 
 class ChatCompletionStreamResponse(BaseModel):
@@ -149,9 +147,7 @@ class ChatCompletionResponseChoice(BaseModel):
 
     index: int = Field(..., description="Choice index")
     message: ChatMessage = Field(..., description="Chat message")
-    finish_reason: Optional[FinishReason] = Field(
-        None, description="Finish reason"
-    )
+    finish_reason: Optional[FinishReason] = Field(None, description="Finish reason")
 
 
 class ChatCompletionResponse(BaseModel):
