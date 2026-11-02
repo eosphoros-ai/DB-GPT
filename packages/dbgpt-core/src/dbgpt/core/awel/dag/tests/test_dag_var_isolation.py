@@ -65,3 +65,37 @@ async def test_task_without_a_dag_does_not_observe_another_task_s_dag():
 
     release.set()
     await task
+
+
+@pytest.mark.asyncio
+async def test_child_task_retains_inherited_dag_after_parent_exits():
+    """A task created inside a DAG keeps that DAG when the parent leaves it.
+
+    ``asyncio`` copies the current context into the child task, so the child
+    inherits the stack as it was at creation time. Entering the stack in place
+    (the pre-fix behaviour) made the parent's ``exit_dag`` pop the very deque
+    the child reads, so the child saw no DAG at all. Copying before mutating is
+    what keeps the inherited stack intact.
+    """
+    dag = DAG("parent")
+    child_ready = asyncio.Event()
+    release_child = asyncio.Event()
+
+    async def child():
+        child_ready.set()
+        await release_child.wait()
+        return DAGVar.get_current_dag()
+
+    DAGVar.enter_dag(dag)
+    try:
+        task = asyncio.create_task(child())
+        await child_ready.wait()
+        DAGVar.exit_dag()
+
+        release_child.set()
+        assert await task is dag, (
+            "the child task lost the DAG it inherited when the parent exited"
+        )
+    finally:
+        if DAGVar.get_current_dag() is not None:
+            DAGVar.exit_dag()
