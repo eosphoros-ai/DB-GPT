@@ -214,6 +214,41 @@ def read_skill_metadata(path: Path) -> Dict[str, Any]:
     return metadata
 
 
+def _command_input_files(metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Validate the optional upload guidance before exposing a command."""
+    if "input_files" not in metadata:
+        return None
+    value = metadata["input_files"]
+    if not isinstance(value, dict):
+        raise ValueError("skill input_files must be an object")
+    minimum, maximum, media_types = (
+        value.get("min"),
+        value.get("max"),
+        value.get("types"),
+    )
+    if (
+        type(minimum) is not int
+        or type(maximum) is not int
+        or minimum < 0
+        or maximum < max(1, minimum)
+    ):
+        raise ValueError("skill input_files requires 0 <= min <= max and max >= 1")
+    if (
+        not isinstance(media_types, list)
+        or not media_types
+        or any(
+            not isinstance(item, str) or not re.fullmatch(r"[\w.+-]+/[\w.+*-]+", item)
+            for item in media_types
+        )
+    ):
+        raise ValueError("skill input_files.types must contain MIME types")
+    return {
+        "min": minimum,
+        "max": maximum,
+        "types": list(dict.fromkeys(item.lower() for item in media_types)),
+    }
+
+
 def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
     """Project QwenWork's native plugin format into the runtime suite index.
 
@@ -249,6 +284,7 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
             "argument-hint",
             "argument-hint-en",
             "argument-hint-zh",
+            "command-en",
         ):
             if key in metadata and not isinstance(metadata[key], str):
                 raise ValueError(f"skill {key} must be a string")
@@ -282,6 +318,12 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
             aliases = [f"/{name}", f"/{display}"]
             if metadata.get("name_en"):
                 aliases.append(f"/{metadata['name_en']}")
+            english_command = metadata.get("command-en")
+            if english_command:
+                if not english_command.startswith("/"):
+                    raise ValueError(f"skill command-en must start with /: {name}")
+                aliases.append(english_command)
+            input_files = _command_input_files(metadata)
             identifiers = set([command_name, *aliases])
             if identifiers & command_names:
                 raise ValueError(f"duplicate plugin command or alias: {name}")
@@ -299,9 +341,12 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
                     "description_en": metadata.get("description_en")
                     or metadata.get("description", ""),
                     "display_en": (
-                        command_name
-                        if metadata.get("command")
-                        else f"/{metadata.get('name_en') or name}"
+                        english_command
+                        or (
+                            command_name
+                            if metadata.get("command")
+                            else f"/{metadata.get('name_en') or name}"
+                        )
                     ),
                     "prefill": metadata.get("argument-hint-zh")
                     or metadata.get("argument-hint")
@@ -309,6 +354,7 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
                     "prefill_en": metadata.get("argument-hint-en")
                     or metadata.get("argument-hint")
                     or "",
+                    **({"input_files": input_files} if input_files is not None else {}),
                 }
             )
     author = raw.get("author")

@@ -36,6 +36,7 @@ export default defineConfig({
       './utils/suite-routing.test.ts',
       './utils/semantic-provenance.test.ts',
       './lib/model-runtime.test.ts',
+      './new-components/financial-analysis/recover-history.test.ts',
     ],
     restoreMocks: true,
     clearMocks: true,

@@ -403,7 +403,8 @@ export const CommonEn = {
   qdock_skip: 'Skip',
   qdock_next: 'Next question',
   qdock_submit: 'Submit',
-  qdock_invalid: 'Question {{n}} is malformed; its slot stays an empty answer. Answer other pages or skip to let the AI re-ask.',
+  qdock_invalid:
+    'Question {{n}} is malformed; its slot stays an empty answer. Answer other pages or skip to let the AI re-ask.',
   qdock_retry_fail: 'Failed to submit the question; retry or cancel.',
   // ── timeline question recap ──
   timeline_q_awaiting: 'Awaiting reply…',
@@ -411,8 +412,10 @@ export const CommonEn = {
   // ── approval setting page ──
   setting_title: 'High-risk interception policy',
   setting_mode: 'Global mode',
-  setting_mode_off_warn: 'off: no tool call is intercepted (high-risk included). Only for short troubleshooting windows.',
-  setting_mode_always_warn: 'always: every tool call (reads included) pops a confirmation card; confirmation fatigue risk.',
+  setting_mode_off_warn:
+    'off: no tool call is intercepted (high-risk included). Only for short troubleshooting windows.',
+  setting_mode_always_warn:
+    'always: every tool call (reads included) pops a confirmation card; confirmation fatigue risk.',
   setting_tools: 'Per-tool tier (unlisted tools follow the rule table)',
   setting_tier_rules: 'Follow rules',
   setting_tier_auto: 'auto allow',
@@ -659,8 +662,10 @@ export const CommonEn = {
   suites_scenario_analysis: 'Data analysis',
   suites_scenario_ops: 'Database operations',
   suites_scenario_expert: 'Expert',
+  suites_scenario_financial: 'Financial reports',
   suites_overrides_note: 'strict-only · enforced by the core gate',
-  suites_market_empty: 'No plugins available. Use "+ Add" to upload a ZIP (up to 50MB) containing .qwenwork-plugin/plugin.json or a legacy suite.yaml.',
+  suites_market_empty:
+    'No plugins available. Use "+ Add" to upload a ZIP (up to 50MB) containing .qwenwork-plugin/plugin.json or a legacy suite.yaml.',
   suites_upload_ok: 'Plugin uploaded',
   suites_upload_fail: 'Upload failed',
   suites_uninstall_confirm: 'Uninstall plugin {{name}}? Package files stay on disk.',

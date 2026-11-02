@@ -217,62 +217,56 @@ async def run_tool(
             except Exception:
                 pass
 
-        # Guard: a truncated ReAct turn can emit ``Action: <tool>`` with no
-        # ``Action Input:`` (or native tool_calls with empty arguments).
-        # Executing then raises a confusing ``missing 1 required positional
-        # argument`` TypeError; fail fast with an observation the model can
-        # act on instead.
-        missing_required: List[str] = []
-        if not args:
-            tool_obj = next(
-                (
-                    r
-                    for r in (tool_pack.sub_resources or [])
-                    if getattr(r, "name", None) == name
-                ),
-                None,
-            )
-            arg_spec = getattr(tool_obj, "args", None) or {}
-            missing_required = [
-                k for k, v in arg_spec.items() if getattr(v, "required", False)
+        action_input = json.dumps(args, ensure_ascii=False)
+        try:
+            execution_tool = tool_pack._get_execution_tool(name)
+            missing = [
+                key
+                for key, parameter in (execution_tool.args or {}).items()
+                if parameter.required and key not in args
             ]
-        gate = _CURRENT_TOOL_GATE.get()
-        gate_observation: Optional[str] = None
-        if gate is not None and not missing_required:
-            gate_observation = await gate(name, args)
-
-        if missing_required:
-            response_success = False
-            status = Status.FAILED.value
-            err_msg = (
-                f"Tool [{name}] was called with no arguments (the Action Input "
-                f"was missing or the output was truncated). Required "
-                f"parameters: {missing_required}. Retry the call with a "
-                f"complete JSON Action Input; keep the payload short enough "
-                f"to fit the output limit."
-            )
-            logger.warning(err_msg)
-            tool_result = err_msg
-        elif gate_observation is not None:
-            # Approval gate blocked the call (policy deny / user reject /
-            # confirmation timeout). The observation tells the model not to
-            # retry the same operation verbatim.
-            response_success = False
-            status = Status.FAILED.value
-            err_msg = None
-            tool_result = gate_observation
-            logger.info("Tool [%s] blocked by approval gate", name)
-        else:
-            try:
+            if missing:
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    action_input=action_input,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: "
+                        + name
+                        + " missing required arguments: "
+                        + ", ".join(missing)
+                        + ". No tool was executed. Submit a complete JSON object "
+                        "in the native function arguments, or include Action Input "
+                        "after Action in text mode. Do not repeat the bare Action."
+                        + "\nRequired parameter schemas: "
+                        + json.dumps(
+                            {
+                                key: execution_tool.args[key].to_json_schema()
+                                for key in missing
+                            },
+                            ensure_ascii=False,
+                        )
+                    ),
+                )
+            # Validate arguments before asking for approval; the gate still
+            # applies to every valid single or batched tool invocation.
+            gate = _CURRENT_TOOL_GATE.get()
+            gate_observation = await gate(name, args) if gate is not None else None
+            if gate_observation is not None:
+                response_success = False
+                status = Status.FAILED.value
+                tool_result = gate_observation
+                logger.info("Tool [%s] blocked by approval gate", name)
+            else:
                 tool_result = await tool_pack.async_execute(resource_name=name, **args)
                 status = Status.COMPLETE.value
                 is_terminal = tool_pack.is_terminal(name)
-            except Exception as e:
-                response_success = False
-                logger.exception(f"Tool [{name}] execute failed!")
-                status = Status.FAILED.value
-                err_msg = f"Tool [{name}] execute failed! {str(e)}"
-                tool_result = err_msg
+        except Exception as e:
+            response_success = False
+            logger.exception(f"Tool [{name}] execute failed!")
+            status = Status.FAILED.value
+            err_msg = f"Tool [{name}] execute failed! {str(e)}"
+            tool_result = err_msg
 
         result_str = str(tool_result)
         try:
@@ -328,6 +322,8 @@ async def run_tool(
 
         return ActionOutput(
             is_exe_success=response_success,
+            action=name,
+            action_input=action_input,
             content=in_context_content,
             view=view,
             observations=result_str,

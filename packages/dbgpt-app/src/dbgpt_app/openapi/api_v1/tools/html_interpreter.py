@@ -2893,6 +2893,8 @@ def make_html_interpreter(
 ):
     @tool(
         description=(
+            "For non-financial reports. Annual financial reports use the dedicated "
+            "financial tools and built-in report component instead. "
             "Render a complete styled HTML analysis report using html, or "
             "existing template_path/data. "
             "Use head/style for CSS. Long reports should reuse templates. "
