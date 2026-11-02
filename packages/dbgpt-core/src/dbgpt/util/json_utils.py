@@ -65,10 +65,12 @@ def find_json_objects(text: str):
         if char == '"' and not escape_character:
             inside_string = not inside_string
 
-        # Replace newline and tab characters inside strings
+        # Escape raw line breaks and tabs inside strings.
         if inside_string:
             if char == "\n":
                 modified_text[i] = "\\n"
+            elif char == "\r":
+                modified_text[i] = "\\r"
             elif char == "\t":
                 modified_text[i] = "\\t"
 
