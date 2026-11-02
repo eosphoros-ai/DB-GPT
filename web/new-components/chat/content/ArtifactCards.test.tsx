@@ -1,9 +1,91 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { message } from 'antd';
 import { describe, expect, it, vi } from 'vitest';
+import { createExport, downloadExport, getReport } from '../../financial-analysis/api';
+import { financialText } from '../../financial-analysis/i18n';
+import { financialArtifact } from '../../financial-analysis/report-delivery';
 import ArtifactCards, { splitQueryArtifacts, type StreamArtifact } from './ArtifactCards';
 import QueryArtifactBlock from './QueryArtifactBlock';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('../../financial-analysis/api', () => ({
+  getReport: vi.fn(),
+  createExport: vi.fn(),
+  downloadExport: vi.fn(),
+}));
+vi.mock('../../financial-analysis/FinancialReportView', () => ({ default: () => null }));
+
+describe('ArtifactCards report delivery', () => {
+  const reference = {
+    kind: 'financial-report' as const,
+    sessionId: 'financial-session',
+    runId: '11111111-1111-4111-8111-111111111111',
+    revision: 'published-revision',
+    title: '财报分析',
+    published: true,
+  };
+
+  it('omits unknown file size while preserving financial report preview', () => {
+    const artifact = financialArtifact(reference, 'message');
+    const onPreview = vi.fn();
+    render(<ArtifactCards artifacts={[artifact]} onPreview={onPreview} />);
+
+    expect(screen.getByText('HTML')).not.toBeNull();
+    expect(screen.queryByText(/undefined|NaN|\b0 B\b/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'artifact_preview' }));
+    expect(onPreview).toHaveBeenCalledWith(artifact);
+  });
+
+  it.each([
+    { size: undefined, content: '<p>财报</p>', meta: 'HTML · 13 B' },
+    { size: 2048, content: '<p>财报</p>', meta: 'HTML · 2.0 KB' },
+    { size: 0, content: '', meta: 'HTML · 0 B' },
+  ])('shows the actual byte size for inline HTML ($meta)', ({ size, content, meta }) => {
+    render(<ArtifactCards artifacts={[{ id: 'html', type: 'html', name: 'report.html', size, content }]} />);
+    expect(screen.getByText(meta)).not.toBeNull();
+  });
+
+  it('downloads the exported HTML for the referenced report revision', async () => {
+    const report = { revision: reference.revision } as Awaited<ReturnType<typeof getReport>>;
+    const file = {
+      id: 'html-export',
+      revision: reference.revision,
+      format: 'html',
+    } as Awaited<ReturnType<typeof createExport>>;
+    vi.mocked(getReport).mockResolvedValueOnce(report);
+    vi.mocked(createExport).mockResolvedValueOnce(file);
+    vi.mocked(downloadExport).mockResolvedValueOnce(undefined);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<ArtifactCards artifacts={[financialArtifact(reference, 'message')]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'artifact_download' }));
+
+    await waitFor(() => expect(downloadExport).toHaveBeenCalledWith(reference.sessionId, reference.runId, file));
+    expect(getReport).toHaveBeenCalledWith(reference.sessionId, reference.runId, undefined, reference.revision);
+    expect(createExport).toHaveBeenCalledWith(reference.sessionId, reference.runId, reference.revision, 'html');
+    expect(click).not.toHaveBeenCalled();
+  });
+
+  it('reports export failures without downloading the reference as a file', async () => {
+    vi.mocked(getReport).mockResolvedValueOnce({ revision: reference.revision } as Awaited<
+      ReturnType<typeof getReport>
+    >);
+    vi.mocked(createExport).mockRejectedValueOnce(new Error('export failed'));
+    const error = vi.spyOn(message, 'error').mockImplementation(() => ({}) as ReturnType<typeof message.error>);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<ArtifactCards artifacts={[financialArtifact(reference, 'message')]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'artifact_download' }));
+
+    await waitFor(() =>
+      expect(error).toHaveBeenCalledWith(
+        financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'),
+      ),
+    );
+    expect(downloadExport).not.toHaveBeenCalled();
+    expect(click).not.toHaveBeenCalled();
+  });
+});
 
 const query = (id: string, rows = 3): StreamArtifact =>
   ({
