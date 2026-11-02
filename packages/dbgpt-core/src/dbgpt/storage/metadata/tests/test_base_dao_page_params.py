@@ -68,13 +68,35 @@ def test_page_size_zero_does_not_raise():
 def test_first_page_used_when_page_is_not_positive():
     dao = _StubDao()
 
-    dao.get_list_page({}, page=0, page_size=20)
+    result = dao.get_list_page({}, page=0, page_size=20)
     assert dao.query.offset_value == 0
+    assert result.page == 1, "the returned page is the clamped one, not the argument"
 
     dao2 = _StubDao()
-    dao2.get_list_page({}, page=-3, page_size=20)
+    result2 = dao2.get_list_page({}, page=-3, page_size=20)
     assert dao2.query.offset_value >= 0, (
         "a negative OFFSET is rejected by MySQL and raises 500"
+    )
+    assert result2.page == 1, "a negative page is reported back as the first page"
+
+
+def test_reported_page_is_clamped_even_when_the_offset_is():
+    """``PaginationResult.page`` must carry the clamped page, not the argument.
+
+    Only the offset was asserted before, so an implementation that clamped the
+    ``OFFSET`` while echoing the caller's ``page`` back would pass every check
+    while still telling the client it was on page 0 (or page -3).
+    """
+    dao = _StubDao()
+    result = dao.get_list_page({}, page=0, page_size=20)
+    assert result.page == 1, (
+        f"page 0 was echoed back to the caller as page {result.page}"
+    )
+
+    dao2 = _StubDao()
+    result2 = dao2.get_list_page({}, page=-3, page_size=20)
+    assert result2.page == 1, (
+        f"page -3 was echoed back to the caller as page {result2.page}"
     )
 
 
