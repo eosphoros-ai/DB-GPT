@@ -46,6 +46,34 @@ def reviews(report, revise=None):
     ]
 
 
+@pytest.mark.parametrize("period", ["2024年", "{{period:2024}}"])
+def test_review_accepts_extracted_periods_without_rewriting_caller_input(period):
+    report = ready_report()
+    records = reviews(report)
+    records[0]["note"] = f"{period}合并报表的方向、期间口径和解释依据已核对。"
+    original = deepcopy(records)
+    published = workflow.publish(workflow.review_report(report, records))
+    assert published["workflow"]["status"] == "published"
+    assert published["workflow"]["review"]["items"][0]["note"].startswith("2024年")
+    assert records == original
+
+
+@pytest.mark.parametrize(
+    "note",
+    ["1999年口径已核对。", "收入为2024元。", "增长率为12%。", "为{{fact:invented}}。"],
+)
+def test_review_still_rejects_unknown_periods_values_and_financial_references(note):
+    report = ready_report()
+    before = deepcopy(report)
+    records = reviews(report)
+    records[-1]["note"] = note
+    with pytest.raises(SessionFileApiError, match="note 校验失败") as error:
+        workflow.review_report(report, records)
+    assert "2024" in str(error.value)
+    assert "只修正报错专题" in str(error.value)
+    assert report == before
+
+
 @pytest.mark.parametrize("status", ["failed", "insufficient"])
 def test_review_cannot_reopen_terminal_gap_and_rejection_is_atomic(status):
     report = ready_report()

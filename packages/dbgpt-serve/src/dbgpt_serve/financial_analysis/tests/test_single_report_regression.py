@@ -97,7 +97,7 @@ def test_single_creation_topics_publication_question_source_and_old_export(
             "directionChecked": True,
             "scopeChecked": True,
             "causalityChecked": True,
-            "note": "合成回归已核对引用与解释边界。",
+            "note": "合成回归已核对2024年引用与解释边界。",
         }
         for t in report["workflow"]["topics"]
     ]

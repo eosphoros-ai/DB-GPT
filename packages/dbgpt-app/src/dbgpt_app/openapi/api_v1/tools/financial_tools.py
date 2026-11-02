@@ -118,7 +118,8 @@ topic_result.saved=false 表示未保存成功，一次处理 issues 中所有 f
 专题连续三次失败后继续其他专题，复核使用 insufficient；不能冒充成功。
 全部专题处理后调用 review_financial_report，逐项检查变化方向、期间/口径和原因依据。
 复核必须覆盖全部专题，每项给出 topic_id、verdict（pass/revise/insufficient）、
-directionChecked:true、scopeChecked:true、causalityChecked:true、note（不含数字的具体核对说明）。
+directionChecked:true、scopeChecked:true、causalityChecked:true、note（具体核对说明）。
+note 可用已提取的年份说明期间，优先写本期、上期；不填写金额、比率、倍数或财务引用。
 三项 Checked 记录该维度及其缺口已检查，不表示结论通过；
 失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient，并在 note 说明限制。
 需要修订就修正对应专题，然后重新复核。明确复核通过后后端原子发布，
@@ -1234,7 +1235,9 @@ def make_financial_tools(
         description=(
             "所有专题保存后逐项复核。reviews 是数组，每项含 topic_id、"
             "verdict(pass/revise/insufficient)、directionChecked、scopeChecked、"
-            "causalityChecked（三项均为 true）、note（无数字的具体核对说明）。"
+            "causalityChecked（三项均为 true）、note（具体核对说明）。"
+            "note 可用已提取的年份说明期间，或写本期、上期；"
+            "不填写金额、比率、倍数或财务引用。"
             "Checked 表示该维度及缺口已检查，不代表结论通过；"
             "失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient。"
             "检查方向是否吻合数据、期间和口径是否一致、因果解释是否有原文支持；"
