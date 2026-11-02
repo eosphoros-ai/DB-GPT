@@ -63,14 +63,14 @@ async def test_late_publication_read_cannot_start_the_next_component(monkeypatch
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, 180),
+        (None, 600),
         ("60", 60),
-        ("300", 300),
-        ("0", 180),
-        ("600", 180),
-        ("-1", 180),
-        ("nan", 180),
-        ("", 180),
+        ("1000", 1000),
+        ("0", 600),
+        ("1001", 600),
+        ("-1", 600),
+        ("nan", 600),
+        ("", 600),
     ],
 )
 def test_configuration_is_finite_and_bounded(monkeypatch, value, expected):
