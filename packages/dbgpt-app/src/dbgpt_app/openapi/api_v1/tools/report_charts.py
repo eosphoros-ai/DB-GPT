@@ -442,7 +442,7 @@ def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
     artifacts = list(sink.snapshot())
     sections = [dict(section) for section in spec["sections"]]
     by_id = {a.artifact_id: a for a in artifacts}
-    additions, prepared = [], {}
+    additions, prepared = {}, {}
     for section_index, artifact, table, identity in _table_selections(spec, artifacts):
         section = sections[section_index] if section_index is not None else None
         current = (section or {}).get("chart") or {}
@@ -495,10 +495,16 @@ def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
         ):
             section["chart"] = node
         else:
-            suffix = " · Charts" if language == "en" else " · 数据图表"
-            additions.append({"heading": title + suffix, "chart": node})
+            # Keep supplementary visuals beside their source section. Their
+            # figure caption identifies the chart without repeating a numbered
+            # section heading after the conclusion.
+            additions.setdefault(section_index, []).append({"chart": node})
         prepared[identity] = node
-    return {**spec, "sections": [*sections, *additions]}
+    ordered = list(additions.get(None, []))
+    for index, section in enumerate(sections):
+        ordered.append(section)
+        ordered.extend(additions.get(index, []))
+    return {**spec, "sections": ordered}
 
 
 def selected_chart_gaps(spec, artifacts, html):

@@ -2,10 +2,50 @@
 
 import json
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt_serve.session_file.domain import SessionFileStatus
+
+
+def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
+    """Use a captured upstream script result for skills declaring this contract."""
+    from dbgpt.agent.claude_skill import get_registry
+    from dbgpt.core.interface.report_capture import read_artifact_result
+
+    skill = get_registry().get_skill(skill_name)
+    if not skill:
+        return args, input_ids
+    contract_path = Path(skill.file_path).parent / "script_input_contract.json"
+    if not contract_path.is_file():
+        return args, input_ids
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    upstream = contract.get(script_name)
+    if not upstream:
+        return args, input_ids
+    candidates = [
+        artifact
+        for artifact in (sink.snapshot() if sink else [])
+        if artifact.type == "python"
+        and artifact.status == "succeeded"
+        and artifact.metadata.get("skill_name") == skill_name
+        and artifact.metadata.get("script_file_name") == upstream
+        and artifact.result is not None
+    ]
+    selected = [item for item in candidates if item.artifact_id in (input_ids or [])]
+    if not selected and len(candidates) == 1:
+        selected = candidates
+    if len(selected) != 1:
+        raise ValueError(
+            f"SKILL_INPUT_REQUIRED: select one successful {upstream} artifact "
+            "in input_artifact_ids; its captured result is used as script input"
+        )
+    source = selected[0]
+    value = read_artifact_result(source)
+    if not isinstance(value, dict) or value.get("error"):
+        raise ValueError("SKILL_INPUT_INVALID: captured upstream result is unavailable")
+    return value, list(dict.fromkeys([*(input_ids or []), source.artifact_id]))
 
 
 def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
@@ -148,6 +188,15 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
             if args and argv is not None:
                 raise ValueError("Use either args (JSON) or argv (CLI), not both")
             sink = react_state.get("_report_artifact_sink")
+            resolved_args, input_artifact_ids = _apply_skill_input_contract(
+                skill_name, script_file_name, args, input_artifact_ids, sink
+            )
+            contract_applied = resolved_args is not args
+            if argv is not None and contract_applied:
+                raise ValueError(
+                    "SKILL_INPUT_INVALID: this script requires captured JSON input"
+                )
+            args = resolved_args
             available = (
                 {a.artifact_id for a in sink.snapshot() if a.status == "succeeded"}
                 if sink
@@ -312,6 +361,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                         "capability_type": "skill",
                         "skill_name": skill_name,
                         "script_file_name": script_file_name,
+                        "captured_input_contract": contract_applied,
                         "arguments": result_obj.get("script_arguments", args),
                     },
                     artifact_sink=react_state.get("_report_artifact_sink"),

@@ -80,8 +80,8 @@ def format_pp_change(current, previous):
 
     change = (current - previous) * 100  # convert to percentage points
     if change >= 0:
-        return f"+{change:.1f}pp", "highlight-positive"
-    return f"{change:.1f}pp", "highlight-negative"
+        return f"+{change:.2f}pp", "highlight-positive"
+    return f"{change:.2f}pp", "highlight-negative"
 
 
 def calculate_template_data(data):
@@ -122,6 +122,12 @@ def calculate_template_data(data):
     prev_non_recurring = _get("prev_non_recurring_net_profit")
     prev_gross_margin = _get("prev_gross_margin")  # ratio 0-1
     prev_roe = _get("prev_roe")  # ratio 0-1
+    prev_cost = _get("prev_cost_of_sales")
+    prev_equity = _get("prev_equity")
+    if prev_gross_margin is None and prev_revenue and prev_cost is not None:
+        prev_gross_margin = (prev_revenue - prev_cost) / prev_revenue
+    if prev_roe is None and prev_equity and prev_net_profit is not None:
+        prev_roe = prev_net_profit / prev_equity
 
     # -------------------------------------------------------- derived ratios
     gross_margin = None
@@ -174,6 +180,75 @@ def calculate_template_data(data):
     result["ROE_CHANGE"] = roe_change
     result["ROE_CHANGE_CLASS"] = roe_cls
     result["ROE_INDUSTRY_AVG"] = "N/A"
+
+    # Retain machine-readable meaning and inputs separately from presentation.
+    # ROE here is net profit / period-end parent equity, not weighted-average ROE.
+    result["FINANCIAL_METRICS"] = {
+        "net_margin": {
+            "value": net_profit / revenue
+            if revenue and net_profit is not None
+            else None,
+            "unit": "ratio",
+            "period": data.get("report_year"),
+            "formula": "parent_net_profit / revenue",
+            "inputs": ["net_profit", "revenue"],
+        },
+        "debt_ratio": {
+            "value": _get("total_liabilities") / _get("total_assets")
+            if _get("total_assets") and _get("total_liabilities") is not None
+            else None,
+            "unit": "ratio",
+            "period": data.get("report_year"),
+            "formula": "total_liabilities / total_assets",
+            "inputs": ["total_liabilities", "total_assets"],
+        },
+        "cash_profit_ratio": {
+            "value": _get("operating_cash_flow") / net_profit
+            if net_profit and _get("operating_cash_flow") is not None
+            else None,
+            "unit": "ratio",
+            "period": data.get("report_year"),
+            "formula": "operating_cash_flow / parent_net_profit",
+            "inputs": ["operating_cash_flow", "net_profit"],
+        },
+        "gross_margin": {
+            "value": gross_margin,
+            "unit": "ratio",
+            "period": data.get("report_year"),
+            "formula": "(revenue - cost_of_sales) / revenue",
+            "inputs": ["revenue", "cost_of_sales"],
+        },
+        "gross_margin_change_pp": {
+            "value": (gross_margin - prev_gross_margin) * 100
+            if gross_margin is not None and prev_gross_margin is not None
+            else None,
+            "unit": "percentage_point",
+            "period": data.get("report_year"),
+            "formula": "(gross_margin - previous_gross_margin) * 100",
+            "inputs": [
+                "revenue",
+                "cost_of_sales",
+                "prev_revenue",
+                "prev_cost_of_sales",
+            ],
+        },
+        "roe_period_end": {
+            "value": roe,
+            "unit": "ratio",
+            "period": data.get("report_year"),
+            "formula": "net_profit / period_end_parent_equity",
+            "inputs": ["net_profit", "equity"],
+        },
+        "roe_period_end_change_pp": {
+            "value": (roe - prev_roe) * 100
+            if roe is not None and prev_roe is not None
+            else None,
+            "unit": "percentage_point",
+            "period": data.get("report_year"),
+            "formula": "(roe_period_end - previous_roe_period_end) * 100",
+            "inputs": ["net_profit", "equity", "prev_net_profit", "prev_equity"],
+        },
+    }
 
     # --- Analysis placeholders (LLM fills these) ---
     result["PROFITABILITY_ANALYSIS"] = "N/A"

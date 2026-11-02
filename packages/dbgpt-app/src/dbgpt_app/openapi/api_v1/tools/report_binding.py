@@ -550,6 +550,7 @@ def validate_report_targets(
     non_metric_prefix=None,
     numeric_evidence=None,
     chart_evidence=None,
+    proposal_texts=None,
 ) -> str | None:
     """Require evidence on every data target, independently of page bindings."""
     offsets = [0, *(match.end() for match in re.finditer("\n", html))]
@@ -757,6 +758,13 @@ def validate_report_targets(
             ):
                 return
             if numeric_pattern is None:
+                return
+            # Only standalone goals approved by the structured recommendation
+            # contract are exempt from observed-value evidence checks.
+            scalar = self.stack[-1]
+            if scalar["attrs"].get("data-dbgpt-value-role") == "proposal" and text in (
+                proposal_texts or set()
+            ):
                 return
             # A numbered recommendation card uses its number as navigation,
             # just like a section ordinal. Its quantitative body stays checked.

@@ -206,6 +206,39 @@ async def test_append_advice_completes_saved_report_without_replacing_analysis(
 
 
 @pytest.mark.asyncio
+async def test_saved_placeholder_report_is_retried_without_model(monkeypatch):
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+
+    state = {
+        "_report_saved_arguments": {
+            "template_path": "csv-data-analysis/templates/report_template.html",
+            "data": {"REPORT_TITLE": "Saved report"},
+        },
+        "_report_html_error": "old render failure",
+    }
+
+    async def render(saved_state, skills_dir, **kwargs):
+        saved_state["_report_presentation"] = {
+            "content": "<html>ok</html>",
+            "title": "Saved report",
+        }
+        saved_state.pop("_report_html_error", None)
+        return True
+
+    async def build_agent(**kwargs):
+        raise AssertionError("A valid saved report should not call the model")
+
+    monkeypatch.setattr(report_agent, "render_saved_report", render)
+    monkeypatch.setattr(report_agent, "build_report_agent", build_agent)
+    response = json.loads(
+        await report_agent.make_generate_report_tool(
+            react_state=state, skills_dir="unused", llm_client=object()
+        )(instructions="Resume")
+    )
+    assert response["status"] == "completed"
+
+
+@pytest.mark.asyncio
 async def test_append_rejects_invalid_sections_before_changing_saved_content():
     state = {
         "_report_saved_arguments": {

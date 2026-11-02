@@ -513,9 +513,9 @@ const EXAMPLE_CARDS = [
     id: 'olist_ecommerce_report',
     icon: '🛍️',
     title: 'Olist 巴西电商经营诊断',
-    description: '使用内置离线演示库分析电商经营；也可连接完整 Olist 数据',
+    description: '使用简化的离线演示数据分析电商经营',
     query:
-      '帮我看看巴西站这段时间的生意怎么样，重点看 2017 年 1 月到 2018 年 8 月：销售额和订单量有什么变化？哪些品类、哪些地区表现比较好？送货慢会不会影响客户评分？最后给我三个最值得先做的改进建议，再整理成一份带图表的报告。',
+      '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
     dbName: 'Olist_Ecommerce',
     knowledgeName: 'Olist_Analytics_Governance',
     color: 'from-rose-500/10 to-orange-500/10',

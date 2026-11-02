@@ -14,13 +14,13 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
    - 脚本支持 PDF 文件（通过 pdfplumber 解析）和纯文本文件，返回 JSON 格式的结构化数据。
 
 2. **财务比率计算**：
-   - 使用 `execute_skill_script_file` 执行 `scripts/calculate_ratios.py`，传入 Step 1 的 JSON 数据。
+   - 使用 `execute_skill_script_file` 执行 `scripts/calculate_ratios.py`，在 `input_artifact_ids` 指定 Step 1 的提取产物 ID；程序直接读取该产物作为输入，不接受手写覆盖数值。
    - 自动计算毛利率、净利率、ROE、资产负债率等关键指标，输出 30 个模板占位符键值。
    - 参考 `references/financial_metrics.md` 确保指标定义的准确性。
    - 系统将脚本的实际 JSON 结果捕获为 Python 产物，并通过通用 `auto_data` 传递模板字段，后续 `html_interpreter` 会自动合并。不使用专用 `ratio_data` 状态。
 
 3. **图表生成**：
-   - 使用 `execute_skill_script_file` 执行 `scripts/generate_charts.py`，传入 Step 1 的 JSON 数据。
+   - 使用 `execute_skill_script_file` 执行 `scripts/generate_charts.py`，在 `input_artifact_ids` 指定 Step 1 的提取产物 ID。图表和财务比率使用同一份提取结果。
    - 自动生成 3 张可视化图表：
      - `financial_overview.png`：核心财务指标对比柱状图
      - `profitability.png`：盈利能力指标横向条形图
@@ -39,28 +39,10 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
      - `RISKS_LIST`：主要风险列表（HTML `<li>` 格式）
      - `OVERALL_ASSESSMENT`：综合评价
 
-5. **渲染报告**：
-   - 调用 `html_interpreter`，使用 `template_path` 模式：
-     ```json
-     {
-       "template_path": "financial-report-analyzer/templates/report_template.html",
-       "data": {
-         "PROFITABILITY_ANALYSIS": "LLM撰写的盈利能力分析...",
-         "SOLVENCY_ANALYSIS": "LLM撰写的偿债分析...",
-         "EFFICIENCY_ANALYSIS": "LLM撰写的营运效率分析...",
-         "CASHFLOW_ANALYSIS": "LLM撰写的现金流分析...",
-         "ADVANTAGES_LIST": "<li>优势1</li><li>优势2</li>",
-         "RISKS_LIST": "<li>风险1</li><li>风险2</li>",
-         "OVERALL_ASSESSMENT": "LLM撰写的综合评价..."
-       },
-       "title": "XX公司 2023年度财报分析报告"
-     }
-     ```
-   - **重要**：`data` 字典中只需传入你撰写的 7 段分析文本！后端会自动合并：
-     - Step 2 的 30 个数据指标（COMPANY_NAME、REVENUE、NET_PROFIT 等）
-     - Step 3 的图表 URL（CHART_FINANCIAL_OVERVIEW、CHART_PROFITABILITY、CHART_ASSET_STRUCTURE）
-   - **绝对不要**在 `data` 中包含数据指标或图表路径，否则 JSON 过大会导致截断。
-   - 分析正文中的业务数值必须引用产生它的 SQL/Python 产物；通过 `report_evidence_manifest` 查看实际字段和路径，不手填或猜测选择器。使用知识库口径时，将对应切片绑定到具体方法说明；来源绑定不代表已通过确定性核验。
+5. **交付报告**：
+   - 调用 `generate_report`，传入报告标题、需要覆盖的分析维度和建议要求。
+   - 报告子代理使用已捕获的脚本结果、图表及模板生成报告；通过证据清单读取实际指标路径，缺失计算只补算缺失部分。
+   - 不要自行调用 `html_interpreter`，不要手写图表文件路径或猜测指标值及来源。
 
 6. **完成**：
    - 调用 `terminate` 返回 1-2 句话的简短摘要。
@@ -80,7 +62,7 @@ Step 3: execute_skill_script_file(skill_name="financial-report-analyzer", script
 
 Step 4: （LLM 自行撰写 7 段深度分析文本）
 
-Step 5: html_interpreter(template_path="financial-report-analyzer/templates/report_template.html", data={仅包含 7 段分析文本}, title="报告标题")
+Step 5: generate_report(instructions="财报分析报告：包含财务摘要、盈利、偿债、效率、现金流、优势和风险")
   → 后端自动合并数据指标 + 图表 URL + 分析文本，渲染完整报告
 
 Step 6: terminate(result="简短摘要")

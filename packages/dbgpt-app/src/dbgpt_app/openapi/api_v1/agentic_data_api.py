@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import shutil
+import sqlite3
 import tempfile
 import uuid
 import zipfile
@@ -3247,7 +3248,8 @@ async def _react_agent_stream_impl(
             record_report_invocation_failure(react_state, raw_call, reason)
         )
 
-        if is_report_resume_request(user_input):
+        report_resume_requested = is_report_resume_request(user_input)
+        if report_resume_requested:
             try:
                 artifact_sink = await asyncio.to_thread(
                     restore_report_checkpoint,
@@ -3266,12 +3268,37 @@ async def _react_agent_stream_impl(
                 react_state["_report_language"] = (
                     "zh" if re.search(r"[\u3400-\u9fff]", original_request) else "en"
                 )
-        artifact_sink = artifact_sink or InMemoryArtifactSink(
-            ArtifactCaptureContext(
+        from .tools.evidence_catalog import (
+            EvidenceCatalog,
+            SessionArtifactSink,
+            catalog_path,
+        )
+
+        context = (
+            artifact_sink.context
+            if artifact_sink is not None
+            else ArtifactCaptureContext(
                 conv_uid=conv_id,
                 run_id=f"turn-{uuid.uuid4().hex}",
             )
         )
+        try:
+            catalog = EvidenceCatalog(
+                catalog_path(), owner_id=str(dialogue.user_name or "anonymous")
+            )
+            session_sink = SessionArtifactSink(
+                context, catalog, include_prior=report_resume_requested
+            )
+            if artifact_sink is not None:
+                for restored in artifact_sink.snapshot():
+                    session_sink.record(restored)
+            artifact_sink = session_sink
+        except (OSError, sqlite3.Error):
+            logger.warning(
+                "Session evidence catalog unavailable; using run capture",
+                exc_info=True,
+            )
+            artifact_sink = artifact_sink or InMemoryArtifactSink(context)
         # Kept in per-turn state for PR5a assembly after the agent task completes.
         # It is never included in prompts, SSE events, or conversation history.
         react_state["_report_artifact_sink"] = artifact_sink
@@ -3629,6 +3656,9 @@ Use concise inline HTML when there is no applicable template.
 4. **generate_report**: Hand the analysis report to the dedicated report agent (it
 owns `report_evidence_manifest`, the report template and every spec repair).
 Parameters: {{"instructions": "report title, required sections, recommendation count"}}
+   - If analysis established a metric's business meaning and grain, pass its
+real artifact ID, selector, meaning and grain together in optional
+`metric_definitions`. Omit uncertain definitions; do not infer from matching values.
    - Only use this if the skill's documentation explicitly provides template paths.
 If a template fails, fix the indicated input or select an existing suitable template.
 For a saved HTML candidate, use {{"retry_saved": true, "repair_patches":
@@ -3863,6 +3893,8 @@ reads the evidence manifest, renders the report template once and repairs only t
 spec from the latest error list. Parameters: {{"instructions": "report title, required
 sections, requested recommendation count"}}. Never write report HTML yourself, never
 patch rendered HTML and never re-run completed analysis for the report.
+Optional `metric_definitions` records known meaning and grain with each real
+artifact selector in this same call; omit unknown definitions.
 18. **report_evidence_manifest** (internal): owned by the report agent. Pass what the
 report must contain to `generate_report` instead of binding values yourself.
 19. **todowrite**: Create and manage a structured task list. Use for complex tasks

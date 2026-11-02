@@ -122,17 +122,31 @@ def build_execution_env(
     env["PLOT_DIR"] = work_dir
     sink = artifact_sink or get_current_artifact_sink()
     inputs, input_ids = snapshot_execution_files(
-        {"file_path": file_path, "files_json_path": files_json_path},
+        {"file_path": file_path},
         sink,
         action="execution.input",
         # These paths are supplied by the server's materialized session state,
         # not by the model's Python source or skill arguments.
-        allowed_paths=[path for path in (file_path, files_json_path) if path],
+        allowed_paths=[path for path in (file_path,) if path],
     )
-    file_path, files_json_path = inputs["file_path"], inputs["files_json_path"]
+    file_path = inputs["file_path"]
     if files_json_path:
+        if sink:
+            manifest_path = Path(files_json_path)
+            if os.path.normcase(
+                str(manifest_path.resolve(strict=True))
+            ) != os.path.normcase(os.path.abspath(files_json_path)):
+                raise ValueError("FILE_INPUT_NOT_AUTHORIZED: symbolic file input")
+            before = manifest_path.stat()
         with open(files_json_path, encoding="utf-8") as stream:
             manifest = json.load(stream)
+        if sink:
+            after = manifest_path.stat()
+            if (before.st_size, before.st_mtime_ns) != (
+                after.st_size,
+                after.st_mtime_ns,
+            ):
+                raise ValueError("FILE_CHANGED_DURING_CAPTURE: retry the file snapshot")
         if selected_file_ids is not None:
             manifest = {
                 key: value

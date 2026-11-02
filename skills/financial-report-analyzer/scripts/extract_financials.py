@@ -1,7 +1,7 @@
-import re
 import json
-import sys
 import os
+import re
+import sys
 
 
 def read_file_content(file_path):
@@ -143,7 +143,15 @@ def extract_financials(file_path):
         return {"error": True, "message": f"File not found: {file_path}"}
 
     try:
-        text = read_file_content(file_path)
+        if file_path.lower().endswith(".pdf"):
+            import pdfplumber
+
+            with pdfplumber.open(file_path) as pdf:
+                pages = [page.extract_text() or "" for page in pdf.pages]
+            text = "\n".join(pages)
+        else:
+            text = read_file_content(file_path)
+            pages = [text]
     except Exception as e:
         return {"error": True, "message": f"Failed to read file: {e}"}
 
@@ -151,6 +159,87 @@ def extract_financials(file_path):
         return {"error": True, "message": "File is empty or could not be parsed"}
 
     data = extract_from_text(text)
+    # Never treat an unscoped first regex match as a financial statement value.
+    # Only rows from identified consolidated statements with explicit years and
+    # units are eligible; unresolved or ambiguous values remain missing.
+    fields = {
+        "合并资产负债表": {
+            "total_assets": "资产总计",
+            "total_liabilities": "负债合计",
+            "equity": "归属于母公司所有者权益合计",
+            "total_equity": "所有者权益合计",
+        },
+        "合并利润表": {
+            "revenue": "营业收入",
+            "cost_of_sales": "营业成本",
+            "net_profit": "归属于母公司所有者的净利润",
+        },
+        "合并现金流量表": {"operating_cash_flow": "经营活动产生的现金流量净额"},
+    }
+    for name in {name for mapping in fields.values() for name in mapping}:
+        data[name] = None
+    sources = {}
+    active = None
+    unit = None
+    years = []
+    candidates = {}
+    heading = re.compile(
+        r"^\s*\d+[、.．]\s*((?:合并|母公司)(?:资产负债表|利润表|现金流量表))\s*$"
+    )
+    number = r"[-−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?"
+    for page_number, page in enumerate(pages, 1):
+        for line in page.splitlines():
+            line = line.strip()
+            match = heading.match(line)
+            if match:
+                active = match.group(1)
+                unit, years = None, []
+                continue
+            if active not in fields:
+                continue
+            if re.fullmatch(r"单位[：:]\s*元", line):
+                unit = "元"
+            if line.startswith("项目"):
+                years = re.findall(r"(?:19|20)\d{2}(?=年)", line)
+            if unit != "元" or len(years) != 2 or years[0] == years[1]:
+                continue
+            for key, label in fields[active].items():
+                row = re.fullmatch(
+                    r"(?:其中[：:]|[一二三四五六七八九十]+[、.．]|\d+[.．])?\s*"
+                    + re.escape(label)
+                    + r"\s+("
+                    + number
+                    + r")\s+("
+                    + number
+                    + r")\s*",
+                    line,
+                )
+                if row:
+                    candidates.setdefault(key, []).append(
+                        {
+                            "statement": active,
+                            "page": page_number,
+                            "row": line,
+                            "unit": unit,
+                            "years": years[:],
+                            "values": [
+                                float(row.group(i).replace(",", "").replace("−", "-"))
+                                for i in (1, 2)
+                            ],
+                        }
+                    )
+    for key, matches in candidates.items():
+        if len(matches) != 1 or not data.get("report_year"):
+            continue
+        source = matches[0]
+        year = str(data["report_year"])
+        if year not in source["years"] or str(int(year) - 1) not in source["years"]:
+            continue
+        data[key] = source["values"][source["years"].index(year)]
+        data["prev_" + key] = source["values"][
+            source["years"].index(str(int(year) - 1))
+        ]
+        sources[key] = source
 
     # Add a summary of which fields were successfully extracted
     extracted = [k for k, v in data.items() if v is not None]
@@ -160,6 +249,7 @@ def extract_financials(file_path):
         "text_length": len(text),
         "extracted_fields": extracted,
         "missing_fields": missing,
+        "sources": sources,
     }
 
     return data
@@ -192,5 +282,6 @@ if __name__ == "__main__":
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(
-            'Usage: python3 extract_financials.py \'{"file_path": "/path/to/report.pdf"}\''
+            'Usage: python3 extract_financials.py '
+            '\'{"file_path": "/path/to/report.pdf"}\''
         )

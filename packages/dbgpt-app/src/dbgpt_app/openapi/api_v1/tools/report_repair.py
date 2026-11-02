@@ -768,6 +768,8 @@ def report_repair_guard(state):
                         if current_sink is not None:
                             for artifact in current_sink.snapshot():
                                 restored.record(artifact)
+                            if hasattr(current_sink, "catalog"):
+                                restored.catalog = current_sink.catalog
                         state["_report_artifact_sink"] = restored
                         source_arguments = dict(
                             state.get("_report_saved_arguments", {})

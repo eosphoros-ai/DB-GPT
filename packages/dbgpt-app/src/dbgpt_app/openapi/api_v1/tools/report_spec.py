@@ -31,6 +31,12 @@ class ReportReference(_SpecNode):
 ReportPart = str | ReportReference
 
 
+class ReportProposal(_SpecNode):
+    """A proposed goal, which is not an observed value."""
+
+    proposal: str = Field(min_length=1)
+
+
 class ReportKPI(_SpecNode):
     label: str
     ref: ReportReference
@@ -75,7 +81,7 @@ class ReportChart(_SpecNode):
 
 class ReportRecommendationLine(_SpecNode):
     label: str | None = None
-    parts: list[ReportPart] = Field(default_factory=list)
+    parts: list[ReportPart | ReportProposal] = Field(default_factory=list)
 
 
 class ReportRecommendation(_SpecNode):
