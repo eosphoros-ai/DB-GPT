@@ -13,6 +13,9 @@ def _configure_example(tmp_path, monkeypatch, name: str):
     source_path = tmp_path / "source.csv"
     source_path.write_text("value\n1\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
+    # The upload base directory falls back to CFG.SYSTEM_APP.work_dir when the
+    # app is configured, which would bypass tmp_path and the guarded owner root.
+    monkeypatch.setattr(examples_api.CFG, "SYSTEM_APP", None)
     monkeypatch.setitem(
         examples_api.EXAMPLE_FILES,
         "test_example",
