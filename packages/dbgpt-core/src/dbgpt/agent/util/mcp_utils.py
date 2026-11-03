@@ -1,6 +1,8 @@
 import logging
 import ssl
 from contextlib import asynccontextmanager
+from datetime import timedelta
+from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
@@ -223,6 +225,30 @@ def _normalise_transport(transport: str | None) -> str:
     return key
 
 
+def _validate_streamable_http_url(url: str, headers: dict[str, Any] | None) -> None:
+    """Reject cleartext credentials except for explicitly local MCP endpoints.
+
+    Header names are arbitrary, so treat any supplied headers as potentially
+    sensitive. Check the literal hostname without DNS resolution; private
+    network addresses and lookalike localhost domains are not loopback.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or (not headers and parsed.username is None):
+        return
+    host = (parsed.hostname or "").lower()
+    if host == "localhost":
+        return
+    try:
+        if ip_address(host).is_loopback:
+            return
+    except ValueError:
+        pass
+    raise ValueError(
+        "MCP Streamable HTTP endpoints with headers or URL credentials require "
+        "HTTPS, except for localhost and literal loopback addresses."
+    )
+
+
 @asynccontextmanager
 async def streamable_http_client(
     url: str,
@@ -231,27 +257,34 @@ async def streamable_http_client(
     sse_read_timeout: float = 60 * 5,
     verify: ssl.SSLContext | str | bool = True,
 ):
-    """Thin wrapper over ``mcp.client.streamable_http.streamablehttp_client``.
+    """Adapt the MCP SDK's Streamable HTTP clients to a pair of streams.
 
-    The official mcp client yields ``(read, write, get_session_id)``. We drop
-    the session-id callback so the yield shape matches :func:`sse_client`,
-    keeping the call sites in :class:`MCPToolPack` identical regardless of
-    transport.
+    Prefer ``streamable_http_client`` (mcp >= 1.24), falling back to the
+    legacy ``streamablehttp_client``. SDK 1.x yields a session-id callback
+    alongside the streams; SDK 2.x yields just the streams. Both are exposed
+    as ``(read, write)`` so callers do not depend on the SDK version.
 
-    Note on ``verify``: the upstream ``streamablehttp_client`` builds its own
-    ``httpx.AsyncClient`` via a factory and does not surface a verify knob,
+    Endpoints with headers or URL credentials require HTTPS unless they use
+    localhost or a literal loopback address. Since custom header names can
+    carry secrets, this applies to all supplied headers. The adapter-owned
+    modern HTTP client does not follow redirects; configure the final MCP
+    URL explicitly. Legacy clients retain their SDK's redirect behavior.
+
+    Note on ``verify``: the SDK's HTTP client factory has no verify knob,
     so the argument is accepted for symmetry with :func:`sse_client` but is
-    currently a no-op. Custom CA / verify=False for streamable HTTP must be
-    configured via env (``SSL_CERT_FILE`` / ``REQUESTS_CA_BUNDLE``) for now.
+    currently a no-op. Certificate trust uses the installed SDK's defaults.
     """
+    _validate_streamable_http_url(url, headers)
     # Local import keeps the dependency lazy: if the installed mcp lib does
     # not ship the streamable_http module yet (mcp < 1.8.0), users only hit
     # this when they actually pick the streamable_http transport — not at
     # module load — and they get an actionable upgrade hint instead of a
     # raw ModuleNotFoundError.
     try:
-        from mcp.client.streamable_http import streamablehttp_client
+        import mcp.client.streamable_http as streamable_http
     except ModuleNotFoundError as exc:
+        if exc.name != "mcp.client.streamable_http":
+            raise
         raise RuntimeError(
             "MCP Streamable HTTP transport requires mcp>=1.8.0, but the "
             "installed mcp package does not provide "
@@ -263,16 +296,38 @@ async def streamable_http_client(
     if verify is not True:
         logger.debug(
             "streamable_http_client: 'verify' is ignored by upstream "
-            "streamablehttp_client (factory builds its own httpx client)."
+            "HTTP client factory."
         )
 
-    async with streamablehttp_client(
+    client_factory = getattr(streamable_http, "streamable_http_client", None)
+    if client_factory is not None:
+        from mcp.shared._httpx_utils import create_mcp_http_client
+
+        # Use the SDK factory: 1.x uses httpx, while 2.x uses httpx2. The
+        # renamed transport accepts an HTTP client, not headers/timeouts.
+        async with create_mcp_http_client(headers=headers) as http_client:
+            # Do not forward requests or custom credential headers to a
+            # redirect target, including internal services on another origin.
+            http_client.follow_redirects = False
+            http_client.timeout = (timeout, sse_read_timeout, timeout, timeout)
+            async with client_factory(url, http_client=http_client) as streams:
+                yield streams[0], streams[1]
+        return
+
+    client_factory = getattr(streamable_http, "streamablehttp_client", None)
+    if client_factory is None:
+        raise RuntimeError(
+            "The installed mcp package provides neither 'streamable_http_client' "
+            "nor 'streamablehttp_client'. Install a supported mcp SDK (>=1.8.0)."
+        )
+    async with client_factory(
         url,
         headers=headers,
-        timeout=timeout,
-        sse_read_timeout=sse_read_timeout,
-    ) as (read_stream, write_stream, _get_session_id):
-        yield read_stream, write_stream
+        # Early 1.x releases require timedelta; later legacy clients accept it too.
+        timeout=timedelta(seconds=timeout),
+        sse_read_timeout=timedelta(seconds=sse_read_timeout),
+    ) as streams:
+        yield streams[0], streams[1]
 
 
 @asynccontextmanager
