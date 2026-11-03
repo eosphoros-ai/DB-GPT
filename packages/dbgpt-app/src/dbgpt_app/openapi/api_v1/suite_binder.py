@@ -97,6 +97,7 @@ class SuiteBinding:
     deny: Set[str] = field(default_factory=set)
     artifacts: list = field(default_factory=list)
     semantic: Dict[str, Any] = field(default_factory=dict)
+    context_defaults: Dict[str, Any] = field(default_factory=dict)
     semantic_status: str = "degraded"  # bound | degraded
     watermark: str = ""
     package_path: str = ""
@@ -217,6 +218,7 @@ def load_binding(slug: str) -> Optional[SuiteBinding]:
         deny=deny,
         artifacts=snapshot.get("artifacts") or [],
         semantic=semantic,
+        context_defaults=dict(manifest.get("context_defaults") or {}),
         package_path=row.package_path or "",
         commands=manifest.get("commands") or [],
         skills=manifest.get("skills") or [],
@@ -402,16 +404,50 @@ def _probe_semantic_status(semantic: Dict[str, Any]) -> str:
         return "degraded"
 
 
-def apply_suite_configuration(dialogue: Any) -> None:
-    """Restore a configured resource before either engine builds its tools.
+def _clear_suite_pin(dialogue: Any) -> None:
+    """Persist an explicit composer cancellation before engine dispatch."""
+    conv_uid = getattr(dialogue, "conv_uid", None)
+    if not conv_uid:
+        return
+    clear_conv_suite(conv_uid)
+    try:
+        _plugins_service().registry.record_unpin(
+            conv_uid, user_name=getattr(dialogue, "user_name", None)
+        )
+    except Exception:  # noqa: BLE001 - preserve fail-soft suite resolution
+        logger.warning("suite pin could not be cleared", exc_info=True)
 
-    This selects a resource only; normal datasource access checks still apply.
+
+def apply_suite_configuration(dialogue: Any) -> None:
+    """Apply enabled suite defaults before selecting the execution engine.
+
+    Runtime defaults come from the loaded package, never request-supplied
+    metadata. Resource selection still uses normal datasource access checks.
     """
     ext = dict(getattr(dialogue, "ext_info", None) or {})
-    if ext.get("creation_mode") == "expert_suite" or ext.get("database_name"):
+    if ext.get("suite_reset") is True:
+        _clear_suite_pin(dialogue)
+        return
+    if ext.get("creation_mode") == "expert_suite":
         return
     ref = resolve_suite_ref(ext)
     if not ref:
+        conv_uid = getattr(dialogue, "conv_uid", None)
+        if conv_uid:
+            try:
+                pin = _plugins_service().registry.current_pin(conv_uid)
+                ref = pin[0] if pin else None
+            except Exception:  # noqa: BLE001 - plugins may not be registered
+                logger.debug("suite configuration pin unavailable", exc_info=True)
+    if not ref:
+        return
+    binding = load_binding(ref)
+    if binding is None:
+        return
+    if binding.context_defaults.get("harness_engine") == "dbgpt":
+        ext["harness_engine"] = "dbgpt"
+        dialogue.ext_info = ext
+    if ext.get("database_name"):
         return
     from dbgpt_serve.plugins.creation import SuiteCreationStore
 
@@ -423,6 +459,9 @@ def apply_suite_configuration(dialogue: Any) -> None:
 
 def resolve_binding_for_turn(dialogue: Any) -> Optional[SuiteBinding]:
     """Resolve + record the suite pin for one chat turn (fail-soft)."""
+    if (getattr(dialogue, "ext_info", None) or {}).get("suite_reset") is True:
+        _clear_suite_pin(dialogue)
+        return None
     if (getattr(dialogue, "ext_info", None) or {}).get(
         "creation_mode"
     ) == "expert_suite":
