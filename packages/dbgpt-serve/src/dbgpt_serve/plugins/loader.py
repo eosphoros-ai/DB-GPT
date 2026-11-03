@@ -28,6 +28,15 @@ PLUGIN_MANIFEST_FILENAME = ".qwenwork-plugin/plugin.json"
 VALID_KINDS = ("scenario-suite", "scenario-plugin")
 REQUIRED_FIELDS = ("kind", "name", "version")
 
+BUILTIN_SUITE_NAMES = frozenset(
+    {
+        "db-query",
+        "db-analysis",
+        "sql-optimization-expert",
+        "metadata-architecture-expert",
+    }
+)
+
 # Fields projected into manifest_snapshot (home tabs / routing / bind).
 # Deliberately excludes ``sop`` body text: the playbook is read from the
 # package at bind time, never duplicated into the DB.

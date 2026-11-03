@@ -345,8 +345,11 @@ def register_conv_tools(
     if binding is not None:
         from dbgpt.configs.model_config import SKILLS_DIR
         from dbgpt_app.openapi.api_v1.tools.chart_query import make_chart_query
+        from dbgpt_app.openapi.api_v1.tools.er_diagram import make_generate_er_diagram
         from dbgpt_app.openapi.api_v1.tools.export_csv import make_export_csv
 
+        if binding.allow is not None and "generate_er_diagram" in binding.allow:
+            tool_list.append(make_generate_er_diagram(react_state))
         if binding.violation("export_csv") is None:
             tool_list.append(make_export_csv(react_state))
         if binding.allow is not None and "chart_query" in binding.allow:

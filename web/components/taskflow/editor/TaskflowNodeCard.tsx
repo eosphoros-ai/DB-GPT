@@ -59,6 +59,11 @@ const TaskflowNodeCard: React.FC<{
               {isZh ? '边界' : 'BOUNDARY'}
             </span>
           )}
+          {node.config?.parallel_group && (
+            <span className='text-[10px] px-1 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 flex-none'>
+              {isZh ? '并行' : 'Parallel'}
+            </span>
+          )}
         </div>
         <div className='text-[11px] text-gray-400 truncate'>{summary}</div>
       </div>

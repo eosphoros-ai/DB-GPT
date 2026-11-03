@@ -10,6 +10,7 @@ from dbgpt_app.operators.agent_runner import (
     _build_skills_section,
     _envelope_readable,
     _make_multi_db_sql_tool,
+    _make_scoped_semantic_tools,
     build_user_message,
     get_agent_profile,
     list_agent_profiles,
@@ -34,6 +35,21 @@ class TestManifests:
         assert get_agent_profile("nope").profile_id == "react_general"
         assert get_agent_profile(None).profile_id == "react_general"
         assert get_agent_profile("react_data").default_tools
+
+
+class TestScopedSemantics:
+    def test_only_selected_reads_are_bound(self):
+        tools = _make_scoped_semantic_tools(
+            ["semantic_get_metric", "sql_query"], ["orders"]
+        )
+        assert [tool._tool.name for tool in tools] == ["semantic_get_metric"]
+        assert "database_name" not in tools[0]._tool.args
+        assert _make_scoped_semantic_tools(["sql_query"], []) == []
+
+    @pytest.mark.parametrize("datasources", [[], ["a", "b"]])
+    def test_requires_one_database(self, datasources):
+        with pytest.raises(ValueError, match="exactly one"):
+            _make_scoped_semantic_tools(["semantic_get_metric"], datasources)
 
 
 class TestPromptAssembly:

@@ -84,6 +84,10 @@ def _sanitize_marker_text(text: Any) -> Any:
     """
     if isinstance(text, str):
         return _BACKTICK_RUN_RE.sub("``", text)
+    if isinstance(text, dict):
+        return {key: _sanitize_marker_text(value) for key, value in text.items()}
+    if isinstance(text, list):
+        return [_sanitize_marker_text(value) for value in text]
     return text
 
 
@@ -99,9 +103,7 @@ def build_step_marker(
     """Build a ``vis-flow-step`` marker block for the chat step card.
 
     ``steps`` carries a structured, recent slice of an agent node's ReAct
-    trace (``[{kind, title, detail}]``) so the chat UI can render compact
-    tool-call rows; it is transient (live events) and never persisted into
-    the final stored answer.
+    trace so the chat UI can render tool-call rows during execution and replay.
     """
     payload = {
         "step_id": step_id,
@@ -115,7 +117,7 @@ def build_step_marker(
     if steps:
         payload["steps"] = [
             {
-                **s,
+                **_sanitize_marker_text(s),
                 "title": _sanitize_marker_text(s.get("title", "")),
                 "detail": _sanitize_marker_text(s.get("detail", "")),
             }
@@ -215,6 +217,7 @@ _SHARE_KEY_EXECUTOR_DF = "__datasource_executor_result__"
 #: Share-data key where TFStepClockOperator stores the chat conversation uid
 #: (used by step markers to push live step events to the SSE channel).
 SHARE_KEY_TASKFLOW_CONV_UID = "__taskflow_conv_uid__"
+SHARE_KEY_TASKFLOW_MODEL = "__taskflow_model__"
 
 # ---------------------------------------------------------------------------
 # Live step events: markers push each completed step payload to a per-chat
@@ -337,6 +340,7 @@ class TFStepClockOperator(BaseOperator[str]):
         curr_task_ctx = dag_ctx.current_task_context
         message = ""
         conv_uid: Optional[str] = None
+        model: Optional[str] = None
         for parent in curr_task_ctx.task_input.parent_outputs:
             task_output = parent.task_output
             if not task_output or task_output.is_empty or task_output.is_stream:
@@ -346,14 +350,20 @@ class TFStepClockOperator(BaseOperator[str]):
                 message = value
             elif isinstance(value, dict):
                 conv_uid = value.get("conv_uid") or conv_uid
+                model = value.get("model") or model
             else:
                 conv_uid = getattr(value, "conv_uid", None) or conv_uid
+                model = getattr(value, "model", None) or model
         await dag_ctx.save_to_share_data(
             _SHARE_KEY_DAG_START_TS, time.monotonic(), overwrite=True
         )
         if conv_uid:
             await dag_ctx.save_to_share_data(
                 SHARE_KEY_TASKFLOW_CONV_UID, conv_uid, overwrite=True
+            )
+        if model:
+            await dag_ctx.save_to_share_data(
+                SHARE_KEY_TASKFLOW_MODEL, model, overwrite=True
             )
         output: TaskOutput[str] = SimpleTaskOutput(message)
         curr_task_ctx.set_task_output(output)
@@ -409,6 +419,12 @@ class TFStepMarkerOperator(MapOperator[str, str]):
         try:
             now = time.monotonic()
             dag_ctx = self.current_dag_context
+            if self._step_kind == "agent":
+                duration = await dag_ctx.get_from_share_data(
+                    f"__taskflow_agent_duration__:{self._step_id}"
+                )
+                if duration is not None:
+                    return int(duration)
             last = await dag_ctx.get_from_share_data(_SHARE_KEY_LAST_STEP_TS)
             if last is None:
                 last = await dag_ctx.get_from_share_data(_SHARE_KEY_DAG_START_TS)
@@ -446,12 +462,18 @@ class TFStepMarkerOperator(MapOperator[str, str]):
             return content or ""
         duration_ms = await self._measure_duration_ms()
         summary = await self._row_count_summary()
+        steps = None
+        if self._step_kind == "agent":
+            steps = await self.current_dag_context.get_from_share_data(
+                f"__taskflow_agent_trace__:{self._step_id}"
+            )
         marker = build_step_marker(
             step_id=self._step_id,
             label=self._step_label or self._step_id,
             kind=self._step_kind or "unknown",
             duration_ms=duration_ms,
             summary=summary,
+            steps=steps,
         )
         payload = marker + (content or "")
         await self._push_step_event(payload)

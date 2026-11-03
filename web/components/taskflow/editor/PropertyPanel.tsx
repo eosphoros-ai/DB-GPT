@@ -2,6 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, uploadFile } from '@/client/api';
 import { getTaskflowAgentOptions } from '@/client/api/flow';
 import { getDbList, getSpaceList } from '@/client/api/request';
+import { renderModelIcon } from '@/components/chat/header/model-selector';
 import type { IChatDbSchema } from '@/types/db';
 import type { IUploadFileResponse } from '@/types/flow';
 import type { ISpace } from '@/types/knowledge';
@@ -45,7 +46,7 @@ const PropertyPanel: React.FC<{
     const [, res] = (dbData as any) ?? [];
     const list = (res ?? []) as IChatDbSchema[];
     return list.map(db => ({
-      label: `${db.db_name}（${db.db_type}）`,
+      label: `${db.db_name}（${db.type ?? db.db_type ?? ''}）`,
       value: db.db_name,
     }));
   }, [dbData]);
@@ -54,7 +55,17 @@ const PropertyPanel: React.FC<{
     const list = (modelList ?? []) as any[];
     return list.map(item => {
       const value = typeof item === 'string' ? item : (item?.value ?? item?.label);
-      return { label: String(value), value: String(value) };
+      const name = String(value);
+      return {
+        value: name,
+        title: name,
+        label: (
+          <div className='flex items-center min-w-0'>
+            <span className='flex flex-none'>{renderModelIcon(name)}</span>
+            <span className='ml-2 truncate'>{name}</span>
+          </div>
+        ),
+      };
     });
   }, [modelList]);
 
@@ -191,6 +202,7 @@ const PropertyPanel: React.FC<{
               placeholder={t('taskflow_model_default') as string}
               value={value}
               options={modelOptions}
+              optionFilterProp='value'
               onChange={val => setConfig(field.name, val)}
               onDropdownVisibleChange={open => {
                 // The global list is fetched once on app mount; refetch on open

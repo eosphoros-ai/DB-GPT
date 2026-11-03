@@ -1,0 +1,138 @@
+[
+  {
+    "name": "真实模型澄清",
+    "detail": [
+      "请确认或调整这些需求假设：使用数据分析 Agent 完成销售分析；模型选择 glm-5.3-flash；允许 Agent 自动选择可用数据源"
+    ],
+    "time": "2026-11-01T02:04:47.159Z"
+  },
+  {
+    "name": "首次生成自动应用",
+    "detail": [
+      [
+        "n1",
+        "开始"
+      ],
+      [
+        "a1",
+        "同比计算 Agent"
+      ],
+      [
+        "a2",
+        "结论汇总 Agent"
+      ],
+      [
+        "n2",
+        "输出结果"
+      ]
+    ],
+    "time": "2026-11-01T02:05:03.025Z"
+  },
+  {
+    "name": "重新打开浏览器恢复编辑会话",
+    "detail": "8997762e61444d54ba7ebce29674cb32",
+    "time": "2026-11-01T06:39:58.815Z"
+  },
+  {
+    "name": "局部修改预览保留其他节点",
+    "detail": [
+      {
+        "node_id": "a2",
+        "label": "结论汇总 Agent",
+        "type": "updated",
+        "fields": [
+          "goal"
+        ],
+        "before": {
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "基于上游 Agent 给出的同比计算结果，用中文输出简洁的结论汇总：核心结论、变化幅度解读，并给出相应的风险提示（如季节性因素、基数效应、数据准确性等），不使用任何外部工具。",
+            "max_turns": 5,
+            "model": "glm-5.3-flash"
+          },
+          "id": "a2",
+          "kind": "agent",
+          "label": "结论汇总 Agent"
+        },
+        "after": {
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "基于上游 Agent 给出的同比计算结果，用中文输出简洁的结论汇总：核心结论、变化幅度解读、风险提示（如季节性因素、基数效应、数据准确性等），并最终列出两条具体的行动建议。不使用任何外部工具。",
+            "max_turns": 5,
+            "model": "glm-5.3-flash"
+          },
+          "id": "a2",
+          "kind": "agent",
+          "label": "结论汇总 Agent"
+        }
+      }
+    ],
+    "time": "2026-11-01T06:40:23.594Z"
+  },
+  {
+    "name": "应用与撤销",
+    "detail": {
+      "revision": 3,
+      "restored": true
+    },
+    "time": "2026-11-01T06:40:24.577Z"
+  },
+  {
+    "name": "放弃候选保留画布",
+    "detail": true,
+    "time": "2026-11-01T06:40:48.596Z"
+  },
+  {
+    "name": "手工编辑使候选过期",
+    "detail": 4,
+    "time": "2026-11-01T06:41:12.386Z"
+  },
+  {
+    "name": "取消真实生成请求",
+    "detail": true,
+    "time": "2026-11-01T06:41:12.485Z"
+  },
+  {
+    "name": "未试运行发布被服务端拦截",
+    "detail": true,
+    "time": "2026-11-01T06:41:12.545Z"
+  },
+  {
+    "name": "真实 Agent 工作流试运行成功",
+    "detail": {
+      "run_id": "a686818fb9eb4611b430a5f6baff6162",
+      "draft_revision": 4,
+      "snapshot_fingerprint": "c1c6c897dd3faceffb4505a3e5c668bf43aa245cfe07bfa1648f33e5834ae3b2",
+      "catalog_version": "87648b08ca883c8e0b35f3374c59dea237cd447029512ec22ef0dfdec93a4c28",
+      "model": "deepseek-v4-pro",
+      "question": "今年销售额为120万元，去年为100万元。请分析同比趋势。",
+      "status": "success"
+    },
+    "time": "2026-11-01T06:41:31.862Z"
+  },
+  {
+    "name": "保存及刷新恢复对话与画布",
+    "detail": "3d5ab79f-2b13-49de-b447-b031e9080335",
+    "time": "2026-11-01T06:41:32.584Z"
+  },
+  {
+    "name": "当前验证版本发布成功",
+    "detail": "3d5ab79f-2b13-49de-b447-b031e9080335",
+    "time": "2026-11-01T06:41:32.676Z"
+  },
+  {
+    "name": "保存新草稿保持已发布定义和运行 DAG",
+    "detail": true,
+    "time": "2026-11-01T06:41:32.753Z"
+  },
+  {
+    "name": "浏览器异常",
+    "detail": [],
+    "time": "2026-11-01T06:41:32.947Z"
+  },
+  {
+    "name": "清理本次测试流程",
+    "detail": "3d5ab79f-2b13-49de-b447-b031e9080335",
+    "time": "2026-11-01T06:41:33.025Z"
+  }
+]

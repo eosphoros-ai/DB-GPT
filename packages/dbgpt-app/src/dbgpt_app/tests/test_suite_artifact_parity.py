@@ -83,7 +83,13 @@ async def test_pi_suite_registers_and_executes_shared_artifact_tools(monkeypatch
         suite_binder.SuiteBinding(
             name="db-analysis",
             version="test",
-            allow={"sql_query", "export_csv", "chart_query", "generate_report"},
+            allow={
+                "sql_query",
+                "export_csv",
+                "chart_query",
+                "generate_report",
+                "generate_er_diagram",
+            },
             deny={"bash"},
         ),
     )
@@ -92,9 +98,12 @@ async def test_pi_suite_registers_and_executes_shared_artifact_tools(monkeypatch
         manifest = tool_bridge.register_conv_tools(
             conv_id, {"database_name": "test"}, app
         )
-        assert {"export_csv", "chart_query", "generate_report"} <= {
-            entry["name"] for entry in manifest
-        }
+        assert {
+            "export_csv",
+            "chart_query",
+            "generate_report",
+            "generate_er_diagram",
+        } <= {entry["name"] for entry in manifest}
         result = json.loads(
             await tool_bridge.run_tool(conv_id, "sql_query", {"sql": "SELECT 1"})
         )

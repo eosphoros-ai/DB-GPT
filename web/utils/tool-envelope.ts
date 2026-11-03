@@ -77,6 +77,35 @@ function regexChunkContents(text: string): { type: string; content: string }[] {
   return found;
 }
 
+/** Public progress can contain a tool envelope while its JSON is still streaming. */
+export function publicToolProgressText(text: string, streaming = false): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{')) return text;
+  try {
+    const value = JSON.parse(trimmed);
+    if (!value || !Array.isArray(value.chunks)) return text;
+    return value.chunks
+      .filter(
+        (chunk: any) =>
+          chunk &&
+          (chunk.output_type === 'text' || chunk.output_type === 'markdown') &&
+          typeof chunk.content === 'string',
+      )
+      .map((chunk: any) => chunk.content.trim())
+      .filter(Boolean)
+      .join('\n\n');
+  } catch {
+    const openingKey = trimmed.replace(/\s/g, '');
+    if (streaming && (/^\{\s*"chunks"\s*:/.test(trimmed) || '{"chunks":'.startsWith(openingKey))) {
+      return regexChunkContents(trimmed)
+        .filter(chunk => chunk.type === 'text' || chunk.type === 'markdown')
+        .map(chunk => chunk.content)
+        .join('\n\n');
+    }
+    return text;
+  }
+}
+
 function nextEnvelopeStart(text: string, from: number): number {
   let best = -1;
   // Tool envelopes may put success/artifact_id before chunks. Match their
@@ -101,6 +130,30 @@ function nextEnvelopeStart(text: string, from: number): number {
 
 /** Parse every ``{"chunks": [...]}`` envelope embedded in ``text``. */
 export function extractEnvelopeObjects(text: string): any[] {
+  // Parallel calls wrap complete tool observations in a JSON array. The
+  // model-facing `content` may be a persisted-output preview; `observation`
+  // retains the uncapped artifact envelope needed by streaming and replay.
+  const nested: any[] = [];
+  const visit = (value: any, depth: number) => {
+    if (depth > 6) return;
+    if (typeof value === 'string') {
+      try {
+        visit(JSON.parse(value), depth + 1);
+      } catch {
+        /* A model-facing preview is not a complete artifact envelope. */
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach(item => visit(item, depth + 1));
+    } else if (value && typeof value === 'object' && value.success !== false) {
+      if (Array.isArray(value.chunks)) nested.push(value);
+      else if (typeof value.name === 'string') {
+        visit(value.observation ?? value.content, depth + 1);
+      }
+    }
+  };
+  const trimmed = text.trimStart();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) visit(trimmed, 0);
+  if (nested.length) return nested;
   const envelopes: any[] = [];
   let cursor = 0;
   let start = nextEnvelopeStart(text, cursor);
@@ -169,8 +222,10 @@ export function envelopeReadableText(text: string): string | null {
 }
 
 /** html/image payloads embedded in envelopes, as synthetic outputs. */
-export function envelopeEmbeddedOutputs(text: string): { type: 'html' | 'image' | 'expert_suite'; content: any }[] {
-  const found: { type: 'html' | 'image' | 'expert_suite'; content: any }[] = [];
+export function envelopeEmbeddedOutputs(
+  text: string,
+): { type: 'html' | 'image' | 'expert_suite' | 'file' | 'query'; content: any }[] {
+  const found: { type: 'html' | 'image' | 'expert_suite' | 'file' | 'query'; content: any }[] = [];
   for (const envelope of extractEnvelopeObjects(text)) {
     for (const chunk of envelope.chunks || []) {
       if (!chunk || typeof chunk !== 'object') continue;
@@ -178,14 +233,19 @@ export function envelopeEmbeddedOutputs(text: string): { type: 'html' | 'image' 
         found.push({
           type: 'html',
           content: {
-            content: typeof chunk.content === 'string' ? chunk.content : String(chunk.content),
-            title: chunk.title || envelope.title || 'Report',
+            content:
+              typeof chunk.content === 'string' ? chunk.content : chunk.content?.content || chunk.content?.html || '',
+            title: chunk.title || chunk.content?.title || envelope.title || 'Report',
           },
         });
       } else if (chunk.output_type === 'image' && chunk.content != null) {
         found.push({ type: 'image', content: chunk.content });
       } else if (chunk.output_type === 'expert_suite' && chunk.content?.artifact_id) {
         found.push({ type: 'expert_suite', content: chunk.content });
+      } else if (chunk.output_type === 'file' && chunk.content?.file_path) {
+        found.push({ type: 'file', content: chunk.content });
+      } else if (chunk.output_type === 'query' && Array.isArray(chunk.content?.columns)) {
+        found.push({ type: 'query', content: chunk.content });
       }
     }
   }

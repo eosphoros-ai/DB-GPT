@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { SuiteItem } from '@/types/suite';
-import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from './suite-routing';
+import {
+  getHomeSuites,
+  localizeSuite,
+  resolveSuiteQuestionDatabase,
+  scoreSuites,
+  suiteDisplayName,
+} from './suite-routing';
 
 const makeSuite = (name: string, keywords: string[], specificity = 0.8, display = name): SuiteItem =>
   ({
@@ -26,6 +32,26 @@ const query = makeSuite('db-query', ['查', '统计', '导出', 'gmv', '客单�
 const analysis = makeSuite('db-analysis', ['分析', '归因', '报告', '趋势', '对比', '复盘'], 0.85, '智能分析');
 const ops = makeSuite('db-ops', ['慢查询', '巡检', '排障', '根因', 'profile', '治理'], 0.9, '智能运维');
 const suites = [query, analysis, ops];
+
+describe('getHomeSuites', () => {
+  it('shows all four official suites in product order and excludes retired or enterprise suites', () => {
+    const sql = makeSuite('sql-optimization-expert', []);
+    const metadata = makeSuite('metadata-architecture-expert', []);
+    const enterprise = { ...makeSuite('custom-expert', []), source: 'enterprise' };
+    const input = [enterprise, metadata, ops, analysis, sql, query];
+    expect(getHomeSuites(input).map(suite => suite.name)).toEqual([
+      'db-query',
+      'db-analysis',
+      'sql-optimization-expert',
+      'metadata-architecture-expert',
+    ]);
+    expect(input[0]).toBe(enterprise);
+  });
+
+  it('does not show disabled official suites', () => {
+    expect(getHomeSuites([{ ...query, status: 'disabled' }, analysis])).toEqual([analysis]);
+  });
+});
 
 describe('resolveSuiteQuestionDatabase', () => {
   const olist = { db_name: 'Olist_Ecommerce', db_type: 'sqlite' };

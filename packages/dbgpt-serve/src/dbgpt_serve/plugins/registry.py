@@ -14,7 +14,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from .api.schemas import SuiteEventResponse, SuiteResponse, SuiteSyncSummary
-from .loader import SuitePackage
+from .loader import BUILTIN_SUITE_NAMES, SuitePackage
 from .models.models import SuiteDao, SuiteEntity, SuiteEventDao
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,11 @@ class SuiteRegistry:
         for pkg in packages:
             seen.add(pkg.name)
             existing = self._dao.get_by_name(pkg.name)
+            promote_builtin = (
+                existing is not None
+                and pkg.name in BUILTIN_SUITE_NAMES
+                and existing.source != "official"
+            )
             if existing is None:
                 self._dao.insert_official(
                     pkg, status=STATUS_ENABLED, user_name=user_name
@@ -54,16 +59,26 @@ class SuiteRegistry:
                 )
                 summary.installed.append(pkg.name)
             elif (
-                existing.version != pkg.version or existing.package_digest != pkg.digest
+                existing.version != pkg.version
+                or existing.package_digest != pkg.digest
+                or promote_builtin
             ):
                 from_version = existing.version
-                self._dao.update_package(existing, pkg, user_name=user_name)
+                self._dao.update_package(
+                    existing,
+                    pkg,
+                    user_name=user_name,
+                    source="official" if promote_builtin else None,
+                )
                 self.record_event(
                     pkg.name,
                     "upgrade",
                     from_version=from_version,
                     to_version=pkg.version,
-                    detail={"digest": pkg.digest},
+                    detail={
+                        "digest": pkg.digest,
+                        **({"source": "official"} if promote_builtin else {}),
+                    },
                     user_name=user_name,
                 )
                 summary.upgraded.append(pkg.name)

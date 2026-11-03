@@ -24,6 +24,7 @@ from .loader import (
 # These identifiers have concrete factories in both harnesses. Do not use
 # conceptual tool labels from suite templates as runtime dependencies.
 CREATION_CAPABILITIES = {
+    "generate_er_diagram",
     "sql_query",
     "code",
     "bash",

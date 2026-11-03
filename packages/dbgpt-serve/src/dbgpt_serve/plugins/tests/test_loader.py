@@ -129,21 +129,35 @@ def test_scan_suites_missing_root_is_failsoft():
 
 
 def test_scan_real_official_suites():
-    """The three official packages in the repo must parse cleanly."""
+    """The four official packages parse cleanly; retired ops is not discovered."""
 
     root = Path(__file__).resolve().parents[6] / "assets" / "suites"
     if not root.is_dir():  # pragma: no cover - depends on checkout layout
         pytest.skip("assets/suites not found")
     packages, warnings = scan_suites(root)
     names = {p.name for p in packages}
-    assert {"db-query", "db-analysis", "db-ops"} <= names
+    assert {
+        "db-query",
+        "db-analysis",
+        "sql-optimization-expert",
+        "metadata-architecture-expert",
+    } <= names
+    assert "db-ops" not in names
     for pkg in packages:
         assert pkg.snapshot["skills"], pkg.name
         assert pkg.warnings == [], (pkg.name, pkg.warnings)
-        if pkg.name in {"db-query", "db-analysis", "db-ops"}:
+        if pkg.name in {
+            "db-query",
+            "db-analysis",
+            "sql-optimization-expert",
+            "metadata-architecture-expert",
+        }:
             assert pkg.snapshot["package_format"] == "qwenwork-plugin"
             assert not (Path(pkg.path) / "suite.yaml").exists()
-            assert pkg.snapshot["context_defaults"]["datasource"] == "session"
+            assert pkg.snapshot["context_defaults"]["datasource"] in {
+                "session",
+                "required",
+            }
             assert "shell" in pkg.snapshot["tools"]["deny"]
 
 
@@ -265,7 +279,12 @@ def test_native_runtime_extension_preserves_policy_and_command_identity(tmp_path
 
 def test_builtin_localizations_are_complete_and_keep_execution_identity():
     root = Path(__file__).resolve().parents[6] / "assets/suites"
-    for slug in ("db-query", "db-analysis", "db-ops"):
+    for slug in (
+        "db-query",
+        "db-analysis",
+        "sql-optimization-expert",
+        "metadata-architecture-expert",
+    ):
         package = load_suite_dir(root / slug)
         assert package.snapshot["description_en"]
         assert Service._read_readme(str(root / slug), "en")
@@ -277,7 +296,8 @@ def test_builtin_localizations_are_complete_and_keep_execution_identity():
             assert command["description_en"]
         for question in package.snapshot["recommended_questions"]:
             assert question["text_en"]
-            assert question["hint_en"]
+            if question.get("hint"):
+                assert question["hint_en"]
         assert "readme" not in package.snapshot
 
 

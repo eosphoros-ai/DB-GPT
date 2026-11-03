@@ -243,6 +243,15 @@ export const getDashboardAxisConfig = (config: ChartConfig) => {
   const horizontal = config.chartType === 'bar';
   const xField = config.xField || 'x';
   const categories = Array.from(new Set(config.data.map(row => row[xField])));
+  const temporalLine =
+    config.chartType === 'line' &&
+    categories.length > 10 &&
+    categories.every(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(?:[T ].*)?$/.test(value));
+  const dateStride = temporalLine
+    ? Math.max(1, Math.ceil(categories.length / Math.max(2, Math.floor(((config.width || 600) - 94) / 100))))
+    : 1;
+  const visibleTick = (_value: unknown, index: number) =>
+    !temporalLine || index % dateStride === 0 || index === categories.length - 1;
   const longest = Math.max(0, ...categories.map(value => String(value ?? '').length));
   const slot = Math.max(1, (config.width || 600) - 94) / Math.max(1, categories.length);
   return {
@@ -258,11 +267,11 @@ export const getDashboardAxisConfig = (config: ChartConfig) => {
         labelAutoHide: false,
         labelAutoEllipsis: false,
         labelAutoRotate: false,
-        labelTransform: !horizontal && slot < 40 && slot < longest * 7 ? 'rotate(-65)' : undefined,
-        labelWordWrap: horizontal || slot >= 40,
+        labelTransform: !temporalLine && !horizontal && slot < 40 && slot < longest * 7 ? 'rotate(-65)' : undefined,
+        labelWordWrap: !temporalLine && (horizontal || slot >= 40),
         labelWordWrapWidth: horizontal ? Math.min(150, Math.max(92, (config.width || 600) * .28)) - 16 : Math.max(40, slot - 8),
         labelMaxLines: 3,
-        tickFilter: () => true,
+        tickFilter: visibleTick,
         labelFilter: () => true,
         grid: false,
       },

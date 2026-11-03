@@ -91,6 +91,27 @@ def test_registered_proposal_arguments_are_generated_from_service_fields(
 
 
 @pytest.mark.asyncio
+async def test_advertised_native_intention_is_not_a_business_argument(
+    annotation_services,
+):
+    pack, arguments, _ = _proposal(annotation_services)
+    before = annotation_services[1].get_dashboard("annotation-dashboard", "alice")
+    arguments["intention"] = "Propose a title adjustment."
+    arguments["operations"] = [
+        {
+            "op": "replace",
+            "path": "/widgets/by-id/value-card/title",
+            "value": "Revenue",
+        }
+    ]
+    result = await run_tool("propose_dashboard_change", arguments, pack)
+    assert result.is_exe_success
+    assert "__dashboard_change_proposal__" in result.content
+    after = annotation_services[1].get_dashboard("annotation-dashboard", "alice")
+    assert after.current_revision == before.current_revision
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("transport", ["array", "json_array", "legacy_wrapper"])
 @pytest.mark.parametrize(
     "operation",

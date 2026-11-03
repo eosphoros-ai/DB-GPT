@@ -8,16 +8,18 @@ Live progress: every ReAct round rebuilds a ``vis-flow-step`` marker with
 and pushes it to the per-chat step-event queue — the chat UI dedupes by
 step_id (keep-last), so the node card shows a live, self-updating ReAct trace
 instead of a static spinner. The final ``status: success`` marker is produced
-by the regular ``TFStepMarkerOperator`` downstream, so the stored final text
-stays identical to other nodes.
+by the regular ``TFStepMarkerOperator`` downstream, which retains the structured
+tool evidence for replay while keeping the node answer separate.
 """
 
+import asyncio
 import json
 import logging
 import os
 import re
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.core import LLMClient
@@ -32,9 +34,10 @@ from dbgpt.core.awel.flow import (
 from dbgpt.model.operators import MixinLLMOperator
 from dbgpt.util.i18n_utils import _
 
-from .agent_runner import AgentStepEvent, run_react_agent
+from .agent_runner import AgentStepEvent, StepCallback, UpstreamSection, run_react_agent
 from .taskflow import (
     SHARE_KEY_TASKFLOW_CONV_UID,
+    SHARE_KEY_TASKFLOW_MODEL,
     TASKFLOW_ARTIFACT_VIS_TAG,
     build_step_marker,
     get_step_event_queue,
@@ -54,7 +57,7 @@ _KIND_ICON = {"thinking": "💭", "action": "🔧", "observation": "👁", "answ
 #: Provider-level fatal errors that must fail the node instead of being
 #: returned (and thus marked success) as the agent's "answer".
 _PROVIDER_FATAL_RE = re.compile(
-    r"Insufficient Balance|Error code: 4(?:01|02|03)",
+    r"LLM_PROVIDER_ERROR|Insufficient Balance|Error code: 4(?:01|02|03)",
     re.I,
 )
 
@@ -116,6 +119,14 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
                 description=_("ReAct loop cap."),
             ),
             Parameter.build_from(
+                _("Parallel Group"),
+                "parallel_group",
+                str,
+                optional=True,
+                default=None,
+                description=_("Ready agents in the same group run concurrently."),
+            ),
+            Parameter.build_from(
                 _("Step ID"),
                 "step_id",
                 str,
@@ -171,6 +182,7 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
         max_turns: int = 10,
         step_id: Optional[str] = None,
         step_label: Optional[str] = None,
+        parallel_group: Optional[str] = None,
         **kwargs,
     ):
         JoinOperator.__init__(self, combine_function=self._join_func, **kwargs)
@@ -186,8 +198,10 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
         self._max_turns = max_turns
         self._step_id = step_id
         self._step_label = step_label
+        self.parallel_group = parallel_group
 
     async def _join_func(self, question: str, *args) -> str:
+        started_at = time.monotonic()
         data_parts = [
             strip_artifact_fences(strip_step_markers(a))
             for a in args
@@ -275,6 +289,20 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             except Exception as e:
                 logger.warning(f"write flow html artifact failed: {e}")
 
+        def _structured_steps() -> List[Dict[str, Any]]:
+            return [
+                {
+                    "kind": e.kind,
+                    "title": e.title,
+                    "detail": (e.detail or "").strip().replace("\n", " ")[:240],
+                    "round": e.round,
+                    "action_input": e.action_input,
+                    "output": e.output,
+                    "success": e.success,
+                }
+                for e in trace_events
+            ]
+
         async def _push_live() -> None:
             if queue is None or not self._step_id:
                 return
@@ -283,22 +311,13 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             body = "\n".join(visible)
             if hidden > 0:
                 body = f"…(前面 {hidden} 步已折叠)\n" + body
-            steps = [
-                {
-                    "kind": e.kind,
-                    "title": e.title,
-                    "detail": (e.detail or "").strip().replace("\n", " ")[:240],
-                    "round": e.round,
-                }
-                for e in trace_events[-12:]
-            ]
             marker = build_step_marker(
                 step_id=self._step_id,
                 label=self._step_label or self._step_id,
                 kind="agent",
                 status="running",
                 summary=None,
-                steps=steps,
+                steps=_structured_steps(),
             )
             try:
                 queue.put_nowait(marker + body)
@@ -319,7 +338,79 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
                 trace_events.append(event)
             await _push_live()
 
-        answer = await run_react_agent(
+        await _push_live()
+        try:
+            answer = await self._run_agent(
+                question, upstream_sections, _on_step, _on_artifact, zh
+            )
+        except (Exception, asyncio.CancelledError) as error:
+            if queue is not None and self._step_id:
+                queue.put_nowait(
+                    build_step_marker(
+                        step_id=self._step_id,
+                        label=self._step_label or self._step_id,
+                        kind="agent",
+                        status="failed",
+                        summary=str(error) or "Agent execution cancelled",
+                        steps=_structured_steps(),
+                    )
+                )
+            raise
+        # Provider-level fatal errors (billing/auth/rate-limit) surface as
+        # error text in the model "answer" after max_turns retries.
+        if _PROVIDER_FATAL_RE.search(answer or ""):
+            fatal_errors.append(answer)
+        if fatal_errors:
+            if queue is not None and self._step_id:
+                queue.put_nowait(
+                    build_step_marker(
+                        step_id=self._step_id,
+                        label=self._step_label or self._step_id,
+                        kind="agent",
+                        status="failed",
+                        summary=fatal_errors[-1][:200],
+                        steps=_structured_steps(),
+                    )
+                )
+            raise Exception(
+                f"agent node failed: model provider error: {fatal_errors[-1][:200]}"
+            )
+        await _push_live()
+        if self._step_id:
+            await self.current_dag_context.save_to_share_data(
+                f"__taskflow_agent_duration__:{self._step_id}",
+                int((time.monotonic() - started_at) * 1000),
+            )
+            await self.current_dag_context.save_to_share_data(
+                f"__taskflow_agent_trace__:{self._step_id}", _structured_steps()
+            )
+        if artifacts:
+            fence = (
+                f"```{TASKFLOW_ARTIFACT_VIS_TAG}\n"
+                + json.dumps(artifacts, ensure_ascii=False)
+                + "\n```\n\n"
+            )
+            answer = (answer or "").rstrip() + "\n\n" + fence
+        return answer
+
+    async def _run_agent(
+        self,
+        question: str,
+        upstream_sections: List[UpstreamSection],
+        on_step: StepCallback,
+        on_artifact: Callable[[Dict[str, Any]], Awaitable[None]],
+        zh: bool,
+    ) -> str:
+        model = self._model
+        if not model:
+            try:
+                model = await self.current_dag_context.get_from_share_data(
+                    SHARE_KEY_TASKFLOW_MODEL
+                )
+            except ValueError:
+                # Standalone calls may have no DAG; use the client default.
+                pass
+        return await run_react_agent(
             goal=self._goal,
             question=question,
             upstream_sections=upstream_sections,
@@ -329,35 +420,11 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             datasources=self._datasources,
             knowledge=self._knowledge,
             mcp=self._mcp,
-            model=self._model,
+            model=model,
             max_turns=self._max_turns,
             llm_client=self.llm_client,
             system_app=self.system_app,
-            on_step=_on_step,
-            on_artifact=_on_artifact,
+            on_step=on_step,
+            on_artifact=on_artifact,
             language="zh" if zh else "en",
         )
-        # Provider-level fatal errors (billing/auth/rate-limit) surface as
-        # error text in the model "answer" after max_turns retries; returning
-        # it would mark the node success with garbage. Fail loudly instead.
-        # Billing/auth failures never recover within a run; whatever the
-        # loop returned afterwards ("No valid response" fallbacks, error
-        # echoes) is not a real analysis — fail the node honestly.
-        if fatal_errors:
-            raise Exception(
-                f"agent node failed: model provider error: {fatal_errors[-1][:200]}"
-            )
-        # Final live frame: full trace + answer before the marker operator
-        # emits the canonical success event.
-        await _push_live()
-        if artifacts:
-            # Metadata fence rides inside the node content so the canonical
-            # marker (and stored history) keep the artifact chips; the
-            # frontend strips vis-* fences from the visible answer text.
-            fence = (
-                f"```{TASKFLOW_ARTIFACT_VIS_TAG}\n"
-                + json.dumps(artifacts, ensure_ascii=False)
-                + "\n```\n\n"
-            )
-            answer = (answer or "").rstrip() + "\n\n" + fence
-        return answer

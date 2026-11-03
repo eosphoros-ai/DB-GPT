@@ -1,0 +1,66 @@
+{
+  "success": true,
+  "err_code": null,
+  "err_msg": null,
+  "data": {
+    "dashboard_id": "7a5543ad45354008aa9d1ddfb8781b04",
+    "refreshed_at": "2026-10-28T13:37:59.755790",
+    "filters": {},
+    "widgets": {
+      "kpi_total_sales": {
+        "widget_id": "kpi_total_sales",
+        "columns": [
+          "total_sales"
+        ],
+        "rows": [
+          [
+            6737218987.11
+          ]
+        ],
+        "row_count": 1,
+        "truncated": false,
+        "duration_ms": 7,
+        "refreshed_at": "2026-10-28T13:37:59.747841",
+        "anomalies": [],
+        "error": null
+      },
+      "bar_top5_stores": {
+        "widget_id": "bar_top5_stores",
+        "columns": [
+          "store",
+          "total_sales"
+        ],
+        "rows": [
+          [
+            20,
+            301397792.46
+          ],
+          [
+            4,
+            299543953.38
+          ],
+          [
+            14,
+            288999911.34
+          ],
+          [
+            13,
+            286517703.8
+          ],
+          [
+            2,
+            275382440.98
+          ]
+        ],
+        "row_count": 5,
+        "truncated": false,
+        "duration_ms": 7,
+        "refreshed_at": "2026-10-28T13:37:59.748168",
+        "anomalies": [],
+        "error": null
+      }
+    },
+    "publication_datasets": {}
+  },
+  "host_name": "HQJL65XWP1"
+}

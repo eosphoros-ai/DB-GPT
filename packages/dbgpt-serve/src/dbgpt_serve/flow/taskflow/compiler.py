@@ -147,6 +147,11 @@ class TaskFlowCompiler:
         predecessors: Dict[str, List[str]] = {n.id: [] for n in dsl.nodes}
         for src, tgt in dsl.edges:
             predecessors[tgt].append(src)
+        ancestors: Dict[str, set] = {}
+        for node_id in order:
+            ancestors[node_id] = set(predecessors[node_id])
+            for predecessor in predecessors[node_id]:
+                ancestors[node_id].update(ancestors[predecessor])
 
         subgraphs: Dict[str, Subgraph] = {}
         for index, node_id in enumerate(order):
@@ -174,11 +179,12 @@ class TaskFlowCompiler:
                         self._connect(source, port)
             if node.kind == "output":
                 continue
-            # Data entries: every clean data exit of the PRIOR nodes.
+            # Preserve full ancestor context without adding sibling dependencies.
             for entry in sg.entry_data:
                 for prior_id in order[:index]:
-                    for data_port in subgraphs[prior_id].exit_data:
-                        self._connect(data_port, entry)
+                    if prior_id in ancestors[node_id]:
+                        for data_port in subgraphs[prior_id].exit_data:
+                            self._connect(data_port, entry)
 
         output_ids = [nid for nid in order if node_map[nid].kind == "output"]
         if output_ids:
@@ -473,6 +479,7 @@ class TaskFlowCompiler:
                 "knowledge": _list("knowledge"),
                 "mcp": _list("mcp"),
                 "max_turns": int(config.get("max_turns") or 10),
+                "parallel_group": config.get("parallel_group"),
                 "step_id": node.id,
                 "step_label": node.label or NODE_KINDS[node.kind].label,
             },

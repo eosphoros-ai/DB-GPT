@@ -80,16 +80,23 @@ import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
-import type { PendingApproval } from '@/utils/react-sse-parser';
-import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
   querySourcesFromExecution,
   semanticReadGapsFromExecution,
   semanticSourcesFromExecution,
 } from '@/utils/semantic-provenance';
-import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
+import type { PendingApproval } from '@/utils/react-sse-parser';
+import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
+import {
+  getHomeSuites,
+  localizeSuite,
+  resolveSuiteQuestionDatabase,
+  scoreSuites,
+  suiteDisplayName,
+} from '@/utils/suite-routing';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
+import { useForegroundResultAcknowledgement } from '@/hooks/use-conversation-attention';
 import {
   AimOutlined,
   ApartmentOutlined,
@@ -242,6 +249,9 @@ const DELIVERABLE_EXTS = new Set([
   'doc',
   'md',
   'markdown',
+  'drawio',
+  'dbml',
+  'mmd',
 ]);
 /** Image extensions: never a final card, always folded into the chart
  *  mosaic / process group. */
@@ -495,7 +505,8 @@ type ArtifactType =
   | 'skill'
   | 'query'
   | 'expert_suite'
-  | 'dashboard';
+  | 'dashboard'
+  | 'artifact_bundle';
 
 interface Artifact {
   id: string;
@@ -531,7 +542,6 @@ const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutp
         ARTIFACT_OUTPUT_TYPES.has(o.output_type) ||
         ((o.output_type === 'text' || o.output_type === 'markdown') &&
           typeof o.content === 'string' &&
-          o.content.includes('"chunks"') &&
           envelopeEmbeddedOutputs(o.content).length > 0),
     ),
   );
@@ -777,7 +787,7 @@ const convertToManusFormat = (
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { model, modelList, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList } =
+  const { model, modelList, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList, unviewedResults, markConvCompleted, markConvViewed, clearConvAttention } =
     useContext(ChatContext);
   const [query, setQuery] = useState('');
   // Expert suites (scenario presets) rendered on the home page from the
@@ -795,6 +805,7 @@ const Playground: NextPage = () => {
     () => suitePackages.map(suite => localizeSuite(suite, i18n.language)),
     [suitePackages, i18n.language],
   );
+  const homeSuites = useMemo(() => getHomeSuites(suites), [suites]);
   const [activeSuiteTab, setActiveSuiteTab] = useState<string>('');
   const [suiteQOffset, setSuiteQOffset] = useState(0);
   // Tab click = explicit preset override; until the user touches a tab the
@@ -813,8 +824,7 @@ const Playground: NextPage = () => {
     getSuites()
       .then(list => {
         if (cancelled) return;
-        // Scenario order mirrors the mockup: 取数 → 分析 → 运维 → 其余按 slug。
-        const scenarioOrder: Record<string, number> = { query: 0, analysis: 1, ops: 2 };
+        const scenarioOrder: Record<string, number> = { query: 0, analysis: 1 };
         const enabled = (Array.isArray(list) ? list : [])
           .filter(s => s?.status === 'enabled')
           .sort(
@@ -1328,6 +1338,8 @@ const Playground: NextPage = () => {
 
   const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
     setPreviewArtifact(artifact as Artifact);
+    setRailDebug(false);
+    setRightPanelCollapsed(false);
   }, []);
 
   /** Edit & re-run a query artifact's SQL against the bound datasource.
@@ -1477,6 +1489,13 @@ const Playground: NextPage = () => {
   }, [abortInFlightChat]);
 
   const [historyLoading, setHistoryLoading] = useState(false);
+  useForegroundResultAcknowledgement(
+    conversationId,
+    conversationId ? unviewedResults[conversationId] : undefined,
+    !!conversationId && !historyLoading && !runningConvIds.includes(conversationId) &&
+      messages.some(msg => msg.role === 'view' && !msg.thinking && !!msg.context?.trim()),
+    markConvViewed,
+  );
   const [contextStatus, setContextStatus] = useState<{
     state: 'OK' | 'WARNING' | 'ERROR';
     used_tokens: number;
@@ -2135,7 +2154,6 @@ const Playground: NextPage = () => {
             stepOutputs.push(output);
             if (output.output_type !== 'text' && output.output_type !== 'markdown') return;
             const content = typeof output.content === 'string' ? output.content : '';
-            if (!content.includes('"chunks"')) return;
             for (const embedded of envelopeEmbeddedOutputs(content)) {
               stepOutputs.push({ output_type: embedded.type, content: embedded.content });
             }
@@ -3011,6 +3029,7 @@ const Playground: NextPage = () => {
 
     try {
       setConvRunning(currentConvId, true);
+      clearConvAttention(currentConvId);
       liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
@@ -3062,7 +3081,6 @@ const Playground: NextPage = () => {
 
       const acceptDashboardEvent = createDashboardGenerationEventGate();
       const processEvent = (raw: string) => {
-        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -3072,6 +3090,10 @@ const Playground: NextPage = () => {
         } catch (_err) {
           return;
         }
+        if (payload.type === 'final' && !controller.signal.aborted) {
+          markConvCompleted(currentConvId, responseId);
+        }
+        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (typeof payload.type === 'string' && payload.type.startsWith('dashboard.')) {
           if (acceptDashboardEvent(payload)) {
             setMessages(prev => applyDashboardGenerationToMessages(prev, responseId, payload));
@@ -3803,6 +3825,7 @@ const Playground: NextPage = () => {
     let serverError = '';
     try {
       setConvRunning(currentConvId, true);
+      clearConvAttention(currentConvId);
       liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
         method: 'POST',
@@ -3893,6 +3916,10 @@ const Playground: NextPage = () => {
         return;
       }
       const parsedStream = parseTaskflowStream(accumulated);
+      if (accumulated.trim() && !controller.signal.aborted &&
+          !parsedStream.markers.some(marker => marker.status === 'failed')) {
+        markConvCompleted(currentConvId, responseId);
+      }
       if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
         syncSteps(parsedStream.markers, true);
         setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
@@ -4706,17 +4733,20 @@ const Playground: NextPage = () => {
                                   {timelineBlocks.length > 0 && (
                                     <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
                                   )}
-                                  <ArtifactCards
-                                    artifacts={roundArtifactsAll}
-                                    onPreview={handlePreviewStreamArtifact}
-                                    onSkillAdd={handleSkillAdd}
-                                    onSkillDownload={handleSkillZipDownload}
-                                    onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
-                                    foldAllQueries={round.viewMsg?.id !== lastQueryRoundId}
-                                  />
                                 </div>
                               ) : undefined
                             }
+                            artifactSlot={useTimelineView && roundArtifactsAll.length > 0 ? (
+                              <ArtifactCards
+                                artifacts={roundArtifactsAll}
+                                consolidate
+                                onPreview={handlePreviewStreamArtifact}
+                                onSkillAdd={handleSkillAdd}
+                                onSkillDownload={handleSkillZipDownload}
+                                onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                                foldAllQueries={round.viewMsg?.id !== lastQueryRoundId}
+                              />
+                            ) : undefined}
                             flowRun={
                               round.viewMsg?.flowRun
                                 ? {
@@ -4894,6 +4924,7 @@ const Playground: NextPage = () => {
                       its own (folded) query block, so repeating them here
                       stacked each sql_query result a second time. */}
                     {(() => {
+                      if (typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off') return null;
                       const surface = convArtifacts.filter(a => a.type !== 'summary' && a.type !== 'query');
                       const finalCount = surface.filter(a => a.tier !== 'process').length;
                       const hasCharts = surface.some(
@@ -4911,6 +4942,8 @@ const Playground: NextPage = () => {
                           )}
                           <ArtifactCards
                             artifacts={surface}
+                            consolidate
+                            showInlineEr={false}
                             onPreview={handlePreviewStreamArtifact}
                             onSkillAdd={handleSkillAdd}
                             onSkillDownload={handleSkillZipDownload}
@@ -6482,10 +6515,10 @@ const Playground: NextPage = () => {
                   </div>
                 </div>
 
-                {/* Scenario tabs + recommended questions, rendered from enabled suites */}
+                {/* Official home tabs; all installed suites remain available in the composer menu. */}
                 <div className='mt-8 w-full'>
                   <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
-                    {suites.slice(0, 3).map(suite => (
+                    {homeSuites.map(suite => (
                       <button
                         key={suite.name}
                         aria-pressed={activeSuiteTab === suite.name}
@@ -6506,12 +6539,12 @@ const Playground: NextPage = () => {
                         }`}
                       >
                         <span className='text-[17px] text-[#18a447]' aria-hidden='true'>
-                          {suite.scenario_id === 'query' ? (
+                          {suite.scenario_id === 'query' || suite.name === 'sql-optimization-expert' ? (
                             <ConsoleSqlOutlined />
                           ) : suite.scenario_id === 'analysis' ? (
                             <BarChartOutlined />
-                          ) : suite.scenario_id === 'ops' ? (
-                            <CloudServerOutlined />
+                          ) : suite.name === 'metadata-architecture-expert' ? (
+                            <ApartmentOutlined />
                           ) : (
                             <ThunderboltOutlined />
                           )}

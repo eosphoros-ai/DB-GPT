@@ -4083,6 +4083,19 @@ expected_revision below unchanged.
 
 {json.dumps(confirmation_contract, ensure_ascii=False, indent=2)}
 """
+            if not confirmation_contract.get("filters"):
+                confirmation_contract_prompt += """
+This confirmed plan has NO global filters. Use filter_parameters: {} and SQL
+without placeholders. Do not invent start_date/end_date parameters, filter
+predicates, or publication datasets. Omit publication entirely for these
+unfiltered widgets. Submit only widget_id, sql, filter_parameters, output_fields
+and encoding inside widget_queries.widgets. Query the authorized source tables
+below; metric and dimension labels in the plan are not table or column aliases.
+For stored DD-MM-YYYY text dates in SQLite, normalize with
+substr(Date,7,4)||'-'||substr(Date,4,2)||'-'||substr(Date,1,2) before grouping,
+ordering, or passing the value to strftime. Preserve each stored weekly date
+when the requested grain is weekly; do not group distinct years by week number.
+"""
 
         annotation_request = "[[dashboard-annotation:" in user_input.casefold()
         read_only_annotation_request = _is_read_only_dashboard_annotation_request(
@@ -4112,7 +4125,7 @@ after the first proposal. Explanation and anomaly annotations remain read-only.
 Widget paths must use /widgets/by-id/{widget_id}/title (or another field), never
 array indexes or /widgets/{widget_id}. Filter paths use /filters/by-id/{filter_id}.
 The tool validates each proposal in memory; it must not apply it. Only after ALL
-modification proposals succeed, call terminate using the six-field ReAct format below
+modification proposals succeed, call the supplied terminate function
 and tell the user to review and apply or reject the proposal in the Dashboard UI.
 """
 
@@ -4133,25 +4146,29 @@ You are the DB-GPT Dashboard Agent. Complete only the selected data source's
 Dashboard planning or generation workflow, in the user's language.
 
 ## Output protocol
-Output exactly ONE action per response using these six plain-text fields:
-Thought: concise reasoning for the next step
-Phase: concise user-facing stage name
-Action Intention: <= 18 Chinese characters or <= 8 English words
-Action Reason: <= 30 Chinese characters or <= 12 English words
-Action: one registered tool name
-Action Input: one valid JSON object
-
-Never emit DSML, XML, `<tool_calls>`, `<invoke>`, native function-call markup,
-multiple actions, or a simulated Observation. Wait for the real Observation before
-choosing another action.
+Call exactly ONE supplied native function per response with valid JSON arguments.
+Before calling it, write a short public progress message in the user's language.
+Keep private reasoning in the thinking channel. Do not emit Thought, Action,
+Action Input, DSML, XML, or simulated tool calls or Observations.
+Wait for the real tool result before choosing another action.
+When complete, call terminate with the final answer in output.
 
 ## Available tools
 {registered_tool_prompt}
 
 ## Workflow rules
+The database information below already supplies the authorized tables, columns,
+SQL dialect and temporal evidence. Use those facts directly; do not rediscover
+the schema through another database's system catalogs. For SQLite, never query
+information_schema or pg_catalog. Discover business data with SELECTs against
+the listed tables only, using the stated dialect and stored date format.
 Respect the requested scope. If the user lists widgets or analytical topics,
 plan one widget per requested item; do not add unrequested KPI cards, duplicate
-charts or filters. Broad requests should start with 3-4 core widgets. Add global
+charts or filters. Broad requests must default to 3-4 core widgets TOTAL: one
+primary KPI, one requested time trend, one requested dimensional comparison,
+and an optional necessary detail table. Expand only for explicitly requested
+additional topics. Weekly monitoring specifies grain, and store performance
+specifies a comparison dimension; neither requests a global filter. Add global
 filters only when requested or necessary for the stated decision, with real
 distinct options discovered from data (a null/All-only option is not sufficient).
 For a requested period with no matching rows, preserve that exact period. A
@@ -4313,9 +4330,12 @@ After partial results, finish only missing requested deliverables, then report.
     if suite_binding is not None and not dashboard_agent_mode:
         from .subagent.report_agent import make_generate_report_tool
         from .tools.chart_query import make_chart_query
+        from .tools.er_diagram import make_generate_er_diagram
         from .tools.export_csv import make_export_csv
 
         suite_tools = []
+        if suite_binding.allow is not None and "generate_er_diagram" in suite_binding.allow:
+            suite_tools.append(make_generate_er_diagram(react_state))
         if suite_binding.violation("export_csv") is None:
             suite_tools.append(make_export_csv(react_state))
         if (

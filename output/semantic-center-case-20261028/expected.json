@@ -1,0 +1,57 @@
+{
+  "net_v1": [
+    {
+      "net_cents": 36800
+    }
+  ],
+  "net_v2": [
+    {
+      "net_cents": 33800
+    }
+  ],
+  "channel_v1": [
+    {
+      "channel_name": "自然渠道",
+      "net_cents": 13500
+    },
+    {
+      "channel_name": "广告渠道",
+      "net_cents": 23300
+    }
+  ],
+  "channel_v2": [
+    {
+      "channel_name": "自然渠道",
+      "net_cents": 12600
+    },
+    {
+      "channel_name": "广告渠道",
+      "net_cents": 21200
+    }
+  ],
+  "gmv": [
+    {
+      "gmv_cents": 40000
+    }
+  ],
+  "view_v1": [
+    {
+      "net_cents": 36800
+    }
+  ],
+  "bad_join": [
+    {
+      "wrong_cents": 38000
+    }
+  ],
+  "successful_payments": [
+    {
+      "amount_cents": 41300
+    }
+  ],
+  "successful_refunds": [
+    {
+      "amount_cents": 4500
+    }
+  ]
+}

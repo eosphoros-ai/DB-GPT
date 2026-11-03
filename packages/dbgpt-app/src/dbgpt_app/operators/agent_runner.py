@@ -29,6 +29,13 @@ logger = logging.getLogger(__name__)
 
 CFG = Config()
 
+SEMANTIC_TOOLS = [
+    "semantic_get_metadata",
+    "semantic_search_business",
+    "semantic_search_metrics",
+    "semantic_get_metric",
+]
+
 #: Factory tools that can be selected via the node's ``tools`` config.
 SELECTABLE_TOOLS = [
     "sql_query",
@@ -38,7 +45,7 @@ SELECTABLE_TOOLS = [
     "bash",
     "web_search",
     "web_fetch",
-]
+] + SEMANTIC_TOOLS
 #: Factory tools attached automatically when skills are selected.
 SKILL_TOOLS = ["load_skill", "execute_skill_script_file"]
 
@@ -65,6 +72,9 @@ class AgentStepEvent:
     title: str
     detail: str = ""
     round: int = 0
+    action_input: Any = None
+    output: Optional[str] = None
+    success: Optional[bool] = None
 
 
 #: ``(node label, node kind, content)`` sections handed to the agent.
@@ -295,6 +305,34 @@ def list_builtin_tools() -> List[Dict[str, Any]]:
             "label_en": "HTML Interpreter",
             "desc": "生成可视化 HTML 报告",
             "desc_en": "Generate visual HTML reports",
+        },
+        {
+            "id": "semantic_get_metadata",
+            "label": "语义元数据",
+            "label_en": "Semantic Metadata",
+            "desc": "读取选中数据库的表字段快照与同步时间",
+            "desc_en": "Read scoped table/column snapshots and sync time",
+        },
+        {
+            "id": "semantic_search_business",
+            "label": "业务定义检索",
+            "label_en": "Business Definitions",
+            "desc": "检索选中数据库已发布的业务定义",
+            "desc_en": "Search published business definitions in the selected database",
+        },
+        {
+            "id": "semantic_search_metrics",
+            "label": "指标检索",
+            "label_en": "Metric Search",
+            "desc": "查找已发布指标候选与口径",
+            "desc_en": "Find published metric candidates and definitions",
+        },
+        {
+            "id": "semantic_get_metric",
+            "label": "指标口径与版本",
+            "label_en": "Metric Definition & Version",
+            "desc": "读取指定发布版本的指标口径与引用",
+            "desc_en": "Read an exact published metric snapshot and citation",
         },
         {
             "id": "bash",
@@ -766,6 +804,22 @@ async def _load_mcp_tools(mcp_specs: List[str]) -> List[Any]:
 # ---------------------------------------------------------------------------
 
 
+def _make_scoped_semantic_tools(
+    selected_tools: List[str], datasources: List[str]
+) -> List[Any]:
+    """Build published semantic reads for one explicitly selected database."""
+    names = set(selected_tools).intersection(SEMANTIC_TOOLS)
+    if not names:
+        return []
+    if len(datasources) != 1:
+        raise ValueError("Semantic tools require exactly one selected datasource")
+    from ..openapi.api_v1.tools.semantic_tools import make_semantic_tools
+
+    return [
+        tool for tool in make_semantic_tools(datasources[0]) if tool._tool.name in names
+    ]
+
+
 async def run_react_agent(
     *,
     goal: str,
@@ -855,7 +909,7 @@ async def run_react_agent(
         database_connector=single_connector,
         knowledge_resources=knowledge_resources,
     )
-    tool_list: List[Any] = []
+    tool_list: List[Any] = _make_scoped_semantic_tools(selected_tools, datasources)
     for name in selected_tools:
         if name == "sql_query" and datasources:
             if len(datasources) > 1 or single_connector is None:
@@ -966,6 +1020,8 @@ async def run_react_agent(
                     title=str(action),
                     detail=(detail or "")[:400],
                     round=round_num,
+                    action_input=action_input,
+                    success=ao.get("is_exe_success"),
                 )
             )
             obs = ao.get("observations") or ao.get("content") or ""
@@ -976,6 +1032,8 @@ async def run_react_agent(
                         title="观察" if zh else "Observation",
                         detail=str(obs)[:400],
                         round=round_num,
+                        output=str(obs),
+                        success=ao.get("is_exe_success"),
                     )
                 )
             # First-class artifacts (html reports, query result sets) are

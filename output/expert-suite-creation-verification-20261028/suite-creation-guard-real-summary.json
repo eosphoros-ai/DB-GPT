@@ -1,0 +1,71 @@
+{
+  "engine": "pi",
+  "conv_uid": "9d8fd804ed1345bca3e0915a9f7b677e",
+  "seconds": 30.0,
+  "event_count": 893,
+  "artifacts": [
+    {
+      "type": "step.chunk",
+      "id": "step-8",
+      "output_type": "expert_suite",
+      "content": {
+        "artifact_type": "expert_suite",
+        "artifact_id": "8dade94a05bb495292444a9374f6ab3f",
+        "draft_id": "ec5549f993b94cbdbcdb02d0213efa20",
+        "revision": 1,
+        "suite_name": "meeting-actions-guard-verification",
+        "display": "会议行动清单专家",
+        "description": "把用户给出的会议文字整理为行动清单：提取行动项、负责人、截止日期与证据原句，缺失项明确标记待确认。",
+        "version": "1.0.0",
+        "package_digest": "31faaa6674bf2499d4a4454847c93a071fd3b1891c51bc62bba5c032da166502",
+        "validation": {
+          "status": "ready",
+          "errors": [],
+          "warnings": [
+            "尚未执行真实任务试跑"
+          ],
+          "dependencies": [],
+          "pending_configuration": [],
+          "trial_status": "not_run"
+        },
+        "size": 6353,
+        "scope": "instance"
+      }
+    }
+  ],
+  "actions": [
+    "load_skill",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "final_types": [
+    "progress",
+    "progress.remove",
+    "final.chunk",
+    "final",
+    "done"
+  ],
+  "tool_titles": [
+    "读取技能",
+    "思考中",
+    "todowrite",
+    "suite_draft_create",
+    "TODO::init:0/3",
+    "思考中",
+    "suite_draft_write",
+    "suite_draft_validate",
+    "思考中",
+    "suite_package_build",
+    "todowrite",
+    "TODO::done:3/3"
+  ]
+}

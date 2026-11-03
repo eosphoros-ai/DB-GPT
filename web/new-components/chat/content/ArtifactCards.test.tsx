@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ArtifactCards, { splitQueryArtifacts, type StreamArtifact } from './ArtifactCards';
 import QueryArtifactBlock from './QueryArtifactBlock';
@@ -28,6 +28,51 @@ const expandedCards = (container: HTMLElement) =>
   [...container.querySelectorAll('pre')].filter(p => !p.closest('details'));
 
 describe('splitQueryArtifacts', () => {
+  it('consolidates final formats and process files into one right-panel entry', () => {
+    const onPreview = vi.fn();
+    const items: StreamArtifact[] = [
+      { id: 'er', type: 'html', name: 'Report.html', content: '<body data-dbgpt-er="1"><svg /></body>' },
+      { id: 'drawio', type: 'file', name: 'er-diagram.drawio', content: { content: 'xml' } },
+      { id: 'script', type: 'code', name: 'code_131.py', content: 'print(1)', tier: 'process' },
+    ];
+    const { container } = render(<ArtifactCards consolidate artifacts={items} onPreview={onPreview} />);
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelectorAll('button')).toHaveLength(1);
+    expect(container.textContent).not.toContain('code_131.py');
+    fireEvent.click(container.querySelector('button')!);
+    expect(onPreview.mock.calls[0][0]).toMatchObject({
+      type: 'artifact_bundle',
+      content: { primaryId: 'er', items },
+    });
+  });
+  it('renders ER HTML inline with zoom scripts and downloads available', () => {
+    const content = '<html><body data-dbgpt-er="1"><svg></svg></body></html>';
+    const { container } = render(<ArtifactCards artifacts={[{ id: 'er-1', name: 'ER 图', type: 'html', content }]} />);
+    const iframe = container.querySelector('iframe');
+    expect(iframe?.getAttribute('srcdoc')).toBe(content);
+    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-downloads');
+  });
+
+  it('keeps ordinary HTML reports in their existing cards', () => {
+    const { container } = render(
+      <ArtifactCards artifacts={[{ id: 'report-1', name: '报告', type: 'html', content: '<h1>报告</h1>' }]} />,
+    );
+    expect(container.querySelector('iframe')).toBeNull();
+  });
+
+  it('keeps the conversation summary compact without rendering a second ER', () => {
+    const { container } = render(
+      <ArtifactCards
+        showInlineEr={false}
+        artifacts={[
+          { id: 'er-summary', name: 'ER 图.html', type: 'html', content: '<body data-dbgpt-er="1"><svg /></body>' },
+        ]}
+      />,
+    );
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.textContent).toContain('ER 图.html');
+  });
+
   it('keeps everything expanded for zero or one query', () => {
     expect(splitQueryArtifacts([])).toEqual({ visible: [], folded: [] });
     const one = [query('q1')];

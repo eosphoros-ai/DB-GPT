@@ -13,6 +13,7 @@
 import {
   CloseOutlined,
   CodeOutlined,
+  DownloadOutlined,
   FileExcelOutlined,
   FileMarkdownOutlined,
   FilePptOutlined,
@@ -22,11 +23,13 @@ import {
   InboxOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import DashboardArtifactPreview from '@/new-components/dashboard/DashboardArtifactPreview';
 
+import { downloadArtifact } from './ArtifactCards';
 import { resolveHtmlImageUrls, resolveImageUrl } from './image-url';
 import QueryArtifactBlock from './QueryArtifactBlock';
 import SuiteArtifactCard from './SuiteArtifactCard';
@@ -52,7 +55,7 @@ interface ArtifactRailProps {
 }
 
 const MD_EXTS = new Set(['md', 'markdown']);
-const CODE_EXTS = new Set(['py', 'js', 'ts', 'tsx', 'jsx', 'sql', 'sh', 'json', 'csv', 'txt']);
+const CODE_EXTS = new Set(['py', 'js', 'ts', 'tsx', 'jsx', 'sql', 'sh', 'json', 'csv', 'txt', 'drawio', 'dbml', 'mmd']);
 
 function formatSize(size?: number): string {
   if (size == null) return '';
@@ -178,6 +181,18 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
   const { t } = useTranslation();
   const text = textOf(artifact);
   const ext = extOf(artifact.name);
+  if (artifact.type === 'artifact_bundle') {
+    return <BundlePreview key={artifact.id} artifact={artifact} />;
+  }
+  if (ext === 'svg' && text) {
+    return (
+      <img
+        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`}
+        alt={artifact.name}
+        className='max-w-full'
+      />
+    );
+  }
   if (artifact.type === 'expert_suite' && artifact.content) {
     return <SuiteArtifactCard content={artifact.content} />;
   }
@@ -200,7 +215,7 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
     return (
       <iframe
         title={artifact.name}
-        sandbox='allow-scripts'
+        sandbox='allow-scripts allow-downloads'
         srcDoc={resolveHtmlImageUrls(text || '')}
         className='w-full h-full min-h-[480px] rounded-lg border border-[#e6e6e2] dark:border-[#2a2925] bg-white'
       />
@@ -294,6 +309,113 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
   );
 }
 
+function BundlePreview({ artifact }: { artifact: RailArtifact }) {
+  const { t } = useTranslation();
+  const items: RailArtifact[] = artifact.content?.items || [];
+  const primary = items.find(item => item.id === artifact.content?.primaryId) || items[0];
+  const [selectedId, setSelectedId] = useState(primary?.id);
+  const [tab, setTab] = useState<'preview' | 'files'>('preview');
+  const selected = items.find(item => item.id === selectedId) || primary;
+  const isExport = (item: RailArtifact) => /^er-diagram\.(drawio|dbml|mmd|svg|json)$/i.test(item.name);
+  const outputs = items.filter(
+    item => (item.tier !== 'process' && item.type !== 'query' && item.type !== 'code') || isExport(item),
+  );
+  const process = items.filter(item => !outputs.includes(item));
+  const downloadable = (item: RailArtifact) => item.type !== 'query' && (textOf(item) != null || item.type === 'code');
+  const open = (item: RailArtifact) => {
+    setSelectedId(item.id);
+    setTab('preview');
+  };
+  const fileRows = (files: RailArtifact[]) =>
+    files.map(item => (
+      <div
+        key={item.id}
+        className='flex items-center gap-2 rounded-lg border border-[#e6e6e2] p-3 dark:border-[#2a2925]'
+      >
+        <span className='shrink-0'>{typeIcon(item.type, item.name)}</span>
+        <button type='button' onClick={() => open(item)} className='min-w-0 flex-1 text-left'>
+          <span className='block truncate text-xs font-medium' title={item.name}>
+            {item.name}
+          </span>
+          <span className='text-[11px] text-[#8b8b84]'>
+            {typeLabel(item.type, item.name, t)}
+            {item.size ? ` · ${formatSize(item.size)}` : ''}
+          </span>
+        </button>
+        {downloadable(item) && (
+          <button
+            type='button'
+            onClick={() => downloadArtifact(item)}
+            title={t('artifact_download', '下载')}
+            className='h-7 w-7 shrink-0 rounded-md hover:bg-[#f4f4f0] dark:hover:bg-white/[.06]'
+          >
+            <DownloadOutlined />
+          </button>
+        )}
+      </div>
+    ));
+  if (!selected) return null;
+  return (
+    <div className='flex h-full min-h-0 flex-col gap-3'>
+      <div className='flex shrink-0 items-center gap-2 border-b border-[#e6e6e2] pb-3 dark:border-[#2a2925]'>
+        {(['preview', 'files'] as const).map(value => (
+          <button
+            key={value}
+            type='button'
+            aria-pressed={tab === value}
+            onClick={() => setTab(value)}
+            className={`rounded-md px-3 py-1.5 text-xs ${tab === value ? 'bg-[#1c1c1a] text-white dark:bg-[#e6e4df] dark:text-[#1c1c1a]' : 'text-[#8b8b84]'}`}
+          >
+            {value === 'preview' ? t('artifact_preview', '预览') : t('artifact_bundle_files', '文件')}
+          </button>
+        ))}
+        <span className='flex-1' />
+        {tab === 'preview' && downloadable(selected) && (
+          <button
+            type='button'
+            onClick={() => downloadArtifact(selected)}
+            className='rounded-md border border-[#e6e6e2] px-2.5 py-1.5 text-xs dark:border-[#2a2925]'
+          >
+            <DownloadOutlined className='mr-1' />
+            {t('artifact_download', '下载')}
+          </button>
+        )}
+      </div>
+      {tab === 'preview' ? (
+        <>
+          <select
+            aria-label={t('artifact_bundle_select', '选择预览文件')}
+            value={selected.id}
+            onChange={event => setSelectedId(event.target.value)}
+            className='w-full shrink-0 rounded-md border border-[#e6e6e2] bg-transparent p-2 text-xs dark:border-[#2a2925]'
+          >
+            {items.map(item => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+          <div className='min-h-0 flex-1'>
+            <PreviewBody artifact={selected} onPreview={item => item && open(item)} />
+          </div>
+        </>
+      ) : (
+        <div className='space-y-2'>
+          {fileRows(outputs)}
+          {process.length > 0 && (
+            <details className='pt-2'>
+              <summary className='cursor-pointer text-xs text-[#8b8b84]'>
+                {t('rail_process_group', '过程文件')} · {process.length}
+              </summary>
+              <div className='mt-2 space-y-2'>{fileRows(process)}</div>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ArtifactRail({
   artifacts,
   previewArtifact,
@@ -310,10 +432,7 @@ export default function ArtifactRail({
     let label = t('rail_root_group', '会话根目录');
     if (a.type === 'summary') label = t('rail_fallback_group', '兜底产物');
     else if (a.tier === 'process') label = t('rail_process_group', '过程文件');
-    else if (a.filePath) {
-      const dir = a.filePath.split('/').slice(0, -1).join('/');
-      label = dir || t('rail_root_group', '会话根目录');
-    } else if (a.type === 'skill') {
+    else if (a.type === 'skill') {
       label = (a.filePath || a.name).replace(/\/$/, '');
     }
     const g = groups.find(x => x.label === label);

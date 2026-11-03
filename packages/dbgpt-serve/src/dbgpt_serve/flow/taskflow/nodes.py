@@ -265,6 +265,15 @@ _register(
                 desc_en="One MCP server URL per line, prefixed sse:/http:",
             ),
             ConfigField(
+                name="parallel_group",
+                type="text",
+                label="并行分组",
+                label_en="Parallel Group",
+                desc="同组 Agent 在依赖就绪后同时执行，最多两个；留空则串行",
+                desc_en="Ready agents in the same group run together, at most two; "
+                "empty means serial",
+            ),
+            ConfigField(
                 name="max_turns",
                 type="number",
                 label="最大回合数",

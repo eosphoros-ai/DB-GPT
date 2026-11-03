@@ -5,10 +5,10 @@ from typing import Any, Dict, Optional
 
 from dbgpt._private.pydantic import PrivateAttr
 from dbgpt.agent import ActionOutput
-from dbgpt.agent.expand.react_agent import ReActAgent
+from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
 
 from .generation_budget import GenerationBudget, check_generation_deadline
-from .tool_failure import capture_tool_failure, failed_action
+from .tool_failure import capture_tool_failure, discovery_correction, failed_action
 
 GENERATION_STAGES = {
     "sql_generation": "模型生成 SQL",
@@ -203,7 +203,7 @@ def continuation_feedback(state: Dict[str, Any]) -> Optional[str]:
     )
 
 
-class DashboardConfirmationAgent(ReActAgent):
+class DashboardConfirmationAgent(ToolCallingReActAgent):
     """Guard Dashboard failures and keep confirmed generation in its bounded loop."""
 
     _dashboard_state: Dict[str, Any] = PrivateAttr(default_factory=dict)
@@ -219,19 +219,29 @@ class DashboardConfirmationAgent(ReActAgent):
             return failed_action(self._dashboard_state["dashboard_tool_failure"])
         feedback = continuation_feedback(self._dashboard_state)
         if feedback:
-            try:
-                steps = self.parser.parse_current_step(message.content or "")
-            except Exception:
-                # Preserve the shared parser's existing malformed-output recovery.
-                steps = []
-            if len(steps) == 1 and str(steps[0].action).lower() in {
+            calls = getattr(self, "_pending_native_tool_calls", None) or []
+            if calls:
+                actions = [
+                    str((call.get("function") or {}).get("name", "")) for call in calls
+                ]
+            else:
+                try:
+                    actions = [
+                        str(step.action)
+                        for step in self.parser.parse_current_step(
+                            message.content or ""
+                        )
+                    ]
+                except Exception:
+                    actions = []
+            if len(actions) == 1 and actions[0].lower() in {
                 "terminate",
                 "question",
             }:
                 return ActionOutput(
                     is_exe_success=False,
                     terminate=False,
-                    action=steps[0].action,
+                    action=actions[0],
                     content=feedback,
                 )
         try:
@@ -242,5 +252,119 @@ class DashboardConfirmationAgent(ReActAgent):
                 content=f"{type(exc).__name__}: {exc}",
                 action="agent_output",
             )
+        if (
+            not output.is_exe_success
+            and not output.action
+            and str(output.content).startswith(
+                "No valid ReAct step or native tool call found."
+            )
+        ):
+            # Some providers finish in prose after a successful tool. Only
+            # persisted facts can close the turn; never trust claims in prose.
+            state = self._dashboard_state
+            record_id = state.get("dashboard_record_id")
+            reference = next(
+                (
+                    item
+                    for item in state.get("dashboard_refs", [])
+                    if item.get("dashboard_id") == record_id
+                ),
+                None,
+            )
+            if (
+                reference
+                and not state.get("dashboard_generation")
+                and reference.get("status") == "awaiting_confirmation"
+            ):
+                return ActionOutput(
+                    is_exe_success=True,
+                    terminate=True,
+                    action="terminate",
+                    content=(
+                        f"已保存「{reference.get('title', '看板')}」的看板规划"
+                        f"（修订 {reference['current_revision']}）。"
+                        "请查看规划卡片，确认后生成并验证组件 SQL。"
+                    ),
+                )
+            generation = state.get("dashboard_generation") or {}
+            if reference and not generation and reference.get("status") == "updated":
+                return ActionOutput(
+                    is_exe_success=True,
+                    terminate=True,
+                    action="terminate",
+                    content=(
+                        f"已保存「{reference.get('title', '看板')}」的草稿修改"
+                        f"（修订 {reference['current_revision']}），"
+                        "请打开看板查看。"
+                    ),
+                )
+            if reference and generation.get("status") == "completed":
+                return ActionOutput(
+                    is_exe_success=True,
+                    terminate=True,
+                    action="terminate",
+                    content=(
+                        f"已生成并保存「{reference.get('title', '看板')}」草稿"
+                        f"（修订 {generation['saved_revision']}），"
+                        "全部组件 SQL 已通过试运行，请打开看板查看。"
+                    ),
+                )
+            if (
+                not feedback
+                and not generation
+                and any(
+                    artifact.get("execution", {}).get("status") == "succeeded"
+                    for artifact in state.get("_query_artifacts", {}).values()
+                )
+            ):
+                feedback = (
+                    "Successful read-only SQL observations are already available. "
+                    "No dashboard plan has been saved. Call plan_dashboard with "
+                    "complete JSON arguments based on those observations and the "
+                    "user's request. If essential evidence is missing, call "
+                    "sql_query within the remaining discovery limit. Do not finish "
+                    "with prose or claim that the dashboard is saved."
+                )
+            if feedback:
+                # A plain answer after staging a partial batch is not a final
+                # result. Give the model the exact remaining contract without
+                # discarding staged queries or resetting the generation budget.
+                attempts = state.get("_dashboard_protocol_corrections", 0)
+                if attempts < 2:
+                    state["_dashboard_protocol_corrections"] = attempts + 1
+                    return ActionOutput(
+                        is_exe_success=False,
+                        have_retry=True,
+                        terminate=False,
+                        action="agent_output",
+                        content=feedback,
+                        observations=feedback,
+                    )
+        correction = discovery_correction(self._dashboard_state, output)
+        if correction:
+            output.have_retry = True
+            output.terminate = False
+            output.content = correction
+            return output
         failure = capture_tool_failure(self._dashboard_state, output)
-        return failed_action(failure, output.action) if failure else output
+        if failure:
+            return failed_action(failure, output.action)
+        generation = self._dashboard_state.get("dashboard_generation") or {}
+        if output.is_exe_success and generation.get("status") == "completed":
+            # Saving a fully validated revision is the completion boundary.
+            # Another provider response cannot improve this persisted result
+            # and can hang or lose its tool-call format after the work is done.
+            output.terminate = True
+        if (
+            output.is_exe_success
+            and not generation
+            and output.action == "plan_dashboard"
+            and any(
+                reference.get("dashboard_id")
+                == self._dashboard_state.get("dashboard_record_id")
+                and reference.get("status") == "awaiting_confirmation"
+                for reference in self._dashboard_state.get("dashboard_refs", [])
+            )
+        ):
+            output.terminate = True
+        return output

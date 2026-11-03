@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DB-GPT：从 ChatBot 到 Data Agent</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Segoe UI", Roboto, sans-serif; background: #f5f6f8; margin: 0; padding: 32px; color: #1a1b1c; }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; text-align: center; margin: 0 0 6px; }
+  .sub { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 28px; }
+  .section-title { font-size: 18px; font-weight: 700; margin: 36px 0 14px; padding-left: 10px; border-left: 4px solid #0069fe; }
+
+  /* ===== 图1：演进时间轴 ===== */
+  .evo { display: flex; gap: 0; position: relative; margin-top: 10px; }
+  .evo::before { content: ""; position: absolute; top: 28px; left: 4%; right: 4%; height: 3px; background: linear-gradient(90deg, #c9d6f2, #9BBBF4, #0069fe); border-radius: 2px; }
+  .stage { flex: 1; padding: 0 8px; position: relative; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid #0069fe; margin: 20px auto 10px; position: relative; z-index: 2; }
+  .stage.now .dot { background: #0069fe; box-shadow: 0 0 0 5px rgba(0,105,254,0.15); }
+  .ver { text-align: center; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+  .name { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+  .card { background: #fff; border: 1px solid #e4e3dd; border-radius: 12px; padding: 12px; min-height: 240px; }
+  .stage.now .card { border: 2px solid #0069fe; background: #f0f6ff; }
+  .role { font-size: 12px; color: #0069fe; font-weight: 600; margin-bottom: 8px; text-align: center; }
+  .cap { font-size: 12px; line-height: 1.6; }
+  .cap li { margin-bottom: 5px; list-style: none; padding-left: 14px; position: relative; }
+  .cap li::before { content: "·"; position: absolute; left: 4px; color: #0069fe; font-weight: 700; }
+  .gap { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #d1d5db; font-size: 11px; color: #b45309; line-height: 1.5; }
+  .gap b { color: #92400e; }
+
+  /* ===== 图2：领域层对比 ===== */
+  .cmp { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 0; border: 1px solid #e4e3dd; border-radius: 12px; overflow: hidden; background: #fff; }
+  .cmp-head { padding: 14px 12px; font-weight: 700; font-size: 14px; text-align: center; }
+  .cmp-head.left { background: #f3f4f6; color: #6b7280; }
+  .cmp-head.mid { background: #f3f4f6; color: #6b7280; }
+  .cmp-head.right { background: #e8f1ff; color: #0069fe; }
+  .dim { padding: 14px 10px; font-size: 12.5px; font-weight: 600; background: #fafafa; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .cell { padding: 12px; font-size: 12.5px; line-height: 1.6; border-top: 1px solid #eee; }
+  .cell.gen { background: #fafafa; color: #4b5563; }
+  .cell.dom { background: #f6faff; color: #1a1b1c; }
+  .cell b { color: #0069fe; }
+  .tag { display: inline-block; background: #e8f1ff; color: #0069fe; border-radius: 4px; padding: 1px 6px; font-size: 11px; margin: 1px 2px; font-weight: 600; }
+
+  .legend { display: flex; gap: 20px; justify-content: center; margin-top: 14px; font-size: 12px; color: #6b7280; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .legend .g::before { background: #f3f4f6; border: 1px solid #d1d5db; }
+  .legend .d::before { background: #e8f1ff; border: 1px solid #0069fe; }
+
+  /* ===== 图3：ChatDB 薄壳 vs DB-GPT 纵深 ===== */
+  .vs { display: grid; grid-template-columns: 220px 1fr 1fr; gap: 0; border: 1px solid #e4e3dd; border-radius: 12px; overflow: hidden; background: #fff; }
+  .vs-head { padding: 14px 12px; font-weight: 700; font-size: 14px; text-align: center; }
+  .vs-head.axis { background: #f3f4f6; color: #6b7280; }
+  .vs-head.chat { background: #fef2f2; color: #b91c1c; }
+  .vs-head.dbgpt { background: #e8f1ff; color: #0069fe; }
+  .axis { padding: 12px 10px; font-size: 12.5px; font-weight: 600; background: #fafafa; border-top: 1px solid #eee; display: flex; align-items: center; }
+  .cell2 { padding: 11px 12px; font-size: 12.5px; line-height: 1.55; border-top: 1px solid #eee; }
+  .cell2.chat { background: #fffafa; color: #6b7280; }
+  .cell2.dbgpt { background: #f6faff; color: #1a1b1c; }
+  .cell2 b { color: #0069fe; }
+  .cell2.chat b { color: #b91c1c; }
+
+  /* ===== 图4：部署安全拓扑 ===== */
+  .dep { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+  .dep-card { border-radius: 12px; padding: 14px; font-size: 12.5px; line-height: 1.6; }
+  .dep-bad { background: #fef2f2; border: 1.5px solid #fca5a5; }
+  .dep-good { background: #f0fdf4; border: 1.5px solid #86efac; }
+  .dep-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .dep-bad .dep-title { color: #b91c1c; }
+  .dep-good .dep-title { color: #15803d; }
+  .arch { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; font-family: ui-monospace, monospace; font-size: 11px; white-space: pre; overflow-x: auto; line-height: 1.5; margin: 8px 0; }
+  .layer { margin: 6px 0; padding: 8px 10px; border-radius: 6px; }
+  .layer-red { background: #fee2e2; border-left: 3px solid #dc2626; }
+  .layer-green { background: #dcfce7; border-left: 3px solid #16a34a; }
+  .layer-blue { background: #dbeafe; border-left: 3px solid #2563eb; }
+  .layer-yellow { background: #fef9c3; border-left: 3px solid #ca8a04; }
+  .layer b { font-family: inherit; }
+
+  .footer { margin-top: 30px; font-size: 11.5px; color: #9ca3af; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DB-GPT：从 ChatBot 到 Data Agent 的架构演进</h1>
+  <div class="sub">每一步都在补一块缺口 · 依据本地分支与 docs/design 设计文档整理（2026-11）</div>
+
+  <div class="section-title">① 演进脉络：5 个阶段，从"能对话"到"能交付一份可核对的分析"</div>
+  <div class="evo">
+    <div class="stage">
+      <div class="dot"></div>
+      <div class="ver">早期</div>
+      <div class="name">固定场景 ChatBot</div>
+      <div class="card">
+        <div class="role">NL → 单点</div>
+        <ul class="cap">
+          <li>ChatDB：自然语言查库</li>
+          <li>ChatExcel：表格问答</li>
+          <li>ChatKnowledge：文档问答</li>
+          <li>核心链路：识别表 → 生成 SQL → 执行</li>
+        </ul>
+        <div class="gap"><b>缺口：</b>任务被切在固定场景里，跨库/跨文档/跨计算的复杂问题无处承载</div>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="dot"></div>
+      <div class="ver">V0.5 – V0.6</div>
+      <div class="name">工作流与应用期</div>
+      <div class="card">
+        <div class="role">AI 原生数据应用</div>
+        <ul class="cap">
+          <li>AWEL：DAG 工作流编排</li>
+          <li>应用构建 / 编排 / 分发</li>
+          <li>检索与可视化增强</li>
+          <li>SystemApp 组件生命周期</li>
+        </ul>
+        <div class="gap"><b>缺口：</b>步骤明确的流程可写死，但工具生态封闭，失败与产物无统一治理</div>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="dot"></div>
+      <div class="ver">V0.7</div>
+      <div class="name">工具开放期</div>
+      <div class="card">
+        <div class="role">生态与模块化</div>
+        <ul class="cap">
+          <li>MCP / Skill 协议接入外部工具</li>
+          <li>6 大 package 模块拆分</li>
+          <li>配置体系重做</li>
+          <li>多 LLM Provider 抽象</li>
+        </ul>
+        <div class="gap"><b>缺口：</b>工具能接了，但任务仍是单轮，缺自主推进、沙箱与产物沉淀</div>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="dot"></div>
+      <div class="ver">V0.8</div>
+      <div class="name">自主任务期</div>
+      <div class="card">
+        <div class="role">Agent 自主分析</div>
+        <ul class="cap">
+          <li>自主规划：读 schema → 多步查询 → 计算</li>
+          <li>Skills：可复用工作方法</li>
+          <li>SQL / Python 沙箱隔离执行</li>
+          <li>报告交付 + 过程回看</li>
+        </ul>
+        <div class="gap"><b>缺口：</b>口径、粒度、血缘、对比窗口全靠模型自由发挥，数字对不上业务预期</div>
+      </div>
+    </div>
+    <div class="stage now">
+      <div class="dot"></div>
+      <div class="ver">当前（2026）</div>
+      <div class="name">领域化 Data Agent</div>
+      <div class="card">
+        <div class="role">可核对 · 可治理 · 可复用</div>
+        <ul class="cap">
+          <li>六层语义层：元数据/含义/指标版本/join 图/样例/规则</li>
+          <li>专家套件：取数 / 分析 / 元数据 / SQL 优化 / MySQL 运维</li>
+          <li>Harness 运行时（DB-GPT 引擎 / pi 引擎适配）</li>
+          <li>审批中心 + 可追溯报告 + 反馈飞轮</li>
+        </ul>
+        <div class="gap"><b>目标：</b>把"SQL 能跑"推进到"结果可核对、口径可溯源、经验可沉淀"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">② 区别于通用 Agent：DB-GPT 在 Data 领域做了哪些层的优化</div>
+  <div class="cmp">
+    <div class="cmp-head mid">维度</div>
+    <div class="cmp-head left">通用 Agent（ReAct + 通用工具）</div>
+    <div class="cmp-head right">DB-GPT Data Agent（领域层增强）</div>
+
+    <div class="dim">知识<br>来源</div>
+    <div class="cell gen">通用 RAG：文档切片 + 向量召回；模型自由理解字段含义</div>
+    <div class="cell dom"><b>六层语义栈</b>：物理元数据 → 业务含义 → <b>指标 + 口径版本</b> → join 路径图 → verified 样例 → 规则护栏；结构化库为权威源，向量只是索引</div>
+
+    <div class="dim">口径<br>管理</div>
+    <div class="cell gen">无口径概念；"销售额"按下单还是付款、是否含退款，靠模型猜</div>
+    <div class="cell dom"><b>指标 = 身份，口径 = 版本载荷</b>：表达式 + 默认过滤 + 时间粒度 + 去重规则；草稿 → 人审 → 发布；历史会话 pin 版本可复现</div>
+
+    <div class="dim">工具<br>调用</div>
+    <div class="cell gen">工具集全开放，模型自主选；无白名单、无成本预估</div>
+    <div class="cell dom"><b>按场景绑工具白名单</b>：取数=只读 SQL + 导出；分析=加图表/报告；运维=EXPLAIN/慢日志/DDL 受控；大扫描、DDL 走审批 dock</div>
+
+    <div class="dim">执行<br>环境</div>
+    <div class="cell gen">直接在宿主环境跑代码/查询，无隔离</div>
+    <div class="cell dom"><b>沙箱隔离</b>（Python/SQL 双沙箱）；只读/读写分级；从库路由；行数上限与超时由 sem_rule 强制</div>
+
+    <div class="dim">工作<br>方法</div>
+    <div class="cell gen">靠 system prompt 临时约束，每次任务从零摸索</div>
+    <div class="cell dom"><b>专家套件 = 可安装能力包</b>：SOP（如分析 playbook）+ 参考知识 + 工具边界 + 产物契约；套件可升级、可审计、可跨会话复用</div>
+
+    <div class="dim">产物<br>交付</div>
+    <div class="cell gen">文本 / 代码片段；数字从哪来、SQL 是什么，靠用户自己翻</div>
+    <div class="cell dom"><b>可追溯报告</b>：trace_id 串联五类日志；每个数字点开看 SQL 与结果；每个图表看数据/单位；产物依赖、引用来源、修订记录全留痕</div>
+
+    <div class="dim">反馈<br>进化</div>
+    <div class="cell gen">对话记忆，下次未必复用</div>
+    <div class="cell dom"><b>反馈飞轮</b>：👍 → verified 样例进 few-shot 库；✏️ → 语义草稿进人审队列；表结构漂移 → 关联指标自动标 stale 进复审</div>
+
+    <div class="dim">治理<br>审计</div>
+    <div class="cell gen">无统一审计；高危操作无 gate</div>
+    <div class="cell dom"><b>审批中心</b>（待办队列 / 策略 / 白名单）+ 五类日志审计 + 发布日志（谁在何时改了哪个口径版本）</div>
+  </div>
+  <div class="legend">
+    <span class="g">通用 Agent：能力通用，领域知识与治理靠外挂</span>
+    <span class="d">DB-GPT Data Agent：把口径、工具、执行、产物、反馈都做成领域原语</span>
+  </div>
+
+  <div class="section-title">③ 不止取数/分析：相比 ChatDB 薄壳，DB-GPT 在 DB 领域本身做了什么</div>
+  <div class="vs">
+    <div class="vs-head axis">环节</div>
+    <div class="vs-head chat">ChatDB 类产品（薄壳）</div>
+    <div class="vs-head dbgpt">DB-GPT 领域纵深</div>
+
+    <div class="axis">对"连接"的理解</div>
+    <div class="cell2 chat">连接 = 一个 SQLAlchemy engine；问的时候才 introspect 一次，schema 直接塞进 prompt</div>
+    <div class="cell2 dbgpt"><b>连接 = 元数据同步管道的起点</b>：introspect → sem_table/sem_column（类型/约束/索引/分区/基数/采样）→ 视图与存储过程定义入库（代码态口径源）→ freq_score 表热度 → <b>漂移检测</b>（列删/改/类型变 → 关联指标自动标 stale）</div>
+
+    <div class="axis">对 schema 的态度</div>
+    <div class="cell2 chat">schema 只是"能写进 SQL 的字段清单"，不关心库设计本身合不合理</div>
+    <div class="cell2 dbgpt"><b>元数据与架构专家</b>：/data-dictionary 物理字典（真实目录查询 CSV）、/physical-er ER 图（真实 FK 实线、推断关系虚线，可下载 drawio/DBML/Mermaid/SVG）、/schema-doc HTML 结构文档、/model-review 建模评审与迁移验证清单</div>
+
+    <div class="axis">对 SQL 的态度</div>
+    <div class="cell2 chat">只追求"SQL 能跑"；生成完就结束，不解释执行计划</div>
+    <div class="cell2 dbgpt"><b>SQL 优化专家</b>：/sql-diagnose EXPLAIN 解读 + 执行计划证据 + HTML 报告；/sql-rewrite 改写 diff + 语义等价验证清单；/index-advise 索引候选 DDL + 已有索引对比 + 实测方案；/sql-review 变更风险 + 上线验证与回退清单</div>
+
+    <div class="axis">对 DBA 日常</div>
+    <div class="cell2 chat">完全不碰；数据库运维是 DBA 的事</div>
+    <div class="cell2 dbgpt"><b>MySQL 运维专家</b> 7 技能：SQL 体检（24 项索引失效原因 I-01~I-24 可追溯、扫描放大比为锚点）/ 实例巡检（8 域判读、两次采样算速率、参数漂移矩阵）/ 故障应急（T1–T10 决策树、先保现场再止血、每个动作带回退命令）/ 变更评审（INSTANT/INPLACE/COPY 判定、9 条一票否决）/ 备份恢复（RPO/RTO 实测、6 种误删找回代价排序）/ 参数调优（内存总账一票否决、明确"不建议改的清单"）/ 运维报告（容量触顶日期、上期承诺闭环）</div>
+
+    <div class="axis">零配置可用</div>
+    <div class="cell2 chat">必须先接库才能用；接不到就没东西可查</div>
+    <div class="cell2 dbgpt"><b>贴输出就能用</b>：先贴 EXPLAIN / SHOW STATUS / SHOW ENGINE INNODB STATUS / 慢日志 / 监控导出 → 出结构化结论；连接器是"增强"不是"必需"，连上才减少人工搬运</div>
+
+    <div class="axis">工具与执行边界</div>
+    <div class="cell2 chat">一个 db_query 工具，任意 SQL 都能跑；无白名单、无审批、无分级</div>
+    <div class="cell2 dbgpt"><b>场景工具白名单 + 审批 dock + 沙箱</b>：取数=只读、分析=只读为主、运维=DDL 受控；大扫描/DDL/生产变更走审批；sem_rule 强制只读/租户注入/软删除/行数上限/从库路由；命令 L0–L3 风险分级 + 六条硬红线（不猜数据、不默认改参数、主库不做重活、无备份不做恢复、不删文件、输出脱敏）</div>
+
+    <div class="axis">一句话定位</div>
+    <div class="cell2 chat">数据库 = <b>被动查询后端</b>；能力 = NL → SQL → 表格</div>
+    <div class="cell2 dbgpt">数据库 = <b>被持续观察与治理的对象</b>；能力 = 取数 + 分析 + 元数据 + SQL 优化 + 运维 + 变更治理，全程留痕、可回退、可沉淀</div>
+  </div>
+
+  <div class="section-title">④ 企业部署：数据库在云端（阿里云 / 字节云），怎么连才安全</div>
+  <div class="dep">
+    <div class="dep-card dep-bad">
+      <div class="dep-title">✗ 不要这么做</div>
+      <div>DB-GPT 公网部署 → RDS 开公网地址 → 用高权限账号 → 模型自主跑任意 SQL</div>
+      <div class="arch"><span class="layer layer-red"><b>DB-GPT（公网）</b>
+   │ 任意 SQL / 任意账号
+   ▼
+<b>云数据库（公网地址）</b>
+   · 3306 暴露在公网
+   · 高权限账号
+   · 无审批、无审计</span></div>
+      <div style="color:#991b1b"><b>风险：</b>SQL 注入、全表扫描打爆生产、误删表、凭据泄露后无法追溯</div>
+    </div>
+    <div class="dep-card dep-good">
+      <div class="dep-title">✓ 推荐这么做</div>
+      <div>同 VPC 私网部署 → 连只读从库 → 最小权限账号 → 审批 + 沙箱 + 规则三重 gate</div>
+      <div class="arch"><span class="layer layer-blue"><b>企业 VPC</b></span>
+<span class="layer layer-green"><b>DB-GPT（ECS/ACK）</b>
+   · 审批中心 ApprovalCenter
+   · 语义层 sem_rule
+   · 沙箱 + 工具白名单
+   · 五类日志审计</span>
+   │ 私网:3306（安全组白名单）
+   ▼
+<span class="layer layer-green"><b>只读从库 / 分析库</b>
+   · 独立只读账号
+   · 限 schema/table
+   · 行数上限 + 超时</span>
+<span class="layer layer-yellow"><b>生产主库</b> ← DBA 人工 / 变更工单
+   · 模型不直接连
+   · DDL/参数走审批</span></div>
+      <div style="color:#166534"><b>原则：</b>LLM 不碰生产主库；变更永远人工；凭据最小化</div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;background:#fff;border:1px solid #e4e3dd;border-radius:12px;padding:14px;">
+    <div style="font-weight:700;margin-bottom:8px;font-size:13.5px;">DB-GPT 内置的 5 道连接防护（需要企业自己开启，不是默认全开）</div>
+    <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
+      <tr style="background:#f3f4f6;">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #eee;">防护层</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #eee;">机制</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #eee;">来源</th>
+      </tr>
+      <tr><td style="padding:6px 8px;border:1px solid #eee;">网络层</td><td style="padding:6px 8px;border:1px solid #eee;">同 VPC 私网 + 安全组白名单；公网入口走网关鉴权</td><td style="padding:6px 8px;border:1px solid #eee;">部署侧配置</td></tr>
+      <tr><td style="padding:6px 8px;border:1px solid #eee;">账号层</td><td style="padding:6px 8px;border:1px solid #eee;">独立只读账号，权限精确到 schema/table；不授 DDL/GRANT</td><td style="padding:6px 8px;border:1px solid #eee;">DBA 建账号时定</td></tr>
+      <tr><td style="padding:6px 8px;border:1px solid #eee;">规则层 L6</td><td style="padding:6px 8px;border:1px solid #eee;">readonly 拦 DDL / limit 行数上限 / replica 强制从库 / tenant_filter 多租户 / soft_delete 过滤</td><td style="padding:6px 8px;border:1px solid #eee;">语义中心 sem_rule</td></tr>
+      <tr><td style="padding:6px 8px;border:1px solid #eee;">审批层</td><td style="padding:6px 8px;border:1px solid #eee;">高危操作 auto/confirm/deny 三档；大扫描、DDL、生产变更弹确认卡</td><td style="padding:6px 8px;border:1px solid #eee;">ApprovalCenter 设计</td></tr>
+      <tr><td style="padding:6px 8px;border:1px solid #eee;">执行层</td><td style="padding:6px 8px;border:1px solid #eee;">场景工具白名单；Python/SQL 双沙箱；命令 L0–L3 分级；六条硬红线</td><td style="padding:6px 8px;border:1px solid #eee;">专家套件 + Harness</td></tr>
+    </table>
+    <div style="margin-top:10px;font-size:12px;color:#6b7280;"><b style="color:#92400e;">落地建议：</b>初期可以<b>不直接连生产库</b>，让 DBA 把 EXPLAIN / SHOW STATUS / 慢日志输出贴进来，模型先出诊断结论；信任建立后再开放只读从库。生产 DDL / 参数调整 / 数据订正永远走人工，不通过模型自动执行。</div>
+  </div>
+
+  <div class="footer">
+    依据：DB-GPT-Data-Agent分享正文.md · docs/design/data-agent-product-design.md · docs/design/semantic-center-impl-plan.md · docs/design/traceable_analysis_report.md · assets/suites/{db-query,db-analysis,metadata-architecture-expert,sql-optimization-expert,mysql-ops-expert}/README.md<br>
+    边界说明：语义层当前已接入元数据/业务释义/指标版本读取；规则强校验、列级血缘、执行前口径 gate 仍在建设中。运维套件以"贴诊断输出"为主路径，不代表本机已直连生产库或自动采集慢日志/监控
+  </div>
+</div>
+</body>
+</html>

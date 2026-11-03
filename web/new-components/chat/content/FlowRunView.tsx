@@ -14,7 +14,6 @@
  */
 import {
   BarChartOutlined,
-  BulbOutlined,
   DatabaseOutlined,
   DownloadOutlined,
   FileTextOutlined,
@@ -27,10 +26,12 @@ import cls from 'classnames';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import MarkdownContext from '@/new-components/common/MarkdownContext';
 import type { ITaskflowAgentStep, ITaskflowArtifact } from '@/types/taskflow';
 import { stripFlowNarration } from '@/utils/taskflow';
 
 import QueryArtifactBlock from './QueryArtifactBlock';
+import TaskflowAgentTrace, { taskflowTraceBlocks } from './TaskflowAgentTrace';
 
 export interface FlowRunRow {
   id: string;
@@ -56,9 +57,6 @@ interface FlowRunViewProps {
   /** Edit & re-run for inline query artifacts (SQL result sets). */
   onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
 }
-
-const GUARD_RE = /no arguments|missing \d+ required|Action Input was missing|truncated/i;
-const FAIL_RE = /execute failed|was called with no arguments|missing \d+ required positional/i;
 
 function fmtDur(ms?: number): string {
   if (ms == null) return '';
@@ -109,92 +107,6 @@ const KIND_BG: Record<string, string> = {
   agent: 'bg-indigo-50 dark:bg-indigo-900/25',
 };
 
-/** One ReAct trace row inside a node card. */
-const TraceRow: React.FC<{
-  step: ITaskflowAgentStep;
-  failInfo?: { guard: boolean; errorText: string; retries: number } | null;
-}> = memo(({ step, failInfo }) => {
-  const { t } = useTranslation();
-  if (step.kind === 'thinking') {
-    if (isEmptyDetail(step.detail)) return null;
-    return (
-      <div className='flex items-baseline gap-2 h-7 px-2 rounded-md text-[12.5px] hover:bg-[#f4f4f0] dark:hover:bg-white/[.04]'>
-        <BulbOutlined className='text-[#8b8b84] flex-none text-xs' />
-        <span className='text-[#8b8b84] dark:text-[#7c7972] flex-none'>{t('flow_trace_thinking', '思考')}</span>
-        <span className='font-mono text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate flex-1'>
-          {step.detail}
-        </span>
-      </div>
-    );
-  }
-  if (step.kind === 'action') {
-    const gist = (step.detail || '').replace(/\s*\n\s*/g, ' ');
-    if (failInfo) {
-      return (
-        <div className='my-1 px-2 py-1.5 rounded-md bg-[#fef2f2] dark:bg-red-950/25 border-l-2 border-[#b91c1c]'>
-          <div className='flex items-baseline gap-2 flex-wrap'>
-            <span className='text-[#b91c1c] flex-none text-xs'>⚠</span>
-            <span className='font-mono text-[12px] font-semibold text-[#b91c1c] dark:text-red-400'>{step.title}</span>
-            <span className='h-[18px] px-1.5 rounded-[5px] text-[10.5px] inline-flex items-center bg-[#fef2f2] dark:bg-red-950/40 border border-[#fecaca] dark:border-red-900 text-[#b91c1c] dark:text-red-400'>
-              {failInfo.guard
-                ? t('flow_badge_missing_args', '缺参数 · 输出被截断')
-                : t('flow_badge_failed', '执行失败')}
-            </span>
-            {failInfo.retries > 0 && (
-              <span className='h-[18px] px-1.5 rounded-[5px] text-[10.5px] inline-flex items-center bg-[#fffbeb] border border-[#fde68a] text-[#b45309]'>
-                {t('flow_badge_retry', '重试 ×{{n}}', { n: failInfo.retries })}
-              </span>
-            )}
-          </div>
-          <details className='mt-1 ml-5 border border-[#fecaca] dark:border-red-900 rounded-lg bg-white dark:bg-[#111217]'>
-            <summary className='cursor-pointer px-2.5 py-1.5 text-[11.5px] text-[#b91c1c] dark:text-red-400 list-none'>
-              ▸ {(failInfo.errorText || '').slice(0, 64)}
-              {(failInfo.errorText || '').length > 64 ? '…' : ''}
-            </summary>
-            <pre className='px-2.5 py-2 border-t border-[#fecaca] dark:border-red-900 font-mono text-[11px] text-[#7f1d1d] dark:text-red-300 whitespace-pre-wrap break-all max-h-[150px] overflow-auto'>
-              {failInfo.errorText}
-            </pre>
-          </details>
-        </div>
-      );
-    }
-    return (
-      <div className='flex items-baseline gap-2 h-7 px-2 rounded-md text-[12.5px] hover:bg-[#f4f4f0] dark:hover:bg-white/[.04]'>
-        <span className='font-mono text-[12px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] flex-none'>
-          {step.title}
-        </span>
-        <span className='font-mono text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate flex-1'>{gist}</span>
-        <span className='text-[10.5px] text-[#15803d] flex-none'>✓</span>
-      </div>
-    );
-  }
-  if (step.kind === 'observation') {
-    // Failed observations are folded into the action row above; the rest
-    // stay collapsible so long tool outputs never flood the card.
-    if (FAIL_RE.test(step.detail || '') || GUARD_RE.test(step.detail || '')) return null;
-    return (
-      <details className='ml-5 mb-1'>
-        <summary className='cursor-pointer text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] list-none'>
-          ▸ {t('flow_trace_observation', '观察')} · {(step.detail || '').slice(0, 48)}
-        </summary>
-        <pre className='mt-1 px-2.5 py-2 border border-[#efefeb] dark:border-[#2a2925] rounded-lg bg-[#f4f4f0] dark:bg-white/[.04] font-mono text-[11px] text-[#55554f] dark:text-[#a8a59e] whitespace-pre-wrap break-all max-h-[150px] overflow-auto'>
-          {step.detail}
-        </pre>
-      </details>
-    );
-  }
-  if (step.kind === 'answer') {
-    return (
-      <div className='flex items-baseline gap-2 h-7 px-2 text-[12.5px]'>
-        <span className='text-[#15803d] flex-none text-xs'>✓</span>
-        <span className='text-[#55554f] dark:text-[#a8a59e] truncate flex-1'>{step.detail || step.title}</span>
-      </div>
-    );
-  }
-  return null;
-});
-TraceRow.displayName = 'TraceRow';
-
 const NodeCard: React.FC<{
   row: FlowRunRow;
   defaultOpen: boolean;
@@ -212,24 +124,15 @@ const NodeCard: React.FC<{
   const isPending = row.status === 'pending' || !row.status;
   const stepsRef = useMemo(() => row.steps ?? [], [row.steps]);
   const steps = stepsRef;
-  const toolCount = steps.filter(s => s.kind === 'action').length;
-
-  // Failure bookkeeping: pair each failed action with its observation and
-  // count same-tool retries that follow it.
-  const failInfoByIndex = useMemo(() => {
-    const map = new Map<number, { guard: boolean; errorText: string; retries: number }>();
-    const all = stepsRef;
-    all.forEach((s, i) => {
-      if (s.kind !== 'action') return;
-      const obs = all.slice(i + 1).find(x => x.kind === 'observation');
-      const errText = obs?.detail || '';
-      const failed = FAIL_RE.test(errText) && !/is_exe_success.*true/i.test(errText);
-      if (!failed) return;
-      const retries = all.slice(i + 1).filter(x => x.kind === 'action' && x.title === s.title).length;
-      map.set(i, { guard: GUARD_RE.test(errText), errorText: errText, retries });
-    });
-    return map;
-  }, [stepsRef]);
+  const toolCount = useMemo(
+    () =>
+      taskflowTraceBlocks(steps, isRun, row.id).reduce(
+        (n, block) => n + (block.kind === 'tool' ? block.count || 1 : 0),
+        0,
+      ),
+    [steps, isRun, row.id],
+  );
+  const conclusion = isRun ? '' : stripFlowNarration(row.content || '');
 
   const summaryLine = useMemo(() => {
     if (row.summary) return row.summary;
@@ -288,7 +191,7 @@ const NodeCard: React.FC<{
           </span>
         )}
         <span className='ml-auto font-mono text-[11px] text-[#8b8b84] dark:text-[#7c7972] flex-none'>
-          {fmtDur(row.durationMs)} {open ? '▴' : '▾'}
+          {row.durationMs ? fmtDur(row.durationMs) : ''} {open ? '▴' : '▾'}
         </span>
       </button>
       {/* First-class artifacts of this node (mockup: flow-output-artifacts §2).
@@ -345,7 +248,7 @@ const NodeCard: React.FC<{
       {open && (
         <div className='px-3.5 py-2 flex flex-col'>
           {steps.length > 0 ? (
-            steps.map((s, i) => <TraceRow key={`${row.id}-${i}`} step={s} failInfo={failInfoByIndex.get(i) || null} />)
+            <TaskflowAgentTrace steps={steps} running={isRun} nodeId={row.id} />
           ) : isPending ? (
             <div className='px-2 py-1 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
               {t('flow_node_pending_hint', '等待上游节点完成后执行')}
@@ -357,6 +260,11 @@ const NodeCard: React.FC<{
             </div>
           ) : (
             <div className='px-2 py-1 text-[12px] text-[#8b8b84]'>{t('flow_no_output', '暂无输出')}</div>
+          )}
+          {conclusion && steps.length > 0 && (
+            <div className='mt-3 pt-3 border-t border-[#efefeb] dark:border-[#232220] text-[13px]'>
+              <MarkdownContext>{conclusion}</MarkdownContext>
+            </div>
           )}
         </div>
       )}

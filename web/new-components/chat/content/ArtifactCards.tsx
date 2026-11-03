@@ -100,6 +100,9 @@ interface ArtifactCardsProps {
   onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
   /** Fold every query card of this round (older rounds in the thread). */
   foldAllQueries?: boolean;
+  /** Conversation summaries keep a compact card for graphs already in a round. */
+  showInlineEr?: boolean;
+  consolidate?: boolean;
 }
 
 const PREVIEW_EXTS = new Set(['md', 'markdown', 'txt', 'py', 'js', 'ts', 'tsx', 'jsx', 'json', 'csv', 'sql']);
@@ -146,7 +149,7 @@ function fileExtIcon(name: string) {
   return <FileTextOutlined className='text-gray-400 text-lg' />;
 }
 
-function downloadArtifact(artifact: StreamArtifact) {
+export function downloadArtifact(artifact: StreamArtifact) {
   const embedded = artifact.content && typeof artifact.content === 'object' ? artifact.content.content : null;
   const content =
     typeof artifact.content === 'string'
@@ -191,6 +194,8 @@ export default function ArtifactCards({
   onSkillDownload,
   onQueryRerun,
   foldAllQueries,
+  showInlineEr = true,
+  consolidate = false,
 }: ArtifactCardsProps) {
   const { t } = useTranslation();
   const [imagesExpanded, setImagesExpanded] = useState(false);
@@ -213,6 +218,40 @@ export default function ArtifactCards({
   const isChart = (a: StreamArtifact) => a.type === 'image' || CHART_EXT_RE.test(a.name || '');
   const charts = processes.filter(isChart);
   const processOthers = processes.filter(a => !isChart(a));
+  const bundleItems = artifacts.filter(a => a.type !== 'summary' && a.type !== 'query');
+  const primary = bundleItems.find(a => a.type === 'html') || finals[0] || bundleItems[0];
+  if (consolidate && primary) {
+    const isEr = primary.type === 'html' && String(primary.content).includes('data-dbgpt-er="1"');
+    const name = isEr ? t('er_diagram_title', 'ER 图') : primary.name;
+    const bundle: StreamArtifact = {
+      id: `bundle-${primary.id}`,
+      type: 'artifact_bundle',
+      name,
+      content: { primaryId: primary.id, items: artifacts.filter(a => a.type !== 'summary') },
+    };
+    return (
+      <div className='mt-3 mb-1 w-full'>
+        <button
+          type='button'
+          onClick={() => onPreview?.(bundle)}
+          className='flex w-full max-w-[440px] items-center gap-3 rounded-xl border border-[#e6e6e2] bg-white p-3 text-left shadow-sm hover:bg-[#fafaf7] dark:border-[#2a2925] dark:bg-[#111217] dark:hover:bg-white/[.04]'
+        >
+          <span className='flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#efefeb] dark:bg-white/[.04]'>
+            {primary.type === 'html' ? <ReportThumb /> : fileExtIcon(primary.name)}
+          </span>
+          <span className='min-w-0 flex-1'>
+            <span className='block truncate text-sm font-semibold text-[#1c1c1a] dark:text-[#e6e4df]'>{name}</span>
+            <span className='mt-1 block text-xs text-[#8b8b84]'>
+              {t('artifact_bundle_meta', '预览与下载 · {{count}} 个文件', { count: bundleItems.length })}
+            </span>
+          </span>
+          <span className='shrink-0 rounded-md bg-[#1c1c1a] px-3 py-1.5 text-xs text-white dark:bg-[#e6e4df] dark:text-[#1c1c1a]'>
+            {t('artifact_open', '打开')}
+          </span>
+        </button>
+      </div>
+    );
+  }
   const chartUrl = (a: StreamArtifact) => {
     const raw = String(a.content ?? '');
     return a.type === 'image' && raw ? resolveImageUrl(raw) : '';
@@ -270,6 +309,37 @@ export default function ArtifactCards({
           ))}
         </div>
       )}
+      {finals
+        .filter(
+          artifact =>
+            showInlineEr &&
+            artifact.type === 'html' &&
+            typeof artifact.content === 'string' &&
+            artifact.content.includes('data-dbgpt-er="1"'),
+        )
+        .map(artifact => (
+          <div
+            key={`er-${artifact.id}`}
+            className='mt-3 w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700'
+          >
+            <div className='flex items-center justify-between gap-2 p-3'>
+              <span className='text-sm font-medium'>{t('er_diagram_title', 'ER 图')}</span>
+              <button
+                type='button'
+                onClick={() => onPreview?.(artifact)}
+                className='text-xs text-green-700 dark:text-green-400'
+              >
+                {t('artifact_preview', '预览')}
+              </button>
+            </div>
+            <iframe
+              title={t('er_diagram_title', 'ER 图')}
+              srcDoc={artifact.content}
+              sandbox='allow-scripts allow-downloads'
+              className='h-[620px] w-full border-0 bg-white'
+            />
+          </div>
+        ))}
       <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
         {finals.map(artifact => {
           if (artifact.type === 'expert_suite') {

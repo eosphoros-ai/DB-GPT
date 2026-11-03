@@ -1,0 +1,16 @@
+erDiagram
+    %% Relationship cardinality is not asserted.
+    T0["sales.客户"] {
+        string C0 PK "tenant : varchar(32)"
+        %% C0 = {"name": "tenant", "type": "varchar(32)", "primary_key": true, "nullable": null}
+        string C1 PK "id : int"
+        %% C1 = {"name": "id", "type": "int", "primary_key": true, "nullable": null}
+    }
+    T1["sales.订单"] {
+        string C0 "tenant : varchar(32)"
+        %% C0 = {"name": "tenant", "type": "varchar(32)", "primary_key": false, "nullable": false}
+        string C1 "customer : int"
+        %% C1 = {"name": "customer", "type": "int", "primary_key": false, "nullable": null}
+    }
+    T1 }o..o{ T0 : "R0"
+    %% R0 = {"name": "fk_customer", "from_table": "child", "to_table": "parent", "from_columns": ["tenant", "customer"], "to_columns": ["tenant", "id"], "kind": "inferred", "basis": "information_schema FK catalog"}

@@ -23,6 +23,32 @@ def intent_request():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("selected", [None, "explicit-model"])
+async def test_editor_intents_reuse_generation_model_unless_explicit(
+    monkeypatch, selected
+):
+    monkeypatch.setattr(api, "_user_id", lambda user: "owner")
+    resolver = AsyncMock(return_value={})
+    monkeypatch.setattr(api, "resolve_annotation_intents", resolver)
+    schema = SimpleNamespace(
+        dashboard=SimpleNamespace(model_dump=lambda **kwargs: {}),
+        filters=[],
+        widgets=[],
+        metadata=SimpleNamespace(agent=SimpleNamespace(model_name="generation-model")),
+    )
+    service = SimpleNamespace(
+        _authorized_entity=Mock(),
+        get_dashboard=Mock(return_value=SimpleNamespace(schema_payload=schema)),
+    )
+    request = intent_request().model_copy(update={"model": selected})
+    await api.resolve_dashboard_annotation_intents(
+        "board", request, user=None, service=service
+    )
+    assert resolver.call_args.args[0].model == (selected or "generation-model")
+    assert request.model == selected
+
+
+@pytest.mark.asyncio
 async def test_viewer_cannot_invoke_annotation_routing(monkeypatch):
     monkeypatch.setattr(api, "_user_id", lambda user: "viewer")
     resolver = AsyncMock()

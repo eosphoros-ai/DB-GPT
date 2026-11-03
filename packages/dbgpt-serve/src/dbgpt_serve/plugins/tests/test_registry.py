@@ -123,6 +123,27 @@ def test_record_pin_bumps_use_count_and_event(tmp_path, registry):
     assert registry.list_events("demo-query")[0].conv_uid == "conv-1"
 
 
+@pytest.mark.parametrize(
+    "name", ["sql-optimization-expert", "metadata-architecture-expert"]
+)
+def test_sync_promotes_uploaded_builtin_preserving_identity_and_pins(registry, name):
+    root = Path(__file__).resolve().parents[6] / "assets/suites" / name
+    package = load_suite_dir(root)
+    registry.install_from_package(package, source="enterprise")
+    registry.record_pin("existing-conv", name, package.version)
+    before = registry.get(name)
+    summary = registry.sync_official([package])
+    after = registry.get(name)
+    assert summary.upgraded == [name]
+    assert after.source == "official"
+    assert after.id == before.id
+    assert after.status == before.status
+    assert after.use_count == before.use_count == 1
+    assert registry.current_pin("existing-conv") == (name, package.version)
+    assert registry.sync_official([package]).unchanged == [name]
+
+
+
 def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry):
     root = Path(__file__).resolve().parents[6] / "assets/suites/db-query"
     native = load_suite_dir(root)

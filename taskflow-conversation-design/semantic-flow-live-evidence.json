@@ -1,0 +1,30 @@
+{
+  "errors": [],
+  "probes": [
+    {
+      "file": "taskflow-db-fetch-template.json",
+      "model": "deepseek-v4-flash",
+      "httpStatus": 200,
+      "elapsedMs": 30001,
+      "serverErrors": [],
+      "success": false,
+      "timeout": true,
+      "sse": ""
+    }
+  ],
+  "editor": {
+    "url": "http://localhost:3000/taskflow/editor",
+    "conversationPanel": true
+  },
+  "options": {
+    "tools": [
+      "sql_query",
+      "code",
+      "knowledge_retrieve",
+      "html_interpreter",
+      "bash"
+    ],
+    "skills": []
+  },
+  "failure": "apiRequestContext.post: Timeout 60000ms exceeded.\nCall log:\n  - → POST http://127.0.0.1:5670/api/v2/serve/awel/flow/debug\n    - user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36\n    - accept: */*\n    - accept-encoding: gzip,deflate,br\n    - content-type: application/json\n    - content-length: 1724\n  - ← 200 OK\n    - date: Sun, 01 Nov 2026 13:58:57 GMT\n    - server: uvicorn\n    - content-type: text/event-stream\n    - cache-control: no-cache\n    - connection: keep-alive\n    - transfer-encoding: chunked\n"
+}

@@ -1,4 +1,6 @@
+import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue, getDialogueListPaged } from '@/client/api';
+import UnviewedResultDot from '@/components/layout/unviewed-result-dot';
 import { IChatDialogueSchema } from '@/types/chat';
 import { DeleteOutlined, MessageOutlined, SearchOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
@@ -7,12 +9,13 @@ import debounce from 'lodash/debounce';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 
 function ConversationsPage() {
+  const { unviewedResults, runningConvIds, clearConvAttention } = useContext(ChatContext);
   const router = useRouter();
   const { t } = useTranslation();
   const [list, setList] = useState<IChatDialogueSchema[]>([]);
@@ -62,6 +65,7 @@ function ConversationsPage() {
       e.preventDefault();
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
+        clearConvAttention(convUid);
         message.success('已删除');
         const current = totalRef.current;
         if (current) {
@@ -71,7 +75,7 @@ function ConversationsPage() {
         }
       }
     },
-    [fetchList],
+    [fetchList, clearConvAttention],
   );
 
   const formatTime = (dateStr?: string) => {
@@ -137,6 +141,9 @@ function ConversationsPage() {
                     )}
                   </div>
 
+                  <UnviewedResultDot
+                    visible={!!unviewedResults[conv.conv_uid] && !runningConvIds.includes(conv.conv_uid)}
+                  />
                   <Popconfirm
                     title='确认删除这条对话记录吗？'
                     onConfirm={e => handleDelete(e as React.MouseEvent, conv.conv_uid)}

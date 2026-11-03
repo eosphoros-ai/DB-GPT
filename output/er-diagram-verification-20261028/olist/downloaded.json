@@ -1,0 +1,456 @@
+{
+  "version": 1,
+  "title": "Olist Ecommerce · 物理 ER",
+  "database": "Olist_Ecommerce",
+  "evidence_artifact_ids": [
+    "sql-b9cfc76f34434dd18578b08d299fd2b3",
+    "sql-a397aab3e17744e0839c1596b9b61b9d"
+  ],
+  "tables": [
+    {
+      "id": "_olist_import_manifest",
+      "name": "_olist_import_manifest",
+      "schema": "",
+      "columns": [
+        {
+          "name": "source_file",
+          "type": "TEXT",
+          "primary_key": true,
+          "nullable": true
+        },
+        {
+          "name": "table_name",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "row_count",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "sha256",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "imported_at",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "customers",
+      "name": "customers",
+      "schema": "",
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "customer_unique_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "customer_zip_code_prefix",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "customer_city",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "customer_state",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "dataset_metadata",
+      "name": "dataset_metadata",
+      "schema": "",
+      "columns": [
+        {
+          "name": "key",
+          "type": "TEXT",
+          "primary_key": true,
+          "nullable": true
+        },
+        {
+          "name": "value",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "geolocation",
+      "name": "geolocation",
+      "schema": "",
+      "columns": [
+        {
+          "name": "geolocation_zip_code_prefix",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "geolocation_lat",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "geolocation_lng",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "geolocation_city",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "geolocation_state",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "metric_definitions",
+      "name": "metric_definitions",
+      "schema": "",
+      "columns": [
+        {
+          "name": "document",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "order_items",
+      "name": "order_items",
+      "schema": "",
+      "columns": [
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_item_id",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "seller_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "shipping_limit_date",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "freight_value",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "order_payments",
+      "name": "order_payments",
+      "schema": "",
+      "columns": [
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "payment_sequential",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "payment_type",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "payment_installments",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "payment_value",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "order_reviews",
+      "name": "order_reviews",
+      "schema": "",
+      "columns": [
+        {
+          "name": "review_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "review_score",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "review_comment_title",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "review_comment_message",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "review_creation_date",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "review_answer_timestamp",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "orders",
+      "name": "orders",
+      "schema": "",
+      "columns": [
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "customer_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_status",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_purchase_timestamp",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_approved_at",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_delivered_carrier_date",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_delivered_customer_date",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "order_estimated_delivery_date",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "product_category_translation",
+      "name": "product_category_translation",
+      "schema": "",
+      "columns": [
+        {
+          "name": "product_category_name",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_category_name_english",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "products",
+      "name": "products",
+      "schema": "",
+      "columns": [
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_category_name",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_name_lenght",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_description_lenght",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_photos_qty",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_weight_g",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_length_cm",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_height_cm",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "product_width_cm",
+          "type": "REAL",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "sellers",
+      "name": "sellers",
+      "schema": "",
+      "columns": [
+        {
+          "name": "seller_id",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "seller_zip_code_prefix",
+          "type": "INTEGER",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "seller_city",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        },
+        {
+          "name": "seller_state",
+          "type": "TEXT",
+          "primary_key": false,
+          "nullable": true
+        }
+      ]
+    }
+  ],
+  "relationships": []
+}

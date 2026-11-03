@@ -229,7 +229,13 @@ class SuiteDao(BaseDao[SuiteEntity, SuiteRequest, SuiteResponse]):
             session.expunge(entity)
         return entity
 
-    def update_package(self, entity: SuiteEntity, pkg, user_name: str) -> None:
+    def update_package(
+        self,
+        entity: SuiteEntity,
+        pkg,
+        user_name: str,
+        source: Optional[str] = None,
+    ) -> None:
         with self.session() as session:
             row = session.query(SuiteEntity).filter(SuiteEntity.id == entity.id).first()
             row.version = pkg.version
@@ -241,6 +247,8 @@ class SuiteDao(BaseDao[SuiteEntity, SuiteRequest, SuiteResponse]):
             row.package_digest = pkg.digest
             row.manifest_snapshot = _snapshot_to_json(pkg.snapshot)
             row.user_name = user_name or row.user_name
+            if source is not None:
+                row.source = source
 
     def set_status(
         self,

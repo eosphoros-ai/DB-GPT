@@ -4,6 +4,7 @@ import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import { AttachedConnector } from '@/new-components/connector/types';
 import type { SuiteMessageReference } from '@/types/suite';
 import type { ITaskflowArtifact } from '@/types/taskflow';
+import { dashboardUserDisplayText } from '@/utils/dashboard-user-message';
 import type { QuerySource, SemanticReadGap, SemanticSource } from '@/utils/semantic-provenance';
 import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
 import { envelopeReadableText } from '@/utils/tool-envelope';
@@ -166,6 +167,8 @@ export interface ManusLeftPanelProps {
   timelineSlot?: React.ReactNode;
   /** Dashboard planning and generation controls attached to this answer. */
   dashboardSlot?: React.ReactNode;
+  /** Final deliverable entry follows the answer, apart from execution steps. */
+  artifactSlot?: React.ReactNode;
   /** Draw a hairline separator above the answer text (timeline mode). */
   answerSeparated?: boolean;
   artifacts?: ArtifactItem[];
@@ -1052,6 +1055,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   subAgentSlot,
   timelineSlot,
   dashboardSlot,
+  artifactSlot,
   answerSeparated,
   artifacts,
   onArtifactClick,
@@ -1078,6 +1082,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onReportClick,
 }) => {
   const { t } = useTranslation();
+  const displayUserQuery = dashboardUserDisplayText(userQuery || '', {
+    confirm: t('dashboard_chat_confirm'),
+    revise: t('dashboard_chat_revise'),
+  });
 
   // ------------------------------------------------------------------
   // TaskFlow run: parse per-node sections (SQL / tables / conclusions)
@@ -1105,7 +1113,15 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           id: step.id,
           title: step.title,
           subtitle: step.subtitle,
-          status: step.status === 'error' ? ('failed' as StepStatus) : step.status,
+          status: sec
+            ? sec.marker.status === 'success'
+              ? 'completed'
+              : sec.marker.status === 'failed'
+                ? 'failed'
+                : 'running'
+            : step.status === 'error'
+              ? ('failed' as StepStatus)
+              : step.status,
           durationMs: sec?.marker.duration_ms,
           summary: sec?.marker.summary,
           content: extracted.clean,
@@ -1122,7 +1138,12 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         id: sec.marker.step_id,
         title: sec.marker.label,
         subtitle: undefined,
-        status: 'completed' as StepStatus,
+        status:
+          sec.marker.status === 'success'
+            ? ('completed' as StepStatus)
+            : sec.marker.status === 'failed'
+              ? ('failed' as StepStatus)
+              : ('running' as StepStatus),
         durationMs: sec.marker.duration_ms,
         summary: sec.marker.summary,
         content: extracted.clean,
@@ -1218,7 +1239,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           <div className='flex justify-end mb-2'>
             <div className='max-w-[85%]'>
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-3 py-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed line-clamp-2'>
-                {userQuery}
+                {displayUserQuery}
               </div>
             </div>
           </div>
@@ -1326,7 +1347,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               ))}
               <AttachmentMessageCards files={attachedFiles} />
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm'>
-                {userQuery}
+                {displayUserQuery}
               </div>
             </div>
           </div>
@@ -1465,6 +1486,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
+        {artifactSlot}
         {artifacts && artifacts.length > 0 && (
           <div className='mt-5 px-1 pb-8'>
             <div className='flex flex-wrap gap-3'>

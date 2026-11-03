@@ -2,6 +2,7 @@ import { buildActionDisplayText, publicAssistantText } from '@/utils/action-disp
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import AgentTimeline, { stepsToTimelineBlocks } from './AgentTimeline';
+import { taskflowTraceBlocks } from './TaskflowAgentTrace';
 import { isTerminalTool, terminalCommand } from './TerminalToolRow';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -18,6 +19,58 @@ const query = (sql: string, value: number) => ({
 });
 
 const step = (id: string) => ({ id, title: 'sql_query', action: 'sql_query', status: 'done' });
+
+describe('workflow tool evidence', () => {
+  it('splits a mixed batch and preserves each tool result and failure', () => {
+    const blocks = taskflowTraceBlocks(
+      [
+        {
+          kind: 'action',
+          title: 'sql_query, bash',
+          detail: 'truncated preview',
+          action_input: [{ sql: 'SELECT 77' }, { code: 'ls -la' }],
+        },
+        {
+          kind: 'observation',
+          title: '观察',
+          output: JSON.stringify([
+            {
+              name: 'sql_query',
+              success: true,
+              content: JSON.stringify({ chunks: [{ output_type: 'query', content: query('SELECT 77', 77) }] }),
+            },
+            { name: 'bash', success: false, content: 'Permission denied' },
+          ]),
+        },
+      ],
+      false,
+      'node1',
+    );
+    expect(blocks.map(block => [block.tool, block.status])).toEqual([
+      ['sql_query', 'success'],
+      ['bash', 'failed'],
+    ]);
+    render(<AgentTimeline blocks={blocks} />);
+    fireEvent.click(screen.getByRole('button', { name: /sql_query/ }));
+    expect(screen.getByRole('cell', { name: '77' })).toBeTruthy();
+    expect(document.querySelector('[aria-label="database"]')).toBeTruthy();
+    expect(screen.queryByText(/truncated preview|call_id/)).toBeNull();
+  });
+
+  it('does not use a later action observation to mark an unfinished call successful', () => {
+    const blocks = taskflowTraceBlocks(
+      [
+        { kind: 'action', title: 'sql_query', detail: '{"sql":"SELECT 1"}' },
+        { kind: 'action', title: 'bash', detail: '{"code":"pwd"}' },
+        { kind: 'observation', title: '观察', detail: '/tmp', success: true },
+      ],
+      true,
+      'node1',
+    );
+    expect(blocks.map(block => block.status)).toEqual(['running', 'success']);
+    expect(taskflowTraceBlocks([{ kind: 'action', title: 'sql_query' }], false, 'node1')[0].status).toBe('failed');
+  });
+});
 
 describe('skill reading steps', () => {
   const binding = {

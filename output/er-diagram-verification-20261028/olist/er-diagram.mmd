@@ -1,0 +1,146 @@
+erDiagram
+    %% Relationship cardinality is not asserted.
+    T0["_olist_import_manifest"] {
+        string C0 PK "source_file : TEXT"
+        %% C0 = {"name": "source_file", "type": "TEXT", "primary_key": true, "nullable": true}
+        string C1 "table_name : TEXT"
+        %% C1 = {"name": "table_name", "type": "TEXT", "primary_key": false, "nullable": false}
+        string C2 "row_count : INTEGER"
+        %% C2 = {"name": "row_count", "type": "INTEGER", "primary_key": false, "nullable": false}
+        string C3 "sha256 : TEXT"
+        %% C3 = {"name": "sha256", "type": "TEXT", "primary_key": false, "nullable": false}
+        string C4 "imported_at : TEXT"
+        %% C4 = {"name": "imported_at", "type": "TEXT", "primary_key": false, "nullable": false}
+    }
+    T1["customers"] {
+        string C0 "customer_id : TEXT"
+        %% C0 = {"name": "customer_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "customer_unique_id : TEXT"
+        %% C1 = {"name": "customer_unique_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C2 "customer_zip_code_prefix : INTEGER"
+        %% C2 = {"name": "customer_zip_code_prefix", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C3 "customer_city : TEXT"
+        %% C3 = {"name": "customer_city", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C4 "customer_state : TEXT"
+        %% C4 = {"name": "customer_state", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T2["dataset_metadata"] {
+        string C0 PK "key : TEXT"
+        %% C0 = {"name": "key", "type": "TEXT", "primary_key": true, "nullable": true}
+        string C1 "value : TEXT"
+        %% C1 = {"name": "value", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T3["geolocation"] {
+        string C0 "geolocation_zip_code_prefix : INTEGER"
+        %% C0 = {"name": "geolocation_zip_code_prefix", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C1 "geolocation_lat : REAL"
+        %% C1 = {"name": "geolocation_lat", "type": "REAL", "primary_key": false, "nullable": true}
+        string C2 "geolocation_lng : REAL"
+        %% C2 = {"name": "geolocation_lng", "type": "REAL", "primary_key": false, "nullable": true}
+        string C3 "geolocation_city : TEXT"
+        %% C3 = {"name": "geolocation_city", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C4 "geolocation_state : TEXT"
+        %% C4 = {"name": "geolocation_state", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T4["metric_definitions"] {
+        string C0 "document : TEXT"
+        %% C0 = {"name": "document", "type": "TEXT", "primary_key": false, "nullable": false}
+    }
+    T5["order_items"] {
+        string C0 "order_id : TEXT"
+        %% C0 = {"name": "order_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "order_item_id : INTEGER"
+        %% C1 = {"name": "order_item_id", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C2 "product_id : TEXT"
+        %% C2 = {"name": "product_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C3 "seller_id : TEXT"
+        %% C3 = {"name": "seller_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C4 "shipping_limit_date : TEXT"
+        %% C4 = {"name": "shipping_limit_date", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C5 "price : REAL"
+        %% C5 = {"name": "price", "type": "REAL", "primary_key": false, "nullable": true}
+        string C6 "freight_value : REAL"
+        %% C6 = {"name": "freight_value", "type": "REAL", "primary_key": false, "nullable": true}
+    }
+    T6["order_payments"] {
+        string C0 "order_id : TEXT"
+        %% C0 = {"name": "order_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "payment_sequential : INTEGER"
+        %% C1 = {"name": "payment_sequential", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C2 "payment_type : TEXT"
+        %% C2 = {"name": "payment_type", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C3 "payment_installments : INTEGER"
+        %% C3 = {"name": "payment_installments", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C4 "payment_value : REAL"
+        %% C4 = {"name": "payment_value", "type": "REAL", "primary_key": false, "nullable": true}
+    }
+    T7["order_reviews"] {
+        string C0 "review_id : TEXT"
+        %% C0 = {"name": "review_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "order_id : TEXT"
+        %% C1 = {"name": "order_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C2 "review_score : INTEGER"
+        %% C2 = {"name": "review_score", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C3 "review_comment_title : TEXT"
+        %% C3 = {"name": "review_comment_title", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C4 "review_comment_message : TEXT"
+        %% C4 = {"name": "review_comment_message", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C5 "review_creation_date : TEXT"
+        %% C5 = {"name": "review_creation_date", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C6 "review_answer_timestamp : TEXT"
+        %% C6 = {"name": "review_answer_timestamp", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T8["orders"] {
+        string C0 "order_id : TEXT"
+        %% C0 = {"name": "order_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "customer_id : TEXT"
+        %% C1 = {"name": "customer_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C2 "order_status : TEXT"
+        %% C2 = {"name": "order_status", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C3 "order_purchase_timestamp : TEXT"
+        %% C3 = {"name": "order_purchase_timestamp", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C4 "order_approved_at : TEXT"
+        %% C4 = {"name": "order_approved_at", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C5 "order_delivered_carrier_date : TEXT"
+        %% C5 = {"name": "order_delivered_carrier_date", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C6 "order_delivered_customer_date : TEXT"
+        %% C6 = {"name": "order_delivered_customer_date", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C7 "order_estimated_delivery_date : TEXT"
+        %% C7 = {"name": "order_estimated_delivery_date", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T9["product_category_translation"] {
+        string C0 "product_category_name : TEXT"
+        %% C0 = {"name": "product_category_name", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "product_category_name_english : TEXT"
+        %% C1 = {"name": "product_category_name_english", "type": "TEXT", "primary_key": false, "nullable": true}
+    }
+    T10["products"] {
+        string C0 "product_id : TEXT"
+        %% C0 = {"name": "product_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "product_category_name : TEXT"
+        %% C1 = {"name": "product_category_name", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C2 "product_name_lenght : INTEGER"
+        %% C2 = {"name": "product_name_lenght", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C3 "product_description_lenght : INTEGER"
+        %% C3 = {"name": "product_description_lenght", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C4 "product_photos_qty : INTEGER"
+        %% C4 = {"name": "product_photos_qty", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C5 "product_weight_g : REAL"
+        %% C5 = {"name": "product_weight_g", "type": "REAL", "primary_key": false, "nullable": true}
+        string C6 "product_length_cm : REAL"
+        %% C6 = {"name": "product_length_cm", "type": "REAL", "primary_key": false, "nullable": true}
+        string C7 "product_height_cm : REAL"
+        %% C7 = {"name": "product_height_cm", "type": "REAL", "primary_key": false, "nullable": true}
+        string C8 "product_width_cm : REAL"
+        %% C8 = {"name": "product_width_cm", "type": "REAL", "primary_key": false, "nullable": true}
+    }
+    T11["sellers"] {
+        string C0 "seller_id : TEXT"
+        %% C0 = {"name": "seller_id", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C1 "seller_zip_code_prefix : INTEGER"
+        %% C1 = {"name": "seller_zip_code_prefix", "type": "INTEGER", "primary_key": false, "nullable": true}
+        string C2 "seller_city : TEXT"
+        %% C2 = {"name": "seller_city", "type": "TEXT", "primary_key": false, "nullable": true}
+        string C3 "seller_state : TEXT"
+        %% C3 = {"name": "seller_state", "type": "TEXT", "primary_key": false, "nullable": true}
+    }

@@ -26,6 +26,7 @@ from dbgpt_app.operators.taskflow import (
     strip_step_markers,
     unregister_step_events,
 )
+from dbgpt_app.operators.taskflow_agent import TFAgentOperator
 
 from ..taskflow import (
     TaskFlowDSLError,
@@ -406,6 +407,51 @@ class TestStepMarker:
         payload = json.loads(payload_line)
         assert payload["step_id"] == "n3"
         assert payload["kind"] == "ai_analysis"
+
+    @pytest.mark.asyncio
+    async def test_agent_marker_preserves_tool_evidence_for_replay(self):
+        steps = [
+            {
+                "kind": "action",
+                "title": "code",
+                "action_input": {"code": "print('```')"},
+                "success": True,
+            },
+            {"kind": "observation", "title": "观察", "output": "```result"},
+        ]
+        op = TFStepMarkerOperator(
+            step_id="agent1", step_label="分析", step_kind="agent"
+        )
+        with patch.object(
+            TFStepMarkerOperator, "current_dag_context", new_callable=PropertyMock
+        ) as ctx:
+            ctx.return_value.get_from_share_data = AsyncMock(
+                side_effect=lambda key: (
+                    steps if key == "__taskflow_agent_trace__:agent1" else None
+                )
+            )
+            ctx.return_value.save_to_share_data = AsyncMock()
+            out = await op.map("结论")
+        payload = json.loads(out.split("```")[1].replace(TASKFLOW_STEP_VIS_TAG, ""))
+        assert payload["steps"][0]["success"] is True
+        assert payload["steps"][0]["action_input"] == {"code": "print('``')"}
+        assert payload["steps"][1]["output"] == "``result"
+        assert strip_step_markers(out) == "结论"
+
+    @pytest.mark.asyncio
+    async def test_agent_provider_failure_answer_is_not_success(self):
+        op = TFAgentOperator(goal="计算同比", llm_client=AsyncMock())
+        with (
+            patch.object(TFAgentOperator, "llm_client", new_callable=PropertyMock),
+            patch(
+                "dbgpt_app.operators.taskflow_agent.run_react_agent",
+                new=AsyncMock(
+                    return_value="LLM_PROVIDER_ERROR: Error code: 402 Insufficient Balance"
+                ),
+            ),
+        ):
+            with pytest.raises(Exception, match="model provider error"):
+                await op._join_func("今年120，去年100")
 
     @pytest.mark.asyncio
     async def test_marker_pushes_step_event(self):

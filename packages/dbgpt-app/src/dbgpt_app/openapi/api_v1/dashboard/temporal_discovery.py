@@ -231,6 +231,30 @@ def collect_temporal_evidence(
                 fact["distinct_domain_complete"] = complete
                 fact["inference"] = infer_temporal_format(values, complete=complete)
                 if connector.dialect == "sqlite":
+                    # Give the generator an executable expression based on the
+                    # observed domain, instead of asking it to guess date().
+                    offsets = {
+                        "DD-MM-YYYY": (7, 4, 1),
+                        "DD/MM/YYYY": (7, 4, 1),
+                        "MM-DD-YYYY": (7, 1, 4),
+                        "MM/DD/YYYY": (7, 1, 4),
+                    }
+                    date_format = fact["inference"]["format"]
+                    if complete and date_format in offsets:
+                        year, month, day = offsets[date_format]
+                        expression = func.date(
+                            func.substr(col, year, 4)
+                            .op("||")("-")
+                            .op("||")(func.substr(col, month, 2))
+                            .op("||")("-")
+                            .op("||")(func.substr(col, day, 2))
+                        )
+                        fact["normalized_date_sql"] = str(
+                            expression.compile(
+                                dialect=dialect,
+                                compile_kwargs={"literal_binds": True},
+                            )
+                        )
                     types = query(select(func.typeof(col)).distinct().limit(6))
                     fact["observed_storage_types"] = sorted(
                         str(row[0]) for row in types
@@ -265,5 +289,11 @@ calendar_distinct_counts.month 以完整年份+月份去重，只有全量 disti
 格式不歧义时才提供；null/unknown/ambiguous/bounded_sample 都不能当作精确事实。
 写 SQL 前依据真实样本和 inference.format 选择当前数据库方言支持的解析表达式，
 保留完整年份。不要假设日期文本能被原生日期函数直接识别，不要凭字段名猜格式。
+若提供 normalized_date_sql，它是基于已确认格式的当前方言解析表达式；
+趋势查询和 publication.query 都应使用它归一化源日期，再聚合与排序。
+时间范围的 MIN/MAX 也应作用于归一化日期。最高/最低指标对应的日期必须来自
+该指标极值所在记录（例如按指标和日期排序的分组窗口排名），不能分别取 MAX(日期)
+和 MAX(指标) 拼成一条记录；并列时使用明确、稳定的日期排序规则。
+SQLite 的 date()/strftime() 不会自动识别 DD-MM-YYYY，replace 分隔符也不会交换日月年。
 格式推断仅覆盖已观测值，不保证未来数据或任意 SQL 的语义正确；缺失事实应明确说明。
 """ + json.dumps(evidence, ensure_ascii=False, indent=2)

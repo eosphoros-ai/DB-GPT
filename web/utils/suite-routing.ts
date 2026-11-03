@@ -1,5 +1,19 @@
 import type { SuiteItem, SuiteRecommendedQuestion } from '@/types/suite';
 
+const HOME_SUITE_ORDER: Record<string, number> = {
+  'db-query': 0,
+  'db-analysis': 1,
+  'sql-optimization-expert': 2,
+  'metadata-architecture-expert': 3,
+};
+
+/** Keep installed enterprise suites in the composer menu, not the official home tabs. */
+export function getHomeSuites(suites: SuiteItem[]): SuiteItem[] {
+  return suites
+    .filter(suite => suite.source === 'official' && suite.status === 'enabled' && suite.name !== 'db-ops')
+    .sort((a, b) => (HOME_SUITE_ORDER[a.name] ?? 9) - (HOME_SUITE_ORDER[b.name] ?? 9) || a.name.localeCompare(b.name));
+}
+
 /** Resolve the example's database without silently falling back to another one. */
 export function resolveSuiteQuestionDatabase<T extends { db_name: string }>(
   question: SuiteRecommendedQuestion,

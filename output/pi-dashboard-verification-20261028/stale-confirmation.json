@@ -1,0 +1,50 @@
+[
+  {
+    "type": "suite.bound",
+    "suite": "db-analysis",
+    "version": "1.1.0",
+    "command": "/dashboard",
+    "command_skill": "build-dashboard",
+    "skill_loaded": true,
+    "skill_sha256": "91f2bbbc58d5e18eaeac0c62ccac1101cd4da14023f88490a7bc8f7f8f86252f",
+    "command_error": null,
+    "semantic_status": "bound",
+    "package_format": "qwenwork-plugin",
+    "documents": [
+      {
+        "path": "skills/build-dashboard/SKILL.md",
+        "sha256": "91f2bbbc58d5e18eaeac0c62ccac1101cd4da14023f88490a7bc8f7f8f86252f",
+        "status": "loaded"
+      },
+      {
+        "path": "skills/build-dashboard/references/connector-readiness.md",
+        "sha256": "a6539202446f40c64697a1fed54991925325cfec3b78466114a397f54e267c85",
+        "status": "loaded"
+      },
+      {
+        "path": "skills/build-dashboard/references/data-quality.md",
+        "sha256": "efef7ce0b2a82a029eb509d66057472f57691e717662e91d9f2010b79f03ee9a",
+        "status": "loaded"
+      },
+      {
+        "path": "skills/build-dashboard/references/evidence-card.md",
+        "sha256": "c519bb9f0d75c986445c89a5ceec57fd452feb875d02475f3175aebadcaa70dc",
+        "status": "loaded"
+      }
+    ]
+  },
+  {
+    "type": "dashboard.generation.failed",
+    "message": "无法继续生成：规划不可访问、已变更、已生成或数据源不匹配。请重新打开有权限的规划并确认当前修订。",
+    "dashboard_id": null
+  },
+  {
+    "type": "final",
+    "protocol_version": 2,
+    "content": "无法继续生成：规划不可访问、已变更、已生成或数据源不匹配。请重新打开有权限的规划并确认当前修订。",
+    "citations": []
+  },
+  {
+    "type": "done"
+  }
+]

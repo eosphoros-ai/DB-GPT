@@ -1,0 +1,24 @@
+[
+  {
+    "name": "weekly-office-dbgpt-verification",
+    "artifact_id": "54011cc79a1a4dcbbd74ff4fcf1ccbeb",
+    "conv_uid": "cea2b936239f4e588ff25a71249ed2e3",
+    "history_status": 200,
+    "history_has_artifact": true,
+    "history_has_skill_read": true,
+    "file_count": 5,
+    "validation": "ready",
+    "installed": false
+  },
+  {
+    "name": "weekly-office-pi-verification",
+    "artifact_id": "b150a72f2f1a44b7967fbc0aabffc6e2",
+    "conv_uid": "062500a4b9a74586b27be2163300169d",
+    "history_status": 200,
+    "history_has_artifact": true,
+    "history_has_skill_read": true,
+    "file_count": 7,
+    "validation": "ready",
+    "installed": false
+  }
+]

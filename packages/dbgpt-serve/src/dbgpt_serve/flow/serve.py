@@ -58,10 +58,16 @@ class Serve(BaseServe):
         if self._app_has_initiated:
             return
         self._system_app = system_app
+        from .api.generation import router as generation_router
+
         for prefix in self._api_prefix:
             self._system_app.app.include_router(
                 router, prefix=prefix, tags=self._api_tags
             )
+            if "/v2/" in prefix:
+                self._system_app.app.include_router(
+                    generation_router, prefix=prefix, tags=self._api_tags
+                )
         init_endpoints(self._system_app, self._config)
         self._app_has_initiated = True
 

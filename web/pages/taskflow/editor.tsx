@@ -1,25 +1,39 @@
+import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getFlowById, getFlowTemplates, getTaskflowNodeKinds, importFlow } from '@/client/api';
-import { addFlow, updateFlowById } from '@/client/api/flow';
+import { getDbList } from '@/client/api/request';
+import ConversationPanel from '@/components/taskflow/editor/ConversationPanel';
 import DebugDrawer from '@/components/taskflow/editor/DebugDrawer';
 import InsertEdge from '@/components/taskflow/editor/InsertEdge';
 import NodePalette from '@/components/taskflow/editor/NodePalette';
 import PropertyPanel from '@/components/taskflow/editor/PropertyPanel';
 import TaskflowNodeCard, { TaskflowNodeCardData } from '@/components/taskflow/editor/TaskflowNodeCard';
+import { useTaskflowConversation } from '@/hooks/use-taskflow-conversation';
 import type { IFlow, IFlowUpdateParam } from '@/types/flow';
 import type { ITaskflowDSL, ITaskflowNode, ITaskflowNodeKind } from '@/types/taskflow';
+import type { EditingSnapshot } from '@/types/taskflow-generation';
 import { emptyDSL, kindSpecOf, missingRequiredFields, nextNodeId } from '@/utils/taskflow';
+import { layoutTaskflow } from '@/utils/taskflow-layout';
 import { ArrowLeftOutlined, CheckOutlined, PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Input, Tag, Upload, message } from 'antd';
+import { Button, Input, Select, Tag, Upload, message } from 'antd';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactFlow, { Background, Controls, Edge, Node, NodeProps } from 'reactflow';
+import ReactFlow, { Background, Controls, Edge, Node, NodeProps, useNodesInitialized, useReactFlow } from 'reactflow';
 
 import 'reactflow/dist/style.css';
 
 const nodeTypes = { taskflowNode: (props: NodeProps<TaskflowNodeCardData>) => <TaskflowNodeCard {...props} /> };
 const edgeTypes = { insert: InsertEdge };
+
+function FitWorkflow({ nodeIds }: { nodeIds: string }) {
+  const initialized = useNodesInitialized();
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    if (initialized) void fitView({ padding: 0.2, duration: 200 });
+  }, [initialized, nodeIds, fitView]);
+  return null;
+}
 
 function summaryOf(node: ITaskflowNode, spec: ITaskflowNodeKind | undefined, isZh: boolean): string {
   const config = node.config ?? {};
@@ -64,6 +78,7 @@ function TaskflowEditor() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith('zh');
+  const { model, modelList, refreshModelList } = useContext(ChatContext);
 
   const [dsl, setDsl] = useState<ITaskflowDSL>(() => emptyDSL());
   const [flowMeta, setFlowMeta] = useState<{
@@ -77,10 +92,57 @@ function TaskflowEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
   const dslRef = useRef(dsl);
   dslRef.current = dsl;
+  const flowMetaRef = useRef(flowMeta);
+  flowMetaRef.current = flowMeta;
+  const applySnapshot = useCallback((snapshot: EditingSnapshot) => {
+    setDsl(snapshot.dsl);
+    setFlowMeta(snapshot.meta);
+  }, []);
+  const conversation = useTaskflowConversation(
+    {
+      dsl,
+      meta: {
+        uid: flowMeta.uid,
+        name: flowMeta.name,
+        label: flowMeta.label,
+        description: flowMeta.description,
+        state: flowMeta.state,
+      },
+    },
+    loaded,
+    `taskflow-session:${router.query.id || router.query.template || 'new'}`,
+    applySnapshot,
+  );
+  const saveConversation = conversation.save;
 
   const { data: manifestData } = useRequest(async () => apiInterceptors(getTaskflowNodeKinds()));
+  const { data: databaseData } = useRequest(async () => apiInterceptors(getDbList()));
+  const databaseOptions = useMemo(() => {
+    const [, databases] = databaseData ?? [];
+    return ((databases ?? []) as Array<{ db_name: string; db_type?: string; type?: string }>).map(database => ({
+      label: `${database.db_name} (${database.type ?? database.db_type ?? ''})`,
+      value: database.db_name,
+    }));
+  }, [databaseData]);
+  const scopedDatabaseNodes = useMemo(
+    () =>
+      dsl.nodes.filter(
+        node =>
+          node.kind === 'agent' &&
+          node.config.tools?.some((tool: string) => tool === 'sql_query' || tool.startsWith('semantic_')),
+      ),
+    [dsl.nodes],
+  );
+  const sharedDatabase = useMemo(() => {
+    const choices = scopedDatabaseNodes.map(node => node.config.datasources ?? []);
+    return choices.length && choices.every(choice => choice.length === 1 && choice[0] === choices[0][0])
+      ? choices[0][0]
+      : undefined;
+  }, [scopedDatabaseNodes]);
   const manifest = useMemo(() => {
     const [, data] = (manifestData as any) ?? [];
     return (data as ITaskflowNodeKind[] | null) ?? null;
@@ -92,6 +154,10 @@ function TaskflowEditor() {
     if (!router.isReady) return;
     (async () => {
       if (id) {
+        if (flowMetaRef.current.uid === id) {
+          setLoaded(true);
+          return;
+        }
         const [, flow] = await apiInterceptors(getFlowById(id));
         const item = flow as IFlow | null;
         if (item?.taskflow_source) {
@@ -119,6 +185,7 @@ function TaskflowEditor() {
           });
         }
       }
+      setLoaded(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady, router.query.id, router.query.template]);
@@ -189,31 +256,14 @@ function TaskflowEditor() {
   // -------------------------------------------------------------------------
   const [insertRequest, setInsertRequest] = useState<[string, string] | null>(null);
 
-  const orderedNodes = useMemo(() => {
-    // Linear chain order following edges from start (fall back to declaration).
-    const byId = new Map(dsl.nodes.map(n => [n.id, n] as const));
-    const nextOf = new Map(dsl.edges.map(([s, t]) => [s, t] as const));
-    const start = dsl.nodes.find(n => n.kind === 'start') ?? dsl.nodes[0];
-    const chain: ITaskflowNode[] = [];
-    const seen = new Set<string>();
-    let current: ITaskflowNode | undefined = start;
-    while (current && !seen.has(current.id)) {
-      chain.push(current);
-      seen.add(current.id);
-      const nextId = nextOf.get(current.id);
-      current = nextId ? byId.get(nextId) : undefined;
-    }
-    for (const node of dsl.nodes) {
-      if (!seen.has(node.id)) chain.push(node);
-    }
-    return chain;
-  }, [dsl]);
+  const layout = useMemo(() => layoutTaskflow(dsl), [dsl]);
+  const orderedNodes = useMemo(() => layout.map(item => item.node), [layout]);
 
   const { rfNodes, rfEdges } = useMemo(() => {
-    const nodes: Node<TaskflowNodeCardData>[] = orderedNodes.map((node, index) => ({
+    const nodes: Node<TaskflowNodeCardData>[] = layout.map(({ node, position }, index) => ({
       id: node.id,
       type: 'taskflowNode',
-      position: { x: 340, y: 40 + index * 118 },
+      position,
       draggable: false,
       data: {
         node,
@@ -234,7 +284,7 @@ function TaskflowEditor() {
       },
     }));
     return { rfNodes: nodes, rfEdges: edges };
-  }, [orderedNodes, dsl.edges, manifest, isZh, deleteNode]);
+  }, [layout, dsl.edges, manifest, isZh, deleteNode]);
 
   const selectedNode = useMemo(() => dsl.nodes.find(n => n.id === selectedId) ?? null, [dsl, selectedId]);
 
@@ -293,30 +343,21 @@ function TaskflowEditor() {
       if (!validateAll(publish)) return;
       setSaving(true);
       try {
-        const payload = buildPayload(publish ? 'deployed' : 'developing');
-        const [err, res] = await apiInterceptors(payload.uid ? updateFlowById(payload.uid, payload) : addFlow(payload));
-        if (err) {
-          message.error(String((err as any)?.err_msg || err));
-          return;
-        }
-        const saved = res as IFlow | null;
+        const result = await saveConversation(publish);
+        const saved = result.snapshot.meta;
         message.success(t(publish ? 'taskflow_publish_success' : 'taskflow_save_success'));
-        setFlowMeta(prev => ({
-          ...prev,
-          uid: saved?.uid ?? prev.uid,
-          name: saved?.name ?? prev.name,
-          state: publish ? 'deployed' : 'developing',
-        }));
         if (!flowMeta.uid && saved?.uid) {
           router.replace({ pathname: '/taskflow/editor', query: { id: saved.uid } }, undefined, {
             shallow: true,
           });
         }
+      } catch (err: any) {
+        message.error(err.message);
       } finally {
         setSaving(false);
       }
     },
-    [buildPayload, flowMeta.uid, router, saving, t, validateAll],
+    [saveConversation, flowMeta.uid, router, saving, t, validateAll],
   );
 
   const handleImport = useCallback(
@@ -361,6 +402,7 @@ function TaskflowEditor() {
           className='!w-56 !text-[15px] !font-bold'
         />
         {stateTag}
+        {conversation.session?.dirty && <Tag>{isZh ? '未保存修改' : 'Unsaved changes'}</Tag>}
         <Input
           variant='borderless'
           value={flowMeta.description}
@@ -368,10 +410,42 @@ function TaskflowEditor() {
           onChange={e => setFlowMeta(prev => ({ ...prev, description: e.target.value }))}
           className='!flex-1 !text-xs !text-gray-400'
         />
+        {scopedDatabaseNodes.length > 0 && (
+          <Select
+            aria-label={isZh ? '流程数据源' : 'Workflow datasource'}
+            className='!w-52 flex-none'
+            placeholder={isZh ? '选择流程数据源' : 'Select workflow database'}
+            value={sharedDatabase}
+            options={databaseOptions}
+            showSearch
+            optionFilterProp='label'
+            onChange={database =>
+              setDsl(previous => ({
+                ...previous,
+                nodes: previous.nodes.map(node =>
+                  node.kind === 'agent' &&
+                  node.config.tools?.some((tool: string) => tool === 'sql_query' || tool.startsWith('semantic_'))
+                    ? { ...node, config: { ...node.config, datasources: [database] } }
+                    : node,
+                ),
+              }))
+            }
+          />
+        )}
         <Upload accept='.json' showUploadList={false} beforeUpload={file => handleImport(file)}>
           <Button icon={<UploadOutlined />}>{t('taskflow_import')}</Button>
         </Upload>
-        <Button icon={<PlayCircleOutlined />} onClick={() => setDebugOpen(true)}>
+        <Button
+          icon={<PlayCircleOutlined />}
+          onClick={async () => {
+            try {
+              await conversation.sync();
+              setDebugOpen(true);
+            } catch (err: any) {
+              message.error(err.message);
+            }
+          }}
+        >
           {t('taskflow_debug')}
         </Button>
         <Button loading={saving} onClick={() => handleSave(false)}>
@@ -382,24 +456,30 @@ function TaskflowEditor() {
         </Button>
       </div>
 
-      {/* NL edit bar (P1 placeholder) */}
-      <div className='px-4 pt-2.5 bg-white dark:bg-[#16171a]'>
-        <div className='flex items-center gap-2.5 border border-gray-100 dark:border-white/10 rounded-lg px-3.5 py-2 text-[12.5px] text-gray-400 bg-gray-50 dark:bg-white/5'>
-          <span className='text-violet-500'>✦</span>
-          <span>{t('taskflow_nl_edit_placeholder')}</span>
-          <Tag className='ml-auto !text-[10px]' color='default'>
-            P1
-          </Tag>
-        </div>
-      </div>
-
       {/* Body: palette / canvas / property */}
       <div className='flex-1 flex min-h-0'>
-        <NodePalette manifest={manifest} onAdd={kind => addNode(kind)} />
+        <ConversationPanel
+          session={conversation.session}
+          busy={conversation.busy}
+          error={conversation.error}
+          selectedId={selectedId}
+          models={modelList ?? []}
+          defaultModel={model}
+          onRefreshModels={refreshModelList}
+          onSend={(text, chosenModel, local, replace, answers) =>
+            conversation.send(text, chosenModel, local, replace, answers, selectedId)
+          }
+          onAction={action => void conversation.action(action)}
+          onSelect={setSelectedId}
+        />
+        {showPalette && <NodePalette manifest={manifest} onAdd={kind => addNode(kind)} />}
         <div className='flex-1 min-w-0 relative'>
           <div className='absolute top-0 left-0 right-0 z-10 px-4 py-2 text-[11.5px] text-gray-400 bg-gray-50/80 dark:bg-[#101114]/80 backdrop-blur'>
             <b className='text-gray-500 font-semibold'>{t('taskflow_editor')}</b>
             <span className='ml-2'>{t('taskflow_canvas_hint')}</span>
+            <Button size='small' type='text' className='!ml-2' onClick={() => setShowPalette(prev => !prev)}>
+              {isZh ? (showPalette ? '收起节点库' : '添加节点') : showPalette ? 'Hide nodes' : 'Add node'}
+            </Button>
           </div>
           <ReactFlow
             nodes={rfNodes}
@@ -415,6 +495,7 @@ function TaskflowEditor() {
             nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
           >
+            <FitWorkflow nodeIds={orderedNodes.map(node => node.id).join(',')} />
             <Background gap={22} size={1} className='!stroke-gray-200 dark:!stroke-gray-700' />
             <Controls showInteractive={false} />
           </ReactFlow>
@@ -460,6 +541,11 @@ function TaskflowEditor() {
         onClose={() => setDebugOpen(false)}
         buildPayload={() => buildPayload('developing') as unknown as Record<string, any>}
         dslNodes={orderedNodes}
+        prepareRun={async () => {
+          const state = await conversation.sync();
+          return { sessionId: state.session_id, revision: state.draft_revision };
+        }}
+        onRunComplete={() => void conversation.refresh()}
       />
     </div>
   );

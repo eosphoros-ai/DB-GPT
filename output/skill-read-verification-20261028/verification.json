@@ -1,0 +1,66 @@
+{
+  "browser": [
+    {
+      "engine": "pi",
+      "kind": "selected",
+      "success": true,
+      "conv_uid": "13636d79-bbb9-4906-be0f-3c5ff3f3ac91"
+    },
+    {
+      "engine": "pi",
+      "kind": "suite",
+      "success": true,
+      "conv_uid": "dc53c11e-a5b9-4230-8e3f-96b4488288cf"
+    },
+    {
+      "engine": "dbgpt",
+      "kind": "selected",
+      "success": true,
+      "conv_uid": "1703bf7c-5b11-467f-9ea6-d51d15e46102"
+    },
+    {
+      "engine": "dbgpt",
+      "kind": "suite",
+      "success": true,
+      "conv_uid": "b7778f7c-81a2-45cb-9cb9-25816ea4c249"
+    },
+    {
+      "kind": "legacy-suite",
+      "success": true
+    }
+  ],
+  "cases": [
+    {
+      "engine": "pi",
+      "kind": "selected",
+      "conv_uid": "13636d79-bbb9-4906-be0f-3c5ff3f3ac91",
+      "skill_read_verified": true,
+      "model_response_completed": false,
+      "model_error": "402 Insufficient Balance"
+    },
+    {
+      "engine": "pi",
+      "kind": "suite",
+      "conv_uid": "dc53c11e-a5b9-4230-8e3f-96b4488288cf",
+      "skill_read_verified": true,
+      "model_response_completed": false,
+      "model_error": "402 Insufficient Balance"
+    },
+    {
+      "engine": "dbgpt",
+      "kind": "selected",
+      "conv_uid": "1703bf7c-5b11-467f-9ea6-d51d15e46102",
+      "skill_read_verified": true,
+      "model_response_completed": false,
+      "model_error": "402 Insufficient Balance"
+    },
+    {
+      "engine": "dbgpt",
+      "kind": "suite",
+      "conv_uid": "b7778f7c-81a2-45cb-9cb9-25816ea4c249",
+      "skill_read_verified": true,
+      "model_response_completed": false,
+      "model_error": "402 Insufficient Balance"
+    }
+  ]
+}

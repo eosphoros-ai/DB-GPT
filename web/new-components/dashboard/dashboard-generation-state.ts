@@ -197,13 +197,14 @@ export const reduceDashboardGeneration = (
     };
   }
   if (event.type === 'dashboard.created') {
+    const failedWidgets = Number(event.failed_widgets ?? current.failedWidgets);
     return {
       ...current,
-      status: 'created',
+      status: failedWidgets > 0 ? 'generating' : 'created',
       title: event.title || current.title,
       totalWidgets: Number(event.total_widgets || current.totalWidgets),
       validatedWidgets: Number(event.validated_widgets ?? current.validatedWidgets),
-      failedWidgets: Number(event.failed_widgets ?? current.failedWidgets),
+      failedWidgets,
       dashboardId: event.dashboard_id,
       sourceTurnId: event.source_turn_id || current.sourceTurnId,
       assetState: event.asset_state || current.assetState || 'generated',

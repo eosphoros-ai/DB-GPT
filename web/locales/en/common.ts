@@ -1,4 +1,5 @@
 export const CommonEn = {
+  conversation_completed_unviewed: 'Completed, not viewed',
   Knowledge_Space: 'Knowledge',
   space: 'space',
   Vector: 'Vector',
@@ -166,6 +167,8 @@ export const CommonEn = {
   coming_soon: 'Coming soon',
   provider_label_openai: 'OpenAI',
   provider_desc_openai: 'GPT models. Sign in with ChatGPT Plus/Pro or an API key',
+  provider_label_xm4: 'XM4 Gateway',
+  provider_desc_xm4: 'OpenAI-compatible gateway. Connected models follow your API key group',
   provider_label_claude: 'Anthropic',
   provider_desc_claude: 'Claude models. Sign in with Claude Pro/Max or an API key',
   provider_label_github_copilot: 'GitHub Copilot',

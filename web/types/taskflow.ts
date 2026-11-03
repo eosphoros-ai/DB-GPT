@@ -113,6 +113,10 @@ export interface ITaskflowAgentStep {
   title: string;
   detail?: string;
   round?: number;
+  /** Structured execution evidence; older traces fall back to detail. */
+  action_input?: unknown;
+  output?: string;
+  success?: boolean;
 }
 
 export interface ITaskflowStepMarker {
@@ -122,7 +126,7 @@ export interface ITaskflowStepMarker {
   status: 'running' | 'success' | 'failed' | 'waiting_confirm';
   duration_ms?: number;
   summary?: string;
-  /** Transient structured ReAct trace (live events only; not persisted). */
+  /** Structured tool trace retained in final markers for replay. */
   steps?: ITaskflowAgentStep[];
 }
 

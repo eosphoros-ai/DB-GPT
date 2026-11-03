@@ -1,0 +1,21 @@
+// Physical metadata export; inferred links are comments, not constraints.
+// "sales.客户"
+Table "sales"."客户" {
+  // "tenant" = "tenant"
+  "tenant" "varchar(32)"
+  // "id" = "id"
+  "id" "int"
+  indexes {
+    ("tenant", "id") [pk]
+  }
+}
+
+// "sales.订单"
+Table "sales"."订单" {
+  // "tenant" = "tenant"
+  "tenant" "varchar(32)" [not null]
+  // "customer" = "customer"
+  "customer" "int"
+}
+
+// R0 = {"name": "fk_customer", "from_table": "child", "to_table": "parent", "from_columns": ["tenant", "customer"], "to_columns": ["tenant", "id"], "kind": "inferred", "basis": "information_schema FK catalog"}

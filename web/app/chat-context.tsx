@@ -1,4 +1,5 @@
 import { apiInterceptors, getUsableModels, queryAdminList } from '@/client/api';
+import { useConversationAttention, type ConversationAttention } from '@/hooks/use-conversation-attention';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { UserInfoResponse } from '@/types/userinfo';
 import { getUserId } from '@/utils';
@@ -6,7 +7,7 @@ import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import { MODELS_CHANGED_EVENT } from '@/utils/events';
 import { useRequest } from 'ahooks';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react';
 
 type ThemeMode = 'dark' | 'light';
 
@@ -49,6 +50,10 @@ interface IChatContext {
   addOptimisticConv: (conv: DialogueListResponse[0]) => void;
   dialogueListVersion: number;
   bumpDialogueList: () => void;
+  unviewedResults: ConversationAttention;
+  markConvCompleted: (id: string, resultId: string) => void;
+  markConvViewed: (id: string, resultId: string) => void;
+  clearConvAttention: (id: string) => void;
 }
 
 function getDefaultTheme(): ThemeMode {
@@ -89,9 +94,14 @@ const ChatContext = createContext<IChatContext>({
   addOptimisticConv: () => {},
   dialogueListVersion: 0,
   bumpDialogueList: () => {},
+  unviewedResults: {},
+  markConvCompleted: () => {},
+  markConvViewed: () => {},
+  clearConvAttention: () => {},
 });
 
 const ChatContextProvider = ({ children }: { children: React.ReactElement }) => {
+  const attention = useConversationAttention(getUserId() || '');
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
@@ -221,6 +231,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     addOptimisticConv,
     dialogueListVersion,
     bumpDialogueList,
+    ...attention,
   };
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 };

@@ -6,6 +6,7 @@ import { DarkSvg, ModelSvg, PanelLeft, SunnySvg } from '@/components/icons';
 import { useStartNewTask } from '@/modules/new-task';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { dashboardUserDisplayText } from '@/utils/dashboard-user-message';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
@@ -16,8 +17,8 @@ import Icon, {
   ClockCircleOutlined,
   DashboardOutlined,
   DatabaseOutlined,
-  DeploymentUnitOutlined,
   DeleteOutlined,
+  DeploymentUnitOutlined,
   FormOutlined,
   GlobalOutlined,
   LineChartOutlined,
@@ -37,6 +38,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import UnviewedResultDot from './unviewed-result-dot';
 
 type RouteItem = {
   key: string;
@@ -56,8 +58,17 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
-  const { isMenuExpand, setIsMenuExpand, mode, setMode, runningConvIds, optimisticConvs, dialogueListVersion } =
-    useContext(ChatContext);
+  const {
+    isMenuExpand,
+    setIsMenuExpand,
+    mode,
+    setMode,
+    runningConvIds,
+    optimisticConvs,
+    dialogueListVersion,
+    unviewedResults,
+    clearConvAttention,
+  } = useContext(ChatContext);
   const router = useRouter();
   const { pathname } = router;
   const isSettingsActive =
@@ -106,19 +117,23 @@ function SideBar() {
     }
   }, []);
 
-  const handleDeleteDialogue = useCallback(async (e: React.MouseEvent, convUid: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    try {
-      const [err] = await apiInterceptors(delDialogue(convUid));
-      if (!err) {
-        setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
-        message.success('已删除');
+  const handleDeleteDialogue = useCallback(
+    async (e: React.MouseEvent, convUid: string) => {
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        const [err] = await apiInterceptors(delDialogue(convUid));
+        if (!err) {
+          clearConvAttention(convUid);
+          setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
+          message.success('已删除');
+        }
+      } catch (error) {
+        console.error('Failed to delete dialogue', error);
       }
-    } catch (error) {
-      console.error('Failed to delete dialogue', error);
-    }
-  }, []);
+    },
+    [clearConvAttention],
+  );
 
   const formatRelativeTime = useCallback((dateStr?: string) => {
     if (!dateStr) return '';
@@ -568,13 +583,19 @@ function SideBar() {
                 <div className='flex-1 min-w-0'>
                   <div className='font-medium truncate leading-5 text-[#3f3f3a] dark:text-[#d4d2cc]'>
                     {typeof conv.user_input === 'string'
-                      ? conv.user_input.slice(0, 40) || 'New Conversation'
+                      ? dashboardUserDisplayText(conv.user_input, {
+                          confirm: t('dashboard_chat_confirm'),
+                          revise: t('dashboard_chat_revise'),
+                        }).slice(0, 40) || 'New Conversation'
                       : 'New Conversation'}
                   </div>
                   {conv.gmt_created && (
                     <div className='text-[11px] text-gray-400 mt-0.5'>{formatRelativeTime(conv.gmt_created)}</div>
                   )}
                 </div>
+                <UnviewedResultDot
+                  visible={!!unviewedResults[conv.conv_uid] && !runningConvIds.includes(conv.conv_uid)}
+                />
                 <Tooltip title='删除'>
                   <DeleteOutlined
                     onClick={e => handleDeleteDialogue(e, conv.conv_uid)}

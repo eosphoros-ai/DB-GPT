@@ -162,6 +162,35 @@ def validate_dsl(dsl: TaskFlowDSL, known_kinds: Dict[str, Any]) -> None:
     if visited != len(id_set):
         raise TaskFlowDSLError("TaskFlow graph has a cycle")
 
+    ancestors: Dict[str, set] = {}
+    groups: Dict[str, List[str]] = {}
+    by_id = {node.id: node for node in dsl.nodes}
+    for node_id in topo_order(dsl):
+        ancestors[node_id] = set()
+        for src, tgt in dsl.edges:
+            if tgt == node_id:
+                ancestors[node_id].add(src)
+                ancestors[node_id].update(ancestors[src])
+        node = by_id[node_id]
+        group = node.config.get("parallel_group")
+        if group is not None and (not isinstance(group, str) or node.kind != "agent"):
+            raise TaskFlowDSLError("parallel_group must be a string on an agent node")
+        if group:
+            if group != group.strip():
+                raise TaskFlowDSLError("parallel_group cannot have surrounding spaces")
+            for sibling in groups.get(group, []):
+                if sibling in ancestors[node_id]:
+                    raise TaskFlowDSLError(
+                        f"Parallel agents must be independent: {sibling} -> {node_id}"
+                    )
+                if set(by_id[sibling].config.get("datasources") or []) != set(
+                    node.config.get("datasources") or []
+                ):
+                    raise TaskFlowDSLError(
+                        "Parallel agents must use the same datasource scope"
+                    )
+            groups.setdefault(group, []).append(node_id)
+
 
 def topo_order(dsl: TaskFlowDSL) -> List[str]:
     """Return DSL node ids in topological order (stable by declaration)."""

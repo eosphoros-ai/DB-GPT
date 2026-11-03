@@ -7,6 +7,7 @@ interface Resources {
 }
 
 export const CommonZh: Resources['translation'] = {
+  conversation_completed_unviewed: '已完成，未查看',
   Knowledge_Space: '知识库',
   space: '知识库',
   Vector: '向量',
@@ -172,6 +173,8 @@ export const CommonZh: Resources['translation'] = {
   coming_soon: '即将支持',
   provider_label_openai: 'OpenAI',
   provider_desc_openai: 'GPT 系列模型，支持 ChatGPT Plus 或 API Key 连接',
+  provider_label_xm4: 'XM4 网关',
+  provider_desc_xm4: 'OpenAI 兼容网关，连接后显示当前 Key 分组可用的模型',
   provider_label_claude: 'Anthropic',
   provider_desc_claude: 'Claude 系列模型，使用 Claude Pro/Max 或 API Key 连接',
   provider_label_github_copilot: 'GitHub Copilot',

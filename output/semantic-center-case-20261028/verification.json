@@ -1,0 +1,119 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "check": "gold_sql:net_v1",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:net_v2",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:channel_v1",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:channel_v2",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:gmv",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:view_v1",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:bad_join",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:successful_payments",
+      "passed": true
+    },
+    {
+      "check": "gold_sql:successful_refunds",
+      "passed": true
+    },
+    {
+      "check": "published_snapshot:v1",
+      "passed": true
+    },
+    {
+      "check": "snapshot_sql:v1",
+      "passed": true
+    },
+    {
+      "check": "published_snapshot:v2",
+      "passed": true
+    },
+    {
+      "check": "snapshot_sql:v2",
+      "passed": true
+    },
+    {
+      "check": "latest_is_v2_not_unpublished_edit",
+      "passed": true
+    },
+    {
+      "check": "unknown_version_no_fallback",
+      "passed": true
+    },
+    {
+      "check": "alias_resolves_to_payment_amount",
+      "passed": true
+    },
+    {
+      "check": "business_drafts_excluded",
+      "passed": true
+    },
+    {
+      "check": "source_is_channel_name",
+      "passed": true
+    },
+    {
+      "check": "search_published_metrics_only",
+      "passed": true
+    },
+    {
+      "check": "draft_metric_cannot_be_consumed",
+      "passed": true
+    },
+    {
+      "check": "real_metadata_snapshot",
+      "passed": true
+    },
+    {
+      "check": "five_declared_foreign_keys",
+      "passed": true
+    },
+    {
+      "check": "metric_lineage_is_explicit_not_inferred",
+      "passed": true
+    },
+    {
+      "check": "base_metric_is_published:成功支付额",
+      "passed": true
+    },
+    {
+      "check": "base_metric_is_published:成功退款额",
+      "passed": true
+    },
+    {
+      "check": "connection_scope_isolation",
+      "passed": true
+    }
+  ],
+  "passed_count": 26,
+  "llm_e2e_tested": false,
+  "vector_retrieval_tested": false,
+  "known_gaps": [
+    "No dedicated relation/ETL-lineage Agent tool; L4 graph is management API data.",
+    "Metric lineage is manually authored JSON, not parsed/validated impact graph.",
+    "No job scheduler/task owner evidence; FK is not ETL lineage.",
+    "Semantic metadata flags are descriptive; this case does not test SQL guardrails.",
+    "Live API lacks metric-edit endpoint; same-metric v1/v2 tested only in isolation."
+  ]
+}

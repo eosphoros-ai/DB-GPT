@@ -14,7 +14,7 @@
  */
 import { publicAssistantText } from '@/utils/action-display';
 import { expandToolCallSteps } from '@/utils/tool-call-display';
-import { envelopeReadableText, extractEnvelopeObjects } from '@/utils/tool-envelope';
+import { envelopeReadableText, extractEnvelopeObjects, publicToolProgressText } from '@/utils/tool-envelope';
 import {
   BulbOutlined,
   CodeOutlined,
@@ -86,6 +86,7 @@ function toolIcon(tool?: string, title?: string) {
   const key = (tool || title || '').toLowerCase();
   if (isSkillRead(tool, title)) return <ReadOutlined />;
   if (isTerminalTool(key)) return <TerminalIcon />;
+  if (key.startsWith('semantic_')) return <DatabaseOutlined />;
   if (key.includes('sql') || key.includes('db') || key.includes('database')) return <DatabaseOutlined />;
   if (key.includes('code') || key.includes('python') || key.includes('interpreter')) return <CodeOutlined />;
   if (key.includes('search') || key.includes('grep') || key.includes('knowledge')) return <SearchOutlined />;
@@ -601,7 +602,10 @@ export function stepsToTimelineBlocks(
       return {
         id: step.id,
         kind: 'text',
-        content: publicAssistantText(step.progressContent || '', step.status === 'running'),
+        content: publicAssistantText(
+          publicToolProgressText(step.progressContent || '', step.status === 'running'),
+          step.status === 'running',
+        ),
         status: step.status === 'running' ? 'running' : 'success',
         streaming: step.status === 'running',
       } as TimelineBlock;

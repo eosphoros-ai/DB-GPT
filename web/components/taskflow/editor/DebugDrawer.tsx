@@ -1,6 +1,8 @@
 import { ChatContext } from '@/app/chat-context';
+import { renderModelIcon } from '@/components/chat/header/model-selector';
+import TaskflowAgentTrace from '@/new-components/chat/content/TaskflowAgentTrace';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
-import type { ITaskflowAgentStep, ITaskflowNode, ITaskflowStepMarker } from '@/types/taskflow';
+import type { ITaskflowNode, ITaskflowStepMarker } from '@/types/taskflow';
 import { parseTaskflowStream, stripVisBlocks, type ITaskflowSection } from '@/utils/taskflow';
 import { Button, Drawer, Input, Select, Spin } from 'antd';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -9,40 +11,9 @@ import { useTranslation } from 'react-i18next';
 interface DebugStep {
   id: string;
   label: string;
-  status: 'running' | 'success' | 'pending';
+  status: 'running' | 'success' | 'pending' | 'failed' | 'waiting_confirm';
   duration_ms?: number;
 }
-
-/** One compact tool-call / thinking row (aligned with the agent trace UI). */
-const AgentStepRow: React.FC<{ step: ITaskflowAgentStep }> = ({ step }) => {
-  const detail = (step.detail ?? '').replace(/\s+/g, ' ').trim();
-  if (step.kind === 'thinking') {
-    return (
-      <div className='text-[12px] text-gray-400 leading-snug truncate' title={detail}>
-        💭 {detail}
-      </div>
-    );
-  }
-  if (step.kind === 'observation') {
-    return (
-      <div className='text-[11.5px] text-gray-400 leading-snug pl-5 truncate' title={detail}>
-        └ {detail}
-      </div>
-    );
-  }
-  // action: compact one-liner like ">_ kb_ls · {params}"
-  return (
-    <div className='flex items-center gap-1.5 text-[12px] leading-snug'>
-      <span className='font-mono text-[11px] text-gray-400 flex-none'>&gt;_</span>
-      <span className='font-semibold text-gray-700 dark:text-gray-200 flex-none'>{step.title}</span>
-      {detail && (
-        <span className='font-mono text-[11px] text-gray-400 truncate' title={detail}>
-          · {detail}
-        </span>
-      )}
-    </div>
-  );
-};
 
 /**
  * Debug-run drawer: sends one question through the unsaved flow (server-side
@@ -53,7 +24,9 @@ const DebugDrawer: React.FC<{
   onClose: () => void;
   buildPayload: () => Record<string, any> | null;
   dslNodes: ITaskflowNode[];
-}> = ({ open, onClose, buildPayload, dslNodes }) => {
+  prepareRun?: () => Promise<{ sessionId: string; revision: number }>;
+  onRunComplete?: () => void;
+}> = ({ open, onClose, buildPayload, dslNodes, prepareRun, onRunComplete }) => {
   const { t } = useTranslation();
   const { model, modelList } = useContext(ChatContext);
   // Debug-local model selection: defaults to the globally selected model but
@@ -63,14 +36,29 @@ const DebugDrawer: React.FC<{
     if (model && model !== debugModel) setDebugModel(model);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model]);
-  const modelOptions = useMemo(() => (modelList ?? []).map(item => ({ label: item, value: item })), [modelList]);
+  const modelOptions = useMemo(
+    () =>
+      (modelList ?? []).map(item => ({
+        value: item,
+        title: item,
+        label: (
+          <div className='flex items-center min-w-0'>
+            <span className='flex flex-none'>{renderModelIcon(item)}</span>
+            <span className='ml-2 truncate'>{item}</span>
+          </div>
+        ),
+      })),
+    [modelList],
+  );
   const [question, setQuestion] = useState('');
   const [running, setRunning] = useState(false);
   const [answer, setAnswer] = useState('');
   const [sections, setSections] = useState<ITaskflowSection[]>([]);
   const [markers, setMarkers] = useState<ITaskflowStepMarker[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
 
   const steps = useMemo<DebugStep[]>(() => {
     const markerMap = new Map(markers.map(m => [m.step_id, m]));
@@ -81,11 +69,11 @@ const DebugDrawer: React.FC<{
         return {
           id: node.id,
           label: marker.label,
-          status: 'success',
+          status: marker.status,
           duration_ms: marker.duration_ms,
         };
       }
-      const status = running && !pendingSeen ? 'running' : 'pending';
+      const status = running && markers.length === 0 && !pendingSeen ? 'running' : 'pending';
       if (status === 'running') pendingSeen = true;
       return { id: node.id, label: node.label ?? node.kind, status };
     });
@@ -99,30 +87,46 @@ const DebugDrawer: React.FC<{
     setSections([]);
     setMarkers([]);
     setError(null);
+    setCompleted(false);
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
-      const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v2/serve/awel/flow/debug`, {
+      const runContext = prepareRun ? await prepareRun() : null;
+      const endpoint = runContext
+        ? `/api/v2/serve/awel/taskflow/generation-sessions/${runContext.sessionId}/debug`
+        : '/api/v2/serve/awel/flow/debug';
+      const response = await fetch(`${process.env.API_BASE_URL ?? ''}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          flow: payload,
-          request: {
-            model: debugModel,
-            messages: question,
-            stream: false,
-            conv_uid: `taskflow-debug-${Date.now()}`,
-          },
-        }),
+        body: JSON.stringify(
+          runContext
+            ? {
+                expected_draft_revision: runContext.revision,
+                model: debugModel,
+                question,
+              }
+            : {
+                flow: payload,
+                request: {
+                  model: debugModel,
+                  messages: question,
+                  stream: false,
+                  conv_uid: `taskflow-debug-${Date.now()}`,
+                },
+              },
+        ),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
-        throw new Error(`HTTP ${response.status}`);
+        const body = await response.json().catch(() => null);
+        const detail = body?.detail ?? body?.err_msg;
+        throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail || `HTTP ${response.status}`));
       }
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
       let accumulated = '';
+      let terminalSeen = false;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -133,13 +137,27 @@ const DebugDrawer: React.FC<{
           const trimmed = line.trim();
           if (!trimmed.startsWith('data:')) continue;
           let chunk = trimmed.slice(5);
+          if (runContext) {
+            const event = JSON.parse(chunk);
+            if (event.error) {
+              setError(event.error);
+              continue;
+            }
+            if (event.run_completed) {
+              terminalSeen = true;
+              setCompleted(event.success);
+              if (!event.success) setError(prev => prev || '试运行未成功');
+              continue;
+            }
+            chunk = event.text ?? '';
+          }
           if (chunk.startsWith('[SERVER_ERROR]')) {
             setError(chunk);
             continue;
           }
           // Negative lookbehind: keep escaped backslashes inside marker
           // JSON (e.g. code like print('\n')) from being corrupted.
-          chunk = chunk.replace(/(?<!\\)\\n/g, '\n');
+          if (!runContext) chunk = chunk.replace(/(?<!\\)\\n/g, '\n');
           accumulated += chunk;
           const parsed = parseTaskflowStream(accumulated);
           setMarkers(parsed.markers);
@@ -147,11 +165,13 @@ const DebugDrawer: React.FC<{
           setAnswer(parsed.cleanText);
         }
       }
+      if (runContext && !terminalSeen) setError('试运行连接中断，未收到完成结果，请重新运行');
     } catch (e: any) {
       if (e?.name !== 'AbortError') setError(e?.message ?? String(e));
     } finally {
       setRunning(false);
       controllerRef.current = null;
+      onRunComplete?.();
     }
   };
 
@@ -171,6 +191,7 @@ const DebugDrawer: React.FC<{
             className='!w-44 flex-none'
             value={debugModel}
             options={modelOptions}
+            optionFilterProp='value'
             onChange={val => setDebugModel(val)}
             showSearch
           />
@@ -188,7 +209,11 @@ const DebugDrawer: React.FC<{
         {(running || markers.length > 0 || answer) && (
           <div className='border border-gray-100 dark:border-white/10 rounded-xl p-3'>
             <div className='text-[11px] font-semibold text-gray-400 mb-2'>
-              {running ? t('taskflow_flow_running') : t('taskflow_flow_completed')}
+              {running
+                ? t('taskflow_flow_running')
+                : completed
+                  ? t('taskflow_flow_completed')
+                  : error || t('taskflow_run')}
             </div>
             <div className='flex flex-col gap-1.5'>
               {steps.map((step, idx) => (
@@ -197,7 +222,9 @@ const DebugDrawer: React.FC<{
                     <span className='w-4 h-4 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-[10px]'>
                       ✓
                     </span>
-                  ) : step.status === 'running' ? (
+                  ) : step.status === 'failed' ? (
+                    <span className='text-red-600'>✕</span>
+                  ) : step.status === 'running' && running ? (
                     <Spin size='small' />
                   ) : (
                     <span className='w-4 h-4 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-[9px]'>
@@ -255,9 +282,11 @@ const DebugDrawer: React.FC<{
                           place of a raw text wall. */}
                       {sec.marker.steps && sec.marker.steps.length > 0 && (
                         <div className='flex flex-col gap-1 mb-2 pb-2 border-b border-dashed border-gray-100 dark:border-white/10'>
-                          {sec.marker.steps.map((st, i) => (
-                            <AgentStepRow key={i} step={st} />
-                          ))}
+                          <TaskflowAgentTrace
+                            steps={sec.marker.steps}
+                            running={running && sec.marker.status === 'running'}
+                            nodeId={sec.marker.step_id}
+                          />
                           {sec.marker.status === 'running' && (
                             <div className='flex items-center gap-1.5 text-[11.5px] text-blue-600 mt-0.5'>
                               <Spin size='small' />
@@ -271,8 +300,7 @@ const DebugDrawer: React.FC<{
                       {/* While running, the trace text body duplicates the
                           structured rows (hide it); after completion the body
                           is the clean answer — show rows AND answer. */}
-                      {(sec.marker.status !== 'running' ||
-                        !(sec.marker.steps && sec.marker.steps.length > 0)) && (
+                      {(sec.marker.status !== 'running' || !(sec.marker.steps && sec.marker.steps.length > 0)) && (
                         <MarkdownContext>{stripVisBlocks(sec.content) || ' '}</MarkdownContext>
                       )}
                     </div>

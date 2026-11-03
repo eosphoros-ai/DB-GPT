@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DB-GPT · 专家套件智能创建设计</title>
+<style>
+:root{--bg:#f5f6f7;--paper:#fff;--ink:#202522;--muted:#68736c;--line:#e1e7e3;--green:#188842;--soft:#eff8f2;--warn:#955617}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}a{color:var(--green);text-underline-offset:3px}header{max-width:1180px;margin:auto;padding:55px 34px 28px}.eyebrow{color:var(--green);font-size:13px;font-weight:650;letter-spacing:2px}h1{font-size:36px;line-height:1.35;margin:12px 0 20px}header p{max-width:820px;color:var(--muted);font-size:17px}.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{border:1px solid var(--line);border-radius:30px;background:var(--paper);padding:3px 12px;font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:205px minmax(0,1fr);gap:26px;max-width:1180px;margin:auto;padding:0 34px 60px}aside{align-self:start;position:sticky;top:24px;padding-top:14px}aside a{display:block;text-decoration:none;color:var(--muted);padding:7px 0;font-size:14px}aside a:hover{color:var(--green)}main{min-width:0}section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px;margin-bottom:22px;scroll-margin-top:24px}h2{margin:0 0 16px;font-size:23px}h3{font-size:18px;margin:24px 0 12px}h4{margin:15px 0 6px;font-size:15px}p{margin:10px 0}ul{padding-left:22px}li{margin:5px 0}.note{border-left:3px solid var(--green);padding:10px 16px;background:var(--soft);margin:16px 0}.minor{font-size:13px;color:var(--muted)}table{border-collapse:collapse;width:100%;font-size:14px;margin:14px 0}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:11px 9px}th{background:var(--bg);font-weight:600}code{font-size:13px;background:var(--bg);border-radius:4px;padding:2px 4px}pre{font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:16px;overflow-wrap:anywhere}.flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.flow span{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px}.flow .focus{border-color:var(--green);color:var(--green)}
+button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:8px;background:#fff;padding:7px 13px;color:var(--ink)}button.primary{background:var(--green);color:white;border-color:var(--green)}button:disabled{cursor:default;opacity:.5}button:hover:not(:disabled){filter:brightness(.97)}button:focus-visible,a:focus-visible{outline:2px solid var(--green);outline-offset:3px}input,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--paper);color:var(--ink)}textarea{resize:vertical;min-height:100px}label{display:block;font-size:14px;margin-top:12px}label.inline{display:flex;gap:9px;align-items:center}label.inline input{width:auto}.demo{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:18px}.demo-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}.badge{font-size:12px;color:var(--green);border:1px solid #afd6bb;background:var(--soft);padding:3px 9px;border-radius:20px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.demo-panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:20px}.prefix{display:flex;align-items:center;gap:12px;color:var(--green);margin-bottom:8px}.prefix button{border:0;padding:0 5px;color:var(--muted)}.prototype-flow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.prototype-flow button{font-size:13px}.prototype-flow button.active{border-color:var(--green);color:var(--green)}.status{border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin-top:12px;background:var(--soft)}.status.warn{background:#fff7ed;color:var(--warn)}.preview-grid{display:grid;grid-template-columns:170px 1fr;gap:15px}.file-list button{display:block;width:100%;text-align:left;margin-bottom:7px;font-size:13px}.artifact-title{font-size:22px;font-weight:650;margin:0}.stat-row{display:flex;gap:12px;color:var(--muted);font-size:13px;margin:8px 0}.block{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.hidden,[hidden]{display:none!important}#feedback{font-size:13px;min-height:24px;color:var(--green);margin-top:12px}.section-id{font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}footer{font-size:12px;color:var(--muted)}@media(max-width:850px){.layout{display:block;padding:0 16px 35px}aside{position:static;display:flex;flex-wrap:wrap;gap:14px;padding:0 0 20px}aside a{padding:0}header{padding:32px 20px 22px}h1{font-size:28px}section{padding:20px}.preview-grid{grid-template-columns:1fr}.file-list{display:flex;flex-wrap:wrap;gap:6px}.file-list button{width:auto}.demo-head{align-items:start;flex-direction:column}table{font-size:13px}th,td{padding:8px 5px}}@media print{aside,.demo,button{display:none}.layout{display:block;padding:0}body{background:white}section{break-inside:avoid;border:0;border-bottom:1px solid #ddd;border-radius:0}header{padding:10px 28px}h1{font-size:27px}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">DB-GPT / PRODUCT DESIGN</div>
+<h1>把工作方法，创建成可安装的专家套件</h1>
+<p>用户描述工作需求或提供 SOP，AI 生成完整的技能、指令与工作流程。对话的最终产物是一张套件卡片，用户可查看内容、继续修改、一键安装，再从套件选择器直接使用。</p>
+<div class="chips"><span class="chip">设计建议 · 待评审</span><span class="chip">参考用户提供的千问办公截图</span><span class="chip">2026-10-28</span><span class="chip">包含可点击原型</span></div>
+</header>
+<div class="layout">
+<aside aria-label="文档导航">
+<a href="#contract">01 产品约定</a><a href="#prototype">02 交互原型</a><a href="#entry">03 创建入口</a><a href="#creation">04 对话生成</a><a href="#artifact">05 套件产物</a><a href="#install-flow">06 一键安装</a><a href="#reuse">07 安装后使用</a><a href="#rules">08 状态与边界</a><a href="#evidence">09 依据与待定项</a>
+</aside>
+<main>
+<section id="contract">
+<h2>产品约定</h2>
+<p><strong>主要用户：</strong>希望把重复工作、岗位经验和业务流程固化为可复用能力的业务专家、分析师及 DBA。用户不需要了解套件文件格式。</p>
+<p><strong>完成条件：</strong>得到一个内容可检查、结构校验通过的套件包；用户点击安装后，套件出现在“已安装”和会话套件选择器中。需要数据库或连接器时，能清楚看到待配置项并完成配置。</p>
+<div class="flow" aria-label="核心流程"><span>描述需求 / 提供材料</span>→<span>对话生成</span>→<span class="focus">套件产物卡片</span>→<span>一键安装</span>→<span>立即使用</span></div>
+<div class="note">生成完成与安装成功是两个独立结果。生成不自动安装；安装不自动连接数据库、执行脚本或运行业务任务。卡片上的“一键安装”就是明确的安装操作入口，无冲突时不再增加确认弹窗。</div>
+<table><thead><tr><th>范围</th><th>本次设计</th></tr></thead><tbody>
+<tr><td>P0 完整闭环</td><td>智能创建入口、材料与需求输入、生成与修改、套件卡片、文件与技能预览、结构校验、一键安装、重复点击处理、安装后配置与调用、历史恢复。</td></tr>
+<tr><td>P1 延伸</td><td>从现有套件创建副本、复杂依赖管理、已安装套件版本升级和回退、团队分享与市场发布。P0 的同名冲突通过改名另存解决。</td></tr>
+<tr><td>安装范围建议</td><td>[Assumption, TBD] P0 沿用当前部署实例的套件安装范围，界面明确显示实际范围。个人与团队范围应在身份和隔离能力落实后提供，不把当前实例安装包装成“仅我可见”。</td></tr>
+</tbody></table>
+</section>
+
+<section id="prototype">
+<h2>交互原型</h2>
+<p>可以走一遍“智能创建 → 生成 → 预览 / 修改 → 安装 → 使用”，也可以勾选异常条件检查阻断及恢复行为。</p>
+<div class="demo" id="suite-demo">
+<div class="demo-head"><strong>专家套件</strong><span class="badge">交互原型 · 不调用模型，不安装到系统</span></div>
+<div class="prototype-flow"><button data-view="market" class="active">套件页</button><button data-view="composer">创建对话</button><button data-view="artifact" disabled>套件产物</button><button data-view="installed" disabled>已安装</button></div>
+<div id="view-market" class="demo-panel">
+<h3 style="margin-top:0">让 DB-GPT 帮你创建专属专家套件</h3>
+<p class="minor">提供你的工作 SOP、业务说明或岗位日常，整理成可重复使用的技能与流程。</p>
+<div class="actions"><button class="primary" id="start-create">智能创建</button><button id="clone-create">基于智能运维创建副本（P1）</button></div>
+<p class="minor">“添加”菜单中的“从文件导入”保留为独立入口；智能创建直接进入对话。</p>
+</div>
+<div id="view-composer" class="demo-panel" hidden>
+<div class="prefix"><strong id="creator-prefix">⌁ 专家套件创建</strong><button id="remove-mode" aria-label="取消专家套件创建">×</button><button id="restore-mode" hidden>恢复创建模式</button></div>
+<label>套件名称<input id="suite-name" value="MySQL 智能巡检专家" maxlength="80"></label>
+<label>描述要完成的工作<textarea id="requirements">为 DBA 创建一个 MySQL 智能巡检套件：检查数据库健康、分析慢查询、提出索引建议，最后生成巡检报告。默认只读，所有数据库变更只输出提案。</textarea></label>
+<label>补充 SOP 或业务说明<textarea id="materials" placeholder="粘贴工作流程、报告要求或业务约束；也可以选择本地 TXT / Markdown"></textarea></label>
+<label class="minor">原型材料导入仅支持 TXT / Markdown<input type="file" id="material-file" accept=".txt,.md"></label>
+<label class="inline"><input id="broken-package" type="checkbox">模拟生成结果缺失技能正文</label>
+<div class="actions"><button class="primary" id="generate">生成套件</button><button id="cancel-generate" disabled>取消生成</button><button id="reset">重置原型</button></div>
+<div id="generation-progress" class="status" hidden></div>
+</div>
+<div id="view-artifact" class="demo-panel" hidden>
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><p class="artifact-title" id="artifact-name"></p><span class="badge" id="artifact-state">待安装</span></div>
+<p id="artifact-description">健康巡检、慢查询分析与索引建议，按 SOP 产出诊断报告和修复提案。</p>
+<div class="stat-row"><span>4 个技能</span><span>3 条指令</span><span id="artifact-revision">草稿 r1</span><span>安装版本 v1.0.0</span></div>
+<div class="status" id="validation">示例结构校验通过；尚未执行真实数据库试跑。</div>
+<div class="block"><strong>查看内容</strong><div class="actions"><button data-file="overview">概览</button><button data-file="skill">技能正文</button><button data-file="sop">工作流程</button><button data-file="files">包内文件</button><button data-file="checks">校验说明</button></div>
+<pre id="file-content"></pre><textarea id="skill-edit" hidden aria-label="编辑技能正文"></textarea>
+<div class="actions"><button id="edit-skill">修改技能正文</button><button id="save-skill" hidden>保存并重新校验</button><button id="continue-edit">继续对话修改</button></div></div>
+<div class="block"><strong>安装至：当前实例（原型示例）</strong><p class="minor">需要已有数据库和诊断工具；不会在安装时执行数据库任务。</p>
+<label class="inline"><input id="dependency-missing" type="checkbox">模拟缺少必须的数据库配置</label>
+<label class="inline"><input id="name-conflict" type="checkbox">模拟当前实例存在同名套件</label>
+<div class="actions"><button class="primary" id="install">一键安装</button><button id="download-demo">下载套件</button><button id="rename-package" hidden>改名另存</button><button id="retry-validation" hidden>补齐内容并重新校验</button></div></div>
+</div>
+<div id="view-installed" class="demo-panel" hidden>
+<span class="badge">已安装</span><h3 id="installed-name"></h3><p id="installed-message"></p>
+<div class="actions"><button class="primary" id="use-suite">立即使用</button><button id="configure-suite" hidden>完成配置并启用</button><button id="open-installed">查看套件</button></div>
+<div id="use-composer" class="status" hidden></div>
+</div>
+<div id="feedback" role="status" aria-live="polite"></div>
+</div>
+<p class="minor">示例中的文件、校验结果和安装状态均为交互演示。完整产品需要依据实际生成文件、工具能力与安装结果展示这些信息。</p>
+</section>
+
+<section id="entry">
+<h2>智能创建入口 <span class="section-id">FR-01</span></h2>
+<p>套件页顶部增加“智能创建”主按钮和说明横幅。“添加”下提供“智能创建”“从文件导入”。保留现有官方、企业、已安装分类；市场仍按实际接入情况展示，不要求先建设市场才能创建套件。</p>
+<p>点击后打开一个新对话，输入框显示可取消的绿色“专家套件创建”标识，示例提示为：“帮我创建一套专属的工作套件。我可以提供工作 SOP、业务文档或者岗位日常。”不预选具体业务场景，不自动发送示例。</p>
+<p>普通对话中说“帮我创建一个专家套件”也可以进入创建流程；模型明确说明将产出套件，使用同一套产物与安装能力。创建模式和目标套件身份分别展示，避免把“创建者”误当成已经安装的业务套件。</p>
+<p>“基于此套件定制”在 P1 生成新副本，显示来源与继承内容，不直接修改官方或他人的套件。创建标识支持关闭按钮和输入开头的 Backspace/Delete，遵守现有输入框取消习惯。</p>
+</section>
+
+<section id="creation">
+<h2>在对话中生成与修改 <span class="section-id">FR-02</span></h2>
+<p>用户提供角色、任务、步骤、资料和预期输出中的任意组合。AI 先归纳目标与能力清单；只有目标不明确、业务口径冲突或关键约束缺失时才提出针对性问题。可使用明确标注的默认方案完成初稿，不强制多轮问卷，也不要求先连接数据库。</p>
+<p>生成过程输出可读说明：“整理你的工作流程”“拆分技能与指令”“编写技能内容”“检查引用和依赖”“生成套件包”。文件读取与写入显示可展开步骤，包含真实路径和内容；连续工具步骤沿用当前自动折叠方式。DBGPT 与 PI 使用相同的进度、产物和历史恢复体验。</p>
+<table><thead><tr><th>内容</th><th>生成要求</th><th>不足时的行为</th></tr></thead><tbody>
+<tr><td>套件概览</td><td>名称、用途、适用任务、安装后的使用方式；内部标识由系统生成。</td><td>无法判断用途时询问；命名冲突在安装前提供改名。</td></tr>
+<tr><td>技能</td><td>每个技能包含触发条件、输入、步骤、允许使用的工具、输出和异常处理；不能只有标题和简介。</td><td>缺少正文或关联关系无效时，不标记为可安装。</td></tr>
+<tr><td>工作流程与指令</td><td>指令与技能一一对应到有效目标；技能之间的先后关系、交接内容和完成条件清楚。</td><td>重复指令、不存在的技能目标需修复并重新校验。</td></tr>
+<tr><td>参考资料</td><td>将用户选定的可复用内容整理成包内参考；说明原始资料与提炼结果的关系。</td><td>无法读取材料时保留已输入需求，提示替换或跳过，不假装已经读取。</td></tr>
+<tr><td>工具与资源</td><td>标出需要的数据库、语义空间、连接器及输出能力；只声明真实可用或明确待补充的能力。</td><td>无法映射的必要工具阻断可安装状态；缺少用户资源配置可生成完整包，安装后待配置。</td></tr>
+</tbody></table>
+<p>用户可继续说“增加周报汇总”“把索引变更改成只输出建议”，AI 在草稿上修改并生成新修订。修改后的内容必须重新校验。生成中取消保留需求和已完成草稿；失败可重试，不安装半成品。</p>
+</section>
+
+<section id="artifact">
+<h2>产物就是专家套件 <span class="section-id">FR-03</span></h2>
+<p>最终答案简要说明完成内容，紧接一张一等产物卡片。卡片显示套件名称、简介、技能数、指令数、版本、校验状态、资源要求和安装状态。主操作为“一键安装”，次操作为“查看内容”“继续修改”“下载套件”。普通 ZIP 链接和一段说明不足以表达这个结果。</p>
+<p>“查看内容”打开右侧预览，分为概览、技能与指令、工作流程、文件、校验说明。点选技能能看到完整正文；文件预览能定位具体错误。预览可编辑技能正文并保存成新修订，不直接修改已安装文件。</p>
+<table><thead><tr><th>卡片状态</th><th>主操作</th><th>反馈</th></tr></thead><tbody>
+<tr><td>生成 / 校验中</td><td>显示过程，安装不可点击</td><td>阶段与正在处理的内容。</td></tr>
+<tr><td>需要修复</td><td>继续修改</td><td>具体文件、问题及修复入口。</td></tr>
+<tr><td>可安装</td><td>一键安装</td><td>结构检查已通过；实际试跑是否完成独立展示。</td></tr>
+<tr><td>安装中</td><td>安装中，不接受重复提交</td><td>保持当前卡片和预览。</td></tr>
+<tr><td>已安装 · 可使用</td><td>立即使用</td><td>目标范围、安装版本和套件详情入口。</td></tr>
+<tr><td>已安装 · 待配置</td><td>配置资源</td><td>缺少的必须资源及配置入口。</td></tr>
+<tr><td>安装失败 / 同名冲突</td><td>重试 / 改名另存</td><td>不丢失产物，不覆盖原套件。</td></tr>
+</tbody></table>
+<div class="note">“结构校验通过”只证明包的结构、引用和工具声明有效，不代表真实任务效果已经验证。试跑必须单独由用户选择，并使用明确绑定的资源；未试跑显示“尚未试跑”。</div>
+<p>套件包至少包含套件描述、完整技能正文、工作流程、使用说明及被引用的参考资料。凭证和临时会话数据不进入包；用户提供材料时，界面标出哪些资料会成为可分发的套件内容。下载的是卡片当前修订对应的实际完整包。</p>
+</section>
+
+<section id="install-flow">
+<h2>一键安装 <span class="section-id">FR-04</span></h2>
+<p>可安装卡片显示实际目标范围。用户点击“一键安装”，系统安装卡片上明确展示的修订；不要求用户先下载再上传，也不跳转到复杂表单。模型不能凭一句生成完成说明擅自安装。</p>
+<p>安装前重新确认内容没有变化、校验仍有效、操作者有目标范围的安装权限、名称没有冲突。成功后同步刷新“已安装”、套件详情和会话套件选择器，并把卡片变为“已安装”。多个页面重复安装同一内容只产生一次有效安装。</p>
+<p>无同名冲突、内容有效且所需资源已配置时，一次点击完成安装并启用。必须资源未配置时，可以安装完整套件，但保持禁用，显示“已安装 · 待配置”；配置完成后再启用。可选资源缺失只提示相关能力限制。</p>
+<p>同名不同内容不自动覆盖。P0 提供“改名另存”并重新生成校验后的包；与官方套件同名时必须创建独立身份。P1 才提供受控升级，显示内容差异和新增资源需求，并保留旧版本供已有会话使用。</p>
+<p>失败不留下可选中的半成品、不损坏已有套件；用户可以从同一卡片重试。安装时展示的权限声明用于说明执行边界，不会授权新的数据库、连接器或系统访问权限。</p>
+</section>
+
+<section id="reuse">
+<h2>安装后立即可用 <span class="section-id">FR-05</span></h2>
+<p>“立即使用”打开新对话并选中刚安装的业务套件，而不是继续使用“专家套件创建”模式。指令和推荐问题从实际安装内容读取；资源未准备好时先进入配置入口，不给出可执行的误导状态。</p>
+<p>新套件可从现有套件选择菜单调用。首页场景区继续保持初始不选中；通用自建岗位套件不默认挤入全部首页场景按钮，可在套件页和选择器发现。</p>
+<p>创建对话刷新后恢复草稿、套件产物和校验说明。历史卡片的安装状态应查询真实安装结果：没有安装就显示“待安装”，已卸载就不显示“立即使用”，已有同名不同内容就显示冲突；旧卡片不得静默改指向新修订。</p>
+</section>
+
+<section id="rules">
+<h2>状态与边界</h2>
+<h3>共同对象</h3>
+<table><thead><tr><th>对象</th><th>定义与稳定规则</th></tr></thead><tbody>
+<tr><td>创建草稿</td><td>用户需求、材料与生成文件的编辑对象。每次修改形成新修订，草稿不进入可调用套件列表。</td></tr>
+<tr><td>套件产物</td><td>一次修订生成的完整包及校验结果。内容变更后旧校验不再用于新内容。</td></tr>
+<tr><td>已安装套件</td><td>产物在目标范围内的安装结果；来源、作者、安装人和版本可以追溯。</td></tr>
+<tr><td>业务会话引用</td><td>指向当次使用的确切套件内容，保证历史可追溯。创建对话与业务执行对话区分。</td></tr>
+</tbody></table>
+<h3>两个独立状态过程</h3>
+<p><strong>创建：</strong>草稿 → 生成中 → 校验中 → 可安装 / 需要修复。编辑可安装内容后回到草稿并重新校验；生成失败、取消后保留可恢复草稿。</p>
+<p><strong>安装：</strong>未安装 → 安装中 → 已安装；失败回到可重试状态。已安装套件的可用性分别是可使用、待配置、已禁用。注册表现有状态继续使用，界面按安装与配置状态派生文案。</p>
+<h3>异常规则</h3>
+<table><thead><tr><th>条件</th><th>产品行为</th></tr></thead><tbody>
+<tr><td>空需求 / 不可读材料</td><td>空需求提示填写；材料失败说明原因，可换材料或基于已输入需求继续。</td></tr>
+<tr><td>模型中断或生成被取消</td><td>显示已完成阶段，保留草稿。取消前最后一个完整的可安装修订仍可查看。</td></tr>
+<tr><td>缺文件 / 非法引用 / 未知必要工具</td><td>定位错误，安装不可用。修复后重新检查完整内容。</td></tr>
+<tr><td>预览修改后点击旧卡片</td><td>仍明确指向旧修订；如果已失效，要求打开最新产物。不会把按钮转接到未展示的新内容。</td></tr>
+<tr><td>没有安装权限</td><td>允许查看自己可见的产物，禁用目标范围安装按钮并说明所需权限。创建权限不等于安装权限。</td></tr>
+<tr><td>套件声明新工具或外部访问</td><td>明确显示依赖；配置和授权使用现有资源流程，安装不扩张执行权限。</td></tr>
+<tr><td>历史产物丢失 / 包不完整</td><td>显示不可安装与原因，提供基于保留草稿重新生成的入口。</td></tr>
+</tbody></table>
+</section>
+
+<section id="evidence">
+<h2>依据与待定项</h2>
+<p><strong>截图可确认：</strong>千问办公套件页有“让千问办公帮我创建”入口、套件定制入口；创建入口后的输入框带“专家套件创建”标识，并提示提供 SOP、业务文档或岗位日常。截图没有展示生成后的产物和安装操作，上述产物卡片与安装规则为 DB-GPT 的产品判断。</p>
+<p><strong>仓库可确认：</strong>当前已有套件列表、详情、启停、卸载和 ZIP 上传；支持千问格式的套件包；已有技能与工作流程资产。现有上传可以复用，但未提供完整的对话创建、草稿产物和产物卡片安装流程。</p>
+<p><strong>需要确定：</strong>[TBD] 安装权限及身份的可靠来源，决定实例安装能否开放给普通用户；个人 / 团队隔离范围。材料类型与大小沿用实际附件能力，在产品实现时明确支持范围。P0 默认不实现市场发布和自动升级。</p>
+<p>工程落点、包格式、事件与校验细节另见 <a href="implementation-notes.md">技术衔接设计</a>。</p>
+<footer>该文档是可评审方案，不代表已经实现。原型不会修改当前 DB-GPT 实例或安装任何套件。</footer>
+</section>
+</main></div>
+<script>
+(() => {
+  const root = document.getElementById('suite-demo');
+  const q = id => root.querySelector('#' + id);
+  let revision = 0, generated = false, valid = false, installed = false, configured = true, creating = true, timer = null;
+  let installedTitle = '', draftTitle = '', skillBody = '---\nname: health-inspection\ndescription: 检查 MySQL 健康并输出巡检报告\n---\n\n# 健康巡检\n输入：目标数据库、时间窗、报告受众。\n步骤：检查资源配置 → 采集健康指标 → 分析异常 → 生成证据与建议。\n边界：默认只读，不能把数据库变更当作已执行动作。\n输出：健康巡检报告、证据列表、待确认的修复提案。';
+  const feedback = text => q('feedback').textContent = text;
+  function show(view) {
+    if (view === 'artifact' && !generated || view === 'installed' && !installed) return;
+    for (const name of ['market','composer','artifact','installed']) q('view-' + name).hidden = name !== view;
+    root.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    feedback('');
+  }
+  function selectFile(file) {
+    const content = {
+      overview: '适用角色：DBA\n技能：健康巡检、慢查询诊断、索引建议、报告汇总\n指令：/巡检、/慢查询、/报告\n完成条件：输出带证据的巡检报告和修复提案\n资源：数据库、已注册的诊断工具\n边界：只读优先，变更仅输出提案',
+      skill: skillBody,
+      sop: '1. 读取目标库和时间窗\n2. 采集健康与慢查询证据\n3. 按证据分析问题\n4. 汇总报告和修复提案\n5. 检查引用及待配置项\n\n此流程为原型示例，不执行真实数据库任务。',
+      files: '.qwenwork-plugin/plugin.json\nREADME.md\nprompts/ops-playbook.md\nskills/health-inspection/SKILL.md\nskills/slow-query-diagnosis/SKILL.md\nskills/index-advisor/SKILL.md\nskills/report-summary/SKILL.md\nreferences/report-requirements.md',
+      checks: valid ? '示例结构检查：通过\n指令与技能引用：有效\n真实数据库试跑：尚未执行\n\n完整产品应基于真实文件生成校验结果。' : '示例错误：skills/health-inspection/SKILL.md 缺失正文\n安装：已阻断\n修复：补齐技能内容并重新校验'
+    };
+    q('file-content').textContent = content[file];
+    q('skill-edit').hidden = true; q('save-skill').hidden = true;
+  }
+  function renderArtifact() {
+    q('artifact-name').textContent = draftTitle;
+    q('artifact-revision').textContent = '草稿 r' + revision;
+    q('artifact-state').textContent = valid ? '待安装' : '需要修复';
+    q('validation').textContent = valid ? '示例结构校验通过；尚未执行真实数据库试跑。' : '示例校验未通过：健康巡检技能正文缺失。请补齐内容。';
+    q('validation').classList.toggle('warn', !valid);
+    q('install').disabled = !valid; q('install').textContent = '一键安装';
+    q('retry-validation').hidden = valid; q('name-conflict').checked = false; q('rename-package').hidden = true;
+    root.querySelector('[data-view="artifact"]').disabled = false;
+    selectFile('overview'); show('artifact');
+  }
+  root.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+  q('start-create').addEventListener('click', () => show('composer'));
+  q('clone-create').addEventListener('click', () => { q('requirements').value = '基于智能运维创建独立副本，增加每周巡检汇总，数据库变更保持只输出提案。'; show('composer'); feedback('P1 演示：新建副本，不修改来源套件。'); });
+  q('remove-mode').addEventListener('click', () => { creating = false; q('creator-prefix').hidden = true; q('remove-mode').hidden = true; q('restore-mode').hidden = false; q('generate').disabled = true; feedback('已取消创建模式，输入内容保留。'); });
+  q('restore-mode').addEventListener('click', () => { creating = true; q('creator-prefix').hidden = false; q('remove-mode').hidden = false; q('restore-mode').hidden = true; q('generate').disabled = false; feedback('创建模式已恢复。'); });
+  q('material-file').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; if (!/\.(txt|md)$/i.test(file.name)) { feedback('原型仅支持 TXT / Markdown，请粘贴其他材料的文本。'); return; } q('materials').value = await file.text(); feedback('原型已读取材料文本，不会上传到外部服务。'); });
+  q('generate').addEventListener('click', () => {
+    if (!creating || !q('requirements').value.trim() || !q('suite-name').value.trim()) { feedback('请填写套件名称和工作需求。'); return; }
+    q('generate').disabled = true; q('cancel-generate').disabled = false; q('generation-progress').hidden = false;
+    q('generation-progress').textContent = '原型演示：整理需求 → 拆分技能 → 编写内容 → 校验结构';
+    timer = setTimeout(() => {
+      timer = null; revision++; generated = true; valid = !q('broken-package').checked; draftTitle = q('suite-name').value.trim();
+      q('generate').disabled = false; q('cancel-generate').disabled = true; q('generation-progress').hidden = true; renderArtifact();
+    }, 650);
+  });
+  q('cancel-generate').addEventListener('click', () => { clearTimeout(timer); timer = null; q('generate').disabled = !creating; q('cancel-generate').disabled = true; q('generation-progress').textContent = '已取消，需求与上一个完整草稿保留。'; feedback('未安装任何套件。'); });
+  root.querySelectorAll('[data-file]').forEach(b => b.addEventListener('click', () => selectFile(b.dataset.file)));
+  q('edit-skill').addEventListener('click', () => { q('skill-edit').value = skillBody; q('skill-edit').hidden = false; q('save-skill').hidden = false; q('skill-edit').focus(); });
+  q('save-skill').addEventListener('click', () => {
+    const body = q('skill-edit').value.trim();
+    if (!body) { valid = false; renderArtifact(); feedback('技能正文不能为空，安装已阻断。'); return; }
+    skillBody = body; revision++; valid = true; renderArtifact(); selectFile('skill'); feedback('原型已生成新修订并演示重新校验；实际产品需要重新检查完整内容。');
+  });
+  q('continue-edit').addEventListener('click', () => { show('composer'); feedback('继续描述调整要求；下一次生成对应新的草稿修订。'); });
+  q('download-demo').addEventListener('click', () => feedback('完整产品会下载当前卡片修订对应的套件 ZIP；本原型不生成实际套件包。'));
+  q('retry-validation').addEventListener('click', () => { q('broken-package').checked = false; valid = true; revision++; renderArtifact(); feedback('原型演示补齐技能正文后重新校验。'); });
+  q('name-conflict').addEventListener('change', () => { q('rename-package').hidden = !q('name-conflict').checked; });
+  q('rename-package').addEventListener('click', () => { draftTitle += ' · 自定义'; q('suite-name').value = draftTitle; revision++; renderArtifact(); feedback('已演示创建独立身份；原套件不被覆盖。'); });
+  q('install').addEventListener('click', () => {
+    if (!valid) return;
+    if (q('name-conflict').checked) { q('rename-package').hidden = false; feedback('同名不同内容：请改名另存，不会覆盖原套件。'); return; }
+    q('install').disabled = true; q('install').textContent = '安装中…';
+    const title = draftTitle;
+    setTimeout(() => {
+      installed = true; installedTitle = title; configured = !q('dependency-missing').checked;
+      q('installed-name').textContent = installedTitle;
+      q('installed-message').textContent = configured ? '原型安装成功 · v1.0.0 · 当前实例 · 可使用' : '原型安装成功 · 待配置数据库 · 套件保持禁用';
+      q('use-suite').disabled = !configured; q('configure-suite').hidden = configured;
+      q('use-composer').hidden = true; q('install').textContent = '已安装'; q('artifact-state').textContent = '已安装';
+      root.querySelector('[data-view="installed"]').disabled = false; show('installed');
+    }, 450);
+  });
+  q('configure-suite').addEventListener('click', () => { configured = true; q('installed-message').textContent = '原型演示配置已完成 · 已启用'; q('use-suite').disabled = false; q('configure-suite').hidden = true; feedback('实际产品会进入已有资源配置及授权流程。'); });
+  q('use-suite').addEventListener('click', () => { q('use-composer').hidden = false; q('use-composer').textContent = '新业务对话已选中：' + installedTitle + '。可以使用 /巡检、/慢查询、/报告；原型不发送真实请求。'; });
+  q('open-installed').addEventListener('click', () => { show('artifact'); selectFile('overview'); });
+  q('reset').addEventListener('click', () => { clearTimeout(timer); location.reload(); });
+})();
+</script>
+</body>
+</html>
