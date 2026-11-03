@@ -15,7 +15,7 @@ title: MCP 连接器
 
 ## 功能亮点
 
-- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、Keenable Search、DeepWiki 一键激活。
+- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、Keenable Search、DeepWiki、deed.page 一键激活。
 - **自定义 MCP Server**——接入任意 SSE 或 Streamable HTTP 的 MCP 端点,自带鉴权。
 - **按对话选择**——在提问区勾选本轮要挂载的连接器,Agent 的 prompt 保持聚焦、节省 token。
 - **人工确认(HITL)**——写操作(创建 / 更新 / 删除)执行前弹出确认框。
@@ -57,10 +57,11 @@ graph LR
 | Tavily | 搜索增强 | Streamable HTTP | 为 LLM 优化的 Web 搜索,返回 Markdown |
 | Keenable Search | 搜索增强 | Streamable HTTP | 网页搜索与网页正文抓取,无需账号或 API Key |
 | DeepWiki | 研发工具 | Streamable HTTP | 对任意 GitHub 仓库的 AI 解读与问答 |
+| deed.page | 研发工具 | Streamable HTTP | 把 HTML 报告或文件夹发布为公开网页,可更新、回滚、删除 |
 
 ## 管理连接器
 
-打开**连接器管理**页,每个模板和自定义 Server 都以卡片呈现。卡片展示图标、名称、`模板` / `自定义` 徽章、所属分类、`MCP / SSE`(或 Streamable HTTP)传输标识,以及简短描述。可用搜索框和 **全部 / 已激活 / 未激活 / 需要关注** 标签筛选。
+打开**连接器管理**页,每个模板和自定义 Server 都以卡片呈现。卡片展示图标、名称、`模板` / `自定义` 徽章、所属分类、传输标识(`MCP / SSE` 或 `MCP / Streamable HTTP`,取自实例自身的设置或模板的默认传输),以及简短描述。可用搜索框和 **全部 / 已激活 / 未激活 / 需要关注** 标签筛选。
 
 <p align="center">
   <img src={'/img/mcp/mcp_list_zh.png'} width="800px" />
@@ -95,6 +96,15 @@ Keenable Search 是一个托管的 MCP Server,提供网页搜索与网页正文�
 2. 将 **Streamable HTTP Endpoint URL** 填为 `https://api.keenable.ai/mcp`。
 3. **认证方式**保持 `none`。若要使用 API Key,改选 `bearer` 并把 Key 填入 Token 字段(将以 `Authorization: Bearer <key>` 发送)。
 4. 保存。该连接器暴露两个只读工具 `search_web_pages` 和 `fetch_page_content`,不会触发确认框。
+
+### 示例:激活 deed.page
+
+deed.page 是一个托管的 MCP Server,可以把文件发布到公开的 HTTPS 地址。Agent 生成了 HTML 报告或图表、需要一个可分享的链接时很方便。开始使用无需账号或 API Key:第一次不带 token 调用 `publish_site` 会返回 owner token,且只显示这一次。请立即安全保存:`update_site`、`delete_site`、`restore_version`、`set_site_access`、`set_listing` 等所有需要站点所有权的工具,都要把该 token 作为工具参数传入。deed.page 只保存 token 的哈希值,除非事先绑定了恢复邮箱,否则丢失的 token 无法找回,也就无法再更新或删除这些站点。持有该 token 的任何人都能控制该所有者的站点;如果泄露,请用 `rotate_token` 轮换或用 `revoke_token` 吊销。
+
+1. 在 **deed.page** 卡片上点击**激活**。
+2. 将 **Streamable HTTP Endpoint URL** 填为 `https://deed.page/mcp`。
+3. **认证方式**保持 `none`。
+4. 保存。全部六个会修改站点的工具(`publish_site`、`update_site`、`restore_version`、`delete_site`、`set_site_access`、`set_listing`)以及两个会修改 token 的工具(`rotate_token`、`revoke_token`)执行前都会弹出确认框;发布的内容默认公开可见。
 
 ### 查看工具
 
