@@ -5,7 +5,8 @@ Lifecycle (mirrors ``scheduled_task/serve.py``):
                         registry (storage seam, DAO, inspector, config, work
                         root) and bind it to the endpoints module
     on_init           - import the Entity class to register SQLAlchemy metadata
-    before_start      - create/get the database manager (sync)
+    after_init        - refresh financial capabilities after application migration
+    before_start      - create/get the database manager and bind shared storage
     async_before_stop - close the registry and unbind the endpoints module so
                         storage-backed endpoints fail closed again
 """
@@ -75,11 +76,18 @@ class SessionFileServe(BaseServe):
         self._registry = registry
         self._work_root = Path(work_root) if work_root is not None else None
         self._db_manager: Optional[DatabaseManager] = None
+        self._financial_analysis = None
+        self._uses_fallback_storage = False
 
     @property
     def registry(self) -> Optional[SessionFileRegistry]:
         """Return the orchestrating registry bound during ``init_app``."""
         return self._registry
+
+    @property
+    def financial_analysis(self):
+        """Shared report persistence and validation for API and agent tools."""
+        return self._financial_analysis
 
     def init_app(self, system_app: SystemApp):
         """Mount the router and bind the registry to the endpoints module."""
@@ -101,18 +109,55 @@ class SessionFileServe(BaseServe):
                 work_root=self._resolve_work_root(system_app),
             )
         init_endpoints(system_app, self._registry, self._serve_config)
+        from dbgpt_serve.financial_analysis.api import make_router
+        from dbgpt_serve.financial_analysis.service import FinancialAnalysisService
+
+        self._financial_analysis = FinancialAnalysisService(self._registry)
+        system_app.app.include_router(
+            make_router(self._financial_analysis),
+            prefix="/api/v1/financial-analysis",
+            tags=["FinancialAnalysis"],
+        )
         self._app_has_initiated = True
 
     def on_init(self):
         """Import the Entity class to register SQLAlchemy metadata."""
+        from dbgpt_serve.financial_analysis.models import (
+            FinancialReportRevisionEntity,  # noqa: F401
+            FinancialRunDocumentEntity,  # noqa: F401
+            FinancialRunEntity,  # noqa: F401
+        )
+
         from .models.models import SessionFileEntity  # noqa: F401
 
+    def after_init(self):
+        """Observe schema upgrades performed after component registration."""
+        if self._financial_analysis is not None:
+            self._financial_analysis.refresh_schema()
+
     def before_start(self):
-        """Create or get the database manager (sync)."""
+        """Initialize metadata and bind storage registered during after_init."""
         self._db_manager = self.create_or_get_db_manager()
+        # FileServe registers its persistent client in after_init, later than
+        # this component's init_app. Replace only our temporary fallback before
+        # accepting requests; explicit clients/registries remain untouched.
+        if self._uses_fallback_storage and self._registry is not None:
+            client = FileStorageClient.get_instance(
+                self._system_app, default_component=None
+            )
+            if client is not None:
+                self._registry.bind_storage_client(client)
+                self._uses_fallback_storage = False
 
     async def async_before_stop(self):
         """Close the registry and unbind the endpoints module."""
+        if self._financial_analysis is not None:
+            import asyncio
+
+            try:
+                await asyncio.to_thread(self._financial_analysis.close)
+            except Exception:
+                logger.exception("Failed to close financial analysis service")
         if self._registry is not None:
             try:
                 self._registry.close()
@@ -120,6 +165,26 @@ class SessionFileServe(BaseServe):
                 logger.exception("Failed to close session file registry")
         _reset_endpoints()
         logger.info("Session file endpoints unbound; serve stopped.")
+
+    async def async_after_start(self):
+        """Bind model work to the serving event loop after components initialize."""
+        import asyncio
+        import os
+
+        from dbgpt_serve.financial_analysis.analysis import QwenAnalyzer
+        from dbgpt_serve.financial_analysis.questions import QwenQuestionAnswerer
+
+        if self._financial_analysis is not None:
+            self._financial_analysis.analyzer = QwenAnalyzer(
+                self._system_app,
+                asyncio.get_running_loop(),
+                model=os.getenv("DBGPT_FINANCIAL_MODEL", "qwen-plus"),
+            )
+            self._financial_analysis.answerer = QwenQuestionAnswerer(
+                self._system_app,
+                asyncio.get_running_loop(),
+                model=os.getenv("DBGPT_FINANCIAL_MODEL", "qwen-plus"),
+            )
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -154,4 +219,5 @@ class SessionFileServe(BaseServe):
             "No shared FileStorageClient registered; session file serve "
             "creates a default local storage client."
         )
+        self._uses_fallback_storage = True
         return FileStorageClient()

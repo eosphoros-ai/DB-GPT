@@ -1,63 +1,33 @@
 # financial-report-analyzer
 
-## Overview
+The built-in skill analyzes Chinese text-based annual-report PDFs from non-financial listed companies. It supports one report, two to five companies in the same reporting year (`peer`), or two to five annual reports for the same company (`trend`). Scanned PDFs, quarterly reports, currency conversion and financial-industry accounting are outside this release's acceptance scope.
 
-`financial-report-analyzer` is a built-in skill for deep analysis of listed-company financial reports such as annual and quarterly reports.
+## Entry Points
 
-It extracts structured financial data, computes ratios, generates charts, and renders a report-ready financial analysis page.
+Upload reports in the current agent conversation. A single report uses `prepare_financial_report`; an explicit comparison request uses `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`. Multiple attachments alone do not trigger a comparison. The result opens in the existing Computer workspace.
 
-## Repo path
+The `/financial-analysis` page also provides single-report, peer and trend modes, a baseline selector, report history and explicit recovery. Changing the baseline creates a new revision. The report keeps the established chapter navigation, execution panel, evidence panel and authorized source preview.
 
-```text
-skills/financial-report-analyzer/
-├── SKILL.md
-├── scripts/
-│   ├── extract_financials.py
-│   ├── calculate_ratios.py
-│   ├── generate_charts.py
-│   └── fill_template.py
-├── references/
-│   ├── analysis_framework.md
-│   └── financial_metrics.md
-└── templates/
-    ├── report_template.html
-    └── report_template.md
-```
+## Data And Analysis
 
-## When to use it
+`scripts/financial_document.py` extracts page-level facts and identity candidates. Amounts and deterministic results remain decimal strings. Missing values, extraction failures and conflicting disclosures remain visible; comparability is a separate decision involving company, period, currency, scope and profit attribution.
 
-- analyze annual or quarterly reports
-- extract core financial indicators
-- calculate profitability and solvency metrics
-- generate financial charts
-- produce a professional HTML financial report
+The backend calculates gross margin, expense ratios, cash/profit ratio, debt ratio, baseline differences, percentage-point differences and valid year-over-year changes. Trend calculations require shared disclosure support for the selected values and preserve gaps. Explicit restatements retain the original candidates and the versioned selection policy.
 
-## Core workflow
+The agent reuses six topic workflows: operating performance, recurring earnings, margins, expenses, cash flow and balance sheet. Each finding declares entities, periods, metrics, subject, baseline and direction. The backend validates these fields and references. Unsupported causes belong in open questions. Validation failures remain distinct from missing financial data.
 
-1. Run `extract_financials.py` to structure source data.
-2. Run `calculate_ratios.py` to compute financial indicators.
-3. Run `generate_charts.py` to create report visuals.
-4. Write the skill's required narrative analysis sections.
-5. Render the final output with `html_interpreter` and the bundled template.
+Models review direction, accounting scope and explanation boundaries before publication. Automatic validation or model review does not constitute independent human verification. Valid findings can be published together with clearly identified gaps.
 
-## Important resources
+## Recovery And Export
 
-| Resource | Purpose |
-|---|---|
-| `scripts/extract_financials.py` | Pulls core financial values from report files |
-| `scripts/calculate_ratios.py` | Computes key ratio fields for templating |
-| `scripts/generate_charts.py` | Generates chart assets used in the report |
-| `references/financial_metrics.md` | Defines the financial metrics and formulas |
-| `references/analysis_framework.md` | Defines the analysis structure and interpretation logic |
-| `templates/report_template.html` | Final HTML delivery template |
+Single reports retain protocol v1; comparisons use v2. Data readiness, analysis and publication have separate states. Successful document extractions persist immediately, and explicit recovery retries failed documents without parsing successful documents again. Topic retry preserves other topics.
 
-## Output expectations
+Published revisions are immutable. History, questions, citations and exports can select an exact saved revision. JSON and interactive offline HTML embed the same report snapshot. HTML includes its scripts and styles; source PDFs require authorized access through the application.
 
-This skill is optimized for structured reporting across:
+## Operations
 
-- profitability
-- solvency and risk
-- operating efficiency
-- cash flow and earnings quality
-- advantages and risks
-- overall assessment
+The runner supports one local service process. Existing databases require an explicit additive migration using `python -m dbgpt_serve.financial_analysis.migrate --database-url <target>`, first without `--apply` to inspect the plan. The application does not silently alter existing tables. Back up the intended database and apply migrations through the normal maintenance process; do not run an old binary against comparison tasks.
+
+Build the offline runtime with `node standalone/financial-analysis/build.cjs <output.html>` and configure `DBGPT_FINANCIAL_EXPORT_RUNTIME`. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
+
+Implementation details, isolated validation commands, measured results and unverified scenarios are recorded in the repository's `docs/financial-comparison-acceptance.zh-CN.md`. Synthetic fixtures and engineering tests do not replace real-PDF, real-model or human acceptance.

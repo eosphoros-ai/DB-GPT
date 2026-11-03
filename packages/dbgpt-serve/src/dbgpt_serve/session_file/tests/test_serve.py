@@ -226,6 +226,22 @@ class TestServeMounting:
 
 
 class TestServeLifecycle:
+    def test_financial_close_failure_still_cleans_registry_and_endpoints(
+        self, serve, monkeypatch, caplog
+    ):
+        import asyncio
+
+        def fail():
+            raise RuntimeError("financial close failed")
+
+        closed = []
+        monkeypatch.setattr(serve._financial_analysis, "close", fail)
+        monkeypatch.setattr(serve.registry, "close", lambda: closed.append(True))
+        asyncio.run(serve.async_before_stop())
+        assert closed == [True]
+        assert endpoints_module._service_instance is None
+        assert "Failed to close financial analysis service" in caplog.text
+
     def test_on_init_registers_entity_metadata(self, serve):
         serve.on_init()
         assert "dbgpt_session_file" in Model.metadata.tables

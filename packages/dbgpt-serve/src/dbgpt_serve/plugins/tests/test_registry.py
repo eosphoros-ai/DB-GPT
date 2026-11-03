@@ -143,6 +143,25 @@ def test_sync_promotes_uploaded_builtin_preserving_identity_and_pins(registry, n
     assert registry.sync_official([package]).unchanged == [name]
 
 
+def test_unpin_clears_only_current_conversation_and_allows_reselection(
+    tmp_path, registry
+):
+    registry.sync_official([_pkg(tmp_path)])
+    registry.record_pin("conv-1", "demo-query", "1.0.0")
+    registry.record_pin("conv-2", "demo-query", "1.0.0")
+    registry.record_unpin("conv-1", user_name="owner")
+    assert registry.current_pin("conv-1") is None
+    assert registry.current_pin("conv-2") == ("demo-query", "1.0.0")
+    event = registry.list_events("demo-query")[0]
+    assert event.event_type == "unpin"
+    assert event.conv_uid == "conv-1"
+    assert event.from_version == "1.0.0"
+    count = len(registry.list_events("demo-query"))
+    registry.record_unpin("conv-1")
+    assert len(registry.list_events("demo-query")) == count
+    registry.record_pin("conv-1", "demo-query", "1.0.0")
+    assert registry.current_pin("conv-1") == ("demo-query", "1.0.0")
+
 
 def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry):
     root = Path(__file__).resolve().parents[6] / "assets/suites/db-query"

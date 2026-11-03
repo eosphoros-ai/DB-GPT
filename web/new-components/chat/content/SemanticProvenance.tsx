@@ -10,6 +10,7 @@ import {
   type SemanticTable,
 } from '@/client/api/semantic';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
+import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
 import {
   decodeSemanticValue,
   matchSemanticSource,
@@ -381,6 +382,7 @@ export default function SemanticProvenance({
   content,
   sources,
   streaming = false,
+  onFinancialCitationClick,
   mode = 'sources',
   querySources = [],
   readGaps = [],
@@ -388,6 +390,7 @@ export default function SemanticProvenance({
   content: string;
   sources: SemanticSource[];
   streaming?: boolean;
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   querySources?: QuerySource[];
   readGaps?: SemanticReadGap[];
   /** Keep answer links in place while mounting the source panel after artifacts. */
@@ -657,7 +660,9 @@ export default function SemanticProvenance({
               <details className='border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700/60 dark:text-gray-400'>
                 <summary className='cursor-pointer'>{t('semantic_provenance_notes')}</summary>
                 <div className='prose prose-sm dark:prose-invert mt-2 max-w-none'>
-                  <MarkdownContext components={components}>{notes}</MarkdownContext>
+                  <MarkdownContext components={components} onFinancialCitationClick={onFinancialCitationClick}>
+                    {notes}
+                  </MarkdownContext>
                 </div>
               </details>
             )}
@@ -668,7 +673,9 @@ export default function SemanticProvenance({
         (streaming ? (
           <span className='whitespace-pre-wrap break-words'>{content}</span>
         ) : (
-          <MarkdownContext components={components}>{answer}</MarkdownContext>
+          <MarkdownContext components={components} onFinancialCitationClick={onFinancialCitationClick}>
+            {answer}
+          </MarkdownContext>
         ))}
       <Drawer
         open={!!selected || !!selectedQuery}
