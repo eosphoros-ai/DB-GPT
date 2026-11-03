@@ -15,6 +15,7 @@ interface NewFormDialogProps {
   dbNames?: string[];
   dbTypeData?: DBOption[];
   description?: string;
+  displayName?: string;
 }
 
 function FormDialog({
@@ -27,6 +28,7 @@ function FormDialog({
   getFromRenderData,
   dbNames,
   description,
+  displayName,
 }: NewFormDialogProps) {
   const { t } = useTranslation();
 
@@ -48,6 +50,7 @@ function FormDialog({
         getFromRenderData={getFromRenderData}
         dbNames={dbNames}
         description={description}
+        displayName={displayName}
       />
     </Modal>
   );
