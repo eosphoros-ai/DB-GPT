@@ -38,6 +38,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+_STOP_REASONS = {
+    "end_turn": "stop",
+    "stop_sequence": "stop",
+    "max_tokens": "length",
+    "tool_use": "tool_calls",
+    "refusal": "content_filter",
+}
+
+
+def _to_finish_reason(stop_reason: Optional[str]) -> Optional[str]:
+    """Map an Anthropic ``stop_reason`` to a chat/completions ``finish_reason``."""
+    if stop_reason is None:
+        return None
+    return _STOP_REASONS.get(stop_reason, "stop")
+
+
 @auto_register_resource(
     label=_("Claude Proxy LLM"),
     category=ResourceCategory.LLM_CLIENT,
@@ -226,7 +242,7 @@ class ClaudeLLMClient(ProxyLLMClient):
                 **payload,
             )
             usage = None
-            finish_reason = response.stop_reason
+            finish_reason = _to_finish_reason(response.stop_reason)
             if response.usage:
                 usage = {
                     "prompt_tokens": response.usage.input_tokens,
