@@ -166,14 +166,6 @@ const SkillPanel: React.FC = () => {
           <dt>{financialText('financial.extract_metrics')}</dt>
           <dd>extract_financials.py</dd>
         </div>
-        <div>
-          <dt>{financialText('financial.calculate_ratios')}</dt>
-          <dd>calculate_ratios.py</dd>
-        </div>
-        <div>
-          <dt>{financialText('financial.create_charts')}</dt>
-          <dd>generate_charts.py</dd>
-        </div>
       </dl>
       <details className={styles.developerNote}>
         <summary>{financialText('financial.about_this_workspace')}</summary>

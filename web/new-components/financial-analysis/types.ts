@@ -249,6 +249,7 @@ export interface ReportData {
     version: number;
     status: 'draft' | 'published';
     publishedAt: string | null;
+    parallelBatch?: { status: 'running' | 'completed' | 'failed' | 'interrupted' };
     review: {
       at: string;
       kind: 'agent-review';

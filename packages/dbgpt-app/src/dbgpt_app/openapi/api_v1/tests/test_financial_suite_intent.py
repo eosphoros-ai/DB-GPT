@@ -7,6 +7,7 @@ import pytest
 
 from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     apply_financial_suite_context,
+    financial_command_input_error,
     financial_completion_error,
     has_comparison_intent,
     is_financial_turn,
@@ -91,7 +92,12 @@ def test_comparison_selection_supplies_intent_but_single_report_does_not():
 
 @pytest.mark.parametrize(
     "query",
-    ["不要比较，只读第一份", "不需要进行对比", "Don't compare these reports"],
+    [
+        "不要比较，只读第一份",
+        "不需要进行对比",
+        "Don't compare these reports",
+        "不要比较，只解释横向这个词",
+    ],
 )
 @pytest.mark.asyncio
 async def test_explicit_negative_request_overrides_the_selected_comparison(query):
@@ -144,3 +150,33 @@ async def test_financial_command_uses_saved_report_despite_a_stale_database_sele
     result = await financial_completion_error(state, service=service)
     assert "read_financial_report" in result
     service.latest_agent_report.assert_called_once_with("alice", "current")
+
+
+@pytest.mark.parametrize("command", [None, "/财报对比"])
+@pytest.mark.parametrize(
+    "query",
+    [
+        "比较 A 和 B，不要比较 C",
+        "不要比较 C；请比较 A 和 B",
+        "不要比较 C 但比较 A 和 B",
+        "Compare A and B, don't compare C",
+        "Do not compare C but compare A and B",
+    ],
+)
+def test_an_excluded_report_does_not_cancel_a_separate_comparison(query, command):
+    assert has_comparison_intent(query, command=command)
+
+
+@pytest.mark.parametrize("command", ["/读年报", "/财报对比"])
+def test_new_analysis_commands_cannot_use_saved_reports_instead_of_attachments(command):
+    error = financial_command_input_error(command, has_files=False)
+    assert "上传" in error
+    assert "追问已有报告" in error
+    assert financial_command_input_error(command, has_files=True) is None
+    assert "Upload" in financial_command_input_error(
+        command, has_files=False, language="en"
+    )
+
+
+def test_ordinary_report_followups_do_not_require_new_attachments():
+    assert financial_command_input_error(None, has_files=False) is None

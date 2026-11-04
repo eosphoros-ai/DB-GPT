@@ -110,7 +110,6 @@ import {
 import {
   suiteCommandFileError,
   suiteCommandFileHint,
-  suiteCommandMatchesReportMode,
   suiteCommandPrompt,
   validateSuiteCommandFiles,
 } from '@/utils/suite-command-inputs';
@@ -1381,7 +1380,14 @@ const Playground: NextPage = () => {
   // active, slide closed when it clears — but only when the preview itself
   // opened the rail (manual expansion / gallery stays open).
   const previewOpenedRailRef = useRef(false);
+  const financialPreviewIdentityRef = useRef<string | null>(null);
   useEffect(() => {
+    const financialIdentity =
+      previewArtifact && isFinancialReportReference(previewArtifact.content) ? artifactIdentity(previewArtifact) : null;
+    const refreshingReport = financialIdentity && financialPreviewIdentityRef.current === financialIdentity;
+    financialPreviewIdentityRef.current = financialIdentity;
+    // A repeated artifact or new revision updates data without undoing manual navigation.
+    if (refreshingReport) return;
     if (previewArtifact) {
       previewOpenedRailRef.current = true;
       setRightPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview');
@@ -1425,6 +1431,10 @@ const Playground: NextPage = () => {
     panelNavigationVersion.current += 1;
     setFinancialCitationTarget(null);
     setPreviewArtifact(artifact as Artifact);
+    if (isFinancialReportReference(artifact.content)) {
+      setRightPanelView('html-preview');
+      setRightPanelCollapsed(false);
+    }
   }, []);
 
   /** Edit & re-run a query artifact's SQL against the bound datasource.
@@ -2928,14 +2938,6 @@ const Playground: NextPage = () => {
       message.error('当前服务未配置可用模型，请先在服务端配置并启动模型');
       return;
     }
-    const hasMatchingReport =
-      effectiveSuite?.scenario_id === 'financial' &&
-      artifacts.some(
-        artifact =>
-          isFinancialReportReference(artifact.content) &&
-          artifact.content.sessionId === conversationIdRef.current &&
-          suiteCommandMatchesReportMode(effectiveSuiteCommand, artifact.content.mode),
-      );
     const draftInputFiles = explicitLegacyFile
       ? [explicitLegacyFile]
       : sessionFiles.legacyFile
@@ -2944,7 +2946,7 @@ const Playground: NextPage = () => {
             name: draft.identity.name,
             media_type: draft.snapshot?.media_type || draft.file?.type || '',
           }));
-    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles, hasMatchingReport);
+    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles);
     if (materialProblem && effectiveSuiteCommand) {
       message.warning(suiteCommandFileError(materialProblem, effectiveSuiteCommand, i18n.language));
       return;
@@ -3040,7 +3042,7 @@ const Playground: NextPage = () => {
     const preparedFiles = sendSnapshot?.legacyFile
       ? [sendSnapshot.legacyFile]
       : (sendSnapshot?.fileIds ?? []).map(fileId => sendSnapshot!.snapshotById[fileId]);
-    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles, hasMatchingReport);
+    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles);
     if (preparedProblem && effectiveSuiteCommand) {
       message.warning(suiteCommandFileError(preparedProblem, effectiveSuiteCommand, i18n.language));
       return;
@@ -3120,6 +3122,8 @@ const Playground: NextPage = () => {
 
     setLoading(true);
     setQuery(''); // Clear input
+    // Analysis commands apply to this send; ordinary follow-ups reuse saved data.
+    if (effectiveSuite?.scenario_id === 'financial') setSelectedSuiteCommand(null);
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
@@ -3892,7 +3896,7 @@ const Playground: NextPage = () => {
                 : {
                     ...item,
                     thinking: false,
-                    executionStatus: 'incomplete',
+                    executionStatus: item.executionStatus || 'incomplete',
                     context:
                       item.context ||
                       (financialDelivery.current.hasPublished(responseId)
@@ -4509,7 +4513,12 @@ const Playground: NextPage = () => {
     if (latestSuite) {
       setActiveSuiteTab(latestSuite.name);
       setSuiteTabTouched(true);
-      setSelectedSuiteCommand(latestSuite.command ? { suite: latestSuite.name, name: latestSuite.command } : null);
+      // History restores the suite, not a completed new-analysis command.
+      const financialCommand =
+        latestSuite.name === 'financial-analysis' && ['/读年报', '/财报对比'].includes(latestSuite.command || '');
+      setSelectedSuiteCommand(
+        latestSuite.command && !financialCommand ? { suite: latestSuite.name, name: latestSuite.command } : null,
+      );
       setSelectedSkill(null);
     } else {
       setActiveSuiteTab('');
@@ -4805,8 +4814,8 @@ const Playground: NextPage = () => {
       {suiteInputHint}
       {effectiveSuite?.scenario_id === 'financial' &&
         (i18n.language.startsWith('en')
-          ? '. You can continue a saved report of the same kind without uploading again.'
-          : '；已有同类报告可直接追问，无需再次上传。')}
+          ? '. For saved-report follow-ups, ask directly without selecting a new-analysis command.'
+          : '；追问已有报告时直接输入问题，无需重新选择分析命令。')}
     </p>
   ) : null;
   const composerContextProps = {

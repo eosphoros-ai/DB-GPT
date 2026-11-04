@@ -12,11 +12,9 @@ export type SuiteInputProblem = 'missing_files' | 'too_many_files' | 'unsupporte
 export function validateSuiteCommandFiles(
   command: SuiteCommand | undefined,
   files: readonly SuiteInputFile[],
-  hasMatchingReport = false,
 ): SuiteInputProblem | null {
   const rules = command?.input_files;
   if (!rules) return null;
-  if (files.length === 0 && hasMatchingReport) return null;
   if (files.length < rules.min) return 'missing_files';
   if (files.length > rules.max) return 'too_many_files';
   if (
@@ -56,12 +54,6 @@ export function suiteCommandFileError(problem: SuiteInputProblem, command: Suite
     return isEnglish ? `Too many files. ${hint}.` : `附件数量过多，请${hint}。`;
   }
   return isEnglish ? `${hint} before starting this task.` : `请先${hint}，再开始任务。`;
-}
-
-/** A document comparison cannot reuse a saved single-report result as its input. */
-export function suiteCommandMatchesReportMode(command: SuiteCommand | undefined, mode?: 'report' | 'comparison') {
-  if (!command?.input_files) return false;
-  return (command.input_files.min > 1 ? 'comparison' : 'report') === (mode || 'report');
 }
 
 /** Preserve supplied command arguments; otherwise use the localized input guide. */

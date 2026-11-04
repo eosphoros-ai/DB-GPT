@@ -326,3 +326,49 @@ async def test_cancel_cleanup_times_out_and_consumes_late_failure(monkeypatch, c
         await asyncio.gather(task, return_exceptions=True)
         await asyncio.sleep(0)
     assert "failed after stream cleanup" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        {"financial_user_query": "分析年报"},
+        {"financial_user_query": "请看附件", "financial_suite_command": "/读年报"},
+        {"financial_user_query": "继续", "financial_pending": {"run"}},
+        {
+            "financial_user_query": "为什么",
+            "financial_report_context": {"revision": "saved"},
+        },
+    ],
+)
+def test_unvalidated_financial_terminate_text_is_never_sent_as_a_final_chunk(state):
+    assert (
+        agentic_data_api._react_final_chunk_event("营业收入为 999 亿元", state) is None
+    )
+    events = agentic_data_api._react_terminal_events(
+        None,
+        None,
+        AgentFinalAnswer(content="已核对的最终回答"),
+    )
+    assert _decode_sse_event(events[0])["content"] == "已核对的最终回答"
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        {"financial_user_query": "Explain photosynthesis"},
+        {
+            "financial_user_query": "按地区汇总营业收入",
+            "financial_other_source_used": True,
+        },
+        {
+            "financial_user_query": "按地区汇总营业收入",
+            "financial_other_source_selected": True,
+        },
+    ],
+)
+def test_nonreport_answers_keep_incremental_final_streaming(state):
+    event = agentic_data_api._react_final_chunk_event("A normal answer", state)
+    assert _decode_sse_event(event) == {
+        "type": "final.chunk",
+        "content": "A normal answer",
+    }

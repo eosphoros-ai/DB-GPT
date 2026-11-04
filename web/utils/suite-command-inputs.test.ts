@@ -1,11 +1,6 @@
 import type { SuiteCommand } from '@/types/suite';
 import { describe, expect, it } from 'vitest';
-import {
-  suiteCommandFileHint,
-  suiteCommandMatchesReportMode,
-  suiteCommandPrompt,
-  validateSuiteCommandFiles,
-} from './suite-command-inputs';
+import { suiteCommandFileHint, suiteCommandPrompt, validateSuiteCommandFiles } from './suite-command-inputs';
 
 const readReport: SuiteCommand = {
   name: '/读年报',
@@ -46,17 +41,10 @@ describe('suite command materials', () => {
     ).toBeNull();
   });
 
-  it('allows a matching saved-report follow-up without files, but still validates newly supplied files', () => {
-    expect(validateSuiteCommandFiles(readReport, [], true)).toBeNull();
-    expect(validateSuiteCommandFiles(compareReports, [], true)).toBeNull();
-    expect(validateSuiteCommandFiles(compareReports, [pdf], true)).toBe('missing_files');
-    expect(validateSuiteCommandFiles(readReport, [{ name: 'notes.txt', type: 'text/plain' }], true)).toBe(
-      'unsupported_file_type',
-    );
-    expect(suiteCommandMatchesReportMode(readReport, undefined)).toBe(true);
-    expect(suiteCommandMatchesReportMode(readReport, 'comparison')).toBe(false);
-    expect(suiteCommandMatchesReportMode(compareReports, 'report')).toBe(false);
-    expect(suiteCommandMatchesReportMode(compareReports, 'comparison')).toBe(true);
+  it('requires files for explicit new analyses while ordinary follow-ups need no command', () => {
+    expect(validateSuiteCommandFiles(readReport, [])).toBe('missing_files');
+    expect(validateSuiteCommandFiles(compareReports, [])).toBe('missing_files');
+    expect(validateSuiteCommandFiles(undefined, [])).toBeNull();
   });
 
   it('leaves commands without file requirements unchanged', () => {
