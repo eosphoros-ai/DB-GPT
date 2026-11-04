@@ -215,12 +215,14 @@ class GeminiLLMClient(ProxyLLMClient):
         try:
             import google.generativeai as genai
 
-            generation_config = {
+            # top_k is left to the API default: forcing top_k=1 makes decoding greedy
+            # and turns temperature/top_p into no-ops.
+            generation_config: Dict[str, Any] = {
                 "temperature": request.temperature,
-                "top_p": 1,
-                "top_k": 1,
                 "max_output_tokens": request.max_new_tokens,
             }
+            if request.top_p is not None:
+                generation_config["top_p"] = request.top_p
             model = genai.GenerativeModel(
                 model_name=self._model,
                 generation_config=generation_config,
