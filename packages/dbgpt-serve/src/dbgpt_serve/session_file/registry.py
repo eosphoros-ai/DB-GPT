@@ -37,8 +37,6 @@ from typing import Any, BinaryIO, Iterator, List, Optional, Tuple
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 
-from dbgpt.core.interface.file import FileStorageClient
-
 from .config import ServeConfig
 from .domain import (
     FileScope,
@@ -433,10 +431,6 @@ class SessionFileRegistry:
         raise SessionFileRegistryError(
             "FILE_ID_CONFLICT", "Could not allocate a unique storage key."
         )
-
-    def bind_storage_client(self, client: FileStorageClient) -> None:
-        """Bind the app's persistent client during startup, before any requests."""
-        self._storage = client
 
     def _save_blob(
         self,

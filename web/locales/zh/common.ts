@@ -659,10 +659,8 @@ export const CommonZh: Resources['translation'] = {
   suites_scenario_analysis: '分析',
   suites_scenario_ops: '运维',
   suites_scenario_expert: '专家',
-  suites_scenario_financial: '财报',
   suites_overrides_note: '仅可加严 · enforcement 在核心 gate',
-  suites_market_empty:
-    '暂无可用套件；可点“＋ 添加”上传 ZIP（≤50MB，包含 .qwenwork-plugin/plugin.json 或旧版 suite.yaml）。',
+  suites_market_empty: '暂无可用套件；可点“＋ 添加”上传 ZIP（≤50MB，包含 .qwenwork-plugin/plugin.json 或旧版 suite.yaml）。',
   suites_upload_ok: '套件已上传',
   suites_upload_fail: '上传失败',
   suites_uninstall_confirm: '确认卸载套件 {{name}}？包文件保留在磁盘。',

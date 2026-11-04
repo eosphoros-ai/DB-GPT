@@ -2,8 +2,6 @@ import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/sess
 import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import { AttachedConnector } from '@/new-components/connector/types';
-import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
-import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
 import type { SuiteMessageReference } from '@/types/suite';
 import type { ITaskflowArtifact } from '@/types/taskflow';
 import type { QuerySource, SemanticReadGap, SemanticSource } from '@/utils/semantic-provenance';
@@ -46,8 +44,6 @@ import { Button, message, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { financialText, useFinancialLocale } from '../../financial-analysis/i18n';
-import FinancialProgressPanel, { FinancialProgressUpdates, financialTasksForStep } from './FinancialProgressPanel';
 import ObservationFormatter from './ObservationFormatter';
 import SemanticProvenance from './SemanticProvenance';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
@@ -80,7 +76,6 @@ export type StepType =
   | 'task'
   | 'skill'
   | 'python'
-  | 'code'
   | 'html'
   | 'sql'
   | 'question'
@@ -139,7 +134,6 @@ export interface ArtifactItem {
   mimeType?: string;
   size?: number;
   filePath?: string;
-  stepId?: string;
 }
 
 export interface ManusLeftPanelProps {
@@ -161,7 +155,6 @@ export interface ManusLeftPanelProps {
   flowExecSteps?: ExecutionStep[];
   userQuery?: string;
   assistantText?: string;
-  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   /** Render incremental answer text without reparsing Markdown on every frame. */
   isAssistantStreaming?: boolean;
   stepThoughts?: Record<string, string>;
@@ -207,7 +200,6 @@ export interface ManusLeftPanelProps {
   attachedSuite?: SuiteMessageReference;
   attachedConnectors?: AttachedConnector[];
   taskPlan?: TaskItem[];
-  financialUpdates?: string[];
   /** Citation indexes that are valid for this answer. */
   citationIndexes?: number[];
   semanticSources?: SemanticSource[];
@@ -242,7 +234,6 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
     case 'glob':
       return <SearchOutlined className={classNames(iconClass, 'text-cyan-500')} />;
     case 'python':
-    case 'code':
       return <CodeOutlined className={classNames(iconClass, 'text-blue-500')} />;
     case 'html':
       return <CodeOutlined className={classNames(iconClass, 'text-orange-500')} />;
@@ -276,7 +267,6 @@ const getTypeLabel = (type: StepType, t: any): string => {
     skill: t('load_skill'),
     sql: t('step_type_sql'),
     python: t('step_type_python'),
-    code: t('step_type_other'),
     html: t('step_type_html'),
     question: t('step_type_question') || 'Ask User',
     kb: t('step_type_kb') || 'Knowledge',
@@ -298,7 +288,6 @@ const getIconBgClass = (type: StepType): string => {
     grep: 'bg-cyan-50 dark:bg-cyan-900/30',
     glob: 'bg-cyan-50 dark:bg-cyan-900/30',
     python: 'bg-blue-50 dark:bg-blue-900/30',
-    code: 'bg-blue-50 dark:bg-blue-900/30',
     html: 'bg-orange-50 dark:bg-orange-900/30',
     task: 'bg-indigo-50 dark:bg-indigo-900/30',
     skill: 'bg-indigo-50 dark:bg-indigo-900/30',
@@ -1058,7 +1047,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   flowExecSteps,
   userQuery,
   assistantText,
-  onFinancialCitationClick,
   isAssistantStreaming = false,
   stepThoughts,
   subAgentSlot,
@@ -1080,7 +1068,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedDb,
   attachedConnectors,
   taskPlan,
-  financialUpdates = [],
   citationIndexes = [],
   semanticSources = [],
   querySources = [],
@@ -1090,7 +1077,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   reportRunId,
   onReportClick,
 }) => {
-  useFinancialLocale();
   const { t } = useTranslation();
 
   // ------------------------------------------------------------------
@@ -1211,9 +1197,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     [displayAssistantText, t],
   );
 
-  const financialTasks = financialTasksForStep(taskPlan || []);
-  const financialArtifact = artifacts?.find(artifact => isFinancialReportReference(artifact.content));
-  const reportPublished = financialArtifact?.content.published === true;
   const isTaskPlanComplete =
     !taskPlan?.length || taskPlan.every(task => task.status === 'completed' || task.status === 'cancelled');
   const handleStepClick = useCallback(
@@ -1243,8 +1226,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {/* Truncated assistant response */}
         {(displayAssistantText || semanticSources.length > 0) && (
           <div className='text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed'>
-            {displayAssistantText?.slice(0, 150)}
-            {(displayAssistantText?.length || 0) > 150 ? '...' : ''}
+            {displayAssistantText.slice(0, 150)}
+            {displayAssistantText.length > 150 ? '...' : ''}
           </div>
         )}
         {/* Completed indicator */}
@@ -1353,32 +1336,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             query, before the thinking placeholder and answer text. */}
         {timelineSlot && <div className='pt-1'>{timelineSlot}</div>}
 
-        {financialTasks.length > 0 ? (
-          <div className='pt-1' data-testid='financial-left-execution'>
-            <FinancialProgressPanel
-              tasks={financialTasks}
-              isRunning={!!isWorking}
-              updates={financialUpdates}
-              reportPublished={reportPublished}
-              onOpenReport={financialArtifact ? () => onArtifactClick?.(financialArtifact) : undefined}
-              compact
-            />
-            {sections.length > 0 && (
-              <details className='mt-3 text-sm text-slate-500'>
-                <summary className='cursor-pointer px-2 py-1'>{financialText('financial.tool_call_details')}</summary>
-                {sections.map(section => (
-                  <SectionBlock
-                    key={section.id}
-                    section={section}
-                    activeStepId={activeStepId}
-                    onStepClick={stepId => handleStepClick(stepId, section.id)}
-                    defaultExpanded={true}
-                  />
-                ))}
-              </details>
-            )}
-          </div>
-        ) : sections.length > 0 || isFlowRun ? (
+        {sections.length > 0 || isFlowRun ? (
           <div className='pt-1'>
             {isFlowRun ? (
               /* TaskFlow run view: header + node chain + node cards,
@@ -1422,11 +1380,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
-        {financialTasks.length === 0 && (
-          <FinancialProgressUpdates updates={financialUpdates} published={reportPublished} />
-        )}
-
-        {isWorking && sections.length > 0 && financialTasks.length === 0 && (
+        {isWorking && sections.length > 0 && (
           <div className='px-4 py-3 mt-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 space-y-2'>
             <div className='flex items-center gap-2'>
               <LoadingOutlined spin className='text-blue-500' />
@@ -1443,7 +1397,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             (its original position). */}
         {subAgentSlot}
 
-        {taskPlan && taskPlan.length > 0 && financialTasks.length === 0 && (
+        {taskPlan && taskPlan.length > 0 && (
           <div className='mt-3 px-1'>
             <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>
@@ -1460,7 +1414,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 content={displayAssistantText}
                 sources={semanticSources}
                 streaming={isAssistantStreaming}
-                onFinancialCitationClick={onFinancialCitationClick}
                 mode='answer'
               />
             </div>
@@ -1540,7 +1493,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               )}
             </div>
 
-            {isTaskPlanComplete && !isWorking && (
+            {isTaskPlanComplete && (
               <div className='flex items-center gap-1.5 mt-5'>
                 <CheckOutlined className='text-xs text-emerald-500' />
                 <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>
@@ -1554,12 +1507,11 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {(semanticSources.length > 0 || querySources.length > 0 || semanticReadGaps.length > 0) && (
           <div className='px-1'>
             <SemanticProvenance
-              content={displayAssistantText || ''}
+              content={displayAssistantText}
               sources={semanticSources}
               querySources={querySources}
               readGaps={semanticReadGaps}
               streaming={isAssistantStreaming}
-              onFinancialCitationClick={onFinancialCitationClick}
             />
           </div>
         )}
