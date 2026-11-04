@@ -4,7 +4,7 @@ The built-in skill analyzes Chinese text-based annual-report PDFs from non-finan
 
 ## Entry Points
 
-Upload reports in the current agent conversation. A single report uses `prepare_financial_report`; an explicit comparison request uses `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`. Multiple attachments alone do not trigger a comparison. The result opens in the existing Computer workspace.
+Upload reports in the current agent conversation. A single report uses `prepare_financial_report`; an explicit comparison request uses `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`. Multiple attachments alone do not trigger a comparison. The `/读年报` and `/财报对比` commands start a new analysis and require files attached to that send, even if the conversation has a saved report. After sending, the command selection clears; ask follow-up questions directly without selecting the command again. The result opens in the existing Computer workspace.
 
 The `/financial-analysis` page also provides single-report, peer and trend modes, a baseline selector, report history and explicit recovery. Changing the baseline creates a new revision. The report keeps the established chapter navigation, execution panel, evidence panel and authorized source preview.
 
@@ -26,7 +26,7 @@ Published revisions are immutable. History, questions, citations and exports can
 
 ## Operations
 
-The runner supports one local service process. Existing databases require an explicit additive migration using `python -m dbgpt_serve.financial_analysis.migrate --database-url <target>`, first without `--apply` to inspect the plan. The application does not silently alter existing tables. Back up the intended database and apply migrations through the normal maintenance process; do not run an old binary against comparison tasks.
+The runner supports one local service process. The financial service itself does not alter existing tables. On SQLite, framework Alembic upgrades run at startup by default (`disable_alembic_upgrade=false`) and can alter existing tables. To inspect changes before startup, set `disable_alembic_upgrade=true` in the `[service.web]` configuration and preview any remaining financial migration with `uv run python -m dbgpt_serve.financial_analysis.migrate --database-url <target>` without `--apply`. Back up the intended database before applying the migration with `--apply` through the normal maintenance process. Do not run an old binary against comparison tasks.
 
 Build the offline runtime with `node standalone/financial-analysis/build.cjs <output.html>` and configure `DBGPT_FINANCIAL_EXPORT_RUNTIME`. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
 

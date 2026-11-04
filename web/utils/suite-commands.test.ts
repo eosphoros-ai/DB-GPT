@@ -67,6 +67,18 @@ describe('getSuiteCommandGroups', () => {
     expect(getSuiteCommandGroups([financial], '不存在')).toEqual([]);
   });
 
+  it('finds an alias from a later matching snapshot without duplicating its command', () => {
+    const updated = {
+      ...financial,
+      manifest_snapshot: {
+        ...financial.manifest_snapshot,
+        commands: [{ ...financial.manifest_snapshot!.commands![0], aliases: ['/new-alias'] }],
+      },
+    };
+    const groups = getSuiteCommandGroups([financial, updated, updated], 'new-alias');
+    expect(groups.flatMap(group => group.options).map(option => option.command.name)).toEqual(['/读年报']);
+  });
+
   it('localizes labels while preserving the original execution identity', () => {
     const option = getSuiteCommandGroups([financial], '', 'en-US')[0].options[0];
     expect(option.suiteLabel).toBe('Financial Reports');
@@ -82,5 +94,7 @@ describe('getSuiteCommandGroups', () => {
     const groups = getSuiteCommandGroups([financial, otherSuite, financial], '读年报');
     expect(groups).toHaveLength(2);
     expect(groups[0].options[0].key).not.toBe(groups[1].options[0].key);
+    const keys = groups.flatMap(group => group.options.map(option => option.key));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

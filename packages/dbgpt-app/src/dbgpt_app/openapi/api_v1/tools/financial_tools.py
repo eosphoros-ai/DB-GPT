@@ -84,18 +84,55 @@ def is_financial_turn(state):
     )
 
 
-def has_comparison_intent(query, *, command=None):
+def has_comparison_intent(
+    query: Optional[str], *, command: Optional[str] = None
+) -> bool:
     query = query or ""
-    if re.search(
+    negative = re.compile(
         r"(?:不(?:要|需(?:要)?|用)?|别|无需|无须|勿)\s*"
         r"(?:(?:做|进行)\s*)?(?:横向|跨年)?(?:对比|比较)|"
         r"do\s+not\s+compare|don['’]t\s+compare|no\s+comparison",
-        query,
         re.I,
-    ):
-        return False
+    )
+    if negative.search(query):
+        # A refusal applies to its clause, not a separate positive request.
+        # Do not let a selected command override a purely negative request.
+        clauses = re.split(
+            r"[，,。.;；!?！？\n]|\bbut\b|但是|但|而是", query, flags=re.I
+        )
+        return any(
+            not negative.search(clause)
+            and re.search(r"对比|比较|\bcompar(?:e|ison)\b", clause, re.I)
+            for clause in clauses
+        )
     return command == "/财报对比" or bool(
         re.search(r"对比|比较|横向|跨年|差异|异同|compar(?:e|ison)", query, re.I)
+    )
+
+
+def financial_command_input_error(
+    command: Optional[str], *, has_files: bool, language: str = "zh"
+) -> Optional[str]:
+    """New-analysis commands require this turn's files, even with saved reports."""
+    if command not in FINANCIAL_SUITE_COMMANDS or has_files:
+        return None
+    count = "1" if command == "/读年报" else "2–5"
+    if language == "en":
+        return (
+            f"Upload {count} PDF file(s) to start a new analysis. "
+            "To ask about a saved report, send your question without selecting "
+            "a new-analysis command."
+        )
+    return (
+        f"请上传 {count} 份 PDF 再开始新分析。"
+        "追问已有报告时直接输入问题，无需重新选择分析命令。"
+    )
+
+
+def defer_financial_answer(state: dict) -> bool:
+    """Hold unvalidated terminate text while preserving other-source streaming."""
+    return bool(state.get("financial_pending")) or (
+        is_financial_turn(state) and not _has_other_source(state)
     )
 
 

@@ -1729,6 +1729,15 @@ def _capture_subagent_step_artifact(
         logger.warning("Unable to capture sub-agent SQL artifact", exc_info=True)
 
 
+def _react_final_chunk_event(content: str, state: Dict[str, Any]) -> Optional[str]:
+    """Keep financial drafts off the wire until final-answer validation completes."""
+    from .tools.financial_tools import defer_financial_answer
+
+    if defer_financial_answer(state):
+        return None
+    return _sse_event({"type": "final.chunk", "content": content})
+
+
 def _sse_event_type(event: Any) -> Optional[str]:
     """Read an SSE event type without trusting arbitrary streamed text."""
     if not isinstance(event, str):
@@ -2727,6 +2736,25 @@ async def _react_agent_stream_impl(
         apply_financial_suite_context(react_state, suite_binding)
     except Exception:
         logger.warning("suite binder failed; turn continues unbound", exc_info=True)
+
+    from .tools.financial_tools import financial_command_input_error
+
+    input_error = financial_command_input_error(
+        react_state.get("financial_suite_command"),
+        has_files=bool(file_paths or (attachment_ctx and attachment_ctx.manifests)),
+        language=report_language,
+    )
+    if input_error:
+        # A new analysis must never silently fall back to another company's report.
+        yield _sse_event(
+            {
+                **AgentFinalAnswer(content=input_error).to_sse_payload(),
+                "execution_status": "failed",
+                "error_code": "FINANCIAL_INPUT_REQUIRED",
+            }
+        )
+        yield _sse_event({"type": "done"})
+        return
 
     # An authoritative Dashboard continuation marker always wins over a stale
     # skill selection restored from task history.  Otherwise an annotation for
@@ -4945,7 +4973,9 @@ Do not write HTML or substitute a textual summary for the requested report.
                         new_text = decoded
                     if new_text:
                         streamed_final_text[round_num] = decoded
-                        yield _sse_event({"type": "final.chunk", "content": new_text})
+                        chunk_event = _react_final_chunk_event(new_text, react_state)
+                        if chunk_event:
+                            yield chunk_event
 
             # ── Text-mode ReAct: stream the terminate Action Input ──
             # Models that ignore native tools write ``Action: terminate`` +
@@ -4968,9 +4998,11 @@ Do not write HTML or substitute a textual summary for the requested report.
                             new_text = decoded
                         if new_text:
                             text_terminate_emitted[round_num] = decoded
-                            yield _sse_event(
-                                {"type": "final.chunk", "content": new_text}
+                            chunk_event = _react_final_chunk_event(
+                                new_text, react_state
                             )
+                            if chunk_event:
+                                yield chunk_event
 
         elif event_type == "act":
             # Create step ONLY when action is confirmed

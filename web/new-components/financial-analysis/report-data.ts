@@ -93,6 +93,14 @@ export function reportRunState(data: FinancialReportData) {
     if (!complete && data.analysis?.status === 'failed') {
       return { label: financialText('financial.data_available_analysis_incomplete'), working: false, complete: false };
     }
+    const active =
+      data.report.run.status === 'running' ||
+      data.analysis?.status === 'running' ||
+      data.workflow.parallelBatch?.status === 'running' ||
+      data.workflow.topics.some(topic => topic.status === 'running');
+    if (!complete && !active && data.workflow.topics.some(topic => topic.status === 'needs_revision')) {
+      return { label: financialText('financial.awaiting_revision_data_retained'), working: false, complete: false };
+    }
     return {
       label: complete ? financialText('financial.report_generated') : financialText('financial.analyzing'),
       working: !complete,

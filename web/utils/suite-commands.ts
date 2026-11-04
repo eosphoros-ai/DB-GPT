@@ -45,7 +45,6 @@ export function getSuiteCommandGroups(suites: SuiteItem[], query = '', locale = 
       if (!command.name) continue;
       const key = suiteCommandKey(suite, command);
       if (seen.has(key)) continue;
-      seen.add(key);
       const label = (isEnglish && command.display_en) || command.display || command.name;
       const description = (isEnglish && command.description_en) || command.description || command.summary || '';
       const searchText = [
@@ -65,6 +64,7 @@ export function getSuiteCommandGroups(suites: SuiteItem[], query = '', locale = 
         .join(' ')
         .toLocaleLowerCase();
       if (terms.every(term => searchText.includes(term))) {
+        seen.add(key);
         options.push({ key, suite, command, suiteLabel, label, description });
       }
     }

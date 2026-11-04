@@ -4,7 +4,7 @@
 
 ## 使用入口
 
-在当前智能体对话上传年报。单报告继续使用 `prepare_financial_report`；用户明确要求比较时，使用 `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`。多附件本身不会触发比较，结果在既有 Computer 工作区展示。
+在当前智能体对话上传年报。单报告继续使用 `prepare_financial_report`；用户明确要求比较时，使用 `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`。多附件本身不会触发比较，结果在既有 Computer 工作区展示。`/读年报` 和 `/财报对比` 命令用于新分析，即使当前对话已有报告，也需要在本次发送中附上文件。发送后清除命令选择；追问已有报告时直接输入问题，无需重新选择命令。
 
 独立 `/financial-analysis` 页面也支持单报告、横向和跨年模式、基准选择、历史与显式恢复。切换基准产生新版本。页面保留原章节导航、执行过程、证据面板和授权原文预览。
 
@@ -26,7 +26,7 @@
 
 ## 运行说明
 
-当前执行器仅支持单个本地服务进程。旧数据库需要显式增量迁移：先执行 `python -m dbgpt_serve.financial_analysis.migrate --database-url <目标>` 预览，按正常维护流程备份目标库后再加 `--apply`。应用不会静默修改旧表。旧程序不应直接运行在已有对比任务的新库上。
+当前执行器仅支持单个本地服务进程。财报服务自身不会修改旧表，但 SQLite 默认启用框架启动时的 Alembic 升级（`disable_alembic_upgrade=false`），可能修改已有表。若要在启动前检查变更，先在 `[service.web]` 配置中设置 `disable_alembic_upgrade=true`，再执行 `uv run python -m dbgpt_serve.financial_analysis.migrate --database-url <目标>` 预览剩余财报迁移，不加 `--apply`。按正常维护流程备份目标库后，再加 `--apply` 执行迁移。旧程序不应直接运行在已有对比任务的新库上。
 
 运行 `node standalone/financial-analysis/build.cjs <输出.html>` 构建离线组件，通过 `DBGPT_FINANCIAL_EXPORT_RUNTIME` 指向产物。当前工具流程见 `skills/financial-report-analyzer/SKILL.md`；原脚本及模板保留兼容用途。
 
