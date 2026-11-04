@@ -258,28 +258,39 @@ def option_chart_spec(node, artifacts):
                     for item in value
                 )
             ):
-                source = read(producer)[0]
-                base_path = list(producer.get("path") or [])
+                source, reference = read(producer)
+                base_path = list(reference.get("path") or [])
                 if isinstance(source, dict) and isinstance(source.get("rows"), list):
                     source = source["rows"]
                     base_path.append("rows")
-                if (
-                    isinstance(source, list)
-                    and len(source) == len(value)
-                    and len(source) <= 5000
-                    and all(isinstance(row, dict) for row in source)
-                ):
+                if isinstance(source, dict):
                     matches = [
                         key
-                        for key in source[0]
-                        if all(key in row for row in source)
-                        and [row[key] for row in source] == value
+                        for key, column in source.items()
+                        if isinstance(column, list) and column == value
                     ]
                     if len(matches) == 1:
+                        return read({**reference, "path": [*base_path, matches[0]]})[0]
+                if isinstance(source, list) and len(source) == len(value) <= 5000:
+                    first = source[0]
+                    keys = (
+                        first.keys()
+                        if isinstance(first, dict)
+                        else (range(len(first)) if isinstance(first, list) else ())
+                    )
+                    matches = []
+                    for key in keys:
+                        try:
+                            column = [row[key] for row in source]
+                        except (IndexError, KeyError, TypeError):
+                            continue
+                        if column == value:
+                            matches.append(key)
+                    if len(matches) == 1:
                         return [
-                            read({**producer, "path": [*base_path, index, matches[0]]})[
-                                0
-                            ]
+                            read(
+                                {**reference, "path": [*base_path, index, matches[0]]}
+                            )[0]
                             for index in range(len(source))
                         ]
             return [
@@ -446,25 +457,30 @@ def prepared_chart_id(sink, spec, source_ids, title, started):
     return identifier
 
 
-def prepare_option_charts(spec, artifacts, sink):
+def prepare_option_charts(spec, artifacts, sink, *, unavailable=None):
     sections = []
-    for section in spec["sections"]:
+    for index, section in enumerate(spec["sections"]):
         section = dict(section)
         node = section.get("chart") or {}
         if isinstance(node.get("option"), dict):
             started = perf_counter()
             try:
                 chart_spec = option_chart_spec(node, artifacts)
-            except ValueError as error:
-                if not (
-                    str(error).startswith("REPORT_CHART_DATA_SHAPE_INVALID:")
-                    and section.get("table")
-                ):
-                    raise
-                logger.warning(
-                    "Invalid authored chart data; using the captured section table: %s",
-                    error,
-                )
+            except (ValueError, TypeError, OSError, KeyError) as error:
+                table_fallback = str(error).startswith(
+                    "REPORT_CHART_DATA_SHAPE_INVALID:"
+                ) and section.get("table")
+                if unavailable is None and not table_fallback:
+                    raise ValueError(f"sections[{index}].chart: {error}") from error
+                if unavailable is not None:
+                    unavailable.append(
+                        {
+                            "json_path": f"$.data.REPORT_SPEC.sections[{index}].chart",
+                            "chart": node,
+                            "error": str(error),
+                        }
+                    )
+                logger.warning("Unable to render authored chart: %s", error)
                 section.pop("chart", None)
                 sections.append(section)
                 continue

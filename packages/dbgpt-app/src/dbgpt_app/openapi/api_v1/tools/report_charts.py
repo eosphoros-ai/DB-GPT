@@ -428,7 +428,9 @@ def _chart_covers(artifact, source, table):
     return source.artifact_id in artifact.input_artifact_ids
 
 
-def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
+def prepare_report_charts(
+    spec: Any, artifacts, sink, language: str = "zh", *, unavailable=None
+):
     """Add executable, immutable charts for selected tabular evidence."""
     if (
         sink is None
@@ -438,7 +440,7 @@ def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
         return spec
     from .report_chart_options import prepare_option_charts, prepared_chart_id
 
-    spec = prepare_option_charts(spec, artifacts, sink)
+    spec = prepare_option_charts(spec, artifacts, sink, unavailable=unavailable)
     artifacts = list(sink.snapshot())
     sections = [dict(section) for section in spec["sections"]]
     by_id = {a.artifact_id: a for a in artifacts}

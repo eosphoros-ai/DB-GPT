@@ -315,3 +315,60 @@ async def test_generate_report_records_declared_meaning_without_extra_model_call
     assert metric["label"] == "商品 GMV"
     assert metric["grain"] == "全部订单"
     assert metric["meaning_source"] == "agent_declared"
+
+
+def test_multirun_checkpoint_and_prior_dependency(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    catalog = EvidenceCatalog(tmp_path / "catalog.sqlite3")
+    first = SessionArtifactSink(
+        ArtifactCaptureContext(conv_uid="multirun", run_id="turn-1"), catalog
+    )
+    source = capture_python_execution(
+        code="source",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        result_inline={"value": 42},
+        artifact_sink=first,
+    )
+    second = SessionArtifactSink(
+        ArtifactCaptureContext(conv_uid="multirun", run_id="turn-2"),
+        catalog,
+        include_prior=True,
+    )
+    state = {"conv_id": "multirun", "_report_artifact_sink": second}
+    report_repair._save_checkpoint(state, {}, "retry")
+    restored = report_repair.restore_report_checkpoint("multirun", {})
+    assert {a.execution.run_id for a in restored.snapshot()} == {"turn-1"}
+    capture_python_execution(
+        code="derived",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        result_inline={"value": 84},
+        input_artifact_ids=[source],
+        artifact_sink=second,
+    )
+    for _ in range(2):
+        report_repair._save_checkpoint(state, {}, "retry")
+        restored = report_repair.restore_report_checkpoint("multirun", {})
+        assert {a.execution.run_id for a in restored.snapshot()} == {"turn-1", "turn-2"}
+        session_sink = SessionArtifactSink(
+            restored.context, catalog, include_prior=True
+        )
+        for artifact in restored.snapshot():
+            session_sink.restore_artifact(artifact)
+        state["_report_artifact_sink"] = session_sink
+    foreign = SessionArtifactSink(
+        ArtifactCaptureContext(conv_uid="other", run_id="turn-1"), catalog
+    )
+    with pytest.raises(ValueError, match="belongs to conversation"):
+        foreign.restore_artifact(restored.snapshot()[0])
+    with pytest.raises(ValueError, match="belongs to run"):
+        second.record(first.snapshot()[0])

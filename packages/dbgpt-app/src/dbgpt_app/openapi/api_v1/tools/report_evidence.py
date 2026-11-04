@@ -62,7 +62,11 @@ def result_selector_context(artifact, selector):
     value = read_artifact_result(artifact)
     field = selector.get("field")
     if field is not None:
-        value = select_result_value(value, {"field": field})
+        try:
+            value = select_result_value(value, {"field": field})
+        except ValueError:
+            field = None
+            selector = {}
     if isinstance(value, str) and value.lstrip().startswith(("{", "[")):
         value = json.loads(value)
     prefix = []
@@ -225,6 +229,7 @@ def _artifact_manifest_item(
             {
                 "language": artifact.language,
                 "exit_code": artifact.exit_code,
+                "result_available": artifact.result is not None,
                 "result_structure": result_structure(preview_data),
                 "result_preview": preview,
                 "result_preview_truncated": truncated,
@@ -280,7 +285,9 @@ def result_evidence_catalog(artifacts) -> list[dict]:
             if key in keys and value is not None
         }
         for artifact in artifacts
-        if artifact.status == "succeeded" and artifact.type in {"sql", "python"}
+        if artifact.status == "succeeded"
+        and artifact.type in {"sql", "python"}
+        and artifact.result is not None
     ]
 
 

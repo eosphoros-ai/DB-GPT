@@ -12,6 +12,15 @@ from .parameters import SkillParameters
 logger = logging.getLogger(__name__)
 
 
+def normalize_script_file_name(name: str) -> str:
+    """Canonicalize the script path forms accepted by the skill executor."""
+    name = name.lstrip("/\\")
+    if name.startswith(("scripts/", "scripts\\")):
+        name = name[8:]
+
+    return name
+
+
 class RegisterSkill:
     """Register skill model."""
 
@@ -993,11 +1002,7 @@ __name__ = "__main__"
         if self._should_reject_personal_skill_execution(skill_path):
             return self._personal_skill_execution_denied_result(skill_name)
 
-        script_file_name = script_file_name.lstrip("/\\")
-        if script_file_name.startswith("scripts/") or script_file_name.startswith(
-            "scripts\\"
-        ):
-            script_file_name = script_file_name[8:]
+        script_file_name = normalize_script_file_name(script_file_name)
 
         script_path = os.path.join(skill_path, "scripts", script_file_name)
         if not os.path.exists(script_path):

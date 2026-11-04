@@ -164,7 +164,15 @@ def test_chart_markup_resolves_only_captured_image():
     assert _result_number("+5.9pp")[0] == _result_number("5.9个百分点")[0]
 
 
-def test_skill_contract_uses_captured_result_instead_of_model_values(monkeypatch):
+@pytest.mark.parametrize(
+    "prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+)
+@pytest.mark.parametrize(
+    "upstream_prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+)
+def test_skill_contract_uses_captured_result_instead_of_model_values(
+    monkeypatch, prefix, upstream_prefix
+):
     from dbgpt.agent import claude_skill
     from dbgpt_app.openapi.api_v1.tools.skill_tools import _apply_skill_input_contract
 
@@ -180,13 +188,17 @@ def test_skill_contract_uses_captured_result_instead_of_model_values(monkeypatch
         status="succeeded",
         metadata={
             "skill_name": "financial-report-analyzer",
-            "script_file_name": "extract_financials.py",
+            "script_file_name": upstream_prefix + "extract_financials.py",
         },
         result=SimpleNamespace(inline={"revenue": 100}, uri=None),
     )
     sink = SimpleNamespace(snapshot=lambda: [artifact])
     value, ids = _apply_skill_input_contract(
-        "financial-report-analyzer", "calculate_ratios.py", {"revenue": 999}, [], sink
+        "financial-report-analyzer",
+        prefix + "calculate_ratios.py",
+        {"revenue": 999},
+        [],
+        sink,
     )
     assert value == {"revenue": 100}
     assert ids == ["python-1"]
@@ -200,7 +212,10 @@ def test_skill_contract_uses_captured_result_instead_of_model_values(monkeypatch
         )
 
 
-def test_verified_template_field_ignores_model_override():
+@pytest.mark.parametrize(
+    "prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+)
+def test_verified_template_field_ignores_model_override(prefix):
     from dbgpt.core.interface.report_capture import (
         ArtifactCaptureContext,
         InMemoryArtifactSink,
@@ -222,7 +237,7 @@ def test_verified_template_field_ignores_model_override():
     original = capture_python_execution(
         code="extract",
         result_inline={"revenue": 100},
-        metadata={"skill_name": "finance", "script_file_name": "extract.py"},
+        metadata={"skill_name": "finance", "script_file_name": prefix + "extract.py"},
         **common,
     )
     producer = capture_python_execution(
@@ -231,7 +246,7 @@ def test_verified_template_field_ignores_model_override():
         input_artifact_ids=[original],
         metadata={
             "skill_name": "finance",
-            "script_file_name": "calculate.py",
+            "script_file_name": prefix + "calculate.py",
             "captured_input_contract": True,
         },
         **common,

@@ -142,6 +142,10 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
     """Share label exclusions; negative/scientific values are never dates."""
     year = r"[12]\d{3}"
     separator = r"(?:[-–—~～]|至|到)"
+    month = (
+        r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
+        r"Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+    )
     return bool(
         # Positional arguments in a SQL date-grouping example are not metrics.
         (
@@ -162,6 +166,10 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
         )
         or re.fullmatch(r"[12]\d{3}[-/]\d{1,2}(?:[-/]\d{1,2})?", value)
         or (re.fullmatch(year, value) and re.match(r"\s*年", suffix))
+        or (
+            re.fullmatch(year, value)
+            and re.search(rf"\b{month}\.?\s*$", prefix, re.IGNORECASE)
+        )
         or (
             re.match(r"\s*(?:月|日)", suffix)
             and re.search(r"(?:[12]\d{3}\s*年|\d{1,2}\s*月)\s*$", prefix)

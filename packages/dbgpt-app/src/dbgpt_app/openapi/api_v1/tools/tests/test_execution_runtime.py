@@ -307,6 +307,35 @@ async def test_local_shell_executes_pipeline_and_preserves_artifact(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_failed_python_does_not_publish_partially_written_image(tmp_path):
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+    )
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="failed-chart"))
+    state = {"conv_id": "failed-chart", "_report_artifact_sink": sink}
+    tool = make_code_interpreter(state)
+    output = json.loads(
+        await tool(
+            code=(
+                'import matplotlib\nmatplotlib.use("Agg")\n'
+                "import matplotlib.pyplot as plt\nplt.plot([1, 2])\n"
+                'plt.savefig(os.path.join(PLOT_DIR, "partial.png"))\n'
+                'raise KeyError("category")'
+            )
+        )
+    )
+    assert not any(item["output_type"] == "image" for item in output["chunks"])
+    assert not state.get("generated_images")
+    assert not any(item.type == "chart" for item in sink.snapshot())
+    assert any(
+        item.type == "python" and item.status == "failed" for item in sink.snapshot()
+    )
+    assert any("KeyError" in str(item.get("content")) for item in output["chunks"])
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("subagent", [False, True])
 async def test_main_and_subagent_python_analyze_upload_and_return_image(
     tmp_path, subagent

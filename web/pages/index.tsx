@@ -517,7 +517,7 @@ const EXAMPLE_CARDS = [
     query:
       '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
     dbName: 'Olist_Ecommerce',
-    knowledgeName: 'Olist_Analytics_Governance',
+    knowledgeName: 'Olist_Analytics_Governance_Demo_v2',
     color: 'from-rose-500/10 to-orange-500/10',
     borderColor: 'border-rose-200/60 dark:border-rose-800/40',
     iconBg: 'bg-rose-100 dark:bg-rose-900/40',

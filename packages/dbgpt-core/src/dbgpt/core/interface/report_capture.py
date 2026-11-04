@@ -273,6 +273,13 @@ class InMemoryArtifactSink:
 
     def record(self, artifact: Artifact) -> None:
         """Record a defensive copy after ownership and uniqueness checks."""
+        self._record(artifact, allow_prior=False)
+
+    def restore_artifact(self, artifact: Artifact) -> None:
+        """Restore session evidence while preserving its original run ownership."""
+        self._record(artifact, allow_prior=True)
+
+    def _record(self, artifact: Artifact, *, allow_prior: bool) -> None:
         payload = artifact.model_dump(mode="python", warnings="none")
         created_at = payload.pop("created_at")
         _validate_json_value(payload, set())
@@ -297,7 +304,7 @@ class InMemoryArtifactSink:
                 f"artifact {validated.artifact_id} belongs to conversation "
                 f"{validated.execution.conv_uid}, expected {self.context.conv_uid}"
             )
-        if validated.execution.run_id != self.context.run_id:
+        if not allow_prior and validated.execution.run_id != self.context.run_id:
             raise ValueError(
                 f"artifact {validated.artifact_id} belongs to run "
                 f"{validated.execution.run_id}, expected {self.context.run_id}"
@@ -770,34 +777,37 @@ def select_artifact_result(artifact: Any, selector: dict) -> Any:
                 "SQL_SELECTOR_INVALID: expected an exact captured SQL quote"
             )
         return quote
-    return select_result_value(
-        read_artifact_result(artifact),
-        normalize_artifact_result_selector(artifact, selector),
-    )
+    return _resolve_artifact_coordinate(read_artifact_result(artifact), selector)[0]
+
+
+def _resolve_artifact_coordinate(value: Any, selector: dict) -> tuple[Any, dict]:
+    try:
+        return _resolve_result_coordinate(value, selector)
+    except (ValueError, TypeError):
+        if (
+            "field" not in selector
+            and selector.get("path")
+            and isinstance(value, dict)
+            and len(value) == 1
+        ):
+            try:
+                return _resolve_result_coordinate(
+                    value, {**selector, "field": next(iter(value))}
+                )
+            except (ValueError, TypeError):
+                pass
+        raise
 
 
 def normalize_artifact_result_selector(artifact: Any, selector: dict) -> dict:
-    """Record a sole payload field when a shorthand path resolves inside it.
-
-    Direct paths and explicit fields retain their meaning. Missing or ambiguous
-    paths remain errors; this never searches other artifacts or guesses a metric.
-    """
-    if "field" in selector or "path" not in selector or selector.get("kind") == "sql":
+    """Return the exact coordinate in the captured result when it resolves."""
+    if selector.get("kind") == "sql" or not selector.get("path"):
         return selector
-    result = read_artifact_result(artifact)
+    value = read_artifact_result(artifact)
     try:
-        select_result_value(result, selector)
-        return selector
+        return _resolve_artifact_coordinate(value, selector)[1]
     except (ValueError, TypeError):
-        pass
-    if isinstance(result, dict) and len(result) == 1:
-        candidate = {**selector, "field": next(iter(result))}
-        try:
-            select_result_value(result, candidate)
-            return candidate
-        except (ValueError, TypeError):
-            pass
-    return selector
+        return selector
 
 
 def sql_predicate_quotes(artifact: Any) -> list[tuple[str, str, str]]:
@@ -831,6 +841,10 @@ def sql_predicate_quotes(artifact: Any) -> list[tuple[str, str, str]]:
 
 def select_result_value(value: Any, selector: dict) -> Any:
     """Resolve a captured value using the report's shared selector semantics."""
+    return _resolve_result_coordinate(value, selector)[0]
+
+
+def _resolve_result_coordinate(value: Any, selector: dict) -> tuple[Any, dict]:
     from .report import normalize_result_selector
 
     selector = normalize_result_selector(selector)
@@ -846,7 +860,16 @@ def select_result_value(value: Any, selector: dict) -> Any:
     path = selector.get("path", [])
     if path and isinstance(value, str):
         value = json.loads(value)
+    coordinate = []
     for index, key in enumerate(path):
+        # JSON object keys stay strings. Only an array gives numeric text
+        # the meaning of an index.
+        if (
+            isinstance(value, list)
+            and isinstance(key, str)
+            and re.fullmatch(r"0|[1-9][0-9]{0,17}", key)
+        ):
+            key = int(key)
         if isinstance(value, dict) and isinstance(key, str) and key in value:
             value = value[key]
         elif isinstance(value, list) and isinstance(key, int) and 0 <= key < len(value):
@@ -855,7 +878,10 @@ def select_result_value(value: Any, selector: dict) -> Any:
             raise ValueError(
                 f"RESULT_SELECTOR_INVALID: path[{index}]={key!r} does not exist"
             )
-    return value
+        coordinate.append(key)
+    if "path" in selector:
+        selector["path"] = coordinate
+    return value, selector
 
 
 def capture_file_artifact(

@@ -498,7 +498,11 @@ def make_code_interpreter(
             status = "succeeded"
             artifact_error = None
 
-        captured_images = publish_generated_images(image_paths)
+        # A script can write a chart and then fail. Such a partial output has no
+        # successful producer and must not be advertised for report use.
+        captured_images = (
+            publish_generated_images(image_paths) if status == "succeeded" else []
+        )
         for image in captured_images:
             chunks.append({"output_type": "image", "content": image["uri"]})
             react_state.setdefault("generated_images", []).append(image["uri"])
@@ -534,6 +538,27 @@ def make_code_interpreter(
             input_artifact_ids=list(dict.fromkeys(sql_input_artifact_ids)),
             artifact_sink=react_state.get("_report_artifact_sink"),
         )
+        sink = react_state.get("_report_artifact_sink")
+        if (
+            status == "succeeded"
+            and sink
+            and python_artifact_id
+            and any(
+                item.artifact_id == python_artifact_id and item.result is None
+                for item in sink.snapshot()
+            )
+        ):
+            chunks.append(
+                {
+                    "output_type": "text",
+                    "content": (
+                        "PYTHON_STRUCTURED_RESULT_MISSING: Execution succeeded but "
+                        "no structured result was captured. Text output is not a "
+                        "selectable result; capture the needed calculation as "
+                        "REPORT_RESULT before referencing its fields."
+                    ),
+                }
+            )
         if (
             missing_calculation
             and not missing_calculation.get("result_artifact_id")

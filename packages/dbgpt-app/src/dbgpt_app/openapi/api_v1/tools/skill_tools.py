@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.agent.skill.manage import normalize_script_file_name
 from dbgpt_serve.session_file.domain import SessionFileStatus
 
 
@@ -21,7 +22,7 @@ def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
     if not contract_path.is_file():
         return args, input_ids
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    upstream = contract.get(script_name)
+    upstream = contract.get(normalize_script_file_name(script_name))
     if not upstream:
         return args, input_ids
     candidates = [
@@ -30,7 +31,8 @@ def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
         if artifact.type == "python"
         and artifact.status == "succeeded"
         and artifact.metadata.get("skill_name") == skill_name
-        and artifact.metadata.get("script_file_name") == upstream
+        and normalize_script_file_name(artifact.metadata.get("script_file_name", ""))
+        == upstream
         and artifact.result is not None
     ]
     selected = [item for item in candidates if item.artifact_id in (input_ids or [])]
@@ -185,6 +187,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         CFG = Config()
 
         try:
+            script_file_name = normalize_script_file_name(script_file_name)
             if args and argv is not None:
                 raise ValueError("Use either args (JSON) or argv (CLI), not both")
             sink = react_state.get("_report_artifact_sink")

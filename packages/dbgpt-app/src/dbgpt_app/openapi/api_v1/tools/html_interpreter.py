@@ -19,6 +19,7 @@ from jinja2 import StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.agent.skill.manage import normalize_script_file_name
 from dbgpt.core.interface.report_capture import (
     normalize_artifact_result_selector,
     read_artifact_result,
@@ -712,7 +713,7 @@ def _result_number(text: str) -> Tuple[Decimal, Decimal] | None:
         return None
 
 
-def _numeric_values(result: Any) -> set[Decimal]:
+def _numeric_values(result: Any, *, parse_json_strings: bool = True) -> set[Decimal]:
     """Extract scalar values without treating booleans or metadata as metrics."""
     values: set[Decimal] = set()
 
@@ -723,7 +724,11 @@ def _numeric_values(result: Any) -> set[Decimal]:
             parsed = _result_number(str(value))
             if parsed:
                 values.add(parsed[0])
-            elif isinstance(value, str) and value.lstrip().startswith(("{", "[")):
+            elif (
+                parse_json_strings
+                and isinstance(value, str)
+                and value.lstrip().startswith(("{", "["))
+            ):
                 try:
                     visit(json.loads(value), depth + 1)
                 except (ValueError, TypeError):
@@ -833,7 +838,14 @@ def _numeric_evidence_validator(artifacts):
                     values[key] = _artifact_numeric_values(artifact)
             # Captured category labels may contain digits without being metrics.
             # Only the exact selected scalar text establishes that provenance.
-            if key in selected_text and text.strip() == selected_text[key]:
+            if key in selected_text and (
+                text.strip() == selected_text[key]
+                or (
+                    _RESULT_LABEL_PATTERN.fullmatch(selected_text[key])
+                    and _normalized_result_label(text.strip())
+                    == _normalized_result_label(selected_text[key])
+                )
+            ):
                 return True
             if selector.get("kind") == "sql":
                 parsed = _result_number(number)
@@ -1227,7 +1239,9 @@ def _expand_table(node: Dict[str, Any], by_id: Dict[str, Any]) -> Dict[str, Any]
             if key is None:
                 raise ValueError(
                     "REPORT_TEMPLATE_TABLE_INVALID: attribute=data; "
-                    f"artifact={artifact_id}; column {field!r} is not in the result"
+                    f"artifact={artifact_id}; column {field!r} is not in the result; "
+                    "available columns: "
+                    f"{list(row) if isinstance(row, dict) else header}"
                 )
             cells.append(
                 _resolve_reference_node(
@@ -1247,6 +1261,23 @@ def _expand_table(node: Dict[str, Any], by_id: Dict[str, Any]) -> Dict[str, Any]
         "columns": [column["label"] for column in columns],
         "rows": rows,
     }
+
+
+def _resolve_display_reference(node, by_id, *, unavailable=None, location):
+    """Keep missing selected values visible as gaps only in partial delivery."""
+    try:
+        return _resolve_reference_node(node, by_id)
+    except (ValueError, TypeError, OSError) as error:
+        artifact = by_id.get(node.get("artifact_id"))
+        if (
+            unavailable is None
+            or artifact is None
+            or artifact.type not in {"sql", "python"}
+            or "RESULT_SELECTOR_INVALID" not in str(error)
+        ):
+            raise
+        unavailable.append({**location, "reference": node, "error": str(error)})
+        return "--"
 
 
 def _resolve_template_references(
@@ -1305,14 +1336,27 @@ def _resolve_template_references(
                             "targets"
                         )
                     )
-                return _resolve_reference_node(node, by_id)
+                return _resolve_display_reference(
+                    node,
+                    by_id,
+                    unavailable=unavailable_references,
+                    location={"json_path": path},
+                )
             if (
                 node.get("artifact_id")
                 and "columns" in node
                 and "rows" not in node
                 and set(node).issubset(_TABLE_NODE_KEYS)
             ):
-                return _expand_table(node, by_id)
+                try:
+                    return _expand_table(node, by_id)
+                except (ValueError, TypeError, OSError) as error:
+                    if unavailable_references is None:
+                        raise
+                    unavailable_references.append(
+                        {"json_path": path, "table": node, "error": str(error)}
+                    )
+                    return None
             if path.endswith(".chart") and isinstance(node.get("refs"), list):
                 node = dict(node)
                 refs = node["refs"]
@@ -1445,18 +1489,6 @@ def _resolve_template_references(
                     {"json_path": path, "chart": node, "error": str(error)}
                 )
                 return None
-            if (
-                unavailable_references is not None
-                and node.get("artifact_id") in by_id
-                and set(node).issubset(_TEMPLATE_REFERENCE_KEYS)
-                and "RESULT_SELECTOR_INVALID" in str(error)
-            ):
-                # Missing display values must never be guessed or rebound to an
-                # unrelated number just to make the rest of a report deliverable.
-                unavailable_references.append(
-                    {"json_path": path, "reference": node, "error": str(error)}
-                )
-                return "--"
             issues.append({"json_path": path, "error": str(error)})
             return node
 
@@ -1818,7 +1850,11 @@ def _render_placeholder_parts(value: Any) -> str:
 
 
 def _resolve_inline_report_references(
-    html: str, artifacts: List[Any], metric_map: Dict[str, Any] | None = None
+    html: str,
+    artifacts: List[Any],
+    metric_map: Dict[str, Any] | None = None,
+    *,
+    unavailable=None,
 ) -> str:
     """Resolve references emitted as prose instead of structured template nodes.
 
@@ -1894,29 +1930,7 @@ def _resolve_inline_report_references(
                         raise ValueError(
                             "REPORT_TEMPLATE_REFERENCE_INVALID: invalid inline path"
                         )
-                    artifact = by_id.get(node.get("artifact_id"))
-                    current = read_artifact_result(artifact) if artifact else None
-                    if isinstance(current, dict):
-                        current = current.get(node.get("field"))
-                    resolved = []
-                    for part in parts:
-                        key = (
-                            int(part)
-                            if isinstance(current, list) and part.isdigit()
-                            else part
-                        )
-                        resolved.append(key)
-                        if isinstance(current, dict):
-                            current = current.get(key)
-                        elif (
-                            isinstance(current, list)
-                            and isinstance(key, int)
-                            and key < len(current)
-                        ):
-                            current = current[key]
-                        else:
-                            current = None
-                    node["path"] = resolved
+                    node["path"] = parts
                 else:
                     node["path"] = re.sub(r"\.(\d+)(?=\.|$)", r"[\1]", path)
         if isinstance(node, dict) and "metric_id" in node:
@@ -1938,7 +1952,14 @@ def _resolve_inline_report_references(
             raise ValueError(
                 "REPORT_TEMPLATE_REFERENCE_INVALID: unsupported inline reference fields"
             )
-        return _render_placeholder_parts(_resolve_reference_node(node, by_id))
+        return _render_placeholder_parts(
+            _resolve_display_reference(
+                node,
+                by_id,
+                unavailable=unavailable,
+                location={"inline_reference": raw},
+            )
+        )
 
     for token in html_tokens(html):
         opening = re.match(r"<\s*([\w:-]+)\b", token)
@@ -2029,7 +2050,8 @@ def _render_template_with_bindings(
                 continue
             metadata = artifact.metadata or {}
             if (
-                metadata.get("script_file_name") != result_script
+                normalize_script_file_name(metadata.get("script_file_name", ""))
+                != result_script
                 or metadata.get("captured_input_contract") is not True
             ):
                 continue
@@ -2040,7 +2062,10 @@ def _render_template_with_bindings(
                 if parent is not None
                 and parent.type == "python"
                 and parent.status == "succeeded"
-                and parent.metadata.get("script_file_name") == upstream_script
+                and normalize_script_file_name(
+                    parent.metadata.get("script_file_name", "")
+                )
+                == upstream_script
                 and parent.metadata.get("skill_name") == metadata.get("skill_name")
             ]
             if len(parents) == 1:
@@ -2229,6 +2254,7 @@ def _render_template_with_bindings(
                 artifacts,
                 draft_state.get("_report_artifact_sink"),
                 language=draft_state.get("_report_language", "zh"),
+                unavailable=unavailable,
             )
         except (ValueError, TypeError, OSError, KeyError) as error:
             errors.append(
@@ -2739,12 +2765,127 @@ def _build_spec_draft(template: str, data: dict, artifacts: List[Any]) -> str | 
     )
 
 
+_RESULT_LABEL_NUMBER = r"[+-]?\d+(?:\.\d+)?"
+_RESULT_LABEL_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_.])(?:"
+    + _RESULT_LABEL_NUMBER
+    + r"\s*[-—–~～至]\s*"
+    + _RESULT_LABEL_NUMBER
+    + r"|(?:>=|<=|[<>≤≥]|高于|低于|大于|小于|不低于|不高于)\s*"
+    + _RESULT_LABEL_NUMBER
+    + r")(?![\d.\-])"
+)
+
+
+def _normalized_result_label(text):
+    """Normalize notation only; never infer a numeric value from a category."""
+    text = re.sub(r"\s+", "", text)
+    for source, target in (
+        ("不低于", ">="),
+        ("不高于", "<="),
+        ("高于", ">"),
+        ("大于", ">"),
+        ("低于", "<"),
+        ("小于", "<"),
+        ("≤", "<="),
+        ("≥", ">="),
+    ):
+        text = text.replace(source, target)
+    return re.sub(r"[—–~～至]", "-", text)
+
+
+def _bind_captured_result_labels(html, artifacts):
+    """Bind whole range/comparison labels to exact captured scalar coordinates."""
+    labels = {}
+
+    def visit(value, artifact_id, path=(), depth=0):
+        if depth > 32:
+            return
+        if isinstance(value, str) and _RESULT_LABEL_PATTERN.fullmatch(value.strip()):
+            labels.setdefault(_normalized_result_label(value), []).append(
+                (artifact_id, {"path": list(path)})
+            )
+        elif isinstance(value, dict):
+            for key, child in value.items():
+                visit(child, artifact_id, (*path, key), depth + 1)
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(child, artifact_id, (*path, index), depth + 1)
+
+    for artifact in artifacts:
+        if (
+            artifact.status == "succeeded"
+            and artifact.type in {"sql", "python"}
+            and artifact.result is not None
+        ):
+            visit(read_artifact_result(artifact), artifact.artifact_id)
+    if not labels:
+        return html
+    output, stack = [], []
+    for token in html_tokens(html):
+        if token.startswith("<"):
+            closing = re.match(r"</\s*([\w:-]+)", token)
+            opening = re.match(r"<\s*([\w:-]+)\b", token)
+            if closing:
+                for index in range(len(stack) - 1, -1, -1):
+                    if stack[index][0] == closing[1].lower():
+                        del stack[index:]
+                        break
+            elif opening:
+                tag = opening[1].lower()
+                if tag not in {
+                    "img",
+                    "br",
+                    "hr",
+                    "input",
+                    "meta",
+                    "link",
+                    "source",
+                    "wbr",
+                } and not token.rstrip().endswith("/>"):
+                    stack.append(
+                        (
+                            tag,
+                            (
+                                tag in _INLINE_EVIDENCE_TAGS
+                                and "data-dbgpt-artifacts" in token
+                            )
+                            or "data-dbgpt-value-role" in token,
+                        )
+                    )
+            output.append(token)
+            continue
+        if any(tag in _NUMERIC_CLAIM_SKIP_TAGS or bound for tag, bound in stack):
+            output.append(token)
+            continue
+        text = unescape_html(token)
+
+        def bind(match):
+            candidates = labels.get(_normalized_result_label(match[0]), [])
+            if len(candidates) != 1:
+                return escape_html(match[0])
+            artifact_id, selector = candidates[0]
+            return _result_span(
+                escape_html(match[0]), artifact_id, source_selector=selector
+            )
+
+        # Escape each untouched fragment once, preserving the original text.
+        cursor = 0
+        for match in _RESULT_LABEL_PATTERN.finditer(text):
+            output.append(escape_html(text[cursor : match.start()]))
+            output.append(bind(match))
+            cursor = match.end()
+        output.append(escape_html(text[cursor:]))
+    return "".join(output)
+
+
 def _bind_unwrapped_numeric_claims(html: str, artifacts: List[Any]) -> str:
     """Bind only result-backed numbers, excluding document and chart labels.
 
     A parent SQL binding alone cannot prove that every number inside it came from
     that query. Keep the original HTML and leave ambiguous numbers unbound.
     """
+    html = _bind_captured_result_labels(html, artifacts)
     artifact_by_id = {
         artifact.artifact_id: artifact
         for artifact in artifacts
@@ -2753,6 +2894,7 @@ def _bind_unwrapped_numeric_claims(html: str, artifacts: List[Any]) -> str:
     }
     template_sources = _template_result_sources(artifacts)
     numeric_values = {}
+    direct_values = {}
     predicates = {}
     tokens = html_tokens(html)
     stack: List[Tuple[str, str | None, bool]] = []
@@ -2798,6 +2940,21 @@ def _bind_unwrapped_numeric_claims(html: str, artifacts: List[Any]) -> str:
                 for artifact_id in artifact_by_id
                 if _matches_result_value(value, values_for(artifact_id))
             ]
+            if len(matches) > 1:
+                # Prefer typed result fields over coincidental numbers buried
+                # in serialized chart specifications. Multiple typed producers
+                # remain ambiguous and are never picked by ordering.
+                for artifact_id in matches:
+                    if artifact_id not in direct_values:
+                        direct_values[artifact_id] = _numeric_values(
+                            read_artifact_result(artifact_by_id[artifact_id]),
+                            parse_json_strings=False,
+                        )
+                matches = [
+                    artifact_id
+                    for artifact_id in matches
+                    if _matches_result_value(value, direct_values[artifact_id])
+                ]
             if len(matches) == 1:
                 artifact_id = matches[0]
                 result = read_artifact_result(artifact_by_id[artifact_id])
@@ -2885,6 +3042,10 @@ def _bind_unwrapped_numeric_claims(html: str, artifacts: List[Any]) -> str:
                                     r"\bclass\s*=\s*(['\"])[^'\"]*\bsection-no\b[^'\"]*\1",
                                     token,
                                     re.IGNORECASE,
+                                )
+                                or re.search(
+                                    r"\bdata-dbgpt-value-role\s*=\s*(['\"])proposal\1",
+                                    token,
                                 )
                                 or (
                                     parsed
@@ -3391,14 +3552,30 @@ def make_html_interpreter(
             if isinstance(auto_data, dict):
                 replacements = {**auto_data, **replacements}
 
+            sink = react_state.get("_report_artifact_sink")
+            captured = sink.snapshot() if sink is not None else []
+            # The session cache only exists in the original tool invocation.
+            # Captured chart filenames and output URIs survive a checkpoint.
+            candidates = {}
+            for artifact in captured:
+                if artifact.type != "chart" or artifact.status != "succeeded":
+                    continue
+                filename = artifact.spec.get("filename")
+                uri = getattr(artifact.output, "uri", None)
+                if isinstance(filename, str) and uri:
+                    key = f"CHART_{Path(filename).stem.upper()}"
+                    candidates.setdefault(key, set()).add(uri)
+            for key, uris in candidates.items():
+                if (
+                    len(uris) == 1
+                    and key in react_state["_report_template_contract"]["fields"]
+                ):
+                    replacements.setdefault(key, next(iter(uris)))
             image_url_map = react_state.get("image_url_map", {})
             if isinstance(image_url_map, dict):
                 for stem, url in image_url_map.items():
-                    chart_key = f"CHART_{stem.upper()}"
-                    if chart_key not in replacements:
-                        replacements[chart_key] = url
+                    replacements.setdefault(f"CHART_{stem.upper()}", url)
 
-            sink = react_state.get("_report_artifact_sink")
             replacements = _merge_report_spec(replacements, react_state)
             spec = replacements.get("REPORT_SPEC")
             if isinstance(spec, dict):
@@ -3408,7 +3585,7 @@ def make_html_interpreter(
             html = _render_template_with_bindings(
                 raw_template,
                 replacements,
-                sink.snapshot() if sink is not None else [],
+                captured,
                 required_recommendations=react_state.get(
                     "_report_required_recommendation_count"
                 ),
@@ -3581,7 +3758,12 @@ def make_html_interpreter(
                 else {}
             )
             fixed_html = _resolve_inline_report_references(
-                fixed_html, artifacts, metric_map
+                fixed_html,
+                artifacts,
+                metric_map,
+                unavailable=react_state["_report_unavailable_references"]
+                if allow_unavailable_references
+                else None,
             )
             knowledge_search_error = _validate_requested_knowledge_search(
                 react_state, artifacts
@@ -3771,7 +3953,7 @@ def make_html_interpreter(
                     else "来源说明：本报告展示已完成的分析结果。"
                 )
                 if any(
-                    "chart" not in item and "citation" not in item
+                    not {"chart", "table", "citation"}.intersection(item)
                     for item in unavailable
                 ):
                     source_note += (
@@ -3779,6 +3961,13 @@ def make_html_interpreter(
                         if english
                         else "部分文字数值的来源路径无法核验，已标为 --，"
                         "相关结论需复核。"
+                    )
+                if any("table" in item for item in unavailable):
+                    source_note += (
+                        "Some tables were omitted because their source "
+                        "selection could not be verified. "
+                        if english
+                        else "部分表格的来源无法核验，已省略。"
                     )
                 if any("chart" in item for item in unavailable):
                     source_note += (
@@ -3867,11 +4056,14 @@ def make_html_interpreter(
                 ensure_ascii=False,
             )
 
+        partial = bool(react_state.get("_report_unavailable_references"))
         chunks: List[Dict[str, Any]] = [
             {
                 "output_type": "text",
                 "content": (
-                    "HTML 报告已成功渲染并展示给用户。报告任务已完成，"
+                    "已生成可查看的报告，部分内容未通过证据校验。"
+                    if partial
+                    else "HTML 报告已成功渲染并展示给用户。报告任务已完成，"
                     "请勿重复调用 html_interpreter 生成报告。"
                     "若全部目标已达成，请直接调用 terminate 结束。"
                 ),
@@ -3880,7 +4072,7 @@ def make_html_interpreter(
         ]
         response = json.dumps(
             {
-                "status": "completed",
+                "status": "partial" if partial else "completed",
                 "retryable": False,
                 "chunks": chunks,
                 "warnings": warnings,

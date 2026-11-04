@@ -217,7 +217,7 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     )
     adapter = TypeAdapter(Artifact)
     for raw in payload["artifacts"]:
-        sink.record(adapter.validate_python(raw))
+        sink.restore_artifact(adapter.validate_python(raw))
     state["_report_pending_html"] = payload.get("pending_html", "")
     state["_report_last_attempt_html"] = payload.get(
         "last_attempt_html", state["_report_pending_html"]
@@ -420,7 +420,11 @@ def _record_failure(
             "mode"
         ) == "placeholders"
         instruction = (
-            "Keep the saved template and artifacts. Call retry_saved=true with "
+            "Keep the saved template and artifacts. For an exact $.data json_path, "
+            'use retry_saved=true and data={"REPORT_DATA_PATCHES":'
+            '[{"path":"$.data.REPORT_SPEC.sections[0].table","value":{...}}]}. '
+            "Replace the smallest existing node with a verified reference or table. "
+            "For other updates, call retry_saved=true with "
             "data containing the corrected or missing named placeholders; existing "
             "fields are preserved. Use the fields declared by this template, "
             "not the business REPORT_SPEC/sections schema. Do not resend rendered "

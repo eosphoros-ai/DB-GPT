@@ -253,7 +253,16 @@ class SessionArtifactSink(InMemoryArtifactSink):
         self.include_prior = include_prior
 
     def record(self, artifact):
+        if self.include_prior:
+            self.snapshot()
         super().record(artifact)
+        self._persist(artifact)
+
+    def restore_artifact(self, artifact):
+        super().restore_artifact(artifact)
+        self._persist(artifact)
+
+    def _persist(self, artifact):
         captured = next(
             item
             for item in super().snapshot()
@@ -274,7 +283,9 @@ class SessionArtifactSink(InMemoryArtifactSink):
         except (OSError, sqlite3.Error):
             logger.warning("Session evidence catalog read failed", exc_info=True)
             persisted = []
-        current = super().snapshot()
-        by_id = {artifact.artifact_id: artifact for artifact in persisted}
-        by_id.update({artifact.artifact_id: artifact for artifact in current})
-        return list(by_id.values())
+        known = {item.artifact_id for item in super().snapshot()}
+        for artifact in persisted:
+            if artifact.artifact_id not in known:
+                super().restore_artifact(artifact)
+                known.add(artifact.artifact_id)
+        return super().snapshot()

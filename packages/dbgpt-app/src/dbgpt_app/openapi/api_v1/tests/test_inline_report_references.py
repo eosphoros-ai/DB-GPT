@@ -22,6 +22,43 @@ from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
 )
 
 
+def test_english_month_year_is_a_date_not_a_metric():
+    from dbgpt_app.openapi.api_v1.tools.report_binding import is_document_number
+
+    assert is_document_number("2017", " - Aug 2018", "Jan ", None)
+    assert is_document_number("2018", "", "Jan 2017 - Aug ", None)
+    assert not is_document_number("2017", " orders", "Total ", None)
+
+
+def test_explicit_english_recommendation_count_is_recognized():
+    from dbgpt_app.openapi.api_v1.agentic_data_api import (
+        _requested_recommendation_count,
+    )
+
+    assert _requested_recommendation_count("report with three recommendations") == 3
+    assert (
+        _requested_recommendation_count("give 3 highest-priority recommendations") == 3
+    )
+    assert _requested_recommendation_count("please give recommendations") is None
+
+
+def test_stdout_only_python_is_not_advertised_as_a_result_producer():
+    from dbgpt_app.openapi.api_v1.tools.report_evidence import result_evidence_catalog
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="stdout-only"))
+    identifier = capture_python_execution(
+        code="print(60.19)",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="gmv growth % 60.19",
+        stderr="",
+        artifact_sink=sink,
+    )
+    assert identifier
+    assert result_evidence_catalog(sink.snapshot()) == []
+
+
 def test_chart_host_accepts_duplicate_identical_capture_only():
     def chart(identifier, digest):
         return SimpleNamespace(

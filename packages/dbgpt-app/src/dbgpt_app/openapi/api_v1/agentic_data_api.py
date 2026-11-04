@@ -116,7 +116,30 @@ def _requested_recommendation_count(user_input: str) -> Optional[int]:
         re.IGNORECASE,
     )
     if not match:
-        return None
+        words = {
+            "one": 1,
+            "two": 2,
+            "three": 3,
+            "four": 4,
+            "five": 5,
+            "six": 6,
+            "seven": 7,
+            "eight": 8,
+            "nine": 9,
+            "ten": 10,
+        }
+        english = re.search(
+            r"\b(?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+            r"\s+(?:(?:highest|top|priority|actionable|key|specific|practical|"
+            r"highest-priority)\s+){0,3}recommendations?\b",
+            user_input,
+            re.IGNORECASE,
+        )
+        if not english:
+            return None
+        value = english.group("count").lower()
+        count = int(value) if value.isdigit() else words[value]
+        return count if 1 <= count <= 20 else None
     raw_count = match.group("count")
     count = (
         int(raw_count)
@@ -3263,6 +3286,12 @@ async def _react_agent_stream_impl(
                 raise ValueError(
                     "REPORT_CHECKPOINT_INVALID: saved report recovery failed; keep completed artifacts and report this error"
                 )
+            if react_state.get("_report_required_recommendation_count") is None:
+                react_state["_report_required_recommendation_count"] = (
+                    _requested_recommendation_count(
+                        react_state.get("_report_original_request") or ""
+                    )
+                )
             if not requested_locale.startswith(("en", "zh")):
                 original_request = react_state.get("_report_original_request") or ""
                 react_state["_report_language"] = (
@@ -3291,7 +3320,7 @@ async def _react_agent_stream_impl(
             )
             if artifact_sink is not None:
                 for restored in artifact_sink.snapshot():
-                    session_sink.record(restored)
+                    session_sink.restore_artifact(restored)
             artifact_sink = session_sink
         except (OSError, sqlite3.Error):
             logger.warning(

@@ -133,7 +133,9 @@ function isEvidenceMetric(value: unknown): boolean {
   if (typeof value === 'number') return Number.isFinite(value);
   if (typeof value !== 'string') return false;
   const text = value.trim();
-  return /^[+−-]?(?:[$¥€£]|R\$)?\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][+-]?\d+)?\s*(?:%|‰|(?:万|亿)?(?:元|次|人|天|条|单|件|个|家|行)?)?$/.test(text);
+  if (/^\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?$/.test(text)) return false;
+  if (/^(?:[+−-]?\d+(?:\.\d+)?\s*[-—–~～至]\s*[+−-]?\d+(?:\.\d+)?|(?:>=|<=|[<>≤≥]|高于|低于|大于|小于|不低于|不高于)\s*[+−-]?\d+(?:\.\d+)?)$/.test(text)) return true;
+  return /^[+−-]?(?:[$¥€£]|R\$)?\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][+-]?\d+)?\s*(?:pp|百分点|个百分点|%|‰|(?:万|亿)?(?:元|次|人|天|条|单|件|个|家|行)?)?$/.test(text);
 }
 
 /** Render an actual DB-GPT AutoChart; the report layer supplies only its host. */
