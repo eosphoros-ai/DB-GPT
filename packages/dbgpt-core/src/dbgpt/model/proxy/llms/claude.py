@@ -81,6 +81,10 @@ async def claude_generate_stream(
         yield r
 
 
+# Current Claude model ids: https://platform.claude.com/docs/en/about-claude/models/overview
+DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-6"
+
+
 class ClaudeLLMClient(ProxyLLMClient):
     def __init__(
         self,
@@ -89,7 +93,7 @@ class ClaudeLLMClient(ProxyLLMClient):
         model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "claude-3-5-sonnet-20241022",
+        model_alias: Optional[str] = DEFAULT_CLAUDE_MODEL,
         context_length: Optional[int] = 8192,
         client: Optional["AsyncAnthropic"] = None,
         claude_kwargs: Optional[Dict[str, Any]] = None,
@@ -103,11 +107,13 @@ class ClaudeLLMClient(ProxyLLMClient):
                 "Please install anthropic by command `pip install anthropic"
             ) from exc
         if not model:
-            model = "claude-3-5-sonnet-20241022"
+            model = DEFAULT_CLAUDE_MODEL
         self._client = client
         self._model = model
         self._api_key = self._resolve_env_vars(api_key)
-        api_base or os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+        self._api_base = api_base or os.environ.get(
+            "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
+        )
         self._api_base = self._resolve_env_vars(self._api_base)
         self._proxies = proxies
         self._timeout = timeout
@@ -177,7 +183,7 @@ class ClaudeLLMClient(ProxyLLMClient):
         """Default model name"""
         model = self._model
         if not model:
-            model = "claude-3-5-sonnet-20241022"
+            model = DEFAULT_CLAUDE_MODEL
         return model
 
     def _build_request(
@@ -330,7 +336,7 @@ class ClaudeProxyTokenizer(ProxyTokenizer):
         from dbgpt.util.chat_util import run_async_tasks
 
         tasks = []
-        model_name = model_name or "claude-3-5-sonnet-20241022"
+        model_name = model_name or DEFAULT_CLAUDE_MODEL
         for prompt in prompts:
             request = ModelRequest(
                 model=model_name, messages=[{"role": "user", "content": prompt}]
@@ -348,6 +354,25 @@ class ClaudeProxyTokenizer(ProxyTokenizer):
 register_proxy_model_adapter(
     ClaudeLLMClient,
     supported_models=[
+        ModelMetadata(
+            model=[
+                "claude-opus-4-6",
+                "claude-sonnet-4-6",
+            ],
+            context_length=1024 * 1024,
+            max_output_length=128 * 1024,
+            description="Claude 4.6 by Anthropic",
+            link="https://platform.claude.com/docs/en/about-claude/models/overview",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["claude-haiku-4-5-20251001"],
+            context_length=200 * 1024,
+            max_output_length=64 * 1024,
+            description="Claude Haiku 4.5 by Anthropic",
+            link="https://platform.claude.com/docs/en/about-claude/models/overview",
+            function_calling=True,
+        ),
         ModelMetadata(
             model=[
                 "claude-3-5-sonnet-20241022",
