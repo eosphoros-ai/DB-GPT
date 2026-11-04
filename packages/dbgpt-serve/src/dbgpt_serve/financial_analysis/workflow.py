@@ -589,6 +589,8 @@ def review_report(report, reviews):
     ids = [r.get("topic_id") for r in reviews if isinstance(r, dict)]
     if len(ids) != len(TOPICS) or set(ids) != set(TOPICS):
         fail("复核必须逐项覆盖全部专题，不得遗漏或重复。")
+    periods = model_context(report)["periods"]
+    reviews = deepcopy(reviews)
     # Validate every record before changing anything. Review is the agent's
     # explicit assessment, never proof of semantic correctness or human review.
     for review in reviews:
@@ -628,11 +630,14 @@ def review_report(report, reviews):
         if not isinstance(review.get("note"), str) or not review["note"].strip():
             fail("请说明每个专题的复核依据或需要修订的问题。")
         try:
-            _render_text(review["note"], {}, {}, set())
+            review["note"] = _render_text(review["note"], {}, {}, set(), periods)
         except ValueError as exc:
             fail(
                 f"专题 {topic_id} 的 note 校验失败：{exc}。"
-                "note 只写不含数字或占位符的具体复核依据。"
+                "note 可使用已提取的报告期间（"
+                + "、".join(periods)
+                + "年），或写本期、上期；不要填写金额、比率、倍数或财务引用。"
+                "只修正报错专题的 note，保留其他复核字段。"
             )
     for review in reviews:
         item = topic(report, review["topic_id"])

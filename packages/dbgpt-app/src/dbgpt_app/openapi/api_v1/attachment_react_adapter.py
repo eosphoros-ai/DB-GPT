@@ -16,7 +16,7 @@ Responsibilities:
 - materialize resolved files under the registry work root and keep the
   materialization context open until the turn ends. Materialized local
   paths are per-turn temporary copies: they may reach prompts and tool
-  observations so the model can analyze files with ``code_interpreter``,
+  observations so the model can analyze files with ``code``,
   and they are scrubbed at the share boundary (see
   :func:`scrub_react_history_for_share`). Storage URIs and hashes remain
   internal everywhere; ``files_json_path`` stays an internal child-process
@@ -236,7 +236,7 @@ def build_manifest_prompt(
     Every line carries ``[file_id] name — kind, media_type, size, status``
     plus the per-turn materialized ``path`` when available. The path is a
     temporary local copy valid only for the current turn, exposed so the
-    model can analyze the file with ``code_interpreter`` without guessing;
+    model can analyze the file with ``code`` without guessing;
     storage URIs, file bodies and hashes never appear here.
     """
     paths = local_paths or {}
@@ -256,7 +256,7 @@ def build_manifest_prompt(
         "\n## User Attachments\n"
         f"{body}\n"
         "- Analyze these files if needed for the user's request. Use the "
-        "shown path with code_interpreter for free-form analysis (valid for "
+        "shown path with code for free-form analysis (valid for "
         "this turn only — re-run load_file in a new turn), or reference "
         "files by file_id.\n"
     )
@@ -287,7 +287,7 @@ class SessionAttachmentContext:
     ``manifests``/``prompt``/``inspections`` are public and safe to render.
     ``local_paths``/``primary_local_path`` are per-turn temporary copies:
     they may reach prompts and tool observations so the model can analyze
-    files with ``code_interpreter``; they are deleted on :meth:`close` and
+    files with ``code``; they are deleted on :meth:`close` and
     scrubbed at the share boundary (see
     :func:`scrub_react_history_for_share`). ``files_json_path`` remains
     internal (child-process handoff only). Storage URIs and hashes never
@@ -495,7 +495,7 @@ def _share_path_prefixes() -> List[str]:
     Covers the three roots that legitimately appear in turns: the home
     directory (default work root and legacy upload roots), the configured
     registry work root (non-default deployments), and the pilot root
-    (code_interpreter tracebacks). Missing config degrades gracefully.
+    (code tracebacks). Missing config degrades gracefully.
     """
     prefixes: List[str] = []
     home = str(Path.home())

@@ -31,8 +31,9 @@ def test_attachment_count_alone_does_not_imply_comparison():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("query,command", [("比较财报", None), ("这两份", "/财报对比")])
 async def test_comparison_without_model_name_uses_serial_topic_path(
-    isolated_service, monkeypatch
+    isolated_service, monkeypatch, query, command
 ):
     service, _, _, _ = isolated_service
     from dbgpt_serve.financial_analysis import parallel
@@ -44,7 +45,8 @@ async def test_comparison_without_model_name_uses_serial_topic_path(
     state = {
         "owner_id": "alice",
         "conv_id": "scope",
-        "financial_user_query": "比较财报",
+        "financial_user_query": query,
+        "financial_suite_command": command,
         "financial_llm_client": object(),
         "model_name": None,
         "session_files": [

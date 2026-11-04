@@ -26,26 +26,8 @@ Published revisions are immutable. History, questions, citations and exports can
 
 ## Operations
 
-The runner supports one local service process. Existing databases need the comparison schema before comparison tasks can run. The financial service does not execute its own `ALTER` statements, but enabled framework migrations can update existing tables during application startup; the service then refreshes its schema state. Inspect the actual database before planning a separate migration. From the repository root, set `FINANCIAL_DATABASE_URL` to a SQLAlchemy database URL and preview the remaining changes without `--apply`. These executable examples use an isolated in-memory database; replace that URL with the intended database URL before actual maintenance.
+The runner supports one local service process. Existing databases require an explicit additive migration using `python -m dbgpt_serve.financial_analysis.migrate --database-url <target>`, first without `--apply` to inspect the plan. The application does not silently alter existing tables. Back up the intended database and apply migrations through the normal maintenance process; do not run an old binary against comparison tasks.
 
-Bash:
-
-```bash
-FINANCIAL_DATABASE_URL='sqlite:///:memory:'
-uv run --no-sync python -m dbgpt_serve.financial_analysis.migrate --database-url "$FINANCIAL_DATABASE_URL"
-```
-
-PowerShell:
-
-```powershell
-$FINANCIAL_DATABASE_URL = 'sqlite:///:memory:'
-uv run --no-sync python -m dbgpt_serve.financial_analysis.migrate --database-url "$FINANCIAL_DATABASE_URL"
-```
-
-Back up the intended database before enabling startup migrations or applying a maintenance migration. If the preview lists missing changes, review them and rerun the command with `--apply` through the normal maintenance process. An empty plan requires no second migration. Do not run an old binary against comparison tasks.
-
-The offline HTML runtime requires the companion financial workspace frontend and its installed web dependencies. A backend-only checkout does not contain the build script. In a checkout containing that frontend, run `node standalone/financial-analysis/build.cjs web/node_modules/.cache/financial-comparison/runtime.html`, then configure `DBGPT_FINANCIAL_EXPORT_RUNTIME` in the backend to point to the built file. Until the runtime is installed, HTML export returns `EXPORT_RUNTIME_MISSING`; JSON export remains available. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
+Build the offline runtime with `node standalone/financial-analysis/build.cjs <output.html>` and configure `DBGPT_FINANCIAL_EXPORT_RUNTIME`. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
 
 Implementation details, isolated validation commands, measured results and unverified scenarios are recorded in the repository's `docs/financial-comparison-acceptance.zh-CN.md`. Synthetic fixtures and engineering tests do not replace real-PDF, real-model or human acceptance.
-
-HTML export accepts an optional `language` (`en` or `zh`, default `zh`) and preserves the selected UI language offline. English and Chinese HTML files are separate artifacts of the same unchanged revision; JSON data is language independent. Rebuild the frontend runtime after updates.

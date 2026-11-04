@@ -1,4 +1,4 @@
-"""code_interpreter tool — execute Python via the configured sandbox runtime.
+"""code tool — execute Python via the configured sandbox runtime.
 
 Execution boundary: file locations (``FILE_PATH``/``FILES_JSON``/``PLOT_DIR``)
 travel only through the subprocess environment; the generated Python source
@@ -211,7 +211,7 @@ def make_code_interpreter(
             'Parameters: {{"code": "python code string"}}'
         )
     )
-    async def code_interpreter(code: str) -> str:
+    async def code(code: str) -> str:
         """Execute arbitrary Python code and return stdout/stderr.
 
         CRITICAL: Each call is completely independent — variables do NOT
@@ -289,12 +289,12 @@ def make_code_interpreter(
         started = time.perf_counter()
 
         try:
-            compile(full_code, "<code_interpreter>", "exec")
+            compile(full_code, "<code>", "exec")
         except SyntaxError as se:
             repaired = _try_repair_truncated_code(full_code)
             if repaired is not None:
                 logger.warning(
-                    "code_interpreter: auto-repaired truncated code "
+                    "code: auto-repaired truncated code "
                     "(original SyntaxError: %s line %s)",
                     se.msg,
                     se.lineno,
@@ -562,4 +562,4 @@ def make_code_interpreter(
             {"chunks": chunks, "artifact_id": python_artifact_id}, ensure_ascii=False
         )
 
-    return code_interpreter
+    return code

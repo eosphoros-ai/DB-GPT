@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from dbgpt_app.openapi.api_v1.financial_execution import (
     FinancialExecutionStream,
     interrupt_financial_progress,
@@ -74,6 +76,38 @@ def test_native_prompt_does_not_require_conflicting_text_action_protocol():
     assert "Every response must contain exactly one Action" not in native
     text = template.format(**params, native_function_calling=False)
     assert "Every response must contain exactly one Action and one Action Input" in text
+
+
+@pytest.mark.parametrize("financial_enabled", [False, True])
+@pytest.mark.parametrize("native", [False, True])
+def test_workflow_text_is_literal_while_registered_tools_remain_dynamic(
+    financial_enabled, native
+):
+    workflow = (
+        'JSON: {"name": "{{ report_title }}", "path": "C:\\\\reports"}\n'
+        "{% if native_function_calling %}keep both{% endif %}\n"
+        "{{ action_space }} {% endraw %} {{ 7 * 7 }} {{ unmatched\n"
+        "Quoted: \" and ' ; 中文 📊"
+    )
+    template = build_react_prompt_template(
+        workflow, financial_enabled=financial_enabled
+    )
+    rendered = template.format(
+        action_space='prepare_report({"file_id": "{{literal}}"})',
+        action_space_names="prepare_report, terminate",
+        native_function_calling=native,
+        report_title="MUST NOT REPLACE CONTENT",
+    )
+    assert rendered.startswith(workflow + "\n\n")
+    assert "MUST NOT REPLACE CONTENT" not in rendered
+    assert 'prepare_report({"file_id": "{{literal}}"})' in rendered
+    assert "Action must be one of: [prepare_report, terminate]." in rendered
+    assert ("Invoke the supplied native functions" in rendered) is native
+    assert (
+        "Every response must contain exactly one Action and one Action Input"
+        in rendered
+    ) is not native
+    assert ("## 财报分析与当前对话中的报告" in rendered) is financial_enabled
 
 
 def test_review_guidance_survives_missing_memory_without_fabricating_reviews():

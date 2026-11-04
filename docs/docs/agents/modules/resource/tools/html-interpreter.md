@@ -65,5 +65,5 @@ It is the final presentation tool for web pages, HTML reports, dashboards, and s
 ## Notes
 
 - this should be the final rendering step for HTML-style outputs
-- do not rely on `code_interpreter` alone for final HTML delivery
+- do not rely on `code` alone for final HTML delivery
 - template mode is especially useful for skill-based reporting workflows

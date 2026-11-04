@@ -11,8 +11,8 @@ The current source of truth lives in:
 The core built-in tools are:
 
 - `load_skill`
-- `code_interpreter`
-- `shell_interpreter`
+- `code`
+- `bash`
 - `sql_query`
 - `html_interpreter`
 
@@ -23,8 +23,8 @@ They are exposed as agent tools and used by the Agentic Data workflow to move fr
 | Tool | Use it for | Do not use it for |
 |------|------------|-------------------|
 | `load_skill` | Load a skill's instructions and workflow | Running code or shell commands |
-| `code_interpreter` | Python analysis, charts, dataframe logic, calculations | Shell commands or final HTML rendering |
-| `shell_interpreter` | Bash / CLI commands such as `ls`, `grep`, `curl`, `git`, `pip` | Python analysis or skill-specific script execution when a skill says otherwise |
+| `code` | Python analysis, charts, dataframe logic, calculations | Shell commands or final HTML rendering |
+| `bash` | Bash / CLI commands such as `ls`, `grep`, `curl`, `git`, `pip` | Python analysis or skill-specific script execution when a skill says otherwise |
 | `sql_query` | Read-only SQL against the selected datasource | Any write/update/delete schema changes |
 | `html_interpreter` | Final HTML page / report rendering | General Python computation or shell execution |
 
@@ -34,8 +34,8 @@ For most agentic data tasks, the pattern is:
 
 1. Use `load_skill` when the task matches a reusable skill.
 2. Use `sql_query` to inspect structured data.
-3. Use `code_interpreter` for Python analysis, chart generation, and data shaping.
-4. Use `shell_interpreter` only for true shell / CLI work.
+3. Use `code` for Python analysis, chart generation, and data shaping.
+4. Use `bash` only for true shell / CLI work.
 5. Use `html_interpreter` as the final presentation step for reports or web pages.
 
 ## Important rules
@@ -55,13 +55,13 @@ the final rendering step should go through `html_interpreter`.
 
 `sql_query` only supports safe query access. It is designed for `SELECT`-style exploration, not data mutation.
 
-### 3. `code_interpreter` calls are independent
+### 3. `code` calls are independent
 
-Each `code_interpreter` call runs independently. Variables do **not** persist between calls, so every snippet must include its own imports, loading logic, and output statements.
+Each `code` call runs independently. Variables do **not** persist between calls, so every snippet must include its own imports, loading logic, and output statements.
 
-### 4. `shell_interpreter` is for shell tasks only
+### 4. `bash` is for shell tasks only
 
-Use `shell_interpreter` for CLI workflows. If a skill specifically requires another execution path, follow the skill instructions.
+Use `bash` for CLI workflows. If a skill specifically requires another execution path, follow the skill instructions.
 
 ## Next step
 

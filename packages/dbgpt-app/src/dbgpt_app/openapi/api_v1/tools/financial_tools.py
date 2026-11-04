@@ -4,6 +4,7 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
 from dbgpt.agent.resource.tool.base import tool
@@ -27,12 +28,39 @@ from dbgpt_serve.financial_analysis.summary import (
 )
 from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 
+if TYPE_CHECKING:
+    from dbgpt_app.openapi.api_v1.suite_binder import SuiteBinding
+
 FINANCIAL_MAX_STEPS = 40
+FINANCIAL_SUITE_COMMANDS = frozenset({"/读年报", "/财报对比"})
+
+
+def apply_financial_suite_context(
+    state: dict, binding: Optional["SuiteBinding"]
+) -> None:
+    """Copy intent only from this turn's successfully resolved suite command."""
+    state.pop("financial_suite_command", None)
+    command = getattr(binding, "command", None)
+    skill_text = getattr(binding, "command_skill_text", None)
+    if (
+        getattr(binding, "name", None) == "financial-analysis"
+        and isinstance(command, str)
+        and command in FINANCIAL_SUITE_COMMANDS
+        and not getattr(binding, "command_error", None)
+        and isinstance(skill_text, str)
+        and skill_text.strip()
+    ):
+        state["financial_suite_command"] = command
 
 
 def is_financial_turn(state):
     """Scope report safeguards to financial requests, including brief follow-ups."""
-    if state.get("financial_pending") or "financial_user_query" not in state:
+    if (
+        state.get("financial_pending")
+        or "financial_user_query" not in state
+        # Set only from a successfully resolved financial suite binding.
+        or state.get("financial_suite_command") in FINANCIAL_SUITE_COMMANDS
+    ):
         return True
     query = (state.get("financial_user_query") or "").strip()
     return bool(
@@ -56,7 +84,7 @@ def is_financial_turn(state):
     )
 
 
-def has_comparison_intent(query):
+def has_comparison_intent(query, *, command=None):
     query = query or ""
     if re.search(
         r"(?:不(?:要|需(?:要)?|用)?|别|无需|无须|勿)\s*"
@@ -66,7 +94,7 @@ def has_comparison_intent(query):
         re.I,
     ):
         return False
-    return bool(
+    return command == "/财报对比" or bool(
         re.search(r"对比|比较|横向|跨年|差异|异同|compar(?:e|ison)", query, re.I)
     )
 
@@ -90,7 +118,8 @@ topic_result.saved=false 表示未保存成功，一次处理 issues 中所有 f
 专题连续三次失败后继续其他专题，复核使用 insufficient；不能冒充成功。
 全部专题处理后调用 review_financial_report，逐项检查变化方向、期间/口径和原因依据。
 复核必须覆盖全部专题，每项给出 topic_id、verdict（pass/revise/insufficient）、
-directionChecked:true、scopeChecked:true、causalityChecked:true、note（不含数字的具体核对说明）。
+directionChecked:true、scopeChecked:true、causalityChecked:true、note（具体核对说明）。
+note 可用已提取的年份说明期间，优先写本期、上期；不填写金额、比率、倍数或财务引用。
 三项 Checked 记录该维度及其缺口已检查，不表示结论通过；
 失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient，并在 note 说明限制。
 需要修订就修正对应专题，然后重新复核。明确复核通过后后端原子发布，
@@ -170,6 +199,8 @@ def _service():
 
 def _has_other_source(state):
     """Keep selected or executed non-report sources outside the keyword gate."""
+    if state.get("financial_suite_command") in FINANCIAL_SUITE_COMMANDS:
+        return False
     return bool(
         state.get("financial_other_source_selected")
         or state.get("financial_other_source_used")
@@ -727,7 +758,10 @@ def make_financial_tools(
     ) -> str:
         if not 2 <= len(file_ids) <= 5:
             raise ValueError("对比需要两到五份 PDF。")
-        if not has_comparison_intent(state.get("financial_user_query")):
+        if not has_comparison_intent(
+            state.get("financial_user_query"),
+            command=state.get("financial_suite_command"),
+        ):
             raise ValueError("当前请求未明确要求比较，请按单报告或普通附件处理。")
         backend, owner, session_id = scope()
         allowed = {
@@ -1201,7 +1235,9 @@ def make_financial_tools(
         description=(
             "所有专题保存后逐项复核。reviews 是数组，每项含 topic_id、"
             "verdict(pass/revise/insufficient)、directionChecked、scopeChecked、"
-            "causalityChecked（三项均为 true）、note（无数字的具体核对说明）。"
+            "causalityChecked（三项均为 true）、note（具体核对说明）。"
+            "note 可用已提取的年份说明期间，或写本期、上期；"
+            "不填写金额、比率、倍数或财务引用。"
             "Checked 表示该维度及缺口已检查，不代表结论通过；"
             "失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient。"
             "检查方向是否吻合数据、期间和口径是否一致、因果解释是否有原文支持；"

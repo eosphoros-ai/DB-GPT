@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>03 · 版本历史与回滚 — DB-GPT LLM-Wiki 设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="app" style="filter: brightness(0.55) saturate(0.7);">
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">D</div><div class="logo-name">DB-GPT</div></div>
+    <div class="nav-item"><span class="ico">💬</span> 对话</div>
+    <div class="nav-item"><span class="ico">🧩</span> 应用</div>
+    <div class="nav-item active"><span class="ico">📚</span> 知识库</div>
+    <div class="nav-item"><span class="ico">🤖</span> 智能体</div>
+  </aside>
+  <main class="app-main">
+    <header class="page-head">
+      <div class="crumbs"><span>知识库</span><span class="sep">›</span><span class="space">星云科技员工手册</span><span class="sep">›</span><span class="cur" style="color:var(--tx-1)">Wiki</span></div>
+      <div class="kb-tabs">
+        <div class="kb-tab">文档</div><div class="kb-tab active">Wiki</div><div class="kb-tab">图谱</div>
+      </div>
+    </header>
+    <div class="wiki-body">
+      <aside class="wiki-side">
+        <div class="row2"><input class="input" placeholder="搜索 Wiki 页面" /></div>
+        <div class="side-tabs"><div class="side-tab active">知识 44</div><div class="side-tab">摘要 4</div></div>
+        <div class="tree">
+          <div class="t-dir"><span class="caret">▾</span><span class="name">人力资源</span><span class="cnt">4</span></div>
+          <div class="t-dir indent-1"><span class="caret">▾</span><span class="name">休假</span><span class="cnt">2</span></div>
+          <div class="t-page indent-2 active"><span class="ico">💡</span> 年假</div>
+          <div class="t-page indent-2"><span class="ico">💡</span> 请假流程</div>
+          <div class="t-dir indent-1"><span class="caret">▸</span><span class="name">制度</span><span class="cnt">2</span></div>
+        </div>
+      </aside>
+      <section class="wiki-reader">
+        <div class="reader-pad" style="max-width:none">
+          <div class="wiki-title">年假</div>
+          <div class="title-meta">
+            <span class="tag t-concept">💡 概念</span><span class="tag ver">v3</span><span class="tag src-user">✎ 手动编辑</span>
+          </div>
+          <div class="wiki-content">
+            <p class="lede">年假是星云科技员工根据工龄享有的带薪休假天数及折算规则。</p>
+            <p>测试编辑功能</p>
+            <p>年假是星云科技员工根据工龄享有的带薪休假天数及折算规则。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ============ 版本历史抽屉 ============ -->
+<div class="drawer-mask"></div>
+<aside class="drawer">
+  <div class="drawer-head">🕘 版本历史 · 年假 <span class="x">✕</span></div>
+  <div class="drawer-body">
+    <!-- 左：版本列表 -->
+    <div class="pane-versions">
+      <div class="ver-item">
+        <div class="v">v3 <span class="cur">当前版本</span></div>
+        <div class="m"><span>✎ 手动编辑</span><span>17:38</span></div>
+      </div>
+      <div class="ver-item sel">
+        <div class="v">v2</div>
+        <div class="m"><span>✎ 手动编辑</span><span>17:37</span></div>
+      </div>
+      <div class="ver-item">
+        <div class="v">v1</div>
+        <div class="m"><span>✦ 自动生成</span><span>17:03</span></div>
+      </div>
+      <div class="ver-item" style="text-align:center;color:var(--tx-4);font-size:12px">── 加载更多 ──</div>
+      <div style="margin-top:10px;padding:10px 12px;border:1px dashed var(--border-2);border-radius:8px;color:var(--tx-4);font-size:11.5px;line-height:1.6">
+        保留策略：自动/Agent 版本最多 50 条可清理，全量上限 200 条（可配置）
+      </div>
+    </div>
+
+    <!-- 右：diff 视图 -->
+    <div class="pane-diff">
+      <div class="diff-toolbar">
+        <span class="range-label">v1 → v2</span>
+        <span class="range-sub">产生 v2 的变更</span>
+        <div class="seg" style="margin-left:10px">
+          <span class="seg-item active">版本变更</span>
+          <span class="seg-item">对比当前</span>
+          <span class="seg-item">查看原文</span>
+        </div>
+        <div class="diff-actions">
+          <button class="btn sm ghost">⤺ 回滚到此版本</button>
+        </div>
+      </div>
+
+      <div class="diff-caption">title</div>
+      <div class="diff-block" style="padding:8px 10px"><span class="diff-line same"># 年假</span></div>
+
+      <div class="diff-caption">content</div>
+      <div class="diff-block">
+        <div class="diff-line del">- # 年假</div>
+        <div class="diff-line add">+ 测试编辑功能</div>
+        <div class="diff-line add">+ </div>
+        <div class="diff-line same">年假是 [[entity/novatech|星云科技]] 员工根据工龄享有的带薪休假天数及折算规则。</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">## 年假天数</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">年假按工龄计算（以入职日期为准）：</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">| 工龄 | 年假天数 |</div>
+        <div class="diff-line same">| ---- | -------- |</div>
+        <div class="diff-line same">| 1 年以下 | 5 天 |</div>
+        <div class="diff-line same">| 1–10 年 | 10 天 |</div>
+        <div class="diff-line same">| 10 年以上 | 15 天 |</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">当年 3 月 31 日前入职的员工，当年年假按剩余月份折算；之后入职次年才开始享受全额年假。</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">## [[concept/leave-request-process|请假流程]]</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">1. 提前在 OA 提交请假单，选择类型（年假/病假/事假等）。</div>
+        <div class="diff-line same">2. 3 天以内：直属主管审批；3–7 天：部门总监审批；7 天以上：HR 备案。</div>
+        <div class="diff-line same">3. 病假连续超过 2 天需附二级以上医院证明。</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">## 与项目冲突</div>
+        <div class="diff-line same"> </div>
+        <div class="diff-line same">若请假期间已有定版的发布节点，须在项目群同步并指定工作交接人。[[entity/zhang-ming|张明]]团队 POC 相关请假，需额外知会产品总监 [[entity/chen-hao|陈浩]]。</div>
+      </div>
+
+      <div class="diff-caption">summary · 无变更时该字段自动隐藏</div>
+
+      <div style="margin-top:14px;padding:10px 14px;border:1px solid var(--border-1);border-radius:10px;background:var(--bg-2);font-size:12px;color:var(--tx-3);line-height:1.7">
+        <b style="color:var(--tx-2)">回滚语义</b>：回滚 = 将 v2 内容以一次新编辑（<span class="mono">edit_source=revert</span>）落为 v4，回滚前状态自动快照，回滚本身可再次回滚。
+      </div>
+    </div>
+  </div>
+</aside>
+</body>
+</html>

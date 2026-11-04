@@ -1045,6 +1045,56 @@ CREATE TABLE IF NOT EXISTS dbgpt_uploaded_dataset (
 	KEY `ix_dbgpt_uploaded_dataset_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- dbgpt_serve_plugins, expert-suite (scenario suite) install/enable registry.
+-- Content lives in the suite package on disk; this table records install state,
+-- version pin source and a rebuildable manifest snapshot (derived projection).
+CREATE TABLE IF NOT EXISTS `dbgpt_serve_plugins` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `name` varchar(255) NOT NULL COMMENT 'suite slug, e.g. db-query',
+  `display` varchar(255) DEFAULT NULL COMMENT 'display name',
+  `icon` varchar(64) DEFAULT NULL COMMENT 'icon emoji',
+  `scenario_id` varchar(64) DEFAULT NULL COMMENT 'query|analysis|ops',
+  `version` varchar(64) NOT NULL COMMENT 'installed/active version',
+  `source` varchar(32) NOT NULL DEFAULT 'official' COMMENT 'official|enterprise|market',
+  `execution` varchar(16) DEFAULT 'react' COMMENT 'react|flow',
+  `status` varchar(16) NOT NULL DEFAULT 'installed' COMMENT 'installed|enabled|disabled',
+  `workspace_id` varchar(128) DEFAULT NULL COMMENT 'instance scope; NULL=global',
+  `package_path` varchar(512) DEFAULT NULL COMMENT 'package location (source of truth)',
+  `package_digest` varchar(64) DEFAULT NULL COMMENT 'sha256 of package for drift detect',
+  `manifest_snapshot` text DEFAULT NULL COMMENT 'derived JSON projection, rebuildable',
+  `use_count` int DEFAULT 0 COMMENT 'pin/invoke count',
+  `enabled_at` datetime DEFAULT NULL COMMENT 'last enabled time',
+  `user_name` varchar(255) DEFAULT NULL COMMENT 'installer/owner',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'system code',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'install time',
+  `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_plugins_ws_name` (`workspace_id`, `name`),
+  KEY `idx_plugins_scenario` (`scenario_id`),
+  KEY `idx_plugins_status` (`status`),
+  KEY `idx_plugins_sys_code` (`sys_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Expert suite install/enable registry';
+
+-- dbgpt_serve_plugins_event, suite audit / timeline events.
+CREATE TABLE IF NOT EXISTS `dbgpt_serve_plugins_event` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `suite_name` varchar(255) NOT NULL COMMENT 'suite slug',
+  `event_type` varchar(32) NOT NULL COMMENT 'install|enable|disable|uninstall|upgrade|switch|pin',
+  `from_version` varchar(64) DEFAULT NULL,
+  `to_version` varchar(64) DEFAULT NULL,
+  `conv_uid` varchar(128) DEFAULT NULL COMMENT 'conversation for switch/pin events',
+  `workspace_id` varchar(128) DEFAULT NULL,
+  `detail` text DEFAULT NULL COMMENT 'JSON payload',
+  `user_name` varchar(255) DEFAULT NULL,
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'system code',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'event time',
+  PRIMARY KEY (`id`),
+  KEY `idx_plugins_event_suite` (`suite_name`),
+  KEY `idx_plugins_event_type` (`event_type`),
+  KEY `idx_plugins_event_conv` (`conv_uid`),
+  KEY `idx_plugins_event_created` (`gmt_created`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Expert suite audit/timeline events';
+
 -- Example database for chat users (moved to end to avoid breaking dbgpt database context)
 CREATE
 DATABASE IF NOT EXISTS EXAMPLE_1;

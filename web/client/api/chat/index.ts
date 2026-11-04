@@ -6,7 +6,7 @@ import {
   RecommendQuestionResponse,
   StopTopicParams,
 } from '@/types/chat';
-import { GET, POST } from '../index';
+import { GET, POST, PUT } from '../index';
 
 /**
  * 查询推荐问题
@@ -40,4 +40,27 @@ export const stopTopic = (data: StopTopicParams) => {
     `/api/v1/chat/topic/terminate?conv_id=${data.conv_id}&round_index=${data.round_index}`,
     data,
   );
+};
+
+/**
+ * Harness engine availability (agent execution engines)
+ */
+export type HarnessEngineInfo = {
+  engine: string;
+  name: string;
+  available: boolean;
+  detail: string;
+};
+
+export type HarnessEnginesResponse = {
+  engines: HarnessEngineInfo[];
+  current: string;
+};
+
+export const getHarnessEngines = () => {
+  return GET<null, HarnessEnginesResponse>(`/api/v1/chat/harness/engines`);
+};
+
+export const saveHarnessEngine = (engine: string) => {
+  return PUT<{ engine: string }, { engine: string }>(`/api/v1/chat/harness/engine`, { engine });
 };

@@ -53,6 +53,20 @@ def prompt_manager(in_memory_storage):
 
 class TestPromptTemplate:
     @pytest.mark.parametrize(
+        "text",
+        [
+            "占位符 {{...}}，报告标题 {{report_title}}",
+            '{"todos": [{"content": "查询"}], "args": {parameters}}',
+            "{% endraw %}{{ 7 * 7 }}{# preserve comment #}",
+            "{name!r:>20}\nSQL: SELECT '{未发布}' AS status;",
+        ],
+    )
+    def test_literal_instructions_are_not_rendered_as_template_expressions(self, text):
+        prompt = PromptTemplate.from_literal(text)
+        assert prompt.input_variables == []
+        assert prompt.format(report_title="replacement", name="replacement") == text
+
+    @pytest.mark.parametrize(
         "template_str, input_vars, expected_output",
         [
             ("Hello {name}", {"name": "World"}, "Hello World"),

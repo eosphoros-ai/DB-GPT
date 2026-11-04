@@ -45,7 +45,9 @@ def capture_tool_failure(state, output):
         "已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；"
         "如再次失败，请将上述工具名称和错误详情交给维护者排查。"
     )
+    generation = state.get("dashboard_generation") or {}
     failure = {
+        **generation,
         "type": "dashboard.generation.failed",
         "title": "看板操作失败",
         "reason": error.get("code", "tool_execution_failed"),
@@ -57,8 +59,10 @@ def capture_tool_failure(state, output):
             f"停在「{stage_label}」（{name}）。\n失败原因：{reason}\n{retry_hint}"
         ),
         "retry_hint": retry_hint,
-        "source_turn_id": state.get("conv_id"),
+        "source_turn_id": generation.get("source_turn_id") or state.get("conv_id"),
     }
+    if generation.get("dashboard_id"):
+        failure["editor_path"] = f"/dashboards/{generation['dashboard_id']}"
     state["dashboard_tool_failure"] = failure
     return failure
 

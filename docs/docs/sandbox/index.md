@@ -172,7 +172,7 @@ reasoning and execution rounds rather than a single tool call.
 
 Today, DB-GPT already uses sandbox execution in application-side agent tooling.
 
-For example, the `shell_interpreter` tool in:
+For example, the `bash` tool in:
 
 - `packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py`
 

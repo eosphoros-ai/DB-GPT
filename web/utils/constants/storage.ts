@@ -11,3 +11,5 @@ export const STORAGE_USERINFO_KEY = '__db_gpt_uinfo_key';
 
 /** UserInfoValidTime */
 export const STORAGE_USERINFO_VALID_TIME_KEY = '__db_gpt_uinfo_vt_key';
+/** Harness engine (agent execution engine) preference */
+export const STORAGE_HARNESS_ENGINE_KEY = '__db_gpt_harness_engine_key';

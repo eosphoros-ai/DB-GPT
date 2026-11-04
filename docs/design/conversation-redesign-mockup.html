@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DB-GPT 对话重设计 · 高保真 Mockup（Walmart_Sales 真实 case）</title>
+<style>
+  /* ── design tokens (OpenCode/Codex-esque: monochrome, dense, 8pt grid) ── */
+  :root {
+    --bg: #fbfbfa;
+    --panel: #ffffff;
+    --ink: #1c1c1a;
+    --ink-2: #55554f;
+    --ink-3: #8b8b84;
+    --line: #e6e6e2;
+    --line-2: #efefeb;
+    --hover: #f4f4f0;
+    --accent: #2563eb;
+    --ok: #10b981;
+    --warn: #f59e0b;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Helvetica Neue", sans-serif;
+    --r: 10px;
+    --shadow: 0 1px 2px rgba(20,20,15,.05), 0 4px 16px rgba(20,20,15,.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  button { font-family: inherit; font-size: inherit; border: 0; background: none; color: inherit; cursor: pointer; }
+  .hidden { display: none !important; }
+  svg { display: block; }
+
+  /* ── top bar ───────────────────────────────────────────────────────── */
+  .topbar {
+    height: 48px; display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; border-bottom: 1px solid var(--line);
+    background: var(--panel); position: relative; z-index: 30;
+  }
+  .brand { font-weight: 600; letter-spacing: .01em; }
+  .crumb { color: var(--ink-3); font-weight: 400; margin-left: 6px; font-size: 13px; }
+  .top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .capsule {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 28px; padding: 0 10px; border: 1px solid var(--line);
+    border-radius: 999px; font-size: 12.5px; color: var(--ink-2);
+    background: var(--panel); transition: background .15s;
+  }
+  .capsule:hover { background: var(--hover); }
+  .capsule b { color: var(--ink); font-weight: 600; }
+  .seg {
+    display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    font-size: 12px; color: var(--ink-2); background: var(--panel);
+  }
+  .seg button { padding: 4px 10px; }
+  .seg button.on { background: var(--ink); color: #fff; }
+  .icon-btn {
+    width: 28px; height: 28px; border-radius: 8px; display: inline-flex;
+    align-items: center; justify-content: center; color: var(--ink-2);
+  }
+  .icon-btn:hover { background: var(--hover); }
+
+  /* ── workspace: stream + contextual rail ───────────────────────────── */
+  .workspace { display: flex; height: calc(100% - 48px); }
+  .stream {
+    flex: 1 1 auto; min-width: 0; overflow-y: auto;
+    transition: margin-right .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .stream-inner { max-width: 780px; margin: 0 auto; padding: 32px 24px 160px; }
+  .workspace.rail-open .stream { margin-right: 0; }
+
+  .rail {
+    width: 0; flex: 0 0 auto; overflow: hidden; background: var(--panel);
+    border-left: 1px solid transparent;
+    transition: width .28s cubic-bezier(.2,.8,.2,1);
+    display: flex; flex-direction: column;
+  }
+  .workspace.rail-open .rail { width: min(560px, 46vw); border-left-color: var(--line); }
+  .rail-head {
+    height: 44px; flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+    padding: 0 12px 0 16px; border-bottom: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-2); white-space: nowrap;
+  }
+  .rail-head b { color: var(--ink); font-weight: 600; }
+  .rail-head .icon-btn { margin-left: auto; }
+  .rail-body { flex: 1 1 auto; overflow-y: auto; padding: 16px; width: min(560px, 46vw); }
+
+  /* ── conversation stream ───────────────────────────────────────────── */
+  .turn + .turn { margin-top: 28px; }
+  .user-row { display: flex; justify-content: flex-end; gap: 8px; align-items: flex-start; }
+  .user-bubble {
+    max-width: 82%; background: #efeeea; border-radius: 14px 14px 4px 14px;
+    padding: 10px 14px; color: var(--ink); white-space: pre-wrap;
+  }
+  .ctx-chip {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+    font-size: 12px; color: var(--ink-2); border: 1px solid var(--line);
+    background: var(--panel); border-radius: 8px; padding: 3px 8px;
+  }
+  .ctx-chip .dot { width: 6px; height: 6px; border-radius: 2px; background: #3b82f6; }
+
+  .intent-line {
+    display: flex; align-items: baseline; gap: 8px; margin: 20px 0 4px;
+    color: var(--ink); font-weight: 500;
+  }
+  .intent-line .round { color: var(--ink-3); font-weight: 400; font-size: 12px; }
+  .intent-line svg { flex: 0 0 auto; transform: translateY(2px); color: var(--ink-3); }
+
+  /* reasoning: one-line disclosure, muted body */
+  .reasoning {
+    display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 6px;
+    color: var(--ink-3); font-size: 12.5px; padding: 2px 6px 2px 2px; border-radius: 6px;
+  }
+  .reasoning:hover { background: var(--hover); color: var(--ink-2); }
+  .reasoning .chev { transition: transform .15s; }
+  .reasoning.open .chev { transform: rotate(90deg); }
+  .reasoning-body {
+    margin: 0 0 8px 22px; padding: 8px 12px; border-left: 2px solid var(--line);
+    color: var(--ink-3); font-size: 12.5px; font-style: italic;
+    max-height: 132px; overflow-y: auto; white-space: pre-wrap;
+  }
+
+  /* tool rows: 28px, icon + name + gist + meta + status */
+  .trow {
+    display: flex; align-items: center; gap: 8px; height: 28px;
+    padding: 0 6px; margin: 0 -6px; border-radius: 7px; color: var(--ink-2);
+    font-size: 13px; position: relative; overflow: hidden;
+  }
+  .trow.clickable { cursor: pointer; }
+  .trow.clickable:hover { background: var(--hover); }
+  .trow .ic { color: var(--ink-3); flex: 0 0 auto; }
+  .trow .name { color: var(--ink); font-weight: 500; font-family: var(--mono); font-size: 12.5px; }
+  .trow .gist { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+  .trow .count { flex: 0 0 auto; font-size: 11.5px; color: var(--ink-3); background: var(--line-2); border-radius: 999px; padding: 0 7px; }
+  .trow .dur { flex: 0 0 auto; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .trow .st { flex: 0 0 auto; color: var(--ok); }
+  .trow .st.fail { color: #ef4444; }
+  .trow .chev { flex: 0 0 auto; color: var(--ink-3); transition: transform .15s; }
+  .trow.open .chev { transform: rotate(90deg); }
+  .trow.group { font-weight: 500; }
+  .trow.sub { margin-left: 22px; width: calc(100% - 22px); }
+  /* running shimmer (DSH-style sweep) */
+  .trow.running::after {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 240px;
+    background: linear-gradient(90deg, transparent, rgba(120,120,110,.14) 55%, transparent);
+    animation: sweep 2.4s ease-out infinite;
+  }
+  @keyframes sweep { 0% { left: -240px; } 90%, 100% { left: 100%; } }
+  .spin { animation: spin 1s linear infinite; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tgroup-body { margin: 2px 0 6px; }
+  .trow-body {
+    margin: 2px 0 8px 22px; border-left: 2px solid var(--line); padding: 8px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .kv-label { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  pre.sql {
+    font-family: var(--mono); font-size: 12px; line-height: 1.55; color: var(--ink-2);
+    background: var(--line-2); border-radius: 8px; padding: 8px 10px;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  pre.sql .kw { color: #7c3aed; font-weight: 600; }
+  pre.sql .fn { color: #0369a1; }
+  table.mini { border-collapse: collapse; font-family: var(--mono); font-size: 12px; width: 100%; }
+  table.mini th, table.mini td { border: 1px solid var(--line); padding: 3px 10px; text-align: left; color: var(--ink-2); }
+  table.mini th { background: var(--line-2); color: var(--ink); font-weight: 600; }
+  .more-link { font-size: 12px; color: var(--accent); align-self: flex-start; }
+
+  /* ── artifact cards ────────────────────────────────────────────────── */
+  .artifacts { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
+  .artifact {
+    display: flex; gap: 10px; align-items: stretch; width: 340px;
+    border: 1px solid var(--line); border-radius: var(--r); background: var(--panel);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .artifact .thumb {
+    flex: 0 0 84px; background: var(--line-2); display: flex; align-items: center; justify-content: center;
+    border-right: 1px solid var(--line-2); cursor: pointer;
+  }
+  .artifact .body { flex: 1 1 auto; min-width: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .artifact .title { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .artifact .meta { font-size: 11.5px; color: var(--ink-3); }
+  .artifact .acts { margin-top: auto; display: flex; gap: 6px; padding-top: 6px; }
+  .btn {
+    height: 24px; padding: 0 9px; border-radius: 7px; font-size: 12px;
+    border: 1px solid var(--line); color: var(--ink-2); background: var(--panel);
+  }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .btn.primary:hover { opacity: .88; }
+  .artifact.img { width: 168px; flex-direction: column; }
+  .artifact.img .thumb { flex: 0 0 92px; border-right: 0; border-bottom: 1px solid var(--line-2); }
+  .artifact.img .body { padding: 6px 8px; }
+
+  /* ── answer prose ──────────────────────────────────────────────────── */
+  .answer { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .answer h4 { font-size: 14px; margin: 14px 0 6px; }
+  .answer ul { margin: 4px 0 4px 18px; color: var(--ink-2); }
+  .answer li { margin: 2px 0; }
+  .answer code { font-family: var(--mono); font-size: 12.5px; background: var(--line-2); border-radius: 5px; padding: 1px 5px; }
+  .answer .lead { color: var(--ink); }
+  .cursor { display: inline-block; width: 7px; height: 14px; background: var(--accent); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── global status line + composer ─────────────────────────────────── */
+  .statusline {
+    margin: 22px 0 0; padding-top: 10px; border-top: 1px dashed var(--line);
+    color: var(--ink-3); font-size: 12.5px; display: flex; align-items: center; gap: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .statusline .ok { color: var(--ok); }
+  .composer {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px;
+    width: min(720px, 92vw); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; box-shadow: var(--shadow); padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px; color: var(--ink-3); z-index: 20;
+  }
+  .composer .ph { flex: 1 1 auto; font-size: 13.5px; }
+  .composer .send { width: 28px; height: 28px; border-radius: 999px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; }
+
+  /* ── rail: report preview mock ─────────────────────────────────────── */
+  .report { background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .report .rhead { padding: 14px 16px 10px; border-bottom: 1px solid var(--line-2); }
+  .report .rhead b { font-size: 15px; }
+  .report .rhead span { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px 16px; }
+  .kpi { border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; }
+  .kpi .v { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .kpi .k { font-size: 10.5px; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  .rsec { padding: 6px 16px 14px; }
+  .rsec .t { font-size: 12px; color: var(--ink-2); font-weight: 600; margin-bottom: 6px; }
+  .gallery { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .gallery .gitem { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; cursor: pointer; background: var(--panel); }
+  .gallery .gitem .gm { padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); border-top: 1px solid var(--line-2); display: flex; justify-content: space-between; }
+
+  /* ── annotation layer (design-review callouts) ─────────────────────── */
+  .notes-legend {
+    position: fixed; right: 16px; bottom: 16px; z-index: 60; width: 320px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 12px 14px; font-size: 12.5px; color: var(--ink-2);
+  }
+  .notes-legend h5 { font-size: 12.5px; color: var(--ink); margin-bottom: 6px; }
+  .notes-legend ol { margin-left: 16px; }
+  .notes-legend li { margin: 3px 0; }
+  .callout {
+    position: absolute; z-index: 55; width: 20px; height: 20px; border-radius: 999px;
+    background: #f97316; color: #fff; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 3px rgba(249,115,22,.25); pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">DB-GPT<span class="crumb">/ Walmart_Sales 数据库画像与分析报告</span></div>
+  <div class="top-actions">
+    <button class="capsule" id="capsuleArtifacts" title="会话产物画廊">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5l6-3 6 3-6 3-6-3zM2 8l6 3 6-3M2 11l6 3 6-3"/></svg>
+      产物 <b>6</b>
+    </button>
+    <div class="seg" id="stateSeg" title="切换完成态 / 运行态预览">
+      <button class="on" data-state="done">已完成</button>
+      <button data-state="running">运行中</button>
+    </div>
+    <button class="icon-btn" id="notesBtn" title="设计标注">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v3.6M8 5.1v.2"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="workspace" id="workspace">
+  <!-- ══════════════ main stream ══════════════ -->
+  <section class="stream" id="stream">
+    <div class="stream-inner" id="streamInner">
+
+      <!-- user turn -->
+      <div class="turn">
+        <div class="user-row">
+          <div>
+            <div class="user-bubble">[Database: Walmart_Sales] Please analyze the currently connected database, generate a database profile (including table structure, field information, data volume statistics, etc.), and generate a beautifully interactive web analysis report.</div>
+            <div style="text-align:right"><span class="ctx-chip"><span class="dot"></span>Walmart_Sales · sqlite</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- assistant turn -->
+      <div class="turn">
+        <!-- ① intent line: what this turn will do (not raw CoT) -->
+        <div class="intent-line">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="2.4"/></svg>
+          为 Walmart_Sales 生成数据库画像，并渲染交互式分析报告
+          <span class="round">· 3 轮</span>
+        </div>
+
+        <!-- ② reasoning: single-line disclosure -->
+        <button class="reasoning" data-toggle="reasonBody">
+          <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2.5a3.5 3.5 0 00-3.5 3.5c0 1.2.5 1.9 1 2.5.4.5.5 1 .5 1.5h4c0-.5.1-1 .5-1.5.5-.6 1-1.3 1-2.5A3.5 3.5 0 008 2.5zM6.5 12.5h3M7 14h2"/></svg>
+          思考 6s
+        </button>
+        <div class="reasoning-body hidden" id="reasonBody">先取表结构与行数，再对数值字段做分布与空值统计；随后按门店/时间维度聚合，最后汇总为交互式 HTML 报告。共规划 8 次只读查询 + 1 次报告渲染。</div>
+
+        <!-- ③ tool group: sql_query ×8, collapsed by default -->
+        <div class="trow group clickable" data-toggle="grpSql" id="grpSqlRow">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="8" cy="4" rx="5.5" ry="2.2"/><path d="M2.5 4v8c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V4M2.5 8c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2"/></svg></span>
+          <span class="name">sql_query</span>
+          <span class="gist">SELECT COUNT(*) AS total_rows FROM walmart_sales …</span>
+          <span class="count" id="sqlCount">×8</span>
+          <span class="dur">12.4s</span>
+          <span class="st"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+        </div>
+        <div class="tgroup-body hidden" id="grpSql">
+          <!-- sub call 1 (expanded example) -->
+          <div class="trow sub clickable open" data-toggle="call1">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></span>
+            <span class="gist">SELECT COUNT(*) AS total_rows FROM walmart_sales</span>
+            <span class="dur">0.4s</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+          </div>
+          <div class="trow-body" id="call1">
+            <div>
+              <div class="kv-label">SQL</div>
+              <pre class="sql"><span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total_rows <span class="kw">FROM</span> walmart_sales</pre>
+            </div>
+            <div>
+              <div class="kv-label">结果 · 1 行</div>
+              <table class="mini"><tr><th>COUNT(*)</th></tr><tr><td>6435</td></tr></table>
+            </div>
+          </div>
+          <!-- sub calls 2-3 (collapsed) -->
+          <div class="trow sub clickable" data-toggle="call2">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></span>
+            <span class="gist">SELECT cid, name, type, "notnull" FROM pragma_table_info('walmart_sales')</span>
+            <span class="dur">0.3s</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+          </div>
+          <div class="trow-body hidden" id="call2">
+            <div>
+              <div class="kv-label">结果 · 8 行（表结构）</div>
+              <table class="mini">
+                <tr><th>name</th><th>type</th><th>notnull</th></tr>
+                <tr><td>Store</td><td>INTEGER</td><td>0</td></tr>
+                <tr><td>Date</td><td>TEXT</td><td>0</td></tr>
+                <tr><td>Weekly_Sales</td><td>REAL</td><td>0</td></tr>
+                <tr><td>Temperature</td><td>REAL</td><td>0</td></tr>
+                <tr><td colspan="3" style="color:var(--ink-3)">… 其余 4 字段</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="trow sub clickable" data-toggle="call3">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></span>
+            <span class="gist">SELECT ROUND(AVG(Weekly_Sales),2) … ROUND(AVG(Unemployment),2) FROM walmart_sales</span>
+            <span class="dur">0.6s</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+          </div>
+          <div class="trow-body hidden" id="call3">
+            <div><div class="kv-label">结果 · 1 行 × 14 列</div><span class="more-link">展开完整表格 ↗</span></div>
+          </div>
+          <!-- late-phase sub calls (hidden in running state) -->
+          <div class="trow sub phase-late">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></span>
+            <span class="gist">SELECT Store, ROUND(AVG(Weekly_Sales),2) … GROUP BY Store ORDER BY 2 DESC</span>
+            <span class="dur">0.5s</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          </div>
+          <div class="trow sub phase-late">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg></span>
+            <span class="gist">SELECT strftime('%Y', Date) yr, SUM(Weekly_Sales) … GROUP BY yr</span>
+            <span class="dur">0.5s</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          </div>
+        </div>
+
+        <!-- tool group 2: html_interpreter -->
+        <div class="trow group clickable phase-late" data-toggle="grpHtml">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3h10l-1 10.5L8 15l-4-1.5L3 3z"/><path d="M5.5 6.5h5M5.7 9h4.6"/></svg></span>
+          <span class="name">html_interpreter</span>
+          <span class="gist">渲染交互式报告 · 9 张 Chart.js 图表</span>
+          <span class="dur">3.1s</span>
+          <span class="st"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+        </div>
+        <div class="tgroup-body hidden phase-late" id="grpHtml">
+          <div class="trow sub">
+            <span class="ic"></span>
+            <span class="gist">✅ HTML 报告已成功渲染并展示给用户 · 48 KB</span>
+            <span class="st"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          </div>
+        </div>
+
+        <!-- running-only row (visible in running state) -->
+        <div class="trow group running hidden" id="runningRow">
+          <span class="ic"><svg class="spin" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2a6 6 0 11-4.9 2.6"/></svg></span>
+          <span class="name">sql_query</span>
+          <span class="gist">SELECT pct_below_500k, pct_500k_1m … FROM walmart_sales</span>
+          <span class="count">×4</span>
+          <span class="dur">6.2s</span>
+        </div>
+
+        <!-- ④ artifact cards: first-class objects in the stream -->
+        <div class="artifacts phase-late">
+          <div class="artifact">
+            <div class="thumb" data-preview="report" title="预览">
+              <svg width="52" height="64" viewBox="0 0 52 64"><rect x="1" y="1" width="50" height="62" rx="4" fill="#fff" stroke="#d8d8d2"/><rect x="6" y="7" width="26" height="4" rx="2" fill="#c9c9c2"/><rect x="6" y="15" width="12" height="10" rx="2" fill="#e8e8e2"/><rect x="20" y="15" width="12" height="10" rx="2" fill="#e8e8e2"/><rect x="34" y="15" width="12" height="10" rx="2" fill="#e8e8e2"/><rect x="8" y="46" width="5" height="10" fill="#9db9e8"/><rect x="15" y="40" width="5" height="16" fill="#7ba3e0"/><rect x="22" y="43" width="5" height="13" fill="#9db9e8"/><rect x="29" y="36" width="5" height="20" fill="#5b8bd6"/><rect x="36" y="41" width="5" height="15" fill="#9db9e8"/><path d="M8 34l8-4 7 3 8-6 7 4" stroke="#e8a33d" stroke-width="1.6" fill="none"/></svg>
+            </div>
+            <div class="body">
+              <div class="title">Walmart Sales 交互式分析报告</div>
+              <div class="meta">HTML · 48 KB · 9 图表 · 45 门店明细</div>
+              <div class="acts">
+                <button class="btn primary" data-preview="report">预览</button>
+                <button class="btn">全屏</button>
+                <button class="btn">下载</button>
+              </div>
+            </div>
+          </div>
+          <div class="artifact img">
+            <div class="thumb" data-preview="chart1" title="预览">
+              <svg width="120" height="64" viewBox="0 0 120 64"><rect width="120" height="64" fill="#f6f6f2"/><g fill="#7ba3e0"><rect x="10" y="34" width="10" height="22"/><rect x="26" y="24" width="10" height="32"/><rect x="42" y="40" width="10" height="16"/><rect x="58" y="14" width="10" height="42"/><rect x="74" y="28" width="10" height="28"/><rect x="90" y="44" width="10" height="12"/></g></svg>
+            </div>
+            <div class="body">
+              <div class="title" style="font-size:12px">周销售分布</div>
+              <div class="meta">PNG · 直方图</div>
+            </div>
+          </div>
+          <div class="artifact img">
+            <div class="thumb" data-preview="chart2" title="预览">
+              <svg width="120" height="64" viewBox="0 0 120 64"><rect width="120" height="64" fill="#f6f6f2"/><path d="M8 48 C 30 44, 40 24, 60 26 S 96 40, 112 18" stroke="#5b8bd6" stroke-width="2" fill="none"/><path d="M8 52 C 30 50, 44 40, 60 40 S 96 46, 112 38" stroke="#e8a33d" stroke-width="2" fill="none"/></svg>
+            </div>
+            <div class="body">
+              <div class="title" style="font-size:12px">年度营收趋势</div>
+              <div class="meta">PNG · 折线</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ answer prose -->
+        <div class="answer phase-late">
+          <p class="lead">Walmart_Sales 数据库画像与分析报告已生成。核心结论：</p>
+          <h4>数据库画像</h4>
+          <ul>
+            <li>1 张表 <code>walmart_sales</code>，8 个字段，<b>6,435</b> 条记录，空值率 0%</li>
+            <li>覆盖 <b>45</b> 家门店 × <b>143</b> 周（2010-02 ~ 2012-10）</li>
+            <li>周销售均值 $1.05M，总营收 $6.74B</li>
+          </ul>
+          <h4>关键洞察</h4>
+          <ul>
+            <li>门店 #20 周均 $2.1M，为门店 #33（$260K）的 8 倍</li>
+            <li>假日周销售提升约 7.7%；失业率与销售负相关最强</li>
+          </ul>
+          <p style="margin-top:10px;color:var(--ink-3);font-size:12.5px">完整交互报告见上方产物卡 · 右侧可预览 <span id="answerCursor" class="cursor hidden"></span></p>
+        </div>
+      </div>
+
+
+      <!-- ── turn 2: skill-creation run — folder-level + file-level artifacts ── -->
+      <div class="turn">
+        <div class="user-row">
+          <div>
+            <div class="user-bubble">把 DB-GPT 的 agent 内置工具接入 pi，并沉淀成一个可复用的 sql-data-analysis 技能包</div>
+          </div>
+        </div>
+        <div class="intent-line">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="2.4"/></svg>
+          创建 sql-data-analysis 技能包（SKILL.md + 脚本 + 参考文档）
+          <span class="round">· 4 轮</span>
+        </div>
+        <button class="reasoning" data-toggle="reasonBody2">
+          <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2.5a3.5 3.5 0 00-3.5 3.5c0 1.2.5 1.9 1 2.5.4.5.5 1 .5 1.5h4c0-.5.1-1 .5-1.5.5-.6 1-1.3 1-2.5A3.5 3.5 0 008 2.5zM6.5 12.5h3M7 14h2"/></svg>
+          思考 14s
+        </button>
+        <div class="reasoning-body hidden" id="reasonBody2">先读现有技能结构作参考，再写 SKILL.md 与 scripts/、references/、assets/ 三层目录，最后自测。</div>
+
+        <div class="trow group clickable" data-toggle="grpWrite">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.5 2.5l2 2L6 12H4v-2l7.5-7.5z"/></svg></span>
+          <span class="name">write</span>
+          <span class="gist">~/.agents/skills/sql-data-analysis/SKILL.md …</span>
+          <span class="count">×5</span>
+          <span class="dur">41ms</span>
+          <span class="st"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+          <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M3 1l4 4-4 4V1z"/></svg></span>
+        </div>
+        <div class="tgroup-body hidden" id="grpWrite">
+          <div class="trow sub"><span class="gist">write ~/.agents/skills/sql-data-analysis/SKILL.md</span><span class="dur">8ms</span><span class="st">✓</span></div>
+          <div class="trow sub"><span class="gist">write scripts/db.py</span><span class="dur">9ms</span><span class="st">✓</span></div>
+          <div class="trow sub"><span class="gist">write scripts/profile.py</span><span class="dur">8ms</span><span class="st">✓</span></div>
+          <div class="trow sub"><span class="gist">write scripts/visualize.py</span><span class="dur">8ms</span><span class="st">✓</span></div>
+          <div class="trow sub"><span class="gist">write references/sql-patterns.md</span><span class="dur">8ms</span><span class="st">✓</span></div>
+        </div>
+        <div class="trow group">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.5 2.5l2 2L6 12H4v-2l7.5-7.5z"/></svg></span>
+          <span class="name">edit</span>
+          <span class="gist">scripts/profile.py · 2 处修正</span>
+          <span class="dur">19ms</span>
+          <span class="st"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+        </div>
+
+        <!-- folder-level artifact: skill package (≥3 files same root + SKILL.md) -->
+        <div class="artifacts">
+          <div class="artifact">
+            <div class="thumb" data-preview="skill" title="预览">
+              <svg width="56" height="60" viewBox="0 0 56 60"><path d="M4 10h14l4 5h30v39H4z" fill="#fff" stroke="#d8d8d2"/><path d="M4 10h14l4 5h30v6H4z" fill="#ecece6"/><g stroke="#9a9a92" stroke-width="1.2" fill="none"><path d="M12 26v20M12 32h8M12 38h8M12 44h8"/></g><g fill="#8b8b84"><rect x="22" y="30" width="20" height="3" rx="1.5"/><rect x="22" y="36" width="24" height="3" rx="1.5"/><rect x="22" y="42" width="16" height="3" rx="1.5"/></g></svg>
+            </div>
+            <div class="body">
+              <div class="title">sql-data-analysis/</div>
+              <div class="meta">技能包 · 9 文件 · SKILL.md + scripts + references</div>
+              <div class="acts">
+                <button class="btn primary" data-preview="skill">预览</button>
+                <button class="btn">下载 zip</button>
+              </div>
+            </div>
+          </div>
+          <div class="artifact img">
+            <div class="thumb" data-preview="md" title="预览">
+              <svg width="120" height="64" viewBox="0 0 120 64"><rect width="120" height="64" fill="#f6f6f2"/><g fill="#c9c9c2"><rect x="12" y="12" width="60" height="6" rx="3"/><rect x="12" y="26" width="96" height="3" rx="1.5"/><rect x="12" y="34" width="96" height="3" rx="1.5"/><rect x="12" y="42" width="72" height="3" rx="1.5"/></g><text x="84" y="20" font-size="10" fill="#5b8bd6" font-family="monospace">.md</text></svg>
+            </div>
+            <div class="body">
+              <div class="title" style="font-size:12px">references/sql-patterns.md</div>
+              <div class="meta">Markdown · 3.2 KB</div>
+            </div>
+          </div>
+          <div class="artifact img">
+            <div class="thumb" data-preview="xlsx" title="预览">
+              <svg width="120" height="64" viewBox="0 0 120 64"><rect width="120" height="64" fill="#f6f6f2"/><g stroke="#7fb069" stroke-width="1.4" fill="none"><rect x="18" y="12" width="84" height="40"/><path d="M18 24h84M18 36h84M46 12v40M74 12v40"/></g></svg>
+            </div>
+            <div class="body">
+              <div class="title" style="font-size:12px">store_profiles.xlsx</div>
+              <div class="meta">Excel · 45 行 × 8 列</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer">
+          <p class="lead">技能包已创建并通过自测：guarded SQL CLI、profiler、无依赖图表脚本齐备。</p>
+          <p style="margin-top:6px;color:var(--ink-3);font-size:12.5px">目录级产物聚合为技能包卡；单文件按类型出卡；本回答本身作为兜底产物进入右栏画廊（不在流内出卡）。</p>
+        </div>
+      </div>
+
+      <!-- ⑥ global status line -->
+      <div class="statusline" id="statusLine">
+        <span class="ok"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 8.5l3 3 6-6.5"/></svg></span>
+        <span id="statusText">已完成 · 3 轮 · 10 次工具调用 · 1m 26s</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ contextual rail (viewer, not permanent panel) ══════════════ -->
+  <aside class="rail" id="rail">
+    <div class="rail-head">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3h10l-1 10.5L8 15l-4-1.5L3 3z"/></svg>
+      <b id="railTitle">报告预览</b>
+      <span id="railMeta" style="font-size:11.5px">sandboxed iframe</span>
+      <button class="icon-btn" id="railClose" title="关闭">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="rail-body" id="railBody"></div>
+  </aside>
+</main>
+
+<div class="composer">
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3v10M3 8h10"/></svg>
+  <span class="ph">继续追问该数据库，或上传 CSV / 选择知识库…</span>
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 13V3M4.5 6.5L8 3l3.5 3.5"/></svg>
+  <span class="send"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 13V3M4.5 6.5L8 3l3.5 3.5"/></svg></span>
+</div>
+
+<!-- design-review legend -->
+<div class="notes-legend hidden" id="notesLegend">
+  <h5>设计标注（对照 Codex / OpenCode 原则）</h5>
+  <ol>
+    <li><b>单流为主</b>：用户消息 → 意图行 → 工具组 → 产物卡 → 答案，一轮内线性阅读，无三套重复表征。</li>
+    <li><b>渐进披露</b>：reasoning 一行"思考 6s"；工具默认折叠成 28px 行，同类调用分组（sql_query ×8）。</li>
+    <li><b>行内 gist</b>：摘要取 SQL 首行/对象路径，不取输出碎片；状态=微图标+耗时，不用彩色徽标。</li>
+    <li><b>产物一等公民</b>：HTML/图片/文件在流内即时插卡；右栏是按需查看器，无内容时不存在，主流全宽。</li>
+    <li><b>内容卫生</b>：流内永不出现 {"chunks": 信封；HTML 只进产物卡与沙箱预览，不进文本行。</li>
+    <li><b>全局状态线</b>：流尾一行汇总轮次/调用数/耗时，运行态为 shimmer + 实时计数。</li>
+    <li><b>产物三层</b>：目录级（技能包卡：同根 ≥3 文件且含 SKILL.md 聚合）→ 文件级（md/xlsx/docx 按扩展名图标）→ 兜底级（本回答 summary 只进画廊不进流内），保证每次对话都有产物。</li>
+  </ol>
+</div>
+
+<script>
+  // ── generic disclosure toggles ──
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.toggle);
+      if (!target) return;
+      const open = target.classList.toggle('hidden') === false;
+      btn.classList.toggle('open', open);
+    });
+  });
+
+  // ── rail previews ──
+  const railBody = document.getElementById('railBody');
+  const railTitle = document.getElementById('railTitle');
+  const railMeta = document.getElementById('railMeta');
+  const workspace = document.getElementById('workspace');
+
+  const REPORT_HTML = `
+    <div class="report">
+      <div class="rhead"><b>Walmart Sales — Database Profile & Analysis</b><span>45 stores · 143 weeks · 6,435 records · generated by DB-GPT</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="v">$6.74B</div><div class="k">Total Revenue</div></div>
+        <div class="kpi"><div class="v">$1.05M</div><div class="k">Avg Weekly</div></div>
+        <div class="kpi"><div class="v">45</div><div class="k">Stores</div></div>
+        <div class="kpi"><div class="v">0%</div><div class="k">Null Rate</div></div>
+      </div>
+      <div class="rsec"><div class="t">Top 10 门店周均销售</div>
+        <svg width="100%" height="120" viewBox="0 0 480 120" preserveAspectRatio="none">
+          <g fill="#7ba3e0">
+            <rect x="10" y="18" width="34" height="94"/><rect x="56" y="34" width="34" height="78"/>
+            <rect x="102" y="44" width="34" height="68"/><rect x="148" y="52" width="34" height="60"/>
+            <rect x="194" y="58" width="34" height="54"/><rect x="240" y="66" width="34" height="46"/>
+            <rect x="286" y="72" width="34" height="40"/><rect x="332" y="80" width="34" height="32"/>
+            <rect x="378" y="88" width="34" height="24"/><rect x="424" y="96" width="34" height="16"/>
+          </g>
+          <g font-size="9" fill="#8b8b84" font-family="monospace">
+            <text x="14" y="118">#20</text><text x="60" y="118">#14</text><text x="106" y="118">#2</text>
+            <text x="152" y="118">#31</text><text x="198" y="118">#7</text><text x="244" y="118">#22</text>
+          </g>
+        </svg>
+      </div>
+      <div class="rsec"><div class="t">年度营收趋势（含假日对比）</div>
+        <svg width="100%" height="110" viewBox="0 0 480 110" preserveAspectRatio="none">
+          <path d="M10 82 C 90 76, 140 40, 220 44 S 380 66, 470 30" stroke="#5b8bd6" stroke-width="2.4" fill="none"/>
+          <path d="M10 92 C 90 88, 150 70, 220 72 S 380 82, 470 62" stroke="#e8a33d" stroke-width="2" fill="none" stroke-dasharray="4 3"/>
+          <g font-size="9" fill="#8b8b84" font-family="monospace"><text x="10" y="106">2010</text><text x="230" y="106">2011</text><text x="440" y="106">2012</text></g>
+        </svg>
+      </div>
+      <div class="rsec" style="color:var(--ink-3);font-size:11.5px">其余 6 张图表：销售分布直方图 · 假日对比 · 温度/油价/CPI/失业率相关性 · 门店明细表</div>
+    </div>`;
+
+  const CHART1 = `<svg width="100%" height="220" viewBox="0 0 480 220"><rect width="480" height="220" fill="#f6f6f2"/><g fill="#7ba3e0"><rect x="40" y="120" width="44" height="80"/><rect x="104" y="80" width="44" height="120"/><rect x="168" y="140" width="44" height="60"/><rect x="232" y="40" width="44" height="160"/><rect x="296" y="100" width="44" height="100"/><rect x="360" y="150" width="44" height="50"/></g><text x="40" y="212" font-size="10" fill="#8b8b84" font-family="monospace">周销售分布直方图（$ bins）</text></svg>`;
+  const CHART2 = `<svg width="100%" height="220" viewBox="0 0 480 220"><rect width="480" height="220" fill="#f6f6f2"/><path d="M30 170 C 120 160, 170 80, 250 88 S 400 130, 460 60" stroke="#5b8bd6" stroke-width="3" fill="none"/><path d="M30 186 C 120 180, 180 140, 250 144 S 400 160, 460 120" stroke="#e8a33d" stroke-width="2" fill="none" stroke-dasharray="5 4"/><text x="30" y="212" font-size="10" fill="#8b8b84" font-family="monospace">年度营收趋势（实线总营收 / 虚线假日周）</text></svg>`;
+
+  const GALLERY = `
+    <div class="gallery">
+      <div class="gitem" data-preview="report">${thumbMini('report')}<div class="gm"><span>Walmart Sales 交互式分析报告</span><span>HTML · 48 KB</span></div></div>
+      <div class="gitem" data-preview="chart1">${thumbMini('chart1')}<div class="gm"><span>周销售分布</span><span>PNG</span></div></div>
+      <div class="gitem" data-preview="chart2">${thumbMini('chart2')}<div class="gm"><span>年度营收趋势</span><span>PNG</span></div></div>
+    </div>`;
+  function thumbMini(kind) {
+    if (kind === 'report') return '<svg width="100%" height="86" viewBox="0 0 480 86" preserveAspectRatio="none"><rect width="480" height="86" fill="#fbfbfa"/><rect x="12" y="10" width="150" height="8" rx="3" fill="#d5d5cf"/><rect x="12" y="28" width="100" height="40" rx="4" fill="#ecece6"/><rect x="122" y="28" width="100" height="40" rx="4" fill="#ecece6"/><rect x="232" y="28" width="100" height="40" rx="4" fill="#ecece6"/><g fill="#9db9e8"><rect x="352" y="48" width="14" height="20"/><rect x="372" y="36" width="14" height="32"/><rect x="392" y="42" width="14" height="26"/><rect x="412" y="28" width="14" height="40"/></g></svg>';
+    if (kind === 'chart1') return '<svg width="100%" height="86" viewBox="0 0 480 86" preserveAspectRatio="none"><rect width="480" height="86" fill="#f6f6f2"/><g fill="#7ba3e0"><rect x="40" y="40" width="44" height="34"/><rect x="104" y="22" width="44" height="52"/><rect x="168" y="50" width="44" height="24"/><rect x="232" y="12" width="44" height="62"/><rect x="296" y="34" width="44" height="40"/><rect x="360" y="56" width="44" height="18"/></g></svg>';
+    return '<svg width="100%" height="86" viewBox="0 0 480 86" preserveAspectRatio="none"><rect width="480" height="86" fill="#f6f6f2"/><path d="M20 66 C 110 60, 160 26, 240 30 S 400 52, 460 20" stroke="#5b8bd6" stroke-width="3" fill="none"/></svg>';
+  }
+
+
+  const SKILL_TREE = `
+    <div class="report">
+      <div class="rhead"><b>sql-data-analysis/</b><span>技能包 · 9 文件 · 创建于本轮</span></div>
+      <div class="rsec" style="font-family:var(--mono);font-size:12px;color:var(--ink-2);line-height:1.9">
+        ├── SKILL.md<br>
+        ├── scripts/<br>
+        │&nbsp;&nbsp; ├── db.py &nbsp;&nbsp;<span style="color:var(--ink-3)"># guarded SQL CLI</span><br>
+        │&nbsp;&nbsp; ├── profile.py <span style="color:var(--ink-3)"># table/query profiler</span><br>
+        │&nbsp;&nbsp; └── visualize.py <span style="color:var(--ink-3)"># dependency-free charts</span><br>
+        ├── references/<br>
+        │&nbsp;&nbsp; ├── connections.md<br>
+        │&nbsp;&nbsp; └── sql-patterns.md<br>
+        └── assets/<br>
+        &nbsp;&nbsp;&nbsp; └── report_template.md
+      </div>
+      <div class="rsec" style="border-top:1px solid var(--line-2);padding-top:10px">
+        <div class="t">SKILL.md 预览</div>
+        <div style="font-size:12.5px;color:var(--ink-2)">
+          <b>sql-data-analysis</b> — 连接 SQLite/PostgreSQL/MySQL/DuckDB，执行只读 SQL，输出 table/JSON/CSV/Markdown，并生成无依赖 SVG 图表。
+        </div>
+      </div>
+    </div>`;
+
+  const MD_PREVIEW = `
+    <div class="report">
+      <div class="rhead"><b>references/sql-patterns.md</b><span>Markdown · 3.2 KB</span></div>
+      <div class="rsec" style="font-size:13px;color:var(--ink-2);line-height:1.8">
+        <h4 style="margin:4px 0">Joins</h4>
+        <div style="font-family:var(--mono);font-size:12px;background:var(--line-2);border-radius:8px;padding:8px 10px">SELECT s.store, SUM(w.sales)<br>&nbsp;FROM stores s JOIN weekly w USING(store_id)<br>&nbsp;GROUP BY 1 ORDER BY 2 DESC;</div>
+        <h4 style="margin:10px 0 4px">Cohorts / Funnels / Time series</h4>
+        <div>窗口函数与日期桶化模式，含 SQLite/Postgres 方言差异对照表。</div>
+      </div>
+    </div>`;
+
+  const XLSX_PREVIEW = `
+    <div class="report">
+      <div class="rhead"><b>store_profiles.xlsx</b><span>Excel · 45 行 × 8 列 · 二进制不在浏览器内渲染</span></div>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="v">45</div><div class="k">Rows</div></div>
+        <div class="kpi"><div class="v">8</div><div class="k">Columns</div></div>
+        <div class="kpi"><div class="v">12 KB</div><div class="k">Size</div></div>
+      </div>
+      <div class="rsec"><button class="btn primary" style="height:30px">下载文件</button> <span style="font-size:11.5px;color:var(--ink-3)">v1 提供元信息 + 下载；表格内预览排期 P2</span></div>
+    </div>`;
+
+  const GALLERY_GROUPED = `
+    <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:2px 0 6px">~/.agents/skills/sql-data-analysis/</div>
+    <div class="gallery" style="margin-bottom:12px">
+      <div class="gitem" data-preview="skill">${thumbMini('report')}<div class="gm"><span>sql-data-analysis/（技能包 · 9 文件）</span><span>folder</span></div></div>
+      <div class="gitem" data-preview="md">${thumbMini('chart2')}<div class="gm"><span>references/sql-patterns.md</span><span>MD · 3.2 KB</span></div></div>
+    </div>
+    <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:2px 0 6px">会话根目录</div>
+    <div class="gallery" style="margin-bottom:12px">
+      <div class="gitem" data-preview="report">${thumbMini('report')}<div class="gm"><span>Walmart Sales 交互式分析报告</span><span>HTML · 48 KB</span></div></div>
+      <div class="gitem" data-preview="xlsx">${thumbMini('chart1')}<div class="gm"><span>store_profiles.xlsx</span><span>XLSX · 12 KB</span></div></div>
+    </div>
+    <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:2px 0 6px">兜底产物</div>
+    <div class="gallery">
+      <div class="gitem" data-preview="md"><div style="height:54px;background:var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:11px">最终回答 · markdown</div><div class="gm"><span>本回答摘要</span><span>summary</span></div></div>
+    </div>`;
+
+  const PREVIEWS = {
+    report: { title: '报告预览', meta: 'sandboxed iframe', html: REPORT_HTML },
+    chart1: { title: '周销售分布', meta: 'PNG · 1280×720', html: CHART1 },
+    chart2: { title: '年度营收趋势', meta: 'PNG · 1280×720', html: CHART2 },
+    gallery: { title: '会话产物', meta: '6 项 · 3 组', html: GALLERY_GROUPED },
+    skill: { title: 'sql-data-analysis/', meta: '技能包 · 9 文件', html: SKILL_TREE },
+    md: { title: 'sql-patterns.md', meta: 'Markdown 渲染', html: MD_PREVIEW },
+    xlsx: { title: 'store_profiles.xlsx', meta: '元信息 + 下载', html: XLSX_PREVIEW },
+  };
+
+  function openRail(kind) {
+    const p = PREVIEWS[kind];
+    if (!p) return;
+    railTitle.textContent = p.title;
+    railMeta.textContent = p.meta;
+    railBody.innerHTML = p.html;
+    workspace.classList.add('rail-open');
+  }
+  function closeRail() { workspace.classList.remove('rail-open'); }
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-preview]');
+    if (t) { openRail(t.dataset.preview); return; }
+    const g = e.target.closest('.gitem');
+    if (g) openRail(g.dataset.preview);
+  });
+  document.getElementById('railClose').addEventListener('click', closeRail);
+  document.getElementById('capsuleArtifacts').addEventListener('click', () => openRail('gallery'));
+
+  // ── state toggle: done / running ──
+  const seg = document.getElementById('stateSeg');
+  const statusText = document.getElementById('statusText');
+  const statusLine = document.getElementById('statusLine');
+  const runningRow = document.getElementById('runningRow');
+  const grpSqlRow = document.getElementById('grpSqlRow');
+  const sqlCount = document.getElementById('sqlCount');
+  const cursor = document.getElementById('answerCursor');
+  seg.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-state]');
+    if (!btn) return;
+    seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+    const running = btn.dataset.state === 'running';
+    document.querySelectorAll('.phase-late').forEach(el => el.classList.toggle('hidden', running));
+    runningRow.classList.toggle('hidden', !running);
+    grpSqlRow.classList.toggle('running', running);
+    grpSqlRow.classList.toggle('clickable', !running);
+    sqlCount.textContent = running ? '×4' : '×8';
+    cursor.classList.toggle('hidden', !running);
+    statusLine.querySelector('svg').parentElement.innerHTML = running
+      ? '<svg class="spin" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent)"><path d="M8 2a6 6 0 11-4.9 2.6"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--ok)"><path d="M3.5 8.5l3 3 6-6.5"/></svg>';
+    statusText.textContent = running
+      ? '运行中 · 第 2 轮 · 已执行 4 次查询 · 26s'
+      : '已完成 · 3 轮 · 10 次工具调用 · 1m 26s';
+  });
+
+  // ── notes layer ──
+  const notesLegend = document.getElementById('notesLegend');
+  document.getElementById('notesBtn').addEventListener('click', () => {
+    notesLegend.classList.toggle('hidden');
+  });
+</script>
+</body>
+</html>

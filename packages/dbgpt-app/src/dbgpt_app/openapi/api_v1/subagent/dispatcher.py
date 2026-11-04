@@ -40,6 +40,7 @@ from dbgpt.core.interface.report_capture import (
     get_current_artifact_sink,
 )
 
+from ..tools.semantic_tools import make_semantic_tools
 from .react_tools import make_react_tools
 from .result import (
     SubagentArtifactSink,
@@ -174,8 +175,8 @@ _SUBAGENT_FACTORY_TOOL_NAMES = [
     "load_tools",
     "knowledge_retrieve",
     "sql_query",
-    "code_interpreter",
-    "shell_interpreter",
+    "code",
+    "bash",
     "execute_skill_script_file",
     "html_interpreter",
 ]
@@ -206,13 +207,13 @@ Use the database / knowledge base / MCP connector named in your goal.
 
 ## Output formatting (IMPORTANT — keep results readable)
 - One query/result per step. Prefer separate ``sql_query`` calls over packing
-  many results into one ``code_interpreter`` print — each ``sql_query`` already
+  many results into one ``code`` print — each ``sql_query`` already
   returns a clean, properly newline-separated markdown table on its own.
 - NEVER concatenate multiple tables into one blob. If you DO print markdown
-  from ``code_interpreter``, every table row MUST be on its OWN line (``\\n``),
+  from ``code``, every table row MUST be on its OWN line (``\\n``),
   and there MUST be a blank line between a table and any following heading or
   the next table. Do NOT glue ``| ... |### heading`` or ``| --- || row``.
-- In ``code_interpreter``, use ``print(df.to_markdown(index=False))`` per table
+- In ``code``, use ``print(df.to_markdown(index=False))`` per table
   and ``print()`` (blank line) between tables — do not hand-build one big string.
 
 ## RESPONSE FORMAT (ReAct)
@@ -344,6 +345,7 @@ async def build_sub_react_agent(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     knowledge_resources: Any = None,
     readonly_connector_tools: Optional[List[Any]] = None,
     extra_context: Optional[str] = None,
@@ -375,7 +377,7 @@ async def build_sub_react_agent(
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
 
     # (1) Independent conv_id — the workspace-isolation anchor. Drives the
-    # subprocess cwd pilot/tmp/{conv_id} inside code_interpreter / shell.
+    # subprocess cwd pilot/tmp/{conv_id} inside code / shell.
     # The ``d{batch_id}`` segment makes each dispatch batch's sub-agents get
     # their OWN directory, so batch 2's sub_0 cannot read/overwrite batch 1's
     # sub_0 artifacts (a real cross-batch data-leak before this).
@@ -405,6 +407,7 @@ async def build_sub_react_agent(
     )
     sub_tool_pack = ToolPack(
         [sub_tools[name] for name in _SUBAGENT_FACTORY_TOOL_NAMES]
+        + (make_semantic_tools(database_name) if database_connector is not None else [])
         + (readonly_connector_tools or [])
         + [Terminate()]
     )
@@ -532,6 +535,7 @@ def make_dispatch_tool(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     database_context: str = "",
     knowledge_resources: Any = None,
     connector_tool_extras: Optional[List[Any]] = None,
@@ -659,6 +663,7 @@ def make_dispatch_tool(
                     llm_client=llm_client,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,
+                    database_name=database_name,
                     knowledge_resources=knowledge_resources,
                     readonly_connector_tools=readonly_connector_tools,
                     extra_context=extra,

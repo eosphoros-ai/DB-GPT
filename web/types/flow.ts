@@ -13,6 +13,9 @@ export type IFlowUpdateParam = {
   flow_data?: IFlowData;
   state?: FlowState;
   variables?: IVariableItem[];
+  flow_category?: string;
+  flow_format?: 'awel' | 'taskflow';
+  taskflow_source?: any;
 };
 
 export type IFlowRefreshParams = {
@@ -46,6 +49,9 @@ export type IFlow = {
   state?: FlowState;
   define_type?: string;
   error_message?: string;
+  flow_category?: string;
+  flow_format?: 'awel' | 'taskflow';
+  taskflow_source?: any;
 };
 
 export interface IFlowResponse {

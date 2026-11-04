@@ -39,6 +39,7 @@ factIds/calculationIds 仅声明文本实际使用的引用；已引用计算的
 所有需要显示的数字（包括年份、金额、百分比、倍数）必须用占位符：
 {{fact:真实事实ID}} 或 {{calculation:真实计算ID}}，并将该 ID 写入对应 Ids 数组。
 占位符将由服务端替换成完整的“期间+指标名称+值+单位”；不要在占位符后再添加单位，
+不要在占位符前重复同一期间和指标名，例如直接写“{{calculation:真实计算ID}}，较上期上升”。
 不要自行书写数字或中文数值，不要换算万元/亿元。title 不需要数字。
 所有文本字段都遵守占位符规则，包括 counterEvidence 和 unresolvedQuestions。
 期间优先写“本期”“上期”；也可引用输入 periods 中的 {{period:年份}}，不能编造期间。
@@ -307,10 +308,23 @@ def _render_text(
         if render_reference is not None:
             return render_reference(kind, ref, item)
         if kind == "fact":
-            return (
-                f"{item['fiscalPeriod']} 年{item['metricName']} {item['displayValue']}"
-            )
-        return f"{item['name']} {item['displayResult']}"
+            label = f"{item['fiscalPeriod']} 年{item['metricName']}"
+            value = item["displayValue"]
+        else:
+            label, value = item["name"], item["displayResult"]
+        # Omit only metadata already spelled out immediately before this
+        # reference. Keep the full label for standalone references and for
+        # different periods/metrics; never infer or rewrite the numeric value.
+        prefix = text[: match.start()]
+        label_pattern = r"\s*".join(map(re.escape, label.split()))
+        if re.search(label_pattern + r"\s*(?:为|是|达|达到|：|:)?\s*$", prefix):
+            return value
+        period_label = re.match(r"([12]\d{3})\s*年\s*(.+)", label)
+        if period_label and re.search(
+            re.escape(period_label[1]) + r"\s*年\s*(?:的)?\s*$", prefix
+        ):
+            return f"{period_label[2]} {value}"
+        return f"{label} {value}"
 
     return REFERENCE.sub(replace, text)
 
@@ -515,6 +529,13 @@ def validate_findings(
             used_references = set()
             for name, text in texts_to_check:
                 referenced = set()
+                # Numeric/wording errors may stop rendering before it records
+                # references. Do not then tell the model to delete valid IDs.
+                used_references.update(
+                    (kind, ref)
+                    for kind, ref in REFERENCE.findall(text)
+                    if ref in (selected_facts if kind == "fact" else selected_calcs)
+                )
                 checks = [
                     lambda: _validate_reference_wording(text, selected_calcs),
                     lambda: _validate_fact_wording(text, selected_facts),
@@ -539,11 +560,61 @@ def validate_findings(
                         }
                         if isinstance(exc, InvalidNarrative):
                             error["invalid_tokens"] = exc.invalid_tokens
+                        if str(exc) == "Reference not declared":
+                            missing = [
+                                (kind, ref)
+                                for kind, ref in REFERENCE.findall(text)
+                                if ref
+                                not in (
+                                    selected_facts if kind == "fact" else selected_calcs
+                                )
+                            ]
+                            error["undeclared_references"] = [
+                                {"kind": kind, "id": ref} for kind, ref in missing
+                            ]
+                            changes = {}
+                            for key, kind, known in (
+                                ("factIds", "fact", facts),
+                                ("calculationIds", "calculation", calculations),
+                            ):
+                                additions = [
+                                    ref
+                                    for k, ref in missing
+                                    if k == kind
+                                    and ref in known
+                                    and (
+                                        allowed_fact_ids is None
+                                        or (
+                                            {ref}
+                                            if kind == "fact"
+                                            else set(known[ref]["inputFactIds"])
+                                        )
+                                        <= allowed_fact_ids
+                                    )
+                                ]
+                                if additions:
+                                    changes[key] = list(
+                                        dict.fromkeys(getattr(draft, key) + additions)
+                                    )
+                            if changes:
+                                error["suggested_changes"] = changes
+                            error["hint"] = (
+                                "此字段使用的引用未声明在同一发现的 Ids 中。"
+                                "将可用引用补入对应数组，并保留原有引用；"
+                                "未知或跨专题引用必须删除或改用本专题已有依据。"
+                            )
                         hints = {
                             "Summary has no numeric reference": (
                                 "只修改此 summary，"
                                 "补充本发现已声明事实或计算的 reference，"
                                 "并保留具体判断及限制；不要改写已通过的其他发现。"
+                            ),
+                            "Unreferenced number or malformed reference": (
+                                "只修正 invalid_tokens 对应的文字，"
+                                "保留有效占位符及其 Ids。"
+                                "金额或比率使用已提供的引用；"
+                                "若现金利润比与一倍阈值比较，改为经营现金流与归母净利润的比较，"
+                                "不要手写阈值。"
                             ),
                             "ambiguous_ratio_wording_use_canonical_reference": (
                                 "计算占位符含完整名称。删除它前面重新定义分母的‘占…的’等前缀，"

@@ -35,7 +35,21 @@ from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkSummaryEntity
 from dbgpt_serve.file.models.models import ServeEntity as FileServeEntity
 from dbgpt_serve.flow.models.models import ServeEntity as FlowServeEntity
 from dbgpt_serve.flow.models.models import VariablesEntity as FlowVariableEntity
+from dbgpt_serve.plugins.models.models import SuiteEntity as PluginsSuiteEntity
+from dbgpt_serve.plugins.models.models import (
+    SuiteEventEntity as PluginsSuiteEventEntity,
+)
 from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
+from dbgpt_serve.semantic.models import SemColumnEntity
+from dbgpt_serve.semantic.models import SemDatasourceEntity
+from dbgpt_serve.semantic.models import SemEntryEntity
+from dbgpt_serve.semantic.models import SemExampleEntity
+from dbgpt_serve.semantic.models import SemMetricEntity
+from dbgpt_serve.semantic.models import SemMetricVersionEntity
+from dbgpt_serve.semantic.models import SemPublishLogEntity
+from dbgpt_serve.semantic.models import SemRelationEntity
+from dbgpt_serve.semantic.models import SemRuleEntity
+from dbgpt_serve.semantic.models import SemTableEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
@@ -90,4 +104,16 @@ _MODELS = [
     ScheduledTaskEntity,
     ScheduledRunEntity,
     UploadedDatasetEntity,
+    PluginsSuiteEntity,
+    PluginsSuiteEventEntity,
+    SemColumnEntity,
+    SemDatasourceEntity,
+    SemEntryEntity,
+    SemExampleEntity,
+    SemMetricEntity,
+    SemMetricVersionEntity,
+    SemPublishLogEntity,
+    SemRelationEntity,
+    SemRuleEntity,
+    SemTableEntity,
 ]

@@ -1,0 +1,229 @@
+{
+  "name": "db-analysis",
+  "version": "1.1.0",
+  "displayNameCn": "智能分析",
+  "displayName": "Smart Data Analysis",
+  "descriptionEn": "Analyze governed business data, explain changes, produce source-backed reports, and build operational dashboards with metric definitions and data evidence.",
+  "descriptionZh": "面向企业业务库的图文分析与经营仪表板能力包。统一数据集、指标口径、默认过滤与时间粒度，多步取数、选图并用证据解释变化。支持图文报告，以及通过 /dashboard 规划、确认和生成可恢复的经营看板；展示指标定义、数据质量状态与执行依据。",
+  "author": { "name": "@DB-GPT 官方" },
+  "category": "engineering",
+  "tags": [
+    "分析",
+    "归因",
+    "报告",
+    "可视化",
+    "数据集",
+    "语义层",
+    "ChatBI",
+    "官方内置"
+  ],
+  "skills": [
+    "skills/multi-step-analysis",
+    "skills/dataset-scoping",
+    "skills/chart-advisor",
+    "skills/report-generation",
+    "skills/attribution-analysis",
+    "skills/build-dashboard"
+  ],
+  "dbgpt": {
+    "icon": "📊",
+    "scenario_id": "analysis",
+    "execution": "react",
+    "sop": "prompts/analysis-playbook.md",
+    "tools": {
+      "allow": [
+        "semantic_get_metadata",
+        "semantic_search_business",
+        "semantic_search_metrics",
+        "semantic_get_metric",
+        "semantic_search",
+        "schema_link",
+        "nl2sql",
+        "sql_execute",
+        "dataset_scope",
+        "chart",
+        "report_export",
+        "export_csv",
+        "plan_dashboard",
+        "revise_dashboard_plan",
+        "load_dashboard_draft",
+        "resolve_dashboard_reference",
+        "create_dashboard_draft",
+        "repair_dashboard_draft",
+        "modify_dashboard_draft",
+        "propose_dashboard_change"
+      ],
+      "deny": ["ddl", "shell"],
+      "provide_mcp": []
+    },
+    "context_defaults": {
+      "semantic_model": "required",
+      "dataset": "required",
+      "datasource": "session",
+      "time_window": "session"
+    },
+    "semantic": {
+      "layer": "mysql_prod",
+      "require": "required",
+      "scope": {
+        "metrics": [
+          "valid_gmv",
+          "paid_order_cnt",
+          "aov",
+          "refund_rate",
+          "active_buyers"
+        ],
+        "tags": ["交易", "销售"]
+      },
+      "pin": {
+        "policy": "pin",
+        "versions": {
+          "valid_gmv": "v2",
+          "paid_order_cnt": "v1",
+          "aov": "v1",
+          "refund_rate": "v1"
+        },
+        "reason": "多步取数会产出多张图与多段结论；若各步各自解析口径，环比/同比/贡献度会出现 \"同一指标不同算法\"的自相矛盾。会话级 pin 后，升级只影响新会话，历史报告可复现。"
+      },
+      "consumption": "metric_first",
+      "proposals": []
+    },
+    "analysis_defaults": {
+      "grain": "day",
+      "compare": ["mom", "yoy"],
+      "default_filters": "inject",
+      "max_steps": 8,
+      "chart_type": "auto",
+      "conclusion": "evidence_required"
+    },
+    "artifacts": [
+      "dataset_card",
+      "chart",
+      "conclusion_card",
+      "report",
+      "dashboard",
+      "citation"
+    ],
+    "templates": { "report": "templates/report-template.md" },
+    "report_formats": ["markdown", "html", "pdf"],
+    "report_sections": [
+      "summary",
+      "dataset_and_semantics",
+      "multi_dim_charts",
+      "attribution",
+      "recommendations",
+      "citations"
+    ],
+    "approval_overrides": [
+      {
+        "match": { "tool": "sql_execute", "est_scan_gb": ">100" },
+        "action": "confirm",
+        "reason": "高代价扫描"
+      },
+      {
+        "match": { "tool": "sql_execute", "est_scan_rows": ">50000000" },
+        "action": "confirm",
+        "reason": "超大行数扫描（预估 > 5000 万行）"
+      },
+      {
+        "match": { "tool": "sql_execute", "without_time_filter": true },
+        "action": "confirm",
+        "reason": "缺少时间范围过滤的全表聚合（分析多步取数更易放大该代价）"
+      },
+      {
+        "match": { "tool": "dataset_scope", "table_count": ">40" },
+        "action": "confirm",
+        "reason": "数据集过宽（>40 表）会显著降低 schema linking 与口径命中率"
+      },
+      {
+        "match": { "tool": "report_export", "share_scope": "external" },
+        "action": "confirm",
+        "reason": "报告外发分享需确认脱敏范围与可见性"
+      },
+      {
+        "match": { "tool": "export_csv", "row_count": ">100000" },
+        "action": "confirm",
+        "reason": "大批量导出（> 10 万行）需确认脱敏与落盘范围"
+      }
+    ],
+    "routing": {
+      "keywords": [
+        "分析",
+        "归因",
+        "报告",
+        "趋势",
+        "对比",
+        "占比",
+        "下滑",
+        "洞察",
+        "可视化",
+        "拆解",
+        "贡献度",
+        "异动",
+        "复盘",
+        "经营大盘",
+        "经营仪表板",
+        "看板",
+        "dashboard"
+      ],
+      "specificity": 0.85
+    },
+    "recommended_questions": [
+      {
+        "text": "构建 Walmart 销售经营大盘，给运营负责人看，按周监控销售趋势和门店表现",
+        "text_en": "Build a Walmart operational dashboard for operations leads to monitor weekly sales trends and store performance",
+        "title": "构建经营仪表板",
+        "title_en": "Build an operational dashboard",
+        "command": "/dashboard",
+        "hint": "指标口径与数据质量检查 → 规划确认 → KPI、趋势和结构拆解",
+        "hint_en": "Check metric definitions and data quality, confirm the plan, then build KPIs, trends and breakdowns",
+        "database_name": "Walmart_Sales"
+      },
+      {
+        "text": "生成 Walmart 销售分析报告",
+        "text_en": "Generate a Walmart sales analysis report",
+        "title": "销售分析报告",
+        "title_en": "Sales analysis report",
+        "command": "/analyze",
+        "hint": "圈数据集→多步取数→图表→结论→报告",
+        "hint_en": "Scope the dataset, query, chart, draw conclusions, and report",
+        "database_name": "Walmart_Sales"
+      },
+      {
+        "text": "分析本月华东区销售下滑的归因，出图文报告",
+        "command": "/analyze",
+        "text_en": "Explain this month's sales decline in East China and produce a visual report",
+        "hint_en": "Scope the dataset, pin valid_gmv@v2, and compare channel and category contributions",
+        "hint": "数据集圈定 + valid_gmv@v2 pin + 渠道/品类贡献度拆解 + HTML 报告"
+      },
+      {
+        "text": "对比华东华南近 12 周订单占比趋势",
+        "command": "/chart",
+        "text_en": "Compare order share in East and South China over the last 12 weeks",
+        "hint_en": "Use consistent definitions, stacked bars, share trends, and evidence-based conclusions",
+        "hint": "同一口径跨区对比，堆叠柱 + 占比折线 + 结论卡"
+      },
+      {
+        "text": "近 30 天各品类 GMV Top10 及环比，生成周报",
+        "command": "/analyze",
+        "text_en": "Create a weekly report on the top 10 categories by GMV over the last 30 days",
+        "hint_en": "Use daily grain, ranking charts, month-over-month changes, and anomaly annotations",
+        "hint": "时间粒度统一为日，Top10 榜单柱图 + 异动标注 + 周报"
+      },
+      {
+        "text": "618 大促 ROI 归因，哪些渠道品类拉动了增量",
+        "command": "/attribute",
+        "text_en": "Analyze ROI for the June 18 promotion and identify channels and categories driving growth",
+        "hint_en": "Compare the promotion with a normal baseline and report incremental contributions",
+        "hint": "大促 vs 日常基线，增量拆解 + 投入产出散点 + 报告"
+      }
+    ],
+    "output_contract": "report+charts or dashboard",
+    "few_shots": {
+      "path": "few_shots/verified-analyses.yaml",
+      "consumption": "metric_first",
+      "writeback": "on_thumbs_up",
+      "eval_set": true
+    }
+  }
+}

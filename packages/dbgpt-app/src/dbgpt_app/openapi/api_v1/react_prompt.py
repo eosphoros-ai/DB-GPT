@@ -1,5 +1,7 @@
 """Render the conversational agent's tool inventory from its bound resources."""
 
+import json
+
 from dbgpt.core import PromptTemplate
 
 from .tools.financial_tools import FINANCIAL_AGENT_PROMPT
@@ -46,9 +48,12 @@ def build_react_prompt_template(
     sections = [workflow_prompt]
     if financial_enabled:
         sections.append(FINANCIAL_AGENT_PROMPT)
-    sections.append(REGISTERED_TOOLS_PROMPT)
+    # The workflow already contains rendered package instructions and source
+    # text. Insert it as a quoted Jinja string value so literal placeholders,
+    # JSON, and even template delimiters are never evaluated a second time.
+    literal_instructions = json.dumps("\n\n".join(sections), ensure_ascii=False)
     return PromptTemplate(
-        template="\n\n".join(sections),
+        template="{{ " + literal_instructions + " }}\n\n" + REGISTERED_TOOLS_PROMPT,
         input_variables=[
             "action_space",
             "action_space_names",

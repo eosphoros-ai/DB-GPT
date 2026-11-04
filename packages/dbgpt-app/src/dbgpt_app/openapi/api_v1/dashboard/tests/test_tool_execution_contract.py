@@ -254,3 +254,81 @@ async def test_unknown_argument_failure_never_echoes_values(tool_environment):
     assert not outcome.is_exe_success
     assert "mistyped" in outcome.content
     assert "private-value-do-not-echo" not in outcome.content
+
+
+@pytest.mark.asyncio
+async def test_repair_keeps_staged_queries_before_initial_draft_save():
+    connector, dao = FakeConnector(), FakeDao()
+    service = DashboardService(dao=dao, connector_resolver=lambda _: connector)
+    planner = DashboardPlannerService(service)
+    state = {"conv_id": "staged-repair"}
+
+    async def capture(kind, payload):
+        pass
+
+    def pack(prompt):
+        return _pack(
+            make_dashboard_planner_tools(
+                react_state=state,
+                database_connector=connector,
+                database_name="walmart",
+                owner_id="alice",
+                user_prompt=prompt,
+                model_name="offline-test",
+                stream_callback=capture,
+                planner_service=planner,
+            ),
+            prompt,
+        )
+
+    planned = await run_tool(
+        "plan_dashboard",
+        {
+            "plan": {
+                "title": "Sales",
+                "business_theme": "Retail",
+                "metrics": ["sales"],
+                "widgets": [
+                    {
+                        "id": name,
+                        "type": "kpi",
+                        "title": name,
+                        "business_question": "How much?",
+                        "metric": "sales",
+                    }
+                    for name in ["sales", "other"]
+                ],
+            }
+        },
+        pack("Build a dashboard"),
+    )
+    dashboard_id = json.loads(planned.content)["__dashboard_plan_draft__"][
+        "dashboard_id"
+    ]
+    confirmed = pack(f"[[confirm-dashboard:{dashboard_id}]] confirm revision 1")
+    widgets = [
+        {
+            "widget_id": name,
+            "sql": "SELECT SUM(sales) AS total_sales FROM sales",
+            "output_fields": [{"name": "total_sales", "type": "number"}],
+            "encoding": {"value": "total_sales"},
+        }
+        for name in ["sales", "other"]
+    ]
+    state["dashboard_query_staging"] = {
+        "dashboard_id": dashboard_id,
+        "expected_revision": 1,
+        "widgets": {widget["widget_id"]: widget for widget in widgets},
+    }
+    repaired = await run_tool(
+        "repair_dashboard_draft",
+        {"widget_queries": {"dashboard_id": dashboard_id, "widgets": [widgets[1]]}},
+        confirmed,
+    )
+    assert "__dashboard__" in json.loads(repaired.content), repaired.content
+    record = service.get_dashboard(dashboard_id, "alice")
+    assert record.current_revision == 2
+    assert all(
+        "SUM(sales)" in widget.query.sql for widget in record.schema_payload.widgets
+    )
+    assert "dashboard_query_staging" not in state

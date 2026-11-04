@@ -1,10 +1,17 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
-import MarkdownContext from '@/new-components/common/MarkdownContext';
+import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
+import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import { AttachedConnector } from '@/new-components/connector/types';
+import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
+import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
+import type { SuiteMessageReference } from '@/types/suite';
+import type { ITaskflowArtifact } from '@/types/taskflow';
+import type { QuerySource, SemanticReadGap, SemanticSource } from '@/utils/semantic-provenance';
+import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
+import { envelopeReadableText } from '@/utils/tool-envelope';
 import {
   ApartmentOutlined,
   ApiOutlined,
-  AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
   CaretDownOutlined,
@@ -15,6 +22,7 @@ import {
   ClockCircleOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
+  CopyOutlined,
   DatabaseOutlined,
   DesktopOutlined,
   DownloadOutlined,
@@ -22,6 +30,7 @@ import {
   ExclamationCircleOutlined,
   FileExcelOutlined,
   FileImageOutlined,
+  FileMarkdownOutlined,
   FileOutlined,
   FilePptOutlined,
   FileSearchOutlined,
@@ -29,17 +38,35 @@ import {
   FolderOpenOutlined,
   LoadingOutlined,
   PlayCircleOutlined,
-  PlusOutlined,
   QuestionCircleOutlined,
   SearchOutlined,
   TableOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip, message } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { financialText, useFinancialLocale } from '../../financial-analysis/i18n';
+import FinancialProgressPanel, { FinancialProgressUpdates, financialTasksForStep } from './FinancialProgressPanel';
 import ObservationFormatter from './ObservationFormatter';
+import SemanticProvenance from './SemanticProvenance';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
+
+/** Strip markdown syntax for the "copy as plain text" action. */
+function markdownToPlainText(md: string): string {
+  return md
+    .replace(/```[a-zA-Z0-9_-]*\n/g, '')
+    .replace(/```/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -53,11 +80,13 @@ export type StepType =
   | 'task'
   | 'skill'
   | 'python'
+  | 'code'
   | 'html'
   | 'sql'
   | 'question'
   | 'kb'
   | 'code_graph'
+  | 'flow_node'
   | 'other';
 
 export interface ExecutionStep {
@@ -90,7 +119,19 @@ export interface ThinkingSection {
 
 export interface ArtifactItem {
   id: string;
-  type: 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
+  type:
+    | 'file'
+    | 'table'
+    | 'chart'
+    | 'image'
+    | 'code'
+    | 'markdown'
+    | 'summary'
+    | 'html'
+    | 'query'
+    | 'skill'
+    | 'dashboard'
+    | 'expert_suite';
   name: string;
   content: any;
   createdAt: number;
@@ -98,6 +139,7 @@ export interface ArtifactItem {
   mimeType?: string;
   size?: number;
   filePath?: string;
+  stepId?: string;
 }
 
 export interface ManusLeftPanelProps {
@@ -105,17 +147,39 @@ export interface ManusLeftPanelProps {
   activeStepId?: string | null;
   onStepClick?: (stepId: string, sectionId: string) => void;
   isWorking?: boolean;
+  /** TaskFlow run info: wraps the execution sections in a flow-name card. */
+  flowRun?: {
+    label: string;
+    running: boolean;
+    done: number;
+    total: number;
+  };
+  /** TaskFlow execution steps seeded from the DSL (with live statuses).
+   *  The run card needs the full node chain from the first frame, but the
+   *  generic `sections` list is suppressed in timeline view — pass the steps
+   *  explicitly so pending nodes stay visible while the DAG executes. */
+  flowExecSteps?: ExecutionStep[];
   userQuery?: string;
   assistantText?: string;
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   /** Render incremental answer text without reparsing Markdown on every frame. */
   isAssistantStreaming?: boolean;
-  modelName?: string;
   stepThoughts?: Record<string, string>;
   /** Optional slot rendered above the execution sections (sub-agent card). */
   subAgentSlot?: React.ReactNode;
+  /** Run timeline (tool/thinking rows) rendered between the user query
+   *  and the thinking/answer area, so tool execution reads in
+   *  conversation order instead of floating above the round. */
+  timelineSlot?: React.ReactNode;
+  /** Dashboard planning and generation controls attached to this answer. */
+  dashboardSlot?: React.ReactNode;
+  /** Draw a hairline separator above the answer text (timeline mode). */
+  answerSeparated?: boolean;
   artifacts?: ArtifactItem[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   onArtifactDownload?: (artifact: ArtifactItem) => void;
+  /** Edit & re-run for inline query artifacts inside flow node cards. */
+  onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
   onViewAllFiles?: () => void;
   onShare?: () => void;
   isCollapsed?: boolean;
@@ -140,13 +204,15 @@ export interface ManusLeftPanelProps {
     db_name: string;
     db_type: string;
   };
+  attachedSuite?: SuiteMessageReference;
   attachedConnectors?: AttachedConnector[];
-  createdSkillName?: string;
-  onSkillCardClick?: (skillName: string) => void;
-  onSkillDownload?: (skillName: string) => void;
   taskPlan?: TaskItem[];
+  financialUpdates?: string[];
   /** Citation indexes that are valid for this answer. */
   citationIndexes?: number[];
+  semanticSources?: SemanticSource[];
+  querySources?: QuerySource[];
+  semanticReadGaps?: SemanticReadGap[];
   /** Open the references panel from the answer footer. */
   onReferencesClick?: () => void;
   /** Persisted evidence report associated with this completed answer. */
@@ -176,6 +242,7 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
     case 'glob':
       return <SearchOutlined className={classNames(iconClass, 'text-cyan-500')} />;
     case 'python':
+    case 'code':
       return <CodeOutlined className={classNames(iconClass, 'text-blue-500')} />;
     case 'html':
       return <CodeOutlined className={classNames(iconClass, 'text-orange-500')} />;
@@ -190,6 +257,8 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
       return <FolderOpenOutlined className={classNames(iconClass, 'text-teal-500')} />;
     case 'code_graph':
       return <ApartmentOutlined className={classNames(iconClass, 'text-violet-500')} />;
+    case 'flow_node':
+      return <ApartmentOutlined className={classNames(iconClass, 'text-blue-600')} />;
     default:
       return <FileTextOutlined className={classNames(iconClass, 'text-gray-500')} />;
   }
@@ -207,10 +276,13 @@ const getTypeLabel = (type: StepType, t: any): string => {
     skill: t('load_skill'),
     sql: t('step_type_sql'),
     python: t('step_type_python'),
+    code: t('step_type_other'),
     html: t('step_type_html'),
     question: t('step_type_question') || 'Ask User',
     kb: t('step_type_kb') || 'Knowledge',
     code_graph: t('step_type_code_graph') || 'Code Graph',
+    // TaskFlow product nodes render icon + title only (no generic type label).
+    flow_node: '',
     other: t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
@@ -226,6 +298,7 @@ const getIconBgClass = (type: StepType): string => {
     grep: 'bg-cyan-50 dark:bg-cyan-900/30',
     glob: 'bg-cyan-50 dark:bg-cyan-900/30',
     python: 'bg-blue-50 dark:bg-blue-900/30',
+    code: 'bg-blue-50 dark:bg-blue-900/30',
     html: 'bg-orange-50 dark:bg-orange-900/30',
     task: 'bg-indigo-50 dark:bg-indigo-900/30',
     skill: 'bg-indigo-50 dark:bg-indigo-900/30',
@@ -233,6 +306,7 @@ const getIconBgClass = (type: StepType): string => {
     question: 'bg-amber-50 dark:bg-amber-900/30',
     kb: 'bg-teal-50 dark:bg-teal-900/30',
     code_graph: 'bg-violet-50 dark:bg-violet-900/30',
+    flow_node: 'bg-blue-50 dark:bg-blue-900/30',
     other: 'bg-gray-50 dark:bg-gray-800',
   };
   return bgClasses[type] || 'bg-gray-50 dark:bg-gray-800';
@@ -266,6 +340,8 @@ const getFileIconElement = (fileName: string, mimeType?: string) => {
 // Get icon for artifact type
 const getArtifactIcon = (artifact: ArtifactItem) => {
   switch (artifact.type) {
+    case 'expert_suite':
+      return <SuiteHammerIcon className='text-green-500 text-base' />;
     case 'file':
       return getFileIconElement(artifact.name, artifact.mimeType);
     case 'html':
@@ -297,6 +373,7 @@ const getArtifactTypeLabel = (artifact: ArtifactItem, t: any): string => {
     code: t('artifact_type_code'),
     markdown: t('artifact_type_markdown'),
     summary: t('artifact_type_summary'),
+    expert_suite: t('artifact_type_expert_suite'),
   };
   return labels[artifact.type] || t('artifact_type_generic');
 };
@@ -306,6 +383,7 @@ const getArtifactIconBg = (type: string): string => {
   const bgs: Record<string, string> = {
     file: 'bg-gray-50 dark:bg-gray-800',
     html: 'bg-blue-50 dark:bg-blue-900/30',
+    expert_suite: 'bg-green-50 dark:bg-green-900/30',
     table: 'bg-blue-50 dark:bg-blue-900/30',
     chart: 'bg-green-50 dark:bg-green-900/30',
     image: 'bg-pink-50 dark:bg-pink-900/30',
@@ -369,75 +447,6 @@ const ArtifactCard: React.FC<{
 ArtifactCard.displayName = 'ArtifactCard';
 
 /** Compact skill card for left panel — shows skill name, download, add-to-skills */
-const SkillCompactCard: React.FC<{
-  skillName: string;
-  onClick?: () => void;
-  onDownload?: () => void;
-}> = memo(({ skillName, onClick, onDownload }) => {
-  const { t } = useTranslation();
-  const [downloading, _setDownloading] = useState(false);
-  const [isAdded, setIsAdded] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      className='group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all duration-200 w-full'
-    >
-      <div className='w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0'>
-        <AppstoreOutlined className='text-lg text-gray-500 dark:text-gray-400' />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='flex items-center gap-2'>
-          <span className='text-sm font-semibold text-gray-800 dark:text-gray-200 truncate'>{skillName}</span>
-          <span className='flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium'>
-            {t('skill_label')}
-          </span>
-        </div>
-      </div>
-      <div className='flex items-center gap-2 flex-shrink-0'>
-        <Tooltip title={t('download_as_zip')}>
-          <button
-            className='flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors'
-            onClick={e => {
-              e.stopPropagation();
-              onDownload?.();
-            }}
-            disabled={downloading}
-          >
-            {downloading ? <LoadingOutlined className='text-sm' /> : <DownloadOutlined className='text-sm' />}
-          </button>
-        </Tooltip>
-        <button
-          className={`flex items-center gap-1.5 rounded-lg text-xs font-medium px-4 py-2 transition-all duration-200 ${
-            isAdded
-              ? 'bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/20 dark:text-green-500 dark:border-green-800'
-              : 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:opacity-90'
-          }`}
-          onClick={e => {
-            e.stopPropagation();
-            if (!isAdded) {
-              setIsAdded(true);
-              message.success(t('skill_added_success', { skillName }));
-            }
-          }}
-        >
-          {isAdded ? (
-            <>
-              <CheckOutlined className='text-[10px]' />
-              {t('added')}
-            </>
-          ) : (
-            <>
-              <PlusOutlined className='text-[10px]' />
-              {t('add')}
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-});
-
-SkillCompactCard.displayName = 'SkillCompactCard';
 
 const StreamingText: React.FC<{ text: string }> = memo(({ text }) => {
   const [displayed, setDisplayed] = useState('');
@@ -567,7 +576,8 @@ const StepCard: React.FC<{
           {
             'opacity-0 translate-y-1': !isVisible,
             'opacity-100 translate-y-0': isVisible,
-            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]': true,
+            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]':
+              true,
             'border-amber-300/80 dark:border-amber-500/30 shadow-[0_4px_16px_rgba(245,158,11,0.12)] ring-1 ring-amber-200/50 dark:ring-amber-500/20':
               isActive || isWaiting,
             'border-amber-200/60 dark:border-amber-600/20 hover:border-amber-300 hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)]':
@@ -706,20 +716,22 @@ const StepCard: React.FC<{
         {getStepIcon(step.type, step.status)}
       </div>
 
-      <span
-        className={classNames('text-[10px] font-medium tracking-wide flex-shrink-0', {
-          'text-emerald-600 dark:text-emerald-400': step.type === 'read',
-          'text-amber-600 dark:text-amber-400': step.type === 'edit' || step.type === 'write',
-          'text-purple-600 dark:text-purple-400': step.type === 'bash',
-          'text-cyan-600 dark:text-cyan-400': step.type === 'grep' || step.type === 'glob',
-          'text-blue-600 dark:text-blue-400': step.type === 'python',
-          'text-orange-600 dark:text-orange-400': step.type === 'html' || step.type === 'question',
-          'text-indigo-600 dark:text-indigo-400': step.type === 'task' || step.type === 'skill',
-          'text-gray-500': step.type === 'other',
-        })}
-      >
-        {getTypeLabel(step.type, t)}
-      </span>
+      {step.type !== 'flow_node' && (
+        <span
+          className={classNames('text-[10px] font-medium tracking-wide flex-shrink-0', {
+            'text-emerald-600 dark:text-emerald-400': step.type === 'read',
+            'text-amber-600 dark:text-amber-400': step.type === 'edit' || step.type === 'write',
+            'text-purple-600 dark:text-purple-400': step.type === 'bash',
+            'text-cyan-600 dark:text-cyan-400': step.type === 'grep' || step.type === 'glob',
+            'text-blue-600 dark:text-blue-400': step.type === 'python',
+            'text-orange-600 dark:text-orange-400': step.type === 'html' || step.type === 'question',
+            'text-indigo-600 dark:text-indigo-400': step.type === 'task' || step.type === 'skill',
+            'text-gray-500': step.type === 'other',
+          })}
+        >
+          {getTypeLabel(step.type, t)}
+        </span>
+      )}
       <div className='flex flex-col min-w-0 flex-1'>
         <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{step.title}</span>
         {thought &&
@@ -1042,15 +1054,21 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   activeStepId,
   onStepClick,
   isWorking,
+  flowRun,
+  flowExecSteps,
   userQuery,
   assistantText,
+  onFinancialCitationClick,
   isAssistantStreaming = false,
-  modelName,
   stepThoughts,
   subAgentSlot,
+  timelineSlot,
+  dashboardSlot,
+  answerSeparated,
   artifacts,
   onArtifactClick,
   onArtifactDownload,
+  onQueryRerun,
   onViewAllFiles,
   onShare: _onShare,
   isCollapsed,
@@ -1058,19 +1076,144 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedFiles,
   attachedKnowledge,
   attachedSkill,
+  attachedSuite,
   attachedDb,
   attachedConnectors,
-  createdSkillName,
-  onSkillCardClick,
-  onSkillDownload,
   taskPlan,
+  financialUpdates = [],
   citationIndexes = [],
+  semanticSources = [],
+  querySources = [],
+  semanticReadGaps = [],
   onReferencesClick,
   reportId,
   reportRunId,
   onReportClick,
 }) => {
+  useFinancialLocale();
   const { t } = useTranslation();
+
+  // ------------------------------------------------------------------
+  // TaskFlow run: parse per-node sections (SQL / tables / conclusions)
+  // from the raw answer text and merge them with the live step statuses.
+  // ------------------------------------------------------------------
+  const flowParsed = useMemo(
+    () => (assistantText && assistantText.includes('vis-flow-step') ? parseTaskflowStream(assistantText) : null),
+    [assistantText],
+  );
+  const isFlowRun = !!flowRun || (flowParsed?.sections.length ?? 0) > 0;
+  const flowSectionMap = useMemo(
+    () => new Map((flowParsed?.sections ?? []).map(sec => [sec.marker.step_id, sec])),
+    [flowParsed],
+  );
+  const flowRows = useMemo<FlowRunRow[]>(() => {
+    // Prefer the DSL-seeded execution steps (they carry pending/running
+    // statuses for nodes the DAG has not reached yet); fall back to the
+    // generic sections list, then to marker synthesis for restored rounds.
+    const execSteps = flowExecSteps ?? sections[0]?.steps ?? [];
+    if (execSteps.length > 0) {
+      return execSteps.map(step => {
+        const sec = flowSectionMap.get(step.id);
+        const extracted = extractFlowArtifacts(sec?.content ?? '');
+        return {
+          id: step.id,
+          title: step.title,
+          subtitle: step.subtitle,
+          status: step.status === 'error' ? ('failed' as StepStatus) : step.status,
+          durationMs: sec?.marker.duration_ms,
+          summary: sec?.marker.summary,
+          content: extracted.clean,
+          kind: sec?.marker.kind,
+          steps: sec?.marker.steps,
+          artifacts: extracted.artifacts.length > 0 ? extracted.artifacts : undefined,
+        };
+      });
+    }
+    // Restored round without execution state: synthesize rows from markers.
+    return (flowParsed?.sections ?? []).map(sec => {
+      const extracted = extractFlowArtifacts(sec.content);
+      return {
+        id: sec.marker.step_id,
+        title: sec.marker.label,
+        subtitle: undefined,
+        status: 'completed' as StepStatus,
+        durationMs: sec.marker.duration_ms,
+        summary: sec.marker.summary,
+        content: extracted.clean,
+        kind: sec.marker.kind,
+        steps: sec.marker.steps,
+        artifacts: extracted.artifacts.length > 0 ? extracted.artifacts : undefined,
+      };
+    });
+  }, [sections, flowSectionMap, flowParsed, flowExecSteps]);
+  const flowDoneCount = flowRows.filter(row => row.status === 'completed').length;
+  const flowRunning = flowRun?.running ?? flowRows.some(row => row.status === 'running');
+  // Flow node artifact chips: payloads live on disk behind the scoped
+  // artifact-file endpoint; preview reuses the react-round html rail.
+  const handleFlowArtifact = useCallback(
+    async (artifact: ITaskflowArtifact, mode: 'preview' | 'download') => {
+      try {
+        const resp = await fetch(`/api/v1/chat/harness/artifact-file?path=${encodeURIComponent(artifact.path)}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const text = await resp.text();
+        const item: ArtifactItem = {
+          id: artifact.path,
+          type: artifact.type === 'html' ? 'html' : 'file',
+          name: artifact.name,
+          content: text,
+          createdAt: Date.now(),
+        };
+        if (mode === 'preview') onArtifactClick?.(item);
+        else onArtifactDownload?.(item);
+      } catch {
+        message.error(t('flow_artifact_load_failed', '产物加载失败'));
+      }
+    },
+    [onArtifactClick, onArtifactDownload, t],
+  );
+  // For flow rounds, the text area below the card shows ONLY the final
+  // node's conclusion (each node's intermediate output stays inside its own
+  // step card). Visual-only sections (charts) are skipped when picking the
+  // final text.
+  const displayAssistantText = useMemo(() => {
+    if (!isFlowRun) return assistantText;
+    // While the DAG runs, the live frames carry the agent's emoji trace
+    // narration as section content — the node cards already show that trace
+    // structurally, so the answer area stays empty until the run settles.
+    if (flowRunning) return '';
+    // Legacy/edge answers may still carry a raw tool envelope ({"chunks":…})
+    // when a model terminated with an observation pasted as its result.
+    const salvage = (s: string) => (s && s.includes('"chunks"') ? (envelopeReadableText(s) ?? s) : s);
+    const sections = flowParsed?.sections ?? [];
+    for (let i = sections.length - 1; i >= 0; i--) {
+      const text = stripFlowNarration(stripVisBlocks(sections[i].content ?? ''));
+      if (text) return salvage(text);
+    }
+    return salvage(stripFlowNarration(stripVisBlocks(flowParsed?.cleanText ?? '')));
+  }, [isFlowRun, flowRunning, flowParsed, assistantText]);
+
+  const copyAnswer = useCallback(
+    async (asMarkdown: boolean) => {
+      const src = displayAssistantText || '';
+      const text = asMarkdown ? src : markdownToPlainText(src);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      message.success(t(asMarkdown ? 'copied_markdown' : 'copied_text') as string);
+    },
+    [displayAssistantText, t],
+  );
+
+  const financialTasks = financialTasksForStep(taskPlan || []);
+  const financialArtifact = artifacts?.find(artifact => isFinancialReportReference(artifact.content));
+  const reportPublished = financialArtifact?.content.published === true;
   const isTaskPlanComplete =
     !taskPlan?.length || taskPlan.every(task => task.status === 'completed' || task.status === 'cancelled');
   const handleStepClick = useCallback(
@@ -1098,19 +1241,20 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
         {/* Truncated assistant response */}
-        {assistantText && (
+        {(displayAssistantText || semanticSources.length > 0) && (
           <div className='text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed'>
-            {assistantText.slice(0, 150)}
-            {assistantText.length > 150 ? '...' : ''}
+            {displayAssistantText?.slice(0, 150)}
+            {(displayAssistantText?.length || 0) > 150 ? '...' : ''}
           </div>
         )}
         {/* Completed indicator */}
-        {!assistantText && sections.length > 0 && (
+        {!displayAssistantText && sections.length > 0 && (
           <div className='flex items-center gap-1.5 text-xs text-gray-400'>
             <CheckCircleFilled className='text-emerald-500' />
             <span>{t('steps_completed_count', { count: sections.length })}</span>
           </div>
         )}
+        {dashboardSlot && <div onClick={event => event.stopPropagation()}>{dashboardSlot}</div>}
       </div>
     );
   }
@@ -1121,6 +1265,23 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {userQuery && (
           <div className='flex justify-end'>
             <div className='max-w-[85%] space-y-2'>
+              {attachedSuite && (
+                <div
+                  data-testid='message-suite-reference'
+                  className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'
+                >
+                  <div className='w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 text-[#18a447] dark:text-[#79cc94]'>
+                    <SuiteHammerIcon className='flex-shrink-0' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>
+                      {attachedSuite.display}
+                      {attachedSuite.command ? ` · ${attachedSuite.command}` : ''}
+                    </div>
+                    <div className='text-[11px] text-gray-400 dark:text-gray-500'>{t('suite_reference_label')}</div>
+                  </div>
+                </div>
+              )}
               {attachedKnowledge && (
                 <div className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'>
                   <div className='w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0'>
@@ -1188,20 +1349,64 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
-        {sections.length > 0 ? (
-          <div className='pt-1'>
-            {sections.map((section, index) => (
-              <SectionBlock
-                key={section.id}
-                section={section}
-                activeStepId={activeStepId}
-                onStepClick={stepId => handleStepClick(stepId, section.id)}
-                defaultExpanded={index === sections.length - 1}
-                stepThoughts={stepThoughts}
-              />
-            ))}
+        {/* Tool/thinking timeline in conversation order: after the user
+            query, before the thinking placeholder and answer text. */}
+        {timelineSlot && <div className='pt-1'>{timelineSlot}</div>}
+
+        {financialTasks.length > 0 ? (
+          <div className='pt-1' data-testid='financial-left-execution'>
+            <FinancialProgressPanel
+              tasks={financialTasks}
+              isRunning={!!isWorking}
+              updates={financialUpdates}
+              reportPublished={reportPublished}
+              onOpenReport={financialArtifact ? () => onArtifactClick?.(financialArtifact) : undefined}
+              compact
+            />
+            {sections.length > 0 && (
+              <details className='mt-3 text-sm text-slate-500'>
+                <summary className='cursor-pointer px-2 py-1'>{financialText('financial.tool_call_details')}</summary>
+                {sections.map(section => (
+                  <SectionBlock
+                    key={section.id}
+                    section={section}
+                    activeStepId={activeStepId}
+                    onStepClick={stepId => handleStepClick(stepId, section.id)}
+                    defaultExpanded={true}
+                  />
+                ))}
+              </details>
+            )}
           </div>
-        ) : (
+        ) : sections.length > 0 || isFlowRun ? (
+          <div className='pt-1'>
+            {isFlowRun ? (
+              /* TaskFlow run view: header + node chain + node cards,
+                 aligned with docs/design/workflow-display-redesign-mockup.html */
+              <FlowRunView
+                label={flowRun?.label ?? t('taskflow')}
+                rows={flowRows}
+                running={flowRunning}
+                doneCount={flowDoneCount}
+                totalCount={flowRun?.total || flowRows.length}
+                onArtifactClick={artifact => handleFlowArtifact(artifact, 'preview')}
+                onArtifactDownload={artifact => handleFlowArtifact(artifact, 'download')}
+                onQueryRerun={onQueryRerun}
+              />
+            ) : (
+              sections.map((section, index) => (
+                <SectionBlock
+                  key={section.id}
+                  section={section}
+                  activeStepId={activeStepId}
+                  onStepClick={stepId => handleStepClick(stepId, section.id)}
+                  defaultExpanded={index === sections.length - 1}
+                  stepThoughts={stepThoughts}
+                />
+              ))
+            )}
+          </div>
+        ) : timelineSlot ? null : (
           <div className='px-4 py-6 text-gray-400 space-y-2'>
             {isWorking ? (
               <div className='flex items-center gap-2'>
@@ -1217,7 +1422,11 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
-        {isWorking && sections.length > 0 && (
+        {financialTasks.length === 0 && (
+          <FinancialProgressUpdates updates={financialUpdates} published={reportPublished} />
+        )}
+
+        {isWorking && sections.length > 0 && financialTasks.length === 0 && (
           <div className='px-4 py-3 mt-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 space-y-2'>
             <div className='flex items-center gap-2'>
               <LoadingOutlined spin className='text-blue-500' />
@@ -1234,30 +1443,61 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             (its original position). */}
         {subAgentSlot}
 
-        {taskPlan && taskPlan.length > 0 && (
+        {taskPlan && taskPlan.length > 0 && financialTasks.length === 0 && (
           <div className='mt-3 px-1'>
             <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>
         )}
 
-        {assistantText && (
-          <div className='mt-4 px-1'>
+        {displayAssistantText && (
+          <div
+            className={
+              answerSeparated ? 'mt-4 pt-4 px-1 border-t border-gray-200/70 dark:border-gray-800' : 'mt-4 px-1'
+            }
+          >
             <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-              {isAssistantStreaming ? (
-                <span className='whitespace-pre-wrap break-words'>{assistantText}</span>
-              ) : (
-                <MarkdownContext>{assistantText}</MarkdownContext>
-              )}
+              <SemanticProvenance
+                content={displayAssistantText}
+                sources={semanticSources}
+                streaming={isAssistantStreaming}
+                onFinancialCitationClick={onFinancialCitationClick}
+                mode='answer'
+              />
             </div>
-            {citationIndexes.length > 0 && onReferencesClick && (
-              <button
-                type='button'
-                onClick={onReferencesClick}
-                className='mt-3 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
-              >
-                <BookOutlined aria-hidden />
-                查看 {citationIndexes.length} 条参考来源
-              </button>
+            {!isAssistantStreaming && displayAssistantText && (
+              <div className='mt-2 -ml-1.5 flex items-center'>
+                <Tooltip title={t('copy_plain_text', '复制文本')}>
+                  <button
+                    type='button'
+                    onClick={() => copyAnswer(false)}
+                    className='w-6 h-6 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                  >
+                    <CopyOutlined className='text-[15px] leading-none' />
+                  </button>
+                </Tooltip>
+                <Tooltip title={t('copy_markdown', '复制 Markdown')}>
+                  <button
+                    type='button'
+                    onClick={() => copyAnswer(true)}
+                    className='w-6 h-6 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                  >
+                    <FileMarkdownOutlined className='text-[15px] leading-none' />
+                  </button>
+                </Tooltip>
+                {citationIndexes.length > 0 && onReferencesClick && (
+                  <>
+                    <span className='w-px h-3.5 mx-1 bg-[#e6e6e2] dark:bg-[#2a2925]' aria-hidden />
+                    <button
+                      type='button'
+                      onClick={onReferencesClick}
+                      className='h-6 inline-flex items-center gap-1.5 rounded-md px-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
+                    >
+                      <BookOutlined aria-hidden />
+                      查看 {citationIndexes.length} 条参考来源
+                    </button>
+                  </>
+                )}
+              </div>
             )}
             {reportId && reportRunId && onReportClick && (
               <button
@@ -1269,16 +1509,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 查看分析报告与证据
               </button>
             )}
-          </div>
-        )}
-
-        {createdSkillName && (
-          <div className='mt-5 px-1'>
-            <SkillCompactCard
-              skillName={createdSkillName}
-              onClick={() => onSkillCardClick?.(createdSkillName)}
-              onDownload={() => onSkillDownload?.(createdSkillName)}
-            />
           </div>
         )}
 
@@ -1310,7 +1540,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               )}
             </div>
 
-            {isTaskPlanComplete && (
+            {isTaskPlanComplete && !isWorking && (
               <div className='flex items-center gap-1.5 mt-5'>
                 <CheckOutlined className='text-xs text-emerald-500' />
                 <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>
@@ -1320,18 +1550,20 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             )}
           </div>
         )}
-      </div>
-
-      {modelName && (
-        <div className='px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50'>
-          <div className='flex items-center justify-between text-[10px] text-gray-400'>
-            <span>{`Model: ${modelName}`}</span>
-            <div className='flex items-center gap-2'>
-              {isWorking && <span className='animate-pulse'>Processing...</span>}
-            </div>
+        {dashboardSlot}
+        {(semanticSources.length > 0 || querySources.length > 0 || semanticReadGaps.length > 0) && (
+          <div className='px-1'>
+            <SemanticProvenance
+              content={displayAssistantText || ''}
+              sources={semanticSources}
+              querySources={querySources}
+              readGaps={semanticReadGaps}
+              streaming={isAssistantStreaming}
+              onFinancialCitationClick={onFinancialCitationClick}
+            />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

@@ -5,129 +5,91 @@ sidebar_position: 1
 
 # 案例展示
 
-DB-GPT 帮助团队把数据问题转化为 SQL、代码、图表、仪表盘、报告以及知识驱动的工作流。
+DB-GPT 帮助团队把数据问题变成 SQL、代码、图表、看板、报告与知识驱动的工作流。以下每个
+场景都在 **pi harness 引擎** 上对内置 `Walmart_Sales` 示例库端到端真实跑出；截图取自亮色
+主题下的真实产品界面。
 
-## 你可以用 DB-GPT 做什么
+## DB-GPT 能做什么
 
 <div className="overview-cards-grid">
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">📈</div>
     <div className="overview-card-content">
       <h3 className="overview-card-title">分析 CSV / Excel 文件</h3>
-      <p className="overview-card-description">上传文件、检查数据、计算指标，并生成可视化报告。</p>
+      <p className="overview-card-description">上传文件、检查数据、计算指标并生成可视化报告。</p>
     </div>
   </div>
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">🗄️</div>
     <div className="overview-card-content">
       <h3 className="overview-card-title">连接数据库</h3>
-      <p className="overview-card-description">探索 schema、查询接近生产环境的数据，并生成分析报告。</p>
+      <p className="overview-card-description">探索 schema、查询生产级数据并生成画像报告。</p>
     </div>
   </div>
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">🧾</div>
     <div className="overview-card-content">
       <h3 className="overview-card-title">自然语言转 SQL</h3>
-      <p className="overview-card-description">直接提出业务问题，让 AI 自动生成 SQL。</p>
+      <p className="overview-card-description">用业务语言提问，由 AI 自动生成 SQL。</p>
     </div>
   </div>
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">💹</div>
     <div className="overview-card-content">
-      <h3 className="overview-card-title">财报分析</h3>
-      <p className="overview-card-description">结合文档、代码、图表与摘要，为业务决策提供支持。</p>
+      <h3 className="overview-card-title">财报深度分析</h3>
+      <p className="overview-card-description">结合文档、代码、图表与摘要支持决策。</p>
     </div>
   </div>
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">🧰</div>
     <div className="overview-card-content">
-      <h3 className="overview-card-title">构建可复用技能</h3>
-      <p className="overview-card-description">为重复性任务创建领域工作流以及可复用的 SQL / 分析 skills。</p>
+      <h3 className="overview-card-title">沉淀可复用技能</h3>
+      <p className="overview-card-description">为重复任务创建领域工作流与可复用 SQL / 分析技能。</p>
     </div>
   </div>
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">🧠</div>
     <div className="overview-card-content">
-      <h3 className="overview-card-title">组合代码、SQL、检索与工具</h3>
-      <p className="overview-card-description">为团队和产品构建下一代 AI + Data 助手。</p>
+      <h3 className="overview-card-title">代码 + SQL + 检索 + 工具组合</h3>
+      <p className="overview-card-description">为团队与产品构建下一代 AI + Data 助手。</p>
     </div>
   </div>
 </div>
 
-## 典型场景
+## 场景一——自然语言取数与一等取数产物
 
-<img
-  src="/img/agentic_data/dbgpt_playgroup.png"
-  alt="DB-GPT 欢迎页"
-  className="showcase-hero-image"
-/>
+用业务语言直接提问；pi 引擎先接地 schema（表清单、字段统计），再写 SQL 执行。每个结果集
+以**取数产物**形式到达：可复制、可编辑重跑的 SQL 块，带行数与截断说明的结果表，以及一键
+CSV / Excel 导出。
 
-## 端到端示例
+![pi 引擎取数回合：SQL 块 + 结果表产物与导出入口](/img/showcases/zh/fig-01-fetch.png)
 
-### 1. Agentic 数据分析
+- schema 接地查询同样是产物，回合结束后整条推理链仍可检查。
+- **编辑重跑**允许就地修改生成的 SQL 并重新执行；重跑端点复核会话与数据源所有权并强制
+  只读 SQL，便利不扩大信任边界。
+- 结果 payload 展示截断（2000 行），导出始终携带全量。
 
-使用 DB-GPT 规划任务、拆解步骤、调用工具，并完成端到端的数据分析流程。
+## 场景二——自主画像到可视化 HTML 报告
 
-<img
-  src="/img/agentic_data/csv_data_analysis.jpg"
-  alt="Agentic 数据分析示例"
-  className="showcase-hero-image"
-/>
+一句话（"画像这个库并给我可视化报告"）让 pi 引擎自主规划探针——总行数、日期范围、Top
+门店、集中度——随后经 HTML 工具渲染出带样式的 HTML 分析报告。报告以 **HTML 产物** 落地：
+会话内产物卡、rail 缩略图与就地预览面板。
 
-### 2. 自主 SQL + 代码执行
+![pi 引擎分析回合，HTML 报告在 rail 预览中打开](/img/showcases/zh/fig-02-report.png)
 
-自动生成 SQL 和代码，用于查询数据、清洗数据集、计算指标并生成结果。
+- 产物随会话持久化：刷新页面后时间线、轨迹与每张产物卡一致重建。
+- Trace 入口打开 pi 回合的合成 span 树（思考、工具动作、terminate），长自主回合仍可审计。
+- 任何场景中的高危工具调用都弹出同一确认 dock，session/always 记忆按调用类记忆。
 
-<div className="showcase-dual-grid">
-  <img
-    src="/img/agentic_data/agentic_gen_code.png"
-    alt="Agentic 代码生成"
-    className="showcase-hero-image"
-  />
-  <img
-    src="/img/agentic_data/agentic_sql_query.png"
-    alt="SQL 查询生成"
-    className="showcase-hero-image"
-  />
-</div>
+## 场景三——把重复分析沉淀为声明式工作流
 
-### 3. 智能数据库洞察与分析报告
+当分析模式重复出现，把它从即兴对话升级为 **TaskFlow 工作流**：声明式 DAG 的专注 agent
+节点（接地 → 取数 → 透视 → 数字复核 → 报告），每个节点带自己的工具边界与输出契约。节点
+运行复用同一 harness 契约，因此工作流产出与上述场景相同的取数产物、HTML 报告与轨迹。见
+[工作流指南](../workflow/introduction.md)。
 
-基于全新 Agentic 架构，引擎可自主完成数据诊断、特征提取与多维分析，生成包含精美图表与深度洞察的专属分析报告，让数据价值一目了然。
+## 选择你的引擎
 
-<img
-  src="/img/agentic_data/agentic_db_data.jpg"
-  alt="智能数据库洞察与分析报告"
-  className="showcase-hero-image"
-/>
-
-### 4. Skills 驱动的可扩展性
-
-将领域知识、分析方法与执行流程封装成可复用的 skills。
-
-<div className="showcase-dual-grid">
-  <img
-    src="/img/skill/import_github_skill_zh.png"
-    alt="导入 GitHub skill"
-    className="showcase-hero-image"
-  />
-  <img
-    src="/img/agentic_data/agent_browse_use.jpg"
-    alt="Agent 浏览技能使用示例"
-    className="showcase-hero-image"
-  />
-</div>
-
-### 5. 沙箱执行
-
-在隔离环境中运行代码与工具，让分析过程更加安全、可靠。
-
-<img
-  src="/img/agentic_data/sanbox_running.png"
-  alt="沙箱执行"
-  className="showcase-hero-image"
-/>
-
-## 最终效果
-
-DB-GPT 面向希望超越简单聊天机器人的团队，帮助他们构建真正可用的 AI + Data 系统：连接数据、借助工具推理，并交付报告、洞察与行动结果。
+所有场景都可运行在你选择的 harness 引擎上——内置 DB-GPT 循环或外部 pi harness——工具、
+审批与产物完全一致。引擎选择、可用性与扩展契约见
+[Harness 指南](../harness/introduction.md)。
