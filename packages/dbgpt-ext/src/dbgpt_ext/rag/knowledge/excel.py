@@ -103,16 +103,38 @@ class ExcelKnowledge(Knowledge):
             best_headers = [str(i) for i in range(num_cols)]
             best_row_index = -1
 
+        original_headers = {header for header in best_headers if header}
+        reserved_headers = set(original_headers)
+        for index, header in enumerate(best_headers):
+            if not header:
+                reserved_headers.add(f"Col_{index}")
+                break
         final_headers = []
+        used_headers = set()
         header_counts = {}
-        for h in best_headers:
-            original_h = h
-            if h in header_counts:
-                header_counts[h] += 1
-                h = f"{original_h} ({header_counts[original_h]})"
+        for index, header in enumerate(best_headers):
+            if header in header_counts:
+                suffix = header_counts[header] + 1
+                final_header = f"{header} ({suffix})"
+                while final_header in used_headers or final_header in reserved_headers:
+                    suffix += 1
+                    final_header = f"{header} ({suffix})"
+                header_counts[header] = suffix
             else:
-                header_counts[h] = 0
-            final_headers.append(h if h else f"Col_{len(final_headers)}")
+                header_counts[header] = 0
+                final_header = header or f"Col_{index}"
+                if not header and (
+                    final_header in original_headers or final_header in used_headers
+                ):
+                    suffix = 1
+                    candidate = f"{final_header} ({suffix})"
+                    while candidate in used_headers or candidate in reserved_headers:
+                        suffix += 1
+                        candidate = f"{final_header} ({suffix})"
+                    final_header = candidate
+
+            final_headers.append(final_header)
+            used_headers.add(final_header)
 
         return final_headers, best_row_index
 
