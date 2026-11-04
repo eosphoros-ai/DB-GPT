@@ -134,14 +134,29 @@ class SuiteRegistry:
         )
 
     def current_pin(self, conv_uid: str) -> Optional[tuple]:
-        """Sticky conversation pin = latest pin/switch event for the conv."""
+        """Return the latest conversation pin unless it was explicitly cleared."""
         if not conv_uid:
             return None
         rows = self._event_dao.list_by_conv(conv_uid)
         for row in reversed(rows):  # list_by_conv is asc; latest last
+            if row.event_type == "unpin":
+                return None
             if row.event_type in ("pin", "switch"):
                 return (row.suite_name, row.to_version or "")
         return None
+
+    def record_unpin(self, conv_uid: str, user_name: Optional[str] = None) -> None:
+        """Clear a conversation's suite without removing its audit history."""
+        pin = self.current_pin(conv_uid)
+        if pin is None:
+            return
+        self.record_event(
+            pin[0],
+            "unpin",
+            from_version=pin[1],
+            conv_uid=conv_uid,
+            user_name=user_name,
+        )
 
     def record_switch(
         self,

@@ -6,7 +6,7 @@ import logging
 import os
 import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from qdrant_client.models import Distance
@@ -103,6 +103,18 @@ def _chunk_id_to_uuid(chunk_id: str) -> str:
             optional=True,
             default="Cosine",
         ),
+        Parameter.build_from(
+            _("Metadata Indexes"),
+            "metadata_indexes",
+            str,
+            description=_(
+                "Comma separated metadata fields to index for faster filtering, "
+                "as field or field:type, e.g. 'session_id,page:integer'. Types: "
+                "keyword (default), integer, float, bool, datetime, uuid."
+            ),
+            optional=True,
+            default=None,
+        ),
     ],
 )
 @dataclass
@@ -145,6 +157,16 @@ class QdrantVectorConfig(VectorStoreConfig):
             "help": _(
                 "Distance metric used to compare vectors. One of: "
                 "Cosine, Euclid, Dot, Manhattan."
+            )
+        },
+    )
+    metadata_indexes: Optional[str] = field(
+        default_factory=lambda: os.getenv("QDRANT_METADATA_INDEXES"),
+        metadata={
+            "help": _(
+                "Comma separated metadata fields to index for faster filtering, "
+                "as field or field:type, e.g. 'session_id,page:integer'. Types: "
+                "keyword (default), integer, float, bool, datetime, uuid."
             )
         },
     )
@@ -214,17 +236,65 @@ class QdrantStore(VectorStoreBase):
         """Create a Qdrant collection."""
         from qdrant_client.models import VectorParams
 
-        if self._client.collection_exists(collection_name):
-            return
-
-        dim = len(self.embeddings.embed_query("probe"))
-        self._client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=dim,
-                distance=self._resolve_distance(self._vector_store_config.distance),
-            ),
+        indexes = self._parse_metadata_indexes(
+            self._vector_store_config.metadata_indexes
         )
+        if not self._client.collection_exists(collection_name):
+            dim = len(self.embeddings.embed_query("probe"))
+            self._client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=dim,
+                    distance=self._resolve_distance(self._vector_store_config.distance),
+                ),
+            )
+        if indexes:
+            self._ensure_metadata_indexes(collection_name, indexes)
+
+    @staticmethod
+    def _parse_metadata_indexes(value: Optional[str]) -> Dict[str, Any]:
+        """Parse 'field[:type],...' into payload index types by field."""
+        from qdrant_client.models import PayloadSchemaType
+
+        allowed = {
+            t.value: t
+            for t in (
+                PayloadSchemaType.KEYWORD,
+                PayloadSchemaType.INTEGER,
+                PayloadSchemaType.FLOAT,
+                PayloadSchemaType.BOOL,
+                PayloadSchemaType.DATETIME,
+                PayloadSchemaType.UUID,
+            )
+        }
+        indexes = {}
+        for item in (value or "").split(","):
+            if not item.strip():
+                continue
+            name, _, type_name = item.partition(":")
+            type_name = type_name.strip().lower() or "keyword"
+            if not name.strip() or type_name not in allowed:
+                raise ValueError(
+                    f"Invalid Qdrant metadata index: {item.strip()!r}. Expected "
+                    f"field or field:type, with type one of: {sorted(allowed)}"
+                )
+            indexes[name.strip()] = allowed[type_name]
+        return indexes
+
+    def _ensure_metadata_indexes(
+        self, collection_name: str, indexes: Dict[str, Any]
+    ) -> None:
+        """Create payload indexes on metadata fields that are not indexed yet."""
+        payload_schema = self._client.get_collection(collection_name).payload_schema
+        for name, schema_type in indexes.items():
+            field_name = f"metadata.{name}"
+            if field_name in payload_schema:
+                continue
+            self._client.create_payload_index(
+                collection_name=collection_name,
+                field_name=field_name,
+                field_schema=schema_type,
+            )
 
     @staticmethod
     def _resolve_distance(name: str) -> "Distance":

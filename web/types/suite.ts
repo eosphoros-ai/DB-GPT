@@ -31,6 +31,8 @@ export interface SuiteCommand {
   example?: string;
   prefill?: string;
   prefill_en?: string;
+  /** Material requirements for a new command run; supplied by its suite manifest. */
+  input_files?: { min: number; max: number; types: string[] };
 }
 
 export interface SuiteSkill {

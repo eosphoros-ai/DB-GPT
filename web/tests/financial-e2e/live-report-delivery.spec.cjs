@@ -1,0 +1,437 @@
+const { test, expect } = require('@playwright/test');
+const { syntheticComparison } = require('../../new-components/financial-analysis/comparison/synthetic-fixture');
+
+const baseURL = process.env.FINANCIAL_LIVE_BASE_URL || 'http://127.0.0.1:3000';
+const report = syntheticComparison();
+report.lifecycle.publicationStatus = 'published';
+report.analysis = {
+  status: 'completed',
+  modelName: 'synthetic',
+  startedAt: '',
+  completedAt: '2026-10-25',
+  rejectedCount: 0,
+};
+const title = '合成报告实时交付测试';
+const stages = ['读取财报', '分析财务数据', '核对结论', '生成报告'];
+
+async function setup(page, history = [], suites = []) {
+  await page.addInitScript(() => {
+    localStorage.setItem('__db_gpt_lng_key', 'zh');
+    localStorage.setItem('__db_gpt_timeline_view', 'on');
+    localStorage.setItem('dbgpt-selected-model', 'synthetic-model');
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, options) => {
+      if (!String(input).endsWith('/api/v1/chat/react-agent')) return originalFetch(input, options);
+      window.financialTestRequest = JSON.parse(options.body);
+      const body = new ReadableStream({
+        start(controller) {
+          window.financialTestStream = controller;
+        },
+      });
+      options.signal.addEventListener('abort', () =>
+        window.financialTestStream.error(new DOMException('Stopped', 'AbortError')),
+      );
+      return new Response(body, { headers: { 'Content-Type': 'text/event-stream' } });
+    };
+  });
+  await page.route('**/api/**', async route => {
+    const pathname = new URL(route.request().url()).pathname.replace(/\/$/, '');
+    let data = [];
+    if (pathname.endsWith('/model/types')) data = ['synthetic-model'];
+    else if (pathname.endsWith('/suites')) data = suites;
+    else if (pathname.endsWith('/messages/history')) data = history;
+    else if (pathname.endsWith('/financial-analysis/runs/latest')) {
+      return route.fulfill({ json: { success: false, err_code: 'REPORT_NOT_FOUND', err_msg: 'No saved report' } });
+    } else if (pathname.endsWith('/report')) {
+      data = new URL(route.request().url()).searchParams.has('revision') ? report : syntheticComparison();
+    }
+    return route.fulfill({ json: { success: true, data } });
+  });
+}
+
+async function emit(page, events) {
+  await page.evaluate(items => {
+    for (const event of items)
+      window.financialTestStream.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`));
+  }, events);
+}
+
+async function start(page) {
+  await setup(page);
+  await page.goto(baseURL);
+  const composer = page.locator('textarea:visible').first();
+  await composer.fill('分析这份合成年报');
+  await composer.press('Enter');
+  await expect.poll(() => page.evaluate(() => !!window.financialTestStream)).toBe(true);
+  const sessionId = await page.evaluate(() => window.financialTestRequest.conv_uid);
+  return {
+    kind: 'financial-report',
+    mode: 'comparison',
+    title,
+    sessionId,
+    runId: report.report.run.id,
+    revision: report.revision,
+    published: true,
+  };
+}
+
+async function publish(page, reference) {
+  await emit(page, [
+    {
+      type: 'step.start',
+      id: 'review',
+      step: 1,
+      title: 'review_financial_report',
+      detail: 'Thought/Action/Observation',
+    },
+    { type: 'step.meta', id: 'review', action: 'review_financial_report', title: 'review_financial_report' },
+    {
+      type: 'plan.update',
+      tasks: stages.map((content, index) => ({
+        id: `stage-${index}`,
+        kind: 'financial-stage',
+        content,
+        status: 'completed',
+        priority: 'high',
+        detail: index === 3 ? '报告已生成，可查看原文依据。' : '本阶段已完成。',
+      })),
+    },
+    {
+      type: 'step.chunk',
+      id: 'review',
+      output_type: 'text',
+      content: '[00:10] 生成报告：报告已生成，可查看原文依据。\n',
+    },
+    { type: 'step.chunk', id: 'review', output_type: 'html', content: reference },
+    { type: 'step.done', id: 'review', status: 'done' },
+  ]);
+}
+
+async function finish(page) {
+  await emit(page, [{ type: 'final', content: '合成最终要点，报告已可查看。' }, { type: 'done' }]);
+  await page.evaluate(() => window.financialTestStream.close());
+}
+
+test('opens the published report before final, keeps manual navigation after final, and deduplicates repeats', async ({
+  page,
+}) => {
+  const reference = await start(page);
+  await publish(page, reference);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toBeVisible();
+  await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('任务已完成', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('报告已生成');
+  await page.screenshot({ path: test.info().outputPath('published-before-summary.png'), fullPage: true });
+  await page.getByRole('button', { name: /任务文件/ }).click();
+  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
+  await emit(page, [{ type: 'step.chunk', id: 'review', output_type: 'html', content: reference }]);
+  await finish(page);
+  await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
+  await expect(page.getByRole('tabpanel').getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+});
+
+test('keeps a published report visible when the connection closes without a final answer', async ({ page }) => {
+  const reference = await start(page);
+  await publish(page, reference);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await page.evaluate(() => window.financialTestStream.close());
+  await expect(page.getByText('报告已生成，可查看报告与原文依据；本次回复未完成。', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toHaveCount(0);
+});
+
+test('removes rejected thinking placeholders without losing the report or showing completed fake steps', async ({
+  page,
+}) => {
+  const reference = await start(page);
+  await publish(page, reference);
+  await emit(page, [
+    { type: 'step.start', id: 'invalid-thinking', step: 2, title: '思考中', detail: 'Thought/Action/Observation' },
+    { type: 'step.remove', id: 'invalid-thinking' },
+    // A late completion/chunk must not recreate a discarded placeholder.
+    { type: 'step.chunk', id: 'invalid-thinking', output_type: 'text', content: '无效回复不应显示' },
+    { type: 'step.done', id: 'invalid-thinking', status: 'done' },
+    { type: 'step.meta', id: 'invalid-thinking', action: 'read_financial_report' },
+    { type: 'step.start', id: 'invalid-thinking', step: 2, title: '思考中' },
+  ]);
+  const execution = page.getByTestId('conversation-content');
+  await expect(execution.getByText('思考中', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('无效回复不应显示', { exact: true })).toHaveCount(0);
+  await expect(execution.getByRole('button', { name: /review_financial_report/ })).toBeVisible();
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await finish(page);
+  await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toHaveCount(0);
+  await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toBeVisible();
+});
+
+test('does not auto-open a draft or steal a view selected before publication', async ({ page }) => {
+  const reference = await start(page);
+  await emit(page, [
+    {
+      type: 'step.start',
+      id: 'prepare',
+      step: 1,
+      title: 'prepare_financial_report',
+      detail: 'Thought/Action/Observation',
+    },
+    {
+      type: 'step.chunk',
+      id: 'prepare',
+      output_type: 'text',
+      content: '[00:03] 读取财报：已提取财务数据。\n已读取财务科目：营业收入、净利润。\n',
+    },
+    {
+      type: 'step.chunk',
+      id: 'prepare',
+      output_type: 'html',
+      content: { ...reference, published: false, revision: 'draft' },
+    },
+  ]);
+  await expect(page.getByRole('button', { name: /prepare_financial_report/ })).toBeVisible();
+  await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('营业收入');
+  await expect(page.getByLabel('报告状态')).toHaveCount(0);
+  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await expect(page.getByLabel('报告状态')).toHaveText('分析中');
+  await page.getByRole('button', { name: /任务文件/ }).click();
+  await publish(page, reference);
+  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
+  await expect(page.getByLabel('报告状态')).toHaveCount(0);
+  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await finish(page);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+});
+
+test('restores public observations and the latest report identity from saved history', async ({ page }) => {
+  const sessionId = 'financial-delivery-history';
+  const reference = {
+    kind: 'financial-report',
+    mode: 'comparison',
+    title,
+    sessionId,
+    runId: report.report.run.id,
+    revision: report.revision,
+    published: true,
+  };
+  await setup(page, [
+    { role: 'human', context: '已保存的合成报告', order: 1 },
+    {
+      role: 'view',
+      order: 1,
+      context: JSON.stringify({
+        version: 2,
+        protocol_version: 2,
+        type: 'react-agent',
+        final_content: '已保存的合成结果。',
+        financial_report: reference,
+        steps: [
+          {
+            id: 'prepare',
+            title: 'prepare_financial_report',
+            detail: 'Thought/Action/Observation',
+            status: 'done',
+            outputs: [
+              { output_type: 'html', content: { ...reference, revision: 'draft', published: false, title: '旧标题' } },
+              { output_type: 'text', content: '[00:03] 读取财报：已提取财务数据。\n' },
+            ],
+          },
+        ],
+      }),
+    },
+  ]);
+  await page.goto(`${baseURL}/?id=${sessionId}`);
+  await expect(page.getByRole('button', { name: /prepare_financial_report/ })).toBeVisible();
+  await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('已提取财务数据');
+  await expect(page.getByText('旧标题.html', { exact: true })).toHaveCount(0);
+  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+});
+
+test('keeps the report and progress accessible on a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const reference = await start(page);
+  await publish(page, reference);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  const workspace = page.getByTestId('right-panel-content');
+  expect((await workspace.boundingBox()).width).toBeGreaterThan(350);
+  await page.getByRole('button', { name: '返回对话' }).click();
+  await expect(
+    page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }),
+  ).toBeVisible();
+  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await finish(page);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await page.screenshot({ path: test.info().outputPath('narrow-report.png'), fullPage: true, animations: 'disabled' });
+});
+
+test('conversation shows one draft card and a failed-step status after review fails', async ({ page }) => {
+  const reference = { ...(await start(page)), published: false };
+  const conversation = page.getByTestId('conversation-content');
+  await emit(page, [
+    { type: 'step.start', id: 'prepare', step: 1, title: 'prepare_financial_report' },
+    { type: 'step.meta', id: 'prepare', action: 'prepare_financial_report' },
+    { type: 'step.chunk', id: 'prepare', output_type: 'html', content: reference },
+    { type: 'step.chunk', id: 'prepare', output_type: 'html', content: reference },
+    { type: 'step.done', id: 'prepare', status: 'done' },
+  ]);
+  await expect(conversation.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+  await emit(page, [
+    { type: 'step.start', id: 'review', step: 2, title: 'review_financial_report' },
+    { type: 'step.meta', id: 'review', action: 'review_financial_report' },
+    { type: 'step.done', id: 'review', status: 'failed' },
+    {
+      type: 'plan.update',
+      tasks: stages.map((content, index) => ({
+        kind: 'financial-stage',
+        content,
+        priority: 'high',
+        status: index < 2 ? 'completed' : index === 2 ? 'error' : 'pending',
+      })),
+    },
+    { type: 'final', content: '合成复核失败，草稿已保留。' },
+    { type: 'done' },
+  ]);
+  await page.evaluate(() => window.financialTestStream.close());
+  const status = page.getByRole('status', { name: '执行状态', exact: true });
+  await expect(status).toContainText('已结束，部分步骤失败');
+  await expect(status.locator('.text-emerald-500')).toHaveCount(0);
+  await expect(conversation.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+  await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '下载', exact: true })).toHaveCount(1);
+  await page.screenshot({ path: test.info().outputPath('conversation-failed-review.png'), fullPage: true });
+  await page.getByRole('button', { name: '预览', exact: true }).click();
+  await expect(page.getByLabel('报告状态')).toBeVisible();
+});
+
+for (const withSteps of [true, false]) {
+  test(`conversation restores one saved report card with${withSteps ? '' : 'out'} tool history`, async ({ page }) => {
+    const sessionId = 'financial-failed-history';
+    const reference = {
+      kind: 'financial-report',
+      mode: 'comparison',
+      title,
+      sessionId,
+      runId: report.report.run.id,
+      revision: report.revision,
+      published: false,
+    };
+    await setup(page, [
+      { role: 'human', context: '合成历史恢复', order: 1 },
+      {
+        role: 'view',
+        order: 1,
+        context: JSON.stringify({
+          version: 2,
+          protocol_version: 2,
+          type: 'react-agent',
+          final_content: '合成任务失败，草稿保留。',
+          execution_status: 'failed',
+          financial_report: reference,
+          steps: withSteps
+            ? [
+                {
+                  id: 'prepare',
+                  title: 'prepare_financial_report',
+                  action: 'prepare_financial_report',
+                  status: 'done',
+                  outputs: [{ output_type: 'html', content: { ...reference, revision: 'old', title: '旧标题' } }],
+                },
+              ]
+            : [],
+        }),
+      },
+    ]);
+    await page.goto(`${baseURL}/?id=${sessionId}`);
+    await expect(page.getByTestId('conversation-content').getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+    await expect(page.getByText('旧标题.html', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
+    if (withSteps) {
+      const status = page.getByRole('status', { name: '执行状态', exact: true });
+      await expect(status).toContainText('执行失败');
+      await expect(status.locator('.text-emerald-500')).toHaveCount(0);
+    }
+    await page.getByRole('button', { name: '预览', exact: true }).click();
+    await expect(page.getByLabel('报告状态')).toBeVisible();
+  });
+}
+
+test('keeps a delivered report and its failed status after a transport error', async ({ page }) => {
+  const reference = await start(page);
+  await publish(page, reference);
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await page.evaluate(() => window.financialTestStream.error(new Error('合成连接失败')));
+  await expect(page.getByRole('status', { name: '执行状态', exact: true })).toContainText('执行失败');
+  await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
+  await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toHaveCount(0);
+});
+
+test('requires current files for a new company even when another report is saved', async ({ page }) => {
+  const sessionId = 'saved-company-a';
+  const reference = {
+    kind: 'financial-report',
+    mode: 'comparison',
+    title,
+    sessionId,
+    runId: report.report.run.id,
+    revision: report.revision,
+    published: true,
+  };
+  const annual = { name: '/读年报', input_files: { min: 1, max: 1, types: ['application/pdf'] } };
+  const compare = { name: '/财报对比', input_files: { min: 2, max: 5, types: ['application/pdf'] } };
+  await setup(
+    page,
+    [
+      { role: 'human', context: '比较甲公司与乙公司', order: 1 },
+      {
+        role: 'view',
+        order: 1,
+        context: JSON.stringify({
+          version: 2,
+          type: 'react-agent',
+          final_content: '已保存的甲乙公司报告',
+          suite_reference: { name: 'financial-analysis', display: '财报分析', command: '/财报对比' },
+          financial_report: reference,
+          steps: [],
+        }),
+      },
+    ],
+    [
+      {
+        id: 4,
+        name: 'financial-analysis',
+        display: '财报分析',
+        scenario_id: 'financial',
+        status: 'enabled',
+        source: 'official',
+        version: '1.0.0',
+        manifest_snapshot: { commands: [annual, compare], context_defaults: { harness_engine: 'dbgpt' } },
+      },
+    ],
+  );
+  await page.goto(`${baseURL}/?id=${sessionId}`);
+  const input = page.locator('textarea:visible').first();
+  await expect(page.getByTestId('suite-composer-prefix')).not.toContainText('/财报对比');
+  await expect(page.getByTestId('suite-material-guide')).toHaveCount(0);
+  // Same-mode saved report previously bypassed all attachment requirements.
+  await input.fill('/财报对比');
+  await input.press('Enter');
+  await input.fill('比较丙公司和丁公司的年度报告');
+  await input.press('Enter');
+  await expect(page.getByText('请先上传 2–5 份 PDF 文件，再开始任务。')).toBeVisible();
+  expect(await page.evaluate(() => !!window.financialTestRequest)).toBe(false);
+  await input.fill('/读年报');
+  await input.press('Enter');
+  await input.fill('分析丙公司的新年报');
+  await input.press('Enter');
+  await expect(page.getByText('请先上传 1 份 PDF 文件，再开始任务。')).toBeVisible();
+  expect(await page.evaluate(() => !!window.financialTestRequest)).toBe(false);
+  // Removing the new-analysis command retains the ordinary saved-report follow-up path.
+  await page.getByTestId('suite-composer-remove').click();
+  await input.fill('这份报告的现金流有什么风险');
+  await input.press('Enter');
+  await expect.poll(() => page.evaluate(() => !!window.financialTestRequest)).toBe(true);
+  expect(await page.evaluate(() => window.financialTestRequest.ext_info.suite_command)).toBeUndefined();
+  await finish(page);
+});

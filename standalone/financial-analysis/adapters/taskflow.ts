@@ -1,0 +1,207 @@
+// Snapshot-only subset of web/utils/taskflow.ts. Keep its parsing behavior in
+// sync; online template creation and API imports must not enter report exports.
+import type { ITaskflowArtifact, ITaskflowStepMarker } from "@/types/taskflow";
+
+const TASKFLOW_ARTIFACT_VIS_TAG = "vis-flow-artifact";
+export interface ITaskflowSection {
+  marker: ITaskflowStepMarker;
+  /** The node output content that follows the marker (until the next one). */
+  content: string;
+}
+
+export interface ParsedTaskflowStream {
+  markers: ITaskflowStepMarker[];
+  /** The answer text with all step markers removed. */
+  cleanText: string;
+  /** Per-node output sections, in execution order. */
+  sections: ITaskflowSection[];
+  /** Text outside any node section (before the first marker). */
+  residual: string;
+}
+
+const STEP_BLOCK_RE = /```vis-flow-step\s*\n([\s\S]*?)```/g;
+
+export function parseTaskflowStream(text: string): ParsedTaskflowStream {
+  if (!text) return { markers: [], cleanText: "", sections: [], residual: "" };
+  const markers: ITaskflowStepMarker[] = [];
+  const sections: ITaskflowSection[] = [];
+
+  // Split into [before, marker1, content1, marker2, content2, ...] spans.
+  const spans: Array<{ type: "text" | "marker"; value: string }> = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(STEP_BLOCK_RE)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      spans.push({ type: "text", value: text.slice(lastIndex, index) });
+    }
+    spans.push({ type: "marker", value: match[1] });
+    lastIndex = index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    spans.push({ type: "text", value: text.slice(lastIndex) });
+  }
+
+  let residual = "";
+  let pendingMarker: ITaskflowStepMarker | null = null;
+  for (const span of spans) {
+    if (span.type === "marker") {
+      try {
+        const parsed = JSON.parse(span.value.trim());
+        if (parsed && parsed.step_id) {
+          pendingMarker = parsed as ITaskflowStepMarker;
+          markers.push(pendingMarker);
+          continue;
+        }
+      } catch {
+        /* fall through: malformed marker treated as text */
+      }
+      if (pendingMarker) {
+        pendingMarker = null;
+      }
+      residual += `\`\`\`vis-flow-step\n${span.value}\`\`\``;
+      continue;
+    }
+    if (pendingMarker) {
+      sections.push({ marker: pendingMarker, content: span.value.trim() });
+      pendingMarker = null;
+    } else {
+      residual += span.value;
+    }
+  }
+  // A trailing marker with no content still counts as a section.
+  if (pendingMarker) {
+    sections.push({ marker: pendingMarker, content: "" });
+  }
+
+  // Live step events re-send each completed step, then the final join output
+  // repeats every marker. Deduplicate by step_id (keep the last occurrence)
+  // so sections, markers and the narrative stay single-copy.
+  const sectionMap = new Map<string, ITaskflowSection>();
+  for (const section of sections) {
+    sectionMap.set(section.marker.step_id, section);
+  }
+  const dedupedSections = Array.from(sectionMap.values());
+  const markerMap = new Map<string, ITaskflowStepMarker>();
+  for (const marker of markers) {
+    markerMap.set(marker.step_id, marker);
+  }
+  const dedupedMarkers = Array.from(markerMap.values());
+
+  // Structured agent steps (ReAct trace) live only in the transient running
+  // frames; the canonical final frame carries the clean answer but no steps.
+  // Merge: content from the last frame, steps from the last frame that had
+  // any — so the trace stays visible after the run completes.
+  const stepsByStepId = new Map<string, ITaskflowStepMarker["steps"]>();
+  for (const marker of markers) {
+    if (marker.steps && marker.steps.length > 0) {
+      stepsByStepId.set(marker.step_id, marker.steps);
+    }
+  }
+  for (const marker of dedupedMarkers) {
+    if (!marker.steps?.length && stepsByStepId.has(marker.step_id)) {
+      marker.steps = stepsByStepId.get(marker.step_id);
+    }
+  }
+  for (const section of dedupedSections) {
+    if (
+      !section.marker.steps?.length &&
+      stepsByStepId.has(section.marker.step_id)
+    ) {
+      section.marker.steps = stepsByStepId.get(section.marker.step_id);
+    }
+  }
+
+  const cleanText = [
+    residual.trim(),
+    ...dedupedSections.map((section) => section.content),
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+  return {
+    markers: dedupedMarkers,
+    cleanText,
+    sections: dedupedSections,
+    residual: residual.trim(),
+  };
+}
+
+/**
+ * Remove all gpt-vis blocks (```vis-xxx ... ```) from text, leaving the
+ * narrative/conclusion only. Used to show the flow's textual answer below the
+ * run card while charts/tables stay inside their step details.
+ */
+const VIS_BLOCK_RE = /```vis-[a-z0-9_-]*\s*\n[\s\S]*?```/g;
+
+export function stripVisBlocks(text: string): string {
+  if (!text) return "";
+  return text.replace(VIS_BLOCK_RE, "").trim();
+}
+
+/**
+ * Pull the node artifact metadata fence (```vis-flow-artifact … ```) out of
+ * a node section's content. Returns the artifacts plus the content with the
+ * fences removed (the fence is UI protocol, never visible text).
+ */
+const ARTIFACT_BLOCK_RE = /```vis-flow-artifact\s*\n([\s\S]*?)```/g;
+
+export function extractFlowArtifacts(content: string): {
+  artifacts: ITaskflowArtifact[];
+  clean: string;
+} {
+  if (!content) return { artifacts: [], clean: "" };
+  if (!content.includes(TASKFLOW_ARTIFACT_VIS_TAG))
+    return { artifacts: [], clean: content };
+  const artifacts: ITaskflowArtifact[] = [];
+  for (const match of content.matchAll(ARTIFACT_BLOCK_RE)) {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item && item.type === "query" && item.query) {
+            // Query artifacts carry their payload inline (no on-disk path).
+            artifacts.push({
+              name: String(item.name || "query"),
+              type: "query",
+              path: "",
+              query: item.query,
+              row_count:
+                typeof item.row_count === "number" ? item.row_count : undefined,
+            });
+          } else if (item && typeof item.path === "string" && item.path) {
+            artifacts.push({
+              name: String(
+                item.name || item.path.split("/").pop() || "artifact",
+              ),
+              type: String(item.type || "file"),
+              path: item.path,
+              size: typeof item.size === "number" ? item.size : undefined,
+            });
+          }
+        }
+      }
+    } catch {
+      /* malformed fence: ignore */
+    }
+  }
+  const clean = content.replace(ARTIFACT_BLOCK_RE, "").trim();
+  return { artifacts, clean };
+}
+
+/**
+ * Remove the agent-node live trace narration (``💭 **Thinking** …``,
+ * ``🔧 **tool** …``, ``👁 **Observation** …`` plus the collapsed-prefix line)
+ * that TFAgentOperator appends to live frames. The structured trace lives in
+ * the node card; the answer area must never show it.
+ */
+const NARRATION_LINE_RE =
+  /^\s*(\u{1F4AD}|\u{1F527}|\u{1F441}|\u2705|\u2022|\u2026)/u;
+
+export function stripFlowNarration(text: string): string {
+  if (!text) return "";
+  return text
+    .split("\n")
+    .filter((line) => !NARRATION_LINE_RE.test(line))
+    .join("\n")
+    .trim();
+}
