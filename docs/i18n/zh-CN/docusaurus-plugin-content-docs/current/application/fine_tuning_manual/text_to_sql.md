@@ -20,15 +20,16 @@ git clone https://github.com/eosphoros-ai/DB-GPT-Hub.git
 cd DB-GPT-Hub
 conda create -n dbgpt_hub python=3.10 
 conda activate dbgpt_hub
-conda install -c conda-forge poetry>=1.4.0
-poetry install
+cd src/dbgpt-hub-sql
+pip install -e .
 ```
+
+Unless otherwise noted, all commands and paths below are relative to the `src/dbgpt-hub-sql` directory.
 
 The current project supports multiple LLMs and can be downloaded on demand. In this tutorial, we use `CodeLlama-13b-Instruct-hf` as the base model. The model can be downloaded from platforms such as [HuggingFace](https://huggingface.co/) and [Modelscope](https://modelscope.cn/models). Taking HuggingFace as an example, the download command is:
 ```python
-cd Your_model_dir
 git lfs install
-git clone git@hf.co:codellama/CodeLlama-13b-Instruct-hf
+git clone git@hf.co:codellama/CodeLlama-13b-Instruct-hf Your_model_dir/CodeLlama-13b-Instruct-hf
 ```
 
 ## Data processing
@@ -36,16 +37,16 @@ git clone git@hf.co:codellama/CodeLlama-13b-Instruct-hf
 ### Data collection
 The case data of this tutorial mainly uses the `Spider` dataset as an example:
 - introduction:  the `Spider` dataset is recognized as the most difficult large-scale cross-domain evaluation list in the industry. It contains 10,181 natural language questions and 5,693 SQL statements, involving more than 200 databases in 138 different fields.
-- download: [download](https://drive.google.com/uc?export=download&id=1TqleXec_OykOYFREKKtschzY29dUcVAQ) the data set to the project directory, which is located in `dbgpt_hub/data/spider`.
+- download: [download](https://drive.google.com/uc?export=download&id=1TqleXec_OykOYFREKKtschzY29dUcVAQ) the data set to the project directory, which is located in `dbgpt_hub_sql/data/spider`.
 
 ### Data processing
 The project uses the information matching generation method for data preparation, that is, the `SQL + Repository` generation method that combines table information. This method combines the data table information to better understand the structure and relationship of the data table, and to better generate SQL that meets the needs.
 
-The project has encapsulated the relevant processing code in the corresponding script. You can directly run the script command with one click. The generated training sets `example_text2sql_train.json` and `example_text2sql_dev.json` will be obtained in the `dbgpt_hub/data/` directory.
+The project has encapsulated the relevant processing code in the corresponding script. You can directly run the script command with one click. The generated training sets `example_text2sql_train.json` and `example_text2sql_dev.json` will be obtained in the `dbgpt_hub_sql/data/` directory.
 
 ```python
 # Generate train data and dev(eval) data
-sh dbgpt_hub/scripts/gen_train_eval_data.sh
+sh dbgpt_hub_sql/scripts/gen_train_eval_data.sh
 ```
 There are `8659` items in the training set and `1034` items in the dev set. The generated training set data format is as follows:
 ```json
@@ -58,11 +59,11 @@ There are `8659` items in the training set and `1034` items in the dev set. The 
 }
 ```
 
-Configure the training data file in `dbgpt_hub/data/dataset_info.json`. The value of the corresponding key in the json file defaults to `example_text2sql`. This value is the value that needs to be passed in for the parameter `--dataset` in the subsequent training script train_sft. The `file_name` in json The value is the file name of the training set.
+Configure the training data file in `dbgpt_hub_sql/data/dataset_info.json`. The value of the corresponding key in the json file defaults to `example_text2sql_train`. This value is the value that needs to be passed in for the parameter `--dataset` in the subsequent training script train_sft. The `file_name` in json The value is the file name of the training set.
 
 
 ### Code interpretation
-The core code of data processing is mainly in `dbgpt_hub/data_process/sql_data_process.py`. The core processing class is `ProcessSqlData()`, and the core processing function is `decode_json_file()`.
+The core code of data processing is mainly in `dbgpt_hub_sql/data_process/sql_data_process.py`. The core processing class is `ProcessSqlData()`, and the core processing function is `decode_json_file()`.
 
 `decode_json_file()` first processes the table information in the `Spider` data into a dictionary format. The `key` and `value` are respectively the `db_id` and the `table` and `column` information corresponding to the `db_id` into the required format, for example:
 ```json
@@ -84,10 +85,10 @@ If you want to collect more data for training yourself, you can use the relevant
 
 
 ## Model train
-For the sake of simplicity, this reproduction tutorial uses LoRA fine-tuning to run directly as an example, but project fine-tuning can support not only `LoRA` but also `QLoRA` and [deepspeed](https://github.com/microsoft/DeepSpeed) acceleration. The detailed parameters of the training script `dbgpt_hub/scripts/train_sft.sh` are as follows:
+For the sake of simplicity, this reproduction tutorial uses LoRA fine-tuning to run directly as an example, but project fine-tuning can support not only `LoRA` but also `QLoRA` and [deepspeed](https://github.com/microsoft/DeepSpeed) acceleration. The detailed parameters of the training script `dbgpt_hub_sql/scripts/train_sft.sh` are as follows:
 
 ```json
-CUDA_VISIBLE_DEVICES=0 python dbgpt_hub/train/sft_train.py \
+CUDA_VISIBLE_DEVICES=0 python dbgpt_hub_sql/train/sft_train.py \
     --model_name_or_path Your_download_CodeLlama-13b-Instruct-hf_path \
     --do_train \
     --dataset example_text2sql_train \
@@ -98,7 +99,7 @@ CUDA_VISIBLE_DEVICES=0 python dbgpt_hub/train/sft_train.py \
     --template llama2 \
     --lora_rank 64 \
     --lora_alpha 32 \
-    --output_dir dbgpt_hub/output/adapter/code_llama-13b-2048_epoch8_lora \
+    --output_dir dbgpt_hub_sql/output/adapter/CodeLlama-13b-sql-lora \
     --overwrite_cache \
     --overwrite_output_dir \
     --per_device_train_batch_size 1 \
@@ -114,7 +115,7 @@ CUDA_VISIBLE_DEVICES=0 python dbgpt_hub/train/sft_train.py \
 
 Introduction to key parameters and meanings in train_sft.sh:
 - `model_name_or_path` : Path to the LLM model used.
-- `dataset`: The value is the configuration name of the training data set, corresponding to the outer key value in `dbgpt_hub/data/dataset_info.json`, such as `example_text2sql`.
+- `dataset`: The value is the configuration name of the training data set, corresponding to the outer key value in `dbgpt_hub_sql/data/dataset_info.json`, such as `example_text2sql_train`.
 - `max_source_length`: Enter the text length of the model. The effect parameter of this tutorial is `2048`, which is the optimal length after multiple experiments and analysis.
 - `max_target_length`: The sql content length of the output model, set to `512`.
 - `template`: The lora part of different model fine-tuning in the project settings. For the Llama2 series models, it is set to `llama2`.
@@ -122,7 +123,7 @@ Introduction to key parameters and meanings in train_sft.sh:
 - `finetuning_type`: Finetuning type, the value is `[ptuning, lora, freeze, full]`, etc.
 - `lora_rank`: Rank size in LoRA fine-tuning.
 - `lora_alpha`: scaling factor in LoRA fine-tuning.
-- `output_dir`: The path output by the Peft module during SFT fine-tuning. The default setting is under the `dbgpt_hub/output/adapter/` path.
+- `output_dir`: The path output by the Peft module during SFT fine-tuning. The default setting is under the `dbgpt_hub_sql/output/adapter/` path.
 - `per_device_train_batch_size`: The batch of training samples on each GPU. If the computing resources support it, it can be set to larger. The default is `1`.
 - `gradient_accumulation_steps`: The accumulated steps value of gradient update.
 - `lr_scheduler_type`: learning rate type.
@@ -142,41 +143,41 @@ After the model training is completed, to predict the trained model, you can dir
 
 Prediction run command:
 ```python
-sh ./dbgpt_hub/scripts/predict_sft.sh
+sh ./dbgpt_hub_sql/scripts/predict_sft.sh
 ```
 
-In the project directory `./dbgpt_hub/output/pred/`, this file path is the location of the default output of the model prediction results (if it does not exist, it needs to be created). The detailed parameters in `predict_sft.sh` for this tutorial are as follows:
+In the project directory `./dbgpt_hub_sql/output/pred/`, this file path is the location of the default output of the model prediction results (if it does not exist, it needs to be created). The detailed parameters in `predict_sft.sh` for this tutorial are as follows:
 ```python
 
 echo " predict Start time: $(date)"
 ## predict
-CUDA_VISIBLE_DEVICES=0 python dbgpt_hub/predict/predict.py \
+CUDA_VISIBLE_DEVICES=0 python dbgpt_hub_sql/predict/predict.py \
     --model_name_or_path Your_download_CodeLlama-13b-Instruct-hf_path \
     --template llama2 \
     --finetuning_type lora \
     --checkpoint_dir Your_last_peft_checkpoint-4000  \
-    --predicted_out_filename Your_model_pred.sql
+    --predicted_out_filename dbgpt_hub_sql/output/pred/Your_model_pred.sql
 
 echo "predict End time: $(date)"
 ```
-The value of the parameter `--predicted_out_filename` is the file name of the result predicted by the model, and the results can be found in the `dbgpt_hub/output/pred` directory.
+The value of the parameter `--predicted_out_filename` is the path of the file the predictions are written to; with the value above, the results are in the `dbgpt_hub_sql/output/pred` directory.
 
 
 ## Model evaluation
 For the evaluation of the model's effect on the dataset, the default is on the `Spider` dataset. Run the following command:
 
 ```python
-python dbgpt_hub/eval/evaluation.py --plug_value --input  Your_model_pred.sql
+python dbgpt_hub_sql/eval/evaluation.py --plug_value --input dbgpt_hub_sql/output/pred/Your_model_pred.sql
 ```
 
-The results generated by large models have a certain degree of randomness because they are closely related to parameters such as `temperature` (can be adjusted in `GeneratingArguments` in `/dbgpt_hub/configs/model_args.py`). By default, the execution accuracy of our multiple evaluations is `0.789` and above. We have placed some of the experimental and evaluation results in the project `docs/eval_llm_result.md` for reference only.
+The results generated by large models have a certain degree of randomness because they are closely related to parameters such as `temperature` (can be adjusted in `GeneratingArguments` in `dbgpt_hub_sql/configs/model_args.py`). By default, the execution accuracy of our multiple evaluations is `0.789` and above. We have placed some of the experimental and evaluation results in [docs/eval_llm_result.md](https://github.com/eosphoros-ai/DB-GPT-Hub/blob/main/docs/eval_llm_result.md) of the DB-GPT-Hub repository for reference only.
 
 
 `DB-GPT-Hub` uses `LoRA` to fine-tune the weight file on `Spider`'s training set based on the LLM of `CodeLlama-13b-Instruct-hf`. The weight file has been released. Currently, it has achieved an execution accuracy of about `0.789` on the `Spider`'s evaluation set. The weight file `CodeLlama-13b-sql-lora` is available on [HuggingFace](https://huggingface.co/eosphoros).
 
 
 ## Appendix
-The experimental environment of this article is based on a graphics card server with `A100 (40G)`, and the total training time is about 12 hours. If your machine resources are insufficient, you can give priority to reducing the value of the parameter `gradient_accumulation_steps`. In addition, you can consider using `QLoRA` to fine-tune (add `--quantization_bit 4` to the training script `dbgpt_hub/scripts/train_sft.sh`). From our experience, `QLoRA` At `8` epochs, the results are not much different from the `LoRA` fine-tuning results.
+The experimental environment of this article is based on a graphics card server with `A100 (40G)`, and the total training time is about 12 hours. If your machine resources are insufficient, you can give priority to reducing the value of the parameter `gradient_accumulation_steps`. In addition, you can consider using `QLoRA` to fine-tune (add `--quantization_bit 4` to the training script `dbgpt_hub_sql/scripts/train_sft.sh`). From our experience, `QLoRA` At `8` epochs, the results are not much different from the `LoRA` fine-tuning results.
 
 # test
 
