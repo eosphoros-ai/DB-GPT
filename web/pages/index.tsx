@@ -52,7 +52,6 @@ import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
 import ComposerContextMenu from '@/new-components/chat/input/ComposerContextMenu';
-import SuiteCommandPopover, { type SuiteCommandPopoverHandle } from '@/new-components/chat/input/SuiteCommandPopover';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
@@ -69,34 +68,15 @@ import {
   deduplicateDashboardHistoryGenerations,
   enrichHistoryWithDashboardRefs,
 } from '@/new-components/dashboard/dashboard-history-recovery';
-import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
-import { getLatestReport } from '@/new-components/financial-analysis/api';
-import {
-  financialStepSubtitle,
-  financialStepTitle,
-  recentFinancialObservations,
-} from '@/new-components/financial-analysis/execution-display';
-import { recoverFinancialHistory } from '@/new-components/financial-analysis/recover-history';
-import {
-  findFinancialCitationArtifact,
-  type FinancialCitation,
-  type FinancialCitationTarget,
-} from '@/new-components/financial-analysis/report-citations';
-import {
-  FinancialReportDelivery,
-  artifactIdentity,
-  mergeArtifacts,
-} from '@/new-components/financial-analysis/report-delivery';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { IFlow } from '@/types/flow';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
-import type { SuiteCommand, SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
+import type { SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
 import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
-import { executionStatus } from '@/utils/execution-status';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
@@ -107,14 +87,6 @@ import {
   semanticReadGapsFromExecution,
   semanticSourcesFromExecution,
 } from '@/utils/semantic-provenance';
-import {
-  suiteCommandFileError,
-  suiteCommandFileHint,
-  suiteCommandMatchesReportMode,
-  suiteCommandPrompt,
-  validateSuiteCommandFiles,
-} from '@/utils/suite-command-inputs';
-import { getSuiteCommandQuery } from '@/utils/suite-commands';
 import { localizeSuite, resolveSuiteQuestionDatabase, scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
@@ -128,7 +100,6 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
-  CloseCircleFilled,
   CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
@@ -143,7 +114,6 @@ import {
   InboxOutlined,
   LeftOutlined,
   LoadingOutlined,
-  PauseCircleOutlined,
   PieChartOutlined,
   PlusOutlined,
   ReadOutlined,
@@ -175,8 +145,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { financialText, useFinancialLocale } from '../new-components/financial-analysis/i18n';
-import { financialTopicRetryPrompt } from '../new-components/financial-analysis/topic-retry';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -465,7 +433,6 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
-  executionStatus?: string;
   /** TaskFlow run metadata (set when this answer was produced by a task flow). */
   flowRun?: { label: string };
   /** Immutable server snapshots of every session file attached to this message. */
@@ -569,6 +536,7 @@ const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutp
     ),
   );
 
+type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary';
 type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary' | 'report';
 
 const _convertExecutionToMessageParts = (
@@ -749,8 +717,8 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
-        subtitle: financialStepSubtitle(step, execution.outputs[step.id] || []) || friendlySubtitle || undefined,
+        title: step.title || `Step ${step.step}`,
+        subtitle: friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
@@ -777,9 +745,8 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
-        subtitle:
-          financialStepSubtitle(step, execution.outputs[step.id] || []) || cleanDetail?.split('\n')[0]?.slice(0, 80),
+        title: step.title || `Step ${step.step}`,
+        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
         action: step.action,
@@ -799,7 +766,7 @@ const convertToManusFormat = (
 
   const stepThoughts = { ...(execution.stepThoughts || {}) };
   execution.steps.forEach(step => {
-    if (step.action === 'dispatch_parallel_tasks' || financialStepTitle(step)) {
+    if (step.action === 'dispatch_parallel_tasks') {
       delete stepThoughts[step.id];
     }
   });
@@ -808,21 +775,11 @@ const convertToManusFormat = (
 };
 
 const Playground: NextPage = () => {
-  useFinancialLocale();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { model, modelList, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList } =
     useContext(ChatContext);
   const [query, setQuery] = useState('');
-  const suiteCommandMenuRef = useRef<SuiteCommandPopoverHandle>(null);
-  const composerAnchorRef = useRef<HTMLDivElement>(null);
-  const [composerCaret, setComposerCaret] = useState(0);
-  const [composerFocused, setComposerFocused] = useState(false);
-  const [composerIsComposing, setComposerIsComposing] = useState(false);
-  const [suiteMenuDismissed, setSuiteMenuDismissed] = useState(false);
-  const [suiteActiveDescendant, setSuiteActiveDescendant] = useState<string>();
-  const slashQuery = getSuiteCommandQuery(query, composerCaret);
-  const suiteMenuVisible = composerFocused && !composerIsComposing && !suiteMenuDismissed && slashQuery !== null;
   // Expert suites (scenario presets) rendered on the home page from the
   // registry (GET /api/v1/suites).  Tab click = explicit preset initializer;
   // the route chip is only a suggestion scored from routing.keywords.
@@ -843,7 +800,6 @@ const Playground: NextPage = () => {
   // Tab click = explicit preset override; until the user touches a tab the
   // keyword router decides the bound suite (design §三 routing rules).
   const [suiteTabTouched, setSuiteTabTouched] = useState(false);
-  const [suiteResetRequested, setSuiteResetRequested] = useState(false);
   const [selectedSuiteCommand, setSelectedSuiteCommand] = useState<{
     suite: string;
     name: string;
@@ -896,8 +852,18 @@ const Playground: NextPage = () => {
         '',
     ),
   );
-  const suiteInputHint = suiteCommandFileHint(effectiveSuiteCommand, i18n.language);
 
+  useEffect(() => {
+    if (!router.isReady || !suites.length) return;
+    const suite = suites.find(item => item.name === router.query.suite);
+    const command = suite?.manifest_snapshot?.commands?.find(cmd => cmd.name === router.query.suite_command);
+    if (!suite || !command) return;
+    setActiveSuiteTab(suite.name);
+    setSuiteTabTouched(true);
+    setSelectedSuiteCommand({ suite: suite.name, name: command.name });
+    const { suite: _suite, suite_command: _command, ...rest } = router.query;
+    router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+  }, [router, router.isReady, router.query.suite, router.query.suite_command, suites]);
   const rotatedSuiteQuestions = useMemo(() => {
     const qs = activeSuite?.manifest_snapshot?.recommended_questions ?? [];
     if (!qs.length) return [] as SuiteRecommendedQuestion[];
@@ -960,7 +926,6 @@ const Playground: NextPage = () => {
   const openSessionFilePreview = useCallback(async (item: RailItem) => {
     const convId = conversationIdRef.current;
     if (!convId || !item.fileId) return;
-    panelNavigationVersion.current += 1;
     const requestVersion = ++sessionFilePreviewRequestRef.current;
     // Desktop previews render inside the right panel: make sure it is visible.
     setRightPanelCollapsed(false);
@@ -1080,7 +1045,6 @@ const Playground: NextPage = () => {
   // through the same preview surfaces (Drawer/desktop right panel).
   const openLegacyFilePreview = useCallback(
     async (file: { name: string; size: number; media_type: string; file_path: string }) => {
-      panelNavigationVersion.current += 1;
       const requestVersion = ++sessionFilePreviewRequestRef.current;
       setRightPanelCollapsed(false);
       setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
@@ -1201,61 +1165,6 @@ const Playground: NextPage = () => {
   selectedFlowRef.current = selectedFlow;
   const [flowOptions, setFlowOptions] = useState<ITaskflowRef[]>([]);
 
-  const selectSuiteContext = useCallback(
-    (suite: SuiteItem) => {
-      if (suite.status !== 'enabled') return;
-      if (suiteCreationMode) {
-        const { creation_mode: _mode, ...rest } = router.query;
-        void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
-      }
-      setActiveSuiteTab(suite.name);
-      setSuiteTabTouched(true);
-      setSuiteResetRequested(false);
-      setSuiteQOffset(0);
-      setSelectedSuiteCommand(null);
-      setSelectedSkill(null);
-      setSelectedFlow(null);
-      selectedFlowRef.current = null;
-      setSelectedKnowledge(null);
-      setSelectedConnectors([]);
-      if (suite.manifest_snapshot?.context_defaults?.datasource === 'optional') setSelectedDb(null);
-      setIsDbModalOpen(false);
-      setIsKnowledgeModalOpen(false);
-      setIsSkillPanelOpen(false);
-      setIsDbPanelOpen(false);
-      setIsKnowledgePanelOpen(false);
-      setIsConnectorPanelOpen(false);
-    },
-    [router, suiteCreationMode],
-  );
-
-  const handleSelectSuiteCommand = useCallback(
-    (suite: SuiteItem, command: SuiteCommand, prompt?: string) => {
-      if (suite.status !== 'enabled' || !suite.manifest_snapshot?.commands?.some(item => item.name === command.name)) {
-        return;
-      }
-      selectSuiteContext(suite);
-      setSelectedSuiteCommand({ suite: suite.name, name: command.name });
-      const nextQuery = prompt ?? command.prefill ?? '';
-      setQuery(nextQuery);
-      setComposerCaret(nextQuery.length);
-      setSuiteMenuDismissed(true);
-    },
-    [selectSuiteContext],
-  );
-
-  useEffect(() => {
-    if (!router.isReady || !suites.length) return;
-    const suite = suites.find(item => item.name === router.query.suite);
-    const command = suite?.manifest_snapshot?.commands?.find(
-      item => item.name === router.query.suite_command || item.aliases?.includes(String(router.query.suite_command)),
-    );
-    if (!suite || !command) return;
-    handleSelectSuiteCommand(suite, command);
-    const { suite: _suite, suite_command: _command, creation_mode: _mode, ...rest } = router.query;
-    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
-  }, [router, router.isReady, router.query.suite, router.query.suite_command, suites, handleSelectSuiteCommand]);
-
   // Load built-in templates + my taskflow flows for the "+" menu cascade.
   useEffect(() => {
     (async () => {
@@ -1367,10 +1276,6 @@ const Playground: NextPage = () => {
   // because the panel already grew in real time.
   const finalChunkStreamedRef = useRef<Record<string, boolean>>({});
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
-  const [financialCitationTarget, setFinancialCitationTarget] = useState<FinancialCitationTarget | null>(null);
-  const financialCitationRequest = useRef(0);
-  const financialDelivery = useRef(new FinancialReportDelivery());
-  const panelNavigationVersion = useRef(0);
 
   // Rail mode: viewer (mockup form: artifact preview / gallery) by default;
   // legacy Execution Steps / Trace / Summary panel behind the debug toggle
@@ -1422,8 +1327,6 @@ const Playground: NextPage = () => {
   );
 
   const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
-    panelNavigationVersion.current += 1;
-    setFinancialCitationTarget(null);
     setPreviewArtifact(artifact as Artifact);
   }, []);
 
@@ -1472,15 +1375,14 @@ const Playground: NextPage = () => {
   const streamStatus = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
-      if (msg.role !== 'view' || !msg.id) continue;
+      if (msg.role !== 'view') continue;
       const exec = executionMap[msg.id];
       if (!exec || exec.steps.length === 0) continue;
       const toolCalls = exec.steps.filter(
         s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
       ).length;
       const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
-      const status = executionStatus(exec.steps, msg.thinking, msg.taskPlan, msg.executionStatus);
-      const running = status === 'running';
+      const running = exec.steps.some(s => s.status === 'running') || Boolean(msg.thinking);
       const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
       const ends = exec.steps.map(s => s.endedAt).filter((v): v is number => typeof v === 'number');
       let dur = '';
@@ -1494,12 +1396,17 @@ const Playground: NextPage = () => {
       }
       return {
         running,
-        status,
-        text: t(`agent_status_${status}`, {
-          rounds,
-          calls: toolCalls,
-          dur: dur ? ` · ${dur}` : '',
-        }) as string,
+        text: running
+          ? (t('agent_status_running', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string)
+          : (t('agent_status_done', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string),
       };
     }
     return null;
@@ -1522,7 +1429,6 @@ const Playground: NextPage = () => {
 
   const handleUserPanelViewChange = useCallback(
     (view: PanelView) => {
-      panelNavigationVersion.current += 1;
       cancelSummaryPresentation();
       setRightPanelView(view);
     },
@@ -1540,25 +1446,6 @@ const Playground: NextPage = () => {
     messageId: string;
     agentId: string;
   } | null>(null);
-
-  const openFinancialCitation = (citation: FinancialCitation, messageId?: string) => {
-    const artifact = findFinancialCitationArtifact(
-      artifacts.filter(item => !messageId || item.messageId === messageId),
-      citation,
-    );
-    if (!artifact) {
-      message.info(financialText('financial.the_referenced_report_is_unavailable_open_the_report_from_this_turn_'));
-      return;
-    }
-    panelNavigationVersion.current += 1;
-    cancelSummaryPresentation();
-    setActiveViewMsgId(artifact.messageId || messageId || null);
-    setActiveSubAgent(null);
-    setPreviewArtifact(artifact);
-    setFinancialCitationTarget({ ...citation, requestId: ++financialCitationRequest.current });
-    setRightPanelView('html-preview');
-    setRightPanelCollapsed(false);
-  };
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -1632,20 +1519,11 @@ const Playground: NextPage = () => {
     closeSessionFilePreview();
     fileDragDepthRef.current = 0;
     terminatedStepIdsRef.current.clear();
-    financialDelivery.current = new FinancialReportDelivery();
     lastSentPayloadRef.current = null;
 
     setMessages([]);
     setConversationId(null);
     setQuery('');
-    setComposerCaret(0);
-    setComposerFocused(false);
-    setComposerIsComposing(false);
-    setSuiteMenuDismissed(false);
-    setActiveSuiteTab('');
-    setSuiteTabTouched(false);
-    setSuiteResetRequested(false);
-    setSuiteQOffset(0);
     setSelectedSuiteCommand(null);
     setSuiteCommandBindings({});
     setLoading(false);
@@ -1668,7 +1546,6 @@ const Playground: NextPage = () => {
     setTaskPlan([]);
     setSelectedStepId(null);
     setSelectedCitationIndex(null);
-    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setSummaryPresentationResponseId(null);
@@ -1681,8 +1558,6 @@ const Playground: NextPage = () => {
     setSelectedDb(null);
     setSelectedKnowledge(null);
     setSelectedSkill(null);
-    setSelectedFlow(null);
-    selectedFlowRef.current = null;
     setSelectedConnectors([]);
     setIsDbModalOpen(false);
     setIsKnowledgeModalOpen(false);
@@ -1695,7 +1570,7 @@ const Playground: NextPage = () => {
     setIsConnectorPanelOpen(false);
     setConnectorSearchQuery('');
     dismiss();
-  }, [cancelSummaryPresentation, closeSessionFilePreview, dismiss, resetSessionFiles]);
+  }, [abortInFlightChat, cancelSummaryPresentation, closeSessionFilePreview, dismiss, resetSessionFiles]);
 
   useNewTaskOwner(resetTaskSession);
 
@@ -1773,7 +1648,7 @@ const Playground: NextPage = () => {
     setSelectedDb(source);
     const { database_name: _name, ...rest } = router.query;
     void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
-  }, [router, router.query.database_name, dataSources]);
+  }, [router.query.database_name, dataSources]);
 
   const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
@@ -1862,7 +1737,6 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
@@ -1915,7 +1789,7 @@ const Playground: NextPage = () => {
       // ref before removing ?id, so its route completion remains idempotent.
       resetTaskSession();
     }
-  }, [rehydrateSessionFiles, resetTaskSession, router.isReady, router.query.id]);
+  }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1961,15 +1835,6 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
-  const mobileFinancialPanel =
-    !isDesktopWidth &&
-    !rightPanelCollapsed &&
-    artifacts.some(
-      artifact =>
-        artifact.messageId === selectedViewMsgId &&
-        isFinancialReportReference(artifact.content) &&
-        artifact.content.published === true,
-    );
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -2138,17 +2003,6 @@ const Playground: NextPage = () => {
         break;
       }
       case 'html': {
-        if (isFinancialReportReference(artifact.content)) {
-          try {
-            const { downloadFinancialReport } = await import(
-              '@/new-components/financial-analysis/FinancialReportArtifact'
-            );
-            await downloadFinancialReport(artifact.content);
-          } catch {
-            message.error(financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'));
-          }
-          break;
-        }
         const htmlContent =
           typeof artifact.content === 'string'
             ? artifact.content
@@ -2332,7 +2186,10 @@ const Playground: NextPage = () => {
                 filePath: output.content?.file_path || output.content?.path,
               });
             } else if (output.output_type === 'html') {
-              const htmlContent = reportArtifactContent(output.content);
+              const htmlContent =
+                typeof output.content === 'string'
+                  ? output.content
+                  : output.content?.content || output.content?.html || String(output.content);
               const htmlTitle = output.content?.title || 'Report';
               finalArtifacts.push({
                 id: `${messageId}-html-${step.id}-${oIdx}`,
@@ -2618,8 +2475,16 @@ const Playground: NextPage = () => {
         }
       }
 
-      // Financial report revisions share a stable run identity.
-      const deduped = mergeArtifacts(finalArtifacts);
+      // Deduplicate: for artifacts with the same name+type, keep only the last one
+      const deduped: Artifact[] = [];
+      const seen = new Map<string, number>();
+      for (let i = finalArtifacts.length - 1; i >= 0; i--) {
+        const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
+        if (!seen.has(key)) {
+          seen.set(key, i);
+          deduped.unshift(finalArtifacts[i]);
+        }
+      }
 
       // Directory-level aggregation: >=3 files under one root that
       // includes SKILL.md collapse into a single skill-package artifact
@@ -2704,7 +2569,7 @@ const Playground: NextPage = () => {
   const convArtifacts = useMemo(() => {
     const list: Artifact[] = [];
     for (const msg of messages) {
-      if (msg.role !== 'view' || !msg.id) continue;
+      if (msg.role !== 'view') continue;
       for (const state of msg.dashboardGenerations || []) {
         if (state.status === 'created' && state.dashboardId) {
           list.push({
@@ -2722,8 +2587,6 @@ const Playground: NextPage = () => {
       if (!exec || !hasArtifactOutputs(exec)) continue;
       list.push(...buildArtifactsFromExecution(msg.id, exec, undefined, undefined, msg.context));
     }
-    // Persisted reports can be restored without the execution steps that produced them.
-    list.push(...artifacts.filter(artifact => isFinancialReportReference(artifact.content)));
     const lastView = [...messages].reverse().find(m => m.role === 'view' && m.context);
     if (lastView?.id && lastView.context) {
       list.push({
@@ -2752,15 +2615,13 @@ const Playground: NextPage = () => {
         deduped.unshift(a);
         continue;
       }
-      const key = isFinancialReportReference(a.content)
-        ? `financial:${a.content.sessionId}:${a.content.runId}`
-        : `${a.type}:${stripRunPrefix(a.name || '').toLowerCase()}`;
+      const key = `${a.type}:${stripRunPrefix(a.name || '').toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.set(key, i);
       deduped.unshift(a);
     }
     return deduped;
-  }, [messages, executionMap, artifacts, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
+  }, [messages, executionMap, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
 
   // Newest round that produced a query result set: only that round keeps an
   // expanded query card; every older round folds its queries into its own
@@ -2788,18 +2649,8 @@ const Playground: NextPage = () => {
 
     setArtifacts(prevArtifacts => {
       const filtered = prevArtifacts.filter(artifact => artifact.messageId !== responseId);
-      const delivered = prevArtifacts.filter(
-        artifact => artifact.messageId === responseId && isFinancialReportReference(artifact.content),
-      );
-      return [...filtered, ...mergeArtifacts([...deduped, ...delivered])];
+      return [...filtered, ...deduped];
     });
-
-    // Financial reports arrive before the final answer. Finalization only fills
-    // the artifact list; it must not replace the report/evidence the user is reading.
-    if (financialDelivery.current.hasReport(responseId)) {
-      setPendingFinalization(null);
-      return;
-    }
 
     const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
     const imageArtifact = deduped.find(artifact => artifact.type === 'image');
@@ -2928,27 +2779,6 @@ const Playground: NextPage = () => {
       message.error('当前服务未配置可用模型，请先在服务端配置并启动模型');
       return;
     }
-    const hasMatchingReport =
-      effectiveSuite?.scenario_id === 'financial' &&
-      artifacts.some(
-        artifact =>
-          isFinancialReportReference(artifact.content) &&
-          artifact.content.sessionId === conversationIdRef.current &&
-          suiteCommandMatchesReportMode(effectiveSuiteCommand, artifact.content.mode),
-      );
-    const draftInputFiles = explicitLegacyFile
-      ? [explicitLegacyFile]
-      : sessionFiles.legacyFile
-        ? [sessionFiles.legacyFile]
-        : sessionFiles.files.map(draft => ({
-            name: draft.identity.name,
-            media_type: draft.snapshot?.media_type || draft.file?.type || '',
-          }));
-    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles, hasMatchingReport);
-    if (materialProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(materialProblem, effectiveSuiteCommand, i18n.language));
-      return;
-    }
     if (
       (!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile && !explicitLegacyFile) ||
       loading ||
@@ -2967,8 +2797,8 @@ const Playground: NextPage = () => {
     if (
       suiteTabTouched &&
       !suiteCreationMode &&
-      effectiveSuite &&
-      effectiveSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional' &&
+      activeSuite &&
+      activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional' &&
       !effectiveDb
     ) {
       message.warning(t('suite_database_required'));
@@ -3037,14 +2867,6 @@ const Playground: NextPage = () => {
       }
     }
     if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
-    const preparedFiles = sendSnapshot?.legacyFile
-      ? [sendSnapshot.legacyFile]
-      : (sendSnapshot?.fileIds ?? []).map(fileId => sendSnapshot!.snapshotById[fileId]);
-    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles, hasMatchingReport);
-    if (preparedProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(preparedProblem, effectiveSuiteCommand, i18n.language));
-      return;
-    }
     // Shallow-write the conversation id into the URL once the send is
     // committed: every same-page affordance (sidebar logo / explore links,
     // also pointing at '/') becomes a real transition whose id removal
@@ -3079,7 +2901,6 @@ const Playground: NextPage = () => {
     const currentOrder = Math.floor(messages.length / 2) + 1;
 
     const responseId = generateUUID();
-    const navigationVersionAtSend = panelNavigationVersion.current;
 
     const humanId = generateUUID();
 
@@ -3123,13 +2944,11 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
-    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
-    let receivedFinal = false;
     chatAbortControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
@@ -3147,7 +2966,9 @@ const Playground: NextPage = () => {
     // Build ext_info once and reuse it for both the live request and the
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
-    // A suite may require an engine; otherwise the server preference applies.
+    // NOTE: the harness engine is now a server-side
+    // preference (Setting → Harness); it is NOT sent
+    // per request to avoid stale client states.
     const baseExtInfo: Record<string, any> = {
       locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
@@ -3162,10 +2983,6 @@ const Playground: NextPage = () => {
         ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
         : {}),
       ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
-      ...(suiteResetRequested && !overrideExtInfo?.suite ? { suite_reset: true } : {}),
-      ...(effectiveSuite?.manifest_snapshot?.context_defaults?.harness_engine
-        ? { harness_engine: effectiveSuite.manifest_snapshot.context_defaults.harness_engine }
-        : {}),
       ...(suiteCreationMode ? { creation_mode: 'expert_suite' } : {}),
       ...overrideExtInfo,
     };
@@ -3546,39 +3363,23 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          if (panelNavigationVersion.current === navigationVersionAtSend) setRightPanelCollapsed(false);
-        } else if (payload.type === 'step.meta' || payload.type === 'step.remove') {
-          if (payload.type === 'step.remove' || payload.action?.toLowerCase() === 'terminate') {
+        } else if (payload.type === 'step.meta') {
+          if (payload.action && payload.action.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
-            setSelectedStepId(selected => (selected === payload.id ? null : selected));
             setExecutionMap(prev => {
               const current = prev[responseId];
               if (!current) return prev;
               const nextSteps = current.steps.filter(item => item.id !== payload.id);
-              const nextActiveStepId =
-                current.activeStepId === payload.id
-                  ? nextSteps[nextSteps.length - 1]?.id || null
-                  : current.activeStepId;
-              const nextOutputs = { ...current.outputs };
-              const nextThoughts = { ...current.stepThoughts };
-              delete nextOutputs[payload.id];
-              delete nextThoughts[payload.id];
+              const nextActiveStepId = current.activeStepId === payload.id ? null : current.activeStepId;
               return {
                 ...prev,
-                [responseId]: {
-                  ...current,
-                  steps: nextSteps,
-                  outputs: nextOutputs,
-                  stepThoughts: nextThoughts,
-                  activeStepId: nextActiveStepId,
-                },
+                [responseId]: { ...current, steps: nextSteps, activeStepId: nextActiveStepId },
               };
             });
             return;
           }
-          if (terminatedStepIdsRef.current.has(payload.id)) return;
           // Clear manual step selection so the right panel auto-tracks this step
-          if (payload.action && panelNavigationVersion.current === navigationVersionAtSend) {
+          if (payload.action) {
             setSelectedStepId(null);
           }
           setExecutionMap(prev => {
@@ -3636,9 +3437,7 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 stepThoughts: nextThoughts,
                 // Focus right panel on this step when it receives action content
-                ...(payload.action && panelNavigationVersion.current === navigationVersionAtSend
-                  ? { activeStepId: payload.id }
-                  : {}),
+                ...(payload.action ? { activeStepId: payload.id } : {}),
               },
             };
           });
@@ -3675,33 +3474,8 @@ const Playground: NextPage = () => {
             };
           });
 
-          if (payload.output_type === 'html') {
-            const delivery = financialDelivery.current.receive(
-              payload.content,
-              currentConvId,
-              responseId,
-              panelNavigationVersion.current === navigationVersionAtSend,
-              id,
-            );
-            if (delivery) {
-              setArtifacts(previous => mergeArtifacts([...previous, delivery.artifact]));
-              if (delivery.open) {
-                cancelSummaryPresentation();
-                setPreviewArtifact(delivery.artifact);
-                setFinancialCitationTarget(null);
-                setActiveSubAgent(null);
-                setSelectedStepId(null);
-                setRightPanelView('html-preview');
-                setRightPanelCollapsed(false);
-              } else {
-                setPreviewArtifact(previous =>
-                  previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
-                    ? delivery.artifact
-                    : previous,
-                );
-              }
-            }
-          }
+          // Artifacts are now generated at task completion (final event),
+          // not during streaming — to avoid showing intermediate outputs as artifacts
         } else if (payload.type === 'step.done') {
           const id = payload.id;
           if (terminatedStepIdsRef.current.has(id || '')) return;
@@ -3739,7 +3513,6 @@ const Playground: NextPage = () => {
             setActiveMessageId(responseId);
           }
         } else if (payload.type === 'final') {
-          receivedFinal = true;
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
           cancelSummaryPresentation();
@@ -3761,7 +3534,6 @@ const Playground: NextPage = () => {
                 reportId: finalAnswer.reportId,
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
-                executionStatus: payload.execution_status,
               };
             }),
           );
@@ -3770,10 +3542,7 @@ const Playground: NextPage = () => {
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
           const hadStreamedFinalChunks = !!finalChunkStreamedRef.current[responseId];
-          if (financialDelivery.current.hasReport(responseId)) {
-            setStreamingSummary(summaryText);
-            setSummaryComplete(true);
-          } else if (summaryText && !hadStreamedFinalChunks) {
+          if (summaryText && !hadStreamedFinalChunks) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
@@ -3844,7 +3613,6 @@ const Playground: NextPage = () => {
                 ...msg,
                 context: partial ? `${partial}\n\n_${stoppedMark}_` : `_${stoppedMark}_`,
                 thinking: false,
-                executionStatus: 'cancelled',
               };
             }),
           );
@@ -3859,7 +3627,6 @@ const Playground: NextPage = () => {
           if (lastMsg && lastMsg.role === 'view') {
             lastMsg.context = err?.message || 'Error occurred';
             lastMsg.thinking = false;
-            lastMsg.executionStatus = 'failed';
           }
           return newMessages;
         });
@@ -3873,44 +3640,6 @@ const Playground: NextPage = () => {
       }
       if (taskEpochRef.current === taskEpoch) {
         setLoading(false);
-        if (!receivedFinal && financialDelivery.current.hasReport(responseId)) {
-          setExecutionMap(previous => {
-            const current = previous[responseId];
-            if (!current) return previous;
-            return {
-              ...previous,
-              [responseId]: {
-                ...current,
-                steps: current.steps.map(step => (step.status === 'running' ? { ...step, status: 'failed' } : step)),
-              },
-            };
-          });
-          setMessages(previous =>
-            previous.map(item =>
-              item.id !== responseId
-                ? item
-                : {
-                    ...item,
-                    thinking: false,
-                    executionStatus: 'incomplete',
-                    context:
-                      item.context ||
-                      (financialDelivery.current.hasPublished(responseId)
-                        ? financialText('financial.the_report_is_ready_with_source_evidence_this_reply_is_incomplete')
-                        : financialText('financial.execution_ended_saved_analysis_remains_available')),
-                    taskPlan: item.taskPlan?.map(task =>
-                      task.status === 'in_progress'
-                        ? {
-                            ...task,
-                            status: 'error' as const,
-                            detail: financialText('financial.execution_ended_saved_content_remains_available'),
-                          }
-                        : task,
-                    ),
-                  },
-            ),
-          );
-        }
       }
     }
   };
@@ -4206,17 +3935,17 @@ const Playground: NextPage = () => {
   };
 
   const handleSuiteQuestionClick = (question: SuiteRecommendedQuestion) => {
-    if (!activeSuite) return;
-    const command = activeSuite.manifest_snapshot?.commands?.find(item => item.name === question.command);
-    if (command) handleSelectSuiteCommand(activeSuite, command, question.text);
-    else {
-      selectSuiteContext(activeSuite);
-      setQuery(question.text);
+    setQuery(question.text);
+    if (activeSuite && question.command) {
+      setSelectedSuiteCommand({ suite: activeSuite.name, name: question.command });
     }
-    const needsDatabase = activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional';
-    const database = needsDatabase ? resolveSuiteQuestionDatabase(question, selectedDb, dataSources || []) : null;
+    if (activeSuite) {
+      setActiveSuiteTab(activeSuite.name);
+      setSuiteTabTouched(true);
+    }
+    const database = resolveSuiteQuestionDatabase(question, selectedDb, dataSources || []);
     setSelectedDb(database);
-    if (needsDatabase && !database) {
+    if (!database) {
       if (question.database_name) {
         message.warning(t('suite_database_unavailable', { name: question.database_name }));
       }
@@ -4245,7 +3974,6 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
-    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
@@ -4254,7 +3982,6 @@ const Playground: NextPage = () => {
     const allArtifacts: Artifact[] = [];
     const restoredSkillNames: Record<string, string> = {};
     const restoredSuiteBindings: typeof suiteCommandBindings = {};
-    let restoredSuiteSelection: SuiteMessageReference | null | undefined;
 
     historyMessages.forEach(msg => {
       if (msg.role === 'human') {
@@ -4275,7 +4002,7 @@ const Playground: NextPage = () => {
             step: s.action === '__progress__' ? 0 : ++historyStepNumber,
             title: s.title || s.action || `Step ${idx + 1}`,
             detail: s.detail || '',
-            status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
+            status: (s.status === 'failed' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
             progressContent: s.progress_content,
             actionInput: s.action_input || undefined,
@@ -4343,12 +4070,7 @@ const Playground: NextPage = () => {
           };
 
           const historyAnswer = decodeHistoryAnswer(payload);
-          const finalContent = cleanFinalContent(
-            historyAnswer.content ||
-              (payload.execution_status
-                ? financialText('financial.task_restored_saved_progress_and_results_are_available')
-                : ''),
-          );
+          const finalContent = cleanFinalContent(historyAnswer.content);
           const recordedBinding = payload.suite_binding;
           if (recordedBinding && typeof recordedBinding.command === 'string') {
             restoredSuiteBindings[viewId] = {
@@ -4361,16 +4083,6 @@ const Playground: NextPage = () => {
 
           // Restore this turn's recorded reference, never the current suite selection.
           const reference = payload.suite_reference;
-          if (Object.prototype.hasOwnProperty.call(payload, 'suite_reference')) {
-            restoredSuiteSelection =
-              reference && typeof reference.name === 'string' && typeof reference.display === 'string'
-                ? {
-                    name: reference.name,
-                    display: reference.display,
-                    command: typeof reference.command === 'string' ? reference.command : undefined,
-                  }
-                : null;
-          }
           if (reference && typeof reference.name === 'string' && typeof reference.display === 'string') {
             const lastHuman = [...newMessages].reverse().find(m => m.role === 'human');
             if (lastHuman) {
@@ -4402,17 +4114,6 @@ const Playground: NextPage = () => {
             null,
           );
           allArtifacts.push(...restoredArtifacts);
-          if (isFinancialReportReference(payload.financial_report)) {
-            allArtifacts.push({
-              id: `${viewId}-financial-report`,
-              type: 'html',
-              name: `${payload.financial_report.title}.html`,
-              content: payload.financial_report,
-              createdAt: Date.now(),
-              messageId: viewId,
-              downloadable: true,
-            });
-          }
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
@@ -4445,11 +4146,6 @@ const Playground: NextPage = () => {
             }
           }
 
-          const savedTasks = Array.isArray(payload.task_plan)
-            ? payload.task_plan
-            : Array.isArray(payload.tasks)
-              ? payload.tasks
-              : undefined;
           newMessages.push({
             id: viewId,
             role: 'view',
@@ -4459,19 +4155,14 @@ const Playground: NextPage = () => {
             reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
-            executionStatus: payload.execution_status,
             dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
               .map(dashboardGenerationFromHistoryRef)
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
-            taskPlan: savedTasks?.map((task: TaskItem) =>
-              payload.execution_status && task.status === 'in_progress'
-                ? {
-                    ...task,
-                    status: 'cancelled' as const,
-                    detail: financialText('financial.saved_progress_restored_you_can_continue_the_task'),
-                  }
-                : task,
-            ),
+            taskPlan: Array.isArray(payload.task_plan)
+              ? payload.task_plan
+              : Array.isArray(payload.tasks)
+                ? payload.tasks
+                : undefined,
           });
         } else {
           const historyAnswer = decodeHistoryAnswer(msg.context || '');
@@ -4494,31 +4185,21 @@ const Playground: NextPage = () => {
       // dropping it left re-entered running conversations blank.
       newMessages.push(...liveTail);
       for (const m of liveTail) {
-        if (!m.id) continue;
         const exec = executionMap[m.id];
         if (exec) newExecutionMap[m.id] = exec;
       }
     }
     setMessages(deduplicateDashboardHistoryGenerations(newMessages));
-    const latestSuite = liveTail.length
-      ? liveTail.find(m => m.role === 'human')?.attachedSuite
-      : restoredSuiteSelection !== undefined
-        ? restoredSuiteSelection
-        : [...newMessages].reverse().find(m => m.attachedSuite)?.attachedSuite;
-    setSuiteResetRequested(false);
+    const latestSuite = [...newMessages].reverse().find(m => m.attachedSuite)?.attachedSuite;
     if (latestSuite) {
       setActiveSuiteTab(latestSuite.name);
       setSuiteTabTouched(true);
       setSelectedSuiteCommand(latestSuite.command ? { suite: latestSuite.name, name: latestSuite.command } : null);
       setSelectedSkill(null);
-    } else {
-      setActiveSuiteTab('');
-      setSuiteTabTouched(false);
-      setSelectedSuiteCommand(null);
     }
     setSuiteCommandBindings(prev => ({ ...prev, ...restoredSuiteBindings }));
     setExecutionMap(newExecutionMap);
-    setArtifacts(mergeArtifacts(allArtifacts));
+    setArtifacts(allArtifacts);
     if (Object.keys(restoredSkillNames).length > 0) {
       setCreatedSkillNames(prev => ({ ...prev, ...restoredSkillNames }));
     }
@@ -4561,20 +4242,6 @@ const Playground: NextPage = () => {
       } else if (Array.isArray(res)) {
         msgList = res;
       }
-      if (msgList?.length === 0) {
-        // Older interrupted turns have a saved financial run but no messages.
-        // Recovery is scoped by the authenticated owner and this conversation.
-        try {
-          const report = await getLatestReport(convUid, controller.signal);
-          if (controller.signal.aborted) return;
-          if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
-          if (report) msgList = [recoverFinancialHistory(report, convUid)];
-        } catch (recoveryError) {
-          if (controller.signal.aborted) return;
-          console.warn('Financial report recovery failed', recoveryError);
-        }
-      }
-      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       if (msgList) {
         // A draft can be saved just before a stream disconnects, before the
         // final answer stores its reference. Reconcile with persisted assets.
@@ -4615,7 +4282,7 @@ const Playground: NextPage = () => {
     } catch (e) {
       if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       console.error('Failed to load conversation', e);
-      message.error(financialText('financial.failed_to_load_conversation_history'));
+      message.error('加载历史对话失败');
     } finally {
       if (historyAbortControllerRef.current === controller) {
         historyAbortControllerRef.current = null;
@@ -4698,8 +4365,7 @@ const Playground: NextPage = () => {
   // Upload Props
   const uploadProps: any = {
     name: 'file',
-    multiple: effectiveSuiteCommand?.input_files?.max !== 1,
-    accept: effectiveSuiteCommand?.input_files?.types.join(','),
+    multiple: true,
     showUploadList: false,
     beforeUpload: (file: any) => {
       // Session-files flow: antd calls beforeUpload once per picked file; the
@@ -4727,7 +4393,6 @@ const Playground: NextPage = () => {
     setActiveSuiteTab('');
     // An explicit cancellation overrides keyword routing for this draft.
     setSuiteTabTouched(true);
-    setSuiteResetRequested(true);
     setSelectedSuiteCommand(null);
     setSuiteQOffset(0);
     if (typedSuiteCommand) {
@@ -4735,15 +4400,10 @@ const Playground: NextPage = () => {
     }
   };
   const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (composerIsComposing || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
-    if (suiteCommandMenuRef.current?.handleKeyDown(event)) return;
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      void handleStart();
-      return;
-    }
     if (
       (!effectiveSuite && !suiteCreationMode) ||
+      event.nativeEvent.isComposing ||
+      event.nativeEvent.keyCode === 229 ||
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
@@ -4751,75 +4411,36 @@ const Playground: NextPage = () => {
       (event.key !== 'Backspace' && event.key !== 'Delete') ||
       event.currentTarget.selectionStart !== 0 ||
       event.currentTarget.selectionEnd !== 0
-    )
+    ) {
       return;
+    }
     event.preventDefault();
-    if (suiteCreationMode) clearCreationContext();
-    else clearSuiteSelection();
+    if (suiteCreationMode) {
+      clearCreationContext();
+      return;
+    }
+    clearSuiteSelection();
   };
-  const composerTextareaProps = {
-    value: query,
-    onKeyDown: handleComposerKeyDown,
-    'aria-controls': suiteMenuVisible ? 'composer-suite-command-list' : undefined,
-    'aria-expanded': suiteMenuVisible,
-    'aria-activedescendant': suiteActiveDescendant,
-    'aria-autocomplete': 'list' as const,
-    onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setQuery(event.target.value);
-      setComposerCaret(event.target.selectionStart);
-      setSuiteMenuDismissed(false);
-    },
-    onSelect: (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
-      const caret = event.currentTarget.selectionStart;
-      if (caret !== composerCaret) setSuiteMenuDismissed(false);
-      setComposerCaret(caret);
-    },
-    onFocus: (event: React.FocusEvent<HTMLTextAreaElement>) => {
-      setComposerFocused(true);
-      setComposerCaret(event.currentTarget.selectionStart);
-      setSuiteMenuDismissed(false);
-    },
-    onBlur: () => setComposerFocused(false),
-    onCompositionStart: () => setComposerIsComposing(true),
-    onCompositionEnd: (event: React.CompositionEvent<HTMLTextAreaElement>) => {
-      setComposerIsComposing(false);
-      setComposerCaret(event.currentTarget.selectionStart);
-    },
-  };
-  const suiteCommandMenu = (
-    <SuiteCommandPopover
-      ref={suiteCommandMenuRef}
-      id='composer-suite-command-list'
-      visible={suiteMenuVisible}
-      suites={suites}
-      query={slashQuery ?? ''}
-      locale={i18n.language}
-      anchorRef={composerAnchorRef}
-      onActiveDescendantChange={setSuiteActiveDescendant}
-      onSelect={(suite, command) => handleSelectSuiteCommand(suite, command, suiteCommandPrompt(command, query))}
-      onClose={() => setSuiteMenuDismissed(true)}
-    />
-  );
-  const suiteMaterialGuide = suiteInputHint ? (
-    <p className='mb-2 text-xs leading-5 text-gray-500 dark:text-gray-400' data-testid='suite-material-guide'>
-      {suiteInputHint}
-      {effectiveSuite?.scenario_id === 'financial' &&
-        (i18n.language.startsWith('en')
-          ? '. You can continue a saved report of the same kind without uploading again.'
-          : '；已有同类报告可直接追问，无需再次上传。')}
-    </p>
-  ) : null;
   const composerContextProps = {
     suites,
     selectedSuite: effectiveSuite?.name,
     onSelectSuite: (suite: SuiteItem) => {
+      if (suiteCreationMode) clearCreationContext();
       if (effectiveSuite?.name === suite.name) {
         clearSuiteSelection();
         return;
       }
-      selectSuiteContext(suite);
-      if (typedSuiteCommand) setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
-      else if (selectedSkill && query.startsWith(`/${selectedSkill.name} `)) {
+      setActiveSuiteTab(suite.name);
+      setSuiteTabTouched(true);
+      setSelectedSuiteCommand(null);
+      setSuiteQOffset(0);
+      setSelectedSkill(null);
+      setSelectedFlow(null);
+      // A typed shortcut from the previous suite must not select a command
+      // in the newly chosen suite. Keep the user's question after the prefix.
+      if (typedSuiteCommand) {
+        setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
+      } else if (selectedSkill && query.startsWith(`/${selectedSkill.name} `)) {
         setQuery(query.slice(selectedSkill.name.length + 2));
       }
     },
@@ -4947,17 +4568,17 @@ const Playground: NextPage = () => {
           {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
 
           {/* Chat Messages or Hero Section */}
-          {/* Keep conversation recovery visible instead of flashing the new-task hero. */}
-          {historyLoading && messages.length === 0 ? (
+          {/* When from_task mode and loading history, show loading spinner instead of Hero */}
+          {router.query.from_task && historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
               <Spin size='large' tip='加载对话历史...' />
             </div>
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 ${mobileFinancialPanel ? 'hidden' : 'flex'} flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
-                <div data-testid='conversation-content' className='flex-1 min-h-0 overflow-y-auto'>
+                <div className='flex-1 min-h-0 overflow-y-auto'>
                   <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                     {rounds.map((round, roundIndex) => {
                       const isLastRound = roundIndex === rounds.length - 1;
@@ -4996,23 +4617,14 @@ const Playground: NextPage = () => {
                           )
                         : [];
                       const roundArtifacts: StreamArtifact[] =
-                        useTimelineView && round.viewMsg?.id
-                          ? mergeArtifacts([
-                              ...(execution && hasArtifactOutputs(execution)
-                                ? buildArtifactsFromExecution(
-                                    round.viewMsg.id,
-                                    execution,
-                                    undefined,
-                                    undefined,
-                                    round.viewMsg.context,
-                                  )
-                                : []),
-                              // Saved reports may outlive their tool steps. The
-                              // latest delivered/restored reference wins here.
-                              ...artifacts.filter(
-                                a => a.messageId === round.viewMsg?.id && isFinancialReportReference(a.content),
-                              ),
-                            ]).map(a => ({
+                        useTimelineView && execution && hasArtifactOutputs(execution)
+                          ? buildArtifactsFromExecution(
+                              round.viewMsg!.id,
+                              execution,
+                              undefined,
+                              undefined,
+                              round.viewMsg!.context,
+                            ).map(a => ({
                               id: a.id,
                               type: a.type,
                               name: a.name,
@@ -5161,7 +4773,7 @@ const Playground: NextPage = () => {
                                 // process view, so the right panel shows this step.
                                 setActiveSubAgent(null);
                                 setRailDebug(true);
-                                handleUserPanelViewChange('execution');
+                                setRightPanelView('execution');
                                 setRightPanelCollapsed(false);
                                 setExecutionMap(prev => ({
                                   ...prev,
@@ -5180,12 +4792,8 @@ const Playground: NextPage = () => {
                             attachedSuite={round.humanMsg?.attachedSuite}
                             attachedDb={round.humanMsg?.attachedDb}
                             taskPlan={round.viewMsg?.taskPlan}
-                            financialUpdates={
-                              execution ? recentFinancialObservations(execution.steps, execution.outputs) : []
-                            }
                             attachedConnectors={round.humanMsg?.attachedConnectors}
                             assistantText={roundAssistantText}
-                            onFinancialCitationClick={citation => openFinancialCitation(citation, round.viewMsg?.id)}
                             isAssistantStreaming={
                               (isPresentingThisRound && !_summaryComplete) ||
                               (!!round.viewMsg?.thinking && !!roundAssistantText)
@@ -5205,7 +4813,7 @@ const Playground: NextPage = () => {
                             onReportClick={() => {
                               if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                               setActiveSubAgent(null);
-                              handleUserPanelViewChange('report');
+                              setRightPanelView('report');
                               setRightPanelCollapsed(false);
                             }}
                             onReferencesClick={
@@ -5214,7 +4822,7 @@ const Playground: NextPage = () => {
                                     if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                                     setSelectedCitationIndex(roundCitations[0].index);
                                     setRailDebug(true);
-                                    handleUserPanelViewChange('references');
+                                    setRightPanelView('references');
                                     setRightPanelCollapsed(false);
                                   }
                                 : undefined
@@ -5222,16 +4830,15 @@ const Playground: NextPage = () => {
                             stepThoughts={stepThoughts}
                             artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
                             onArtifactClick={artifact => {
-                              setFinancialCitationTarget(null);
                               if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                               setRightPanelCollapsed(false);
                               if (artifact.type === 'html') {
                                 setPreviewArtifact(artifact as Artifact);
-                                handleUserPanelViewChange('html-preview');
+                                setRightPanelView('html-preview');
                               } else if (artifact.type === 'code' && artifact.stepId) {
                                 setSelectedStepId(artifact.stepId);
                                 setRailDebug(true);
-                                handleUserPanelViewChange('execution');
+                                setRightPanelView('execution');
                                 if (round.viewMsg?.id && execution) {
                                   setExecutionMap(prev => ({
                                     ...prev,
@@ -5245,24 +4852,23 @@ const Playground: NextPage = () => {
                                 // Image file artifacts: preview instead of download
                                 if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                                   setPreviewArtifact(artifact as Artifact);
-                                  handleUserPanelViewChange('image-preview');
+                                  setRightPanelView('image-preview');
                                 } else {
                                   downloadArtifact(artifact as Artifact);
                                 }
                               } else if (artifact.type === 'image') {
                                 setPreviewArtifact(artifact as Artifact);
-                                handleUserPanelViewChange('image-preview');
+                                setRightPanelView('image-preview');
                               }
                             }}
                             onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
                             onViewAllFiles={() => {
                               if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                               setRightPanelCollapsed(false);
-                              handleUserPanelViewChange('files');
+                              setRightPanelView('files');
                             }}
                             isCollapsed={isCurrentRoundCollapsed}
                             onExpand={() => {
-                              panelNavigationVersion.current += 1;
                               if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                             }}
                           />
@@ -5270,25 +4876,49 @@ const Playground: NextPage = () => {
                       );
                     })}
                     {streamStatus && (
-                      <div
-                        role='status'
-                        aria-label={t('agent_execution_status')}
-                        className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'
-                      >
+                      <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
                         {streamStatus.running ? (
                           <LoadingOutlined spin className='text-blue-500' />
-                        ) : streamStatus.status === 'done' ? (
-                          <CheckCircleFilled className='text-emerald-500' />
-                        ) : streamStatus.status === 'incomplete' ? (
-                          <PauseCircleOutlined className='text-slate-400' />
                         ) : (
-                          <CloseCircleFilled
-                            className={streamStatus.status === 'failed' ? 'text-red-500' : 'text-amber-500'}
-                          />
+                          <CheckCircleFilled className='text-emerald-500' />
                         )}
                         <span className='tabular-nums'>{streamStatus.text}</span>
                       </div>
                     )}
+                    {/* Conversation-completion artifact summary: deliverables
+                      produced across all rounds, surfaced again at the end so
+                      finished conversations keep a visible deliverable list
+                      (mid-stream cards stay where they were made). Charts are
+                      folded into the mosaic tile, scripts into process.
+                      Query cards are excluded: every round already renders
+                      its own (folded) query block, so repeating them here
+                      stacked each sql_query result a second time. */}
+                    {(() => {
+                      const surface = convArtifacts.filter(a => a.type !== 'summary' && a.type !== 'query');
+                      const finalCount = surface.filter(a => a.tier !== 'process').length;
+                      const hasCharts = surface.some(
+                        a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
+                      );
+                      if (finalCount === 0 && !hasCharts) return null;
+                      const lastViewId = [...messages].reverse().find(m => m.role === 'view')?.id;
+                      return (
+                        <div className='mt-4 mb-2'>
+                          {finalCount > 0 && (
+                            <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
+                              <InboxOutlined />
+                              <span>{t('conv_artifacts_title', '对话产物 · {{count}}', { count: finalCount })}</span>
+                            </div>
+                          )}
+                          <ArtifactCards
+                            artifacts={surface}
+                            onPreview={handlePreviewStreamArtifact}
+                            onSkillAdd={handleSkillAdd}
+                            onSkillDownload={handleSkillZipDownload}
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, lastViewId)}
+                          />
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -5384,12 +5014,10 @@ const Playground: NextPage = () => {
 
                       {/* Outer Frame - Floating Effect */}
                       <div
-                        ref={composerAnchorRef}
                         className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'
                         {...composerDragHandlers}
                       >
                         {composerDragOverlay}
-                        {suiteCommandMenu}
                         {/* White Inner Box - Clean Glass Card */}
                         <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
                           <AttachmentRail
@@ -5410,15 +5038,28 @@ const Playground: NextPage = () => {
                             onClosePreview={closeSessionFilePreview}
                             className='mb-2'
                           />
-                          {taskPlan.length > 0 && !taskPlan.some(task => task.kind === 'financial-stage') && (
+                          {taskPlan.length > 0 && (
                             <div className='mb-3'>
                               <TaskPlanCard tasks={taskPlan} embedded />
                             </div>
                           )}
-                          {suiteMaterialGuide}
                           {suiteComposerPrefix}
                           <Input.TextArea
-                            {...composerTextareaProps}
+                            value={query}
+                            onKeyDown={handleComposerKeyDown}
+                            onChange={e => {
+                              const newValue = e.target.value;
+                              setQuery(newValue);
+                              if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
+                                setIsSkillPanelOpen(true);
+                              }
+                            }}
+                            onPressEnter={e => {
+                              if (!e.shiftKey) {
+                                e.preventDefault();
+                                handleStart();
+                              }
+                            }}
                             placeholder={
                               suiteCreationMode
                                 ? i18n.language.startsWith('en')
@@ -5867,10 +5508,7 @@ const Playground: NextPage = () => {
               <div className='relative z-20 flex-shrink-0'>
                 <Tooltip title={rightPanelCollapsed ? t('expand_panel') : t('collapse_panel')} placement='left'>
                   <button
-                    onClick={() => {
-                      panelNavigationVersion.current += 1;
-                      setRightPanelCollapsed(prev => !prev);
-                    }}
+                    onClick={() => setRightPanelCollapsed(prev => !prev)}
                     className='absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-8 flex items-center justify-center bg-white dark:bg-[#1a1b1e] border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:w-5 hover:shadow-md transition-all duration-200 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                   >
                     {rightPanelCollapsed ? (
@@ -5884,18 +5522,6 @@ const Playground: NextPage = () => {
               <div
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
-                {mobileFinancialPanel && (
-                  <button
-                    type='button'
-                    onClick={() => {
-                      panelNavigationVersion.current += 1;
-                      setRightPanelCollapsed(true);
-                    }}
-                    className='shrink-0 border-b border-slate-200 bg-white px-4 py-3 text-left text-sm text-sky-700 dark:border-slate-800 dark:bg-[#111217] dark:text-sky-300'
-                  >
-                    <LeftOutlined className='mr-2' /> {financialText('financial.back_to_chat')}
-                  </button>
-                )}
                 {showInlineAttachmentPreview ? (
                   <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
                     <div className='flex h-12 flex-shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 dark:border-white/10 dark:bg-[#1a1b1e]/95'>
@@ -5961,15 +5587,8 @@ const Playground: NextPage = () => {
                       isRunning = activeSub.status === 'running';
                     }
 
-                    return railDebug || isFinancialReportReference(previewArtifact?.content) ? (
+                    return railDebug ? (
                       <ManusRightPanel
-                        financialCitationTarget={financialCitationTarget}
-                        onFinancialCitationClick={citation => openFinancialCitation(citation, activeViewMsg?.id)}
-                        onFinancialTopicRetry={(reference, topicId) => {
-                          if (loading || reference.sessionId !== conversationId) return;
-                          const prompt = financialTopicRetryPrompt(reference.runId, topicId);
-                          if (prompt) void handleStart(prompt);
-                        }}
                         activeStep={activeStep}
                         outputs={outputs}
                         conversationId={conversationId}
@@ -5987,13 +5606,12 @@ const Playground: NextPage = () => {
                         artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
                         inputFiles={rounds.find(r => r.viewMsg?.id === activeViewMsg?.id)?.humanMsg?.attachedFiles}
                         onArtifactClick={artifact => {
-                          setFinancialCitationTarget(null);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            handleUserPanelViewChange('html-preview');
+                            setRightPanelView('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            handleUserPanelViewChange('execution');
+                            setRightPanelView('execution');
                             if (activeViewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -6006,12 +5624,12 @@ const Playground: NextPage = () => {
                           } else if (artifact.type === 'file') {
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              handleUserPanelViewChange('image-preview');
+                              setRightPanelView('image-preview');
                               setRightPanelCollapsed(false);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            handleUserPanelViewChange('image-preview');
+                            setRightPanelView('image-preview');
                             setRightPanelCollapsed(false);
                           }
                         }}
@@ -6048,13 +5666,13 @@ const Playground: NextPage = () => {
                               activeStepId: stepId,
                             },
                           }));
-                          handleUserPanelViewChange('execution');
+                          setRightPanelView('execution');
                         }}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;
                           setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
-                          handleUserPanelViewChange('execution');
+                          setRightPanelView('execution');
                         }}
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}
@@ -6063,11 +5681,7 @@ const Playground: NextPage = () => {
                       <ArtifactRail
                         artifacts={convArtifacts}
                         previewArtifact={previewArtifact}
-                        onPreview={artifact => {
-                          panelNavigationVersion.current += 1;
-                          setFinancialCitationTarget(null);
-                          setPreviewArtifact(artifact as Artifact | null);
-                        }}
+                        onPreview={artifact => setPreviewArtifact(artifact as Artifact | null)}
                         onDebug={() => setRailDebug(true)}
                         onClose={() => setRightPanelCollapsed(true)}
                         onTrace={() => {
@@ -6097,8 +5711,7 @@ const Playground: NextPage = () => {
                 </p>
 
                 {/* Composer follows the suite reference: quiet frame and inline preset. */}
-                <div ref={composerAnchorRef} className='w-full relative'>
-                  {suiteCommandMenu}
+                <div className='w-full relative'>
                   {/* Outer Frame - Floating Effect */}
                   <div
                     className='suite-composer w-full relative rounded-[28px] shadow-[0_12px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.2)]'
@@ -6177,11 +5790,24 @@ const Playground: NextPage = () => {
                         </div>
                       )}
 
-                      {suiteMaterialGuide}
                       <div className='flex flex-col sm:flex-row items-start gap-x-3 gap-y-1 px-1 pt-2 mb-4'>
                         {suiteComposerPrefix}
                         <Input.TextArea
-                          {...composerTextareaProps}
+                          value={query}
+                          onKeyDown={handleComposerKeyDown}
+                          onChange={e => {
+                            const newValue = e.target.value;
+                            setQuery(newValue);
+                            if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
+                              setIsSkillPanelOpen(true);
+                            }
+                          }}
+                          onPressEnter={e => {
+                            if (!e.shiftKey) {
+                              e.preventDefault();
+                              handleStart();
+                            }
+                          }}
                           placeholder={
                             suiteCreationMode
                               ? i18n.language.startsWith('en')
@@ -6859,7 +6485,7 @@ const Playground: NextPage = () => {
                 {/* Scenario tabs + recommended questions, rendered from enabled suites */}
                 <div className='mt-8 w-full'>
                   <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
-                    {suites.map(suite => (
+                    {suites.slice(0, 3).map(suite => (
                       <button
                         key={suite.name}
                         aria-pressed={activeSuiteTab === suite.name}
@@ -6868,7 +6494,10 @@ const Playground: NextPage = () => {
                             clearSuiteSelection();
                             return;
                           }
-                          selectSuiteContext(suite);
+                          setActiveSuiteTab(suite.name);
+                          setSuiteQOffset(0);
+                          setSuiteTabTouched(true);
+                          setSelectedSuiteCommand(null);
                         }}
                         className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
                           activeSuiteTab === suite.name
@@ -6901,7 +6530,10 @@ const Playground: NextPage = () => {
                           <button
                             type='button'
                             aria-pressed={effectiveSuiteCommand?.name === command.name}
-                            onClick={() => handleSelectSuiteCommand(activeSuite, command)}
+                            onClick={() => {
+                              setSuiteTabTouched(true);
+                              setSelectedSuiteCommand({ suite: activeSuite.name, name: command.name });
+                            }}
                             className={`rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
                               effectiveSuiteCommand?.name === command.name
                                 ? 'border-green-300 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'

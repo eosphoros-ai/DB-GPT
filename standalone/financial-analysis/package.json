@@ -1,5 +1,0 @@
-{
-  "name": "dbgpt-financial-analysis-standalone",
-  "private": true,
-  "scripts": { "build": "node build.cjs" }
-}

@@ -11,8 +11,6 @@
  * ``summary`` artifacts never appear here — they live in the rail
  * gallery so every conversation has artifacts without card noise.
  */
-import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
-import { financialText } from '@/new-components/financial-analysis/i18n';
 import {
   CheckOutlined,
   CodeOutlined,
@@ -27,7 +25,6 @@ import {
   PictureOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import { message } from 'antd';
 import cls from 'classnames';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -149,16 +146,7 @@ function fileExtIcon(name: string) {
   return <FileTextOutlined className='text-gray-400 text-lg' />;
 }
 
-async function downloadArtifact(artifact: StreamArtifact) {
-  if (isFinancialReportReference(artifact.content)) {
-    try {
-      const { downloadFinancialReport } = await import('@/new-components/financial-analysis/FinancialReportArtifact');
-      await downloadFinancialReport(artifact.content);
-    } catch {
-      message.error(financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'));
-    }
-    return;
-  }
+function downloadArtifact(artifact: StreamArtifact) {
   const embedded = artifact.content && typeof artifact.content === 'object' ? artifact.content.content : null;
   const content =
     typeof artifact.content === 'string'
@@ -296,17 +284,13 @@ export default function ArtifactCards({
           const previewable =
             isHtml || isSkill || (artifact.type === 'file' && PREVIEW_EXTS.has(ext) && hasTextContent);
           const downloadable = isHtml || artifact.type === 'code' || (artifact.type === 'file' && hasTextContent);
-          const size = formatSize(
-            artifact.size ??
-              (isHtml && typeof artifact.content === 'string' ? new Blob([artifact.content]).size : undefined),
-          );
           const meta = isHtml
-            ? `HTML${size ? ` · ${size}` : ''}`
+            ? `HTML · ${formatSize(artifact.size) || `${(artifact.content || '').length} B`}`
             : isSkill
               ? `技能包 · ${artifact.content?.files?.length ?? 0} 文件`
               : artifact.type === 'code'
                 ? '代码'
-                : `${(ext || 'file').toUpperCase()} · ${size || '—'}`;
+                : `${(ext || 'file').toUpperCase()} · ${formatSize(artifact.size) || '—'}`;
           return (
             <div
               key={artifact.id}

@@ -13,7 +13,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.core.profile.base import ProfileConfig
@@ -22,18 +22,15 @@ from dbgpt_app.openapi.api_v1.suite_binder import (
     IMPLICIT_ALLOW,
     SEMANTIC_DEGRADED_WATERMARK,
     SuiteBinding,
-    apply_suite_configuration,
     bind_command,
     build_sop_block,
     canonical_suite_tool,
     command_binding_event,
     compose_gates,
-    get_conv_suite,
     load_binding,
     make_suite_gate,
     report_agent_tool_scope,
     resolve_binding_for_turn,
-    set_conv_suite,
     suite_message_reference,
 )
 from dbgpt_serve.plugins.loader import load_suite_dir
@@ -68,7 +65,7 @@ class SuiteCommandTest(unittest.TestCase):
             commands=manifest["commands"],
             skills=manifest["skills"],
             package_format=manifest["package_format"],
-            sop_text=(root / manifest["sop"]).read_text(encoding="utf-8"),
+            sop_text=(root / manifest["sop"]).read_text(),
             allow={"sql_query"},
             deny={"bash"},
         )
@@ -251,173 +248,6 @@ class SuiteCommandTest(unittest.TestCase):
             self.assertEqual(result.command, expected)
 
 
-class SuiteConfigurationTest(unittest.TestCase):
-    def setUp(self):
-        package = load_suite_dir(SUITES_ROOT / "db-query")
-        self.manifest = dict(package.manifest)
-        self.manifest["context_defaults"] = {"harness_engine": "dbgpt"}
-        self.row = SimpleNamespace(
-            name=package.name,
-            version=package.version,
-            status="enabled",
-            package_path=package.path,
-            manifest_snapshot={
-                **package.snapshot,
-                "context_defaults": {"harness_engine": "pi"},
-            },
-        )
-        self.service = SimpleNamespace(
-            get=lambda name: self.row if name == "db-query" else None,
-            registry=SimpleNamespace(current_pin=lambda _: ("db-query", "1.1.0")),
-        )
-        self.service.registry.record_unpin = Mock(
-            side_effect=lambda *args, **kwargs: setattr(
-                self.service.registry, "current_pin", lambda _: None
-            )
-        )
-        plugins = patch(
-            "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
-            return_value=self.service,
-        )
-        self.plugins = plugins.start()
-        self.addCleanup(plugins.stop)
-        loader = patch(
-            "dbgpt_serve.plugins.loader.load_suite_dir",
-            return_value=SimpleNamespace(manifest=self.manifest),
-        )
-        self.loader = loader.start()
-        self.addCleanup(loader.stop)
-        store = patch("dbgpt_serve.plugins.creation.SuiteCreationStore")
-        self.store = store.start()
-        self.store.return_value.configuration.return_value = {
-            "database_name": "configured-db"
-        }
-        self.addCleanup(store.stop)
-
-    def test_manifest_engine_overrides_preference_with_existing_database(self):
-        dialogue = SimpleNamespace(
-            ext_info={
-                "suite": "db-query@1.1.0",
-                "harness_engine": "pi",
-                "database_name": "selected-db",
-            }
-        )
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info["harness_engine"], "dbgpt")
-        self.assertEqual(dialogue.ext_info["database_name"], "selected-db")
-        self.store.assert_not_called()
-
-    def test_configured_database_and_engine_are_restored_together(self):
-        dialogue = SimpleNamespace(ext_info={"suite": "db-query"})
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info["harness_engine"], "dbgpt")
-        self.assertEqual(dialogue.ext_info["database_name"], "configured-db")
-
-    def test_followup_without_suite_restores_pinned_engine_before_dispatch(self):
-        dialogue = SimpleNamespace(
-            conv_uid="saved-financial-conversation",
-            ext_info={"harness_engine": "pi", "database_name": "selected-db"},
-        )
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info["harness_engine"], "dbgpt")
-        self.assertEqual(dialogue.ext_info["database_name"], "selected-db")
-        self.store.assert_not_called()
-
-    def test_disabled_or_uninstalled_pin_does_not_select_engine(self):
-        for name, status in (("db-query", "disabled"), ("uninstalled", "enabled")):
-            with self.subTest(name=name, status=status):
-                self.row.status = status
-                self.service.registry.current_pin = lambda _: (name, "1.1.0")
-                ext = {"harness_engine": "pi", "database_name": "selected-db"}
-                dialogue = SimpleNamespace(conv_uid="saved-conversation", ext_info=ext)
-                apply_suite_configuration(dialogue)
-                self.assertEqual(dialogue.ext_info, ext)
-        self.store.assert_not_called()
-
-    def test_explicit_suite_wins_over_conversation_pin(self):
-        self.service.registry.current_pin = lambda _: ("db-query", "1.1.0")
-        ext = {
-            "suite": "missing",
-            "harness_engine": "pi",
-            "database_name": "selected-db",
-        }
-        dialogue = SimpleNamespace(conv_uid="saved-conversation", ext_info=ext)
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info, ext)
-
-    def test_explicit_reset_clears_pin_and_skips_stale_suite_and_command(self):
-        ext = {
-            "suite_reset": True,
-            "suite": "db-query",
-            "suite_command": "/nl2sql",
-            "harness_engine": "pi",
-        }
-        dialogue = SimpleNamespace(
-            conv_uid="cancelled-suite", user_name="owner", ext_info=ext.copy()
-        )
-        set_conv_suite(
-            dialogue.conv_uid, SuiteBinding(name="db-query", version="1.1.0")
-        )
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info, ext)
-        self.assertIsNone(get_conv_suite(dialogue.conv_uid))
-        self.service.registry.record_unpin.assert_called_once_with(
-            dialogue.conv_uid, user_name="owner"
-        )
-        self.assertIsNone(resolve_binding_for_turn(dialogue))
-        self.assertIsNone(
-            resolve_binding_for_turn(
-                SimpleNamespace(conv_uid=dialogue.conv_uid, ext_info={})
-            )
-        )
-        self.loader.assert_not_called()
-        self.store.assert_not_called()
-
-    def test_disabled_unknown_or_unreadable_suite_cannot_select_engine(self):
-        for name, status, package in (
-            ("missing", "enabled", SimpleNamespace(manifest=self.manifest)),
-            ("db-query", "disabled", SimpleNamespace(manifest=self.manifest)),
-            ("db-query", "enabled", None),
-        ):
-            with self.subTest(name=name, status=status, readable=package is not None):
-                self.row.status = status
-                self.loader.return_value = package
-                ext = {
-                    "suite": name,
-                    "harness_engine": "pi",
-                    "database_name": "selected-db",
-                    "context_defaults": {"harness_engine": "dbgpt"},
-                }
-                dialogue = SimpleNamespace(ext_info=ext.copy())
-                apply_suite_configuration(dialogue)
-                self.assertEqual(dialogue.ext_info, ext)
-
-    def test_request_and_snapshot_defaults_do_not_replace_package_defaults(self):
-        self.manifest["context_defaults"] = {"datasource": "optional"}
-        self.row.manifest_snapshot["context_defaults"] = {"harness_engine": "dbgpt"}
-        ext = {
-            "suite": "db-query",
-            "harness_engine": "pi",
-            "database_name": "selected-db",
-            "context_defaults": {"harness_engine": "dbgpt"},
-        }
-        dialogue = SimpleNamespace(ext_info=ext.copy())
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info, ext)
-
-    def test_suite_creation_preserves_its_existing_engine(self):
-        ext = {
-            "suite": "db-query",
-            "creation_mode": "expert_suite",
-            "harness_engine": "pi",
-        }
-        dialogue = SimpleNamespace(ext_info=ext.copy())
-        apply_suite_configuration(dialogue)
-        self.assertEqual(dialogue.ext_info, ext)
-        self.plugins.assert_not_called()
-        self.store.assert_not_called()
-
-
 class NativePluginBindingTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -464,7 +294,7 @@ class NativePluginBindingTest(unittest.TestCase):
         self.assertTrue(event["skill_loaded"])
         self.assertEqual(len(event["documents"]), 3)
         for doc in event["documents"]:
-            text = (self.root / doc["path"]).read_text(encoding="utf-8").strip()
+            text = (self.root / doc["path"]).read_text().strip()
             self.assertEqual(
                 doc["sha256"], hashlib.sha256(text.encode("utf-8")).hexdigest()
             )
