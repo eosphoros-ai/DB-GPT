@@ -1,3 +1,5 @@
+import sqlite3
+
 import pytest
 
 from dbgpt.util.sql_utils import remove_sql_comments
@@ -81,6 +83,53 @@ class TestRemoveSqlComments:
         expected = "SELECT * FROM users WHERE id = 1 ORDER BY name"
         result = remove_sql_comments(sql)
         assert result == expected
+
+    @pytest.mark.parametrize(
+        "sql, expected",
+        [
+            ("SELECT 'a--b' AS value", "SELECT 'a--b' AS value"),
+            ("SELECT 'a/*b*/c' AS value", "SELECT 'a/*b*/c' AS value"),
+            ('SELECT "a--b" FROM `my/*table*/`', 'SELECT "a--b" FROM `my/*table*/`'),
+            (
+                "SELECT 'it''s -- data', \"id\"\"--x\", `tick``--x` -- comment\n"
+                "FROM users",
+                "SELECT 'it''s -- data', \"id\"\"--x\", `tick``--x` FROM users",
+            ),
+            (
+                "SELECT '/* retained */' /* removed */ , '-- retained' -- removed\n"
+                "FROM users",
+                "SELECT '/* retained */'  , '-- retained' FROM users",
+            ),
+            (
+                "SELECT 'multi-line\n-- retained' /* removed */ FROM users",
+                "SELECT 'multi-line\n-- retained'  FROM users",
+            ),
+        ],
+    )
+    def test_comment_markers_inside_quoted_regions_are_preserved(self, sql, expected):
+        assert remove_sql_comments(sql) == expected
+
+    def test_comment_markers_in_string_values_remain_executable_sql(self):
+        sql = "SELECT 'a--b' AS dash, 'a/*b*/' AS block"
+        cleaned_sql = remove_sql_comments(sql)
+        connection = sqlite3.connect(":memory:")
+        try:
+            result = connection.execute(cleaned_sql).fetchone()
+        finally:
+            connection.close()
+
+        assert result == ("a--b", "a/*b*/")
+
+    def test_backslash_before_closing_quote_is_not_a_sql_escape(self):
+        sql = "SELECT 'path\\' AS value -- comment\n"
+        cleaned_sql = remove_sql_comments(sql)
+        connection = sqlite3.connect(":memory:")
+        try:
+            result = connection.execute(cleaned_sql).fetchone()
+        finally:
+            connection.close()
+
+        assert result == ("path\\",)
 
     def test_empty_string(self):
         """Test with empty string."""
