@@ -158,7 +158,10 @@ class DAGVar:
         """
         is_async = _is_async_context()
         if is_async:
-            stack = cls._async_local.get()
+            # The ContextVar default is one deque shared by every context that
+            # has not called set() yet, so copy it before mutating: appending
+            # in place would expose this DAG to all other concurrent tasks.
+            stack = deque(cls._async_local.get())
             stack.append(dag)
             cls._async_local.set(stack)
         else:
@@ -173,8 +176,11 @@ class DAGVar:
         if is_async:
             stack = cls._async_local.get()
             if stack:
-                stack.pop()
-                cls._async_local.set(stack)
+                # Copy before popping: the value may still be the shared
+                # ContextVar default, which other tasks read concurrently.
+                new_stack = deque(stack)
+                new_stack.pop()
+                cls._async_local.set(new_stack)
         else:
             if (
                 hasattr(cls._thread_local, "current_dag_stack")
