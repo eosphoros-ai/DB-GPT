@@ -105,6 +105,14 @@ class KnowledgeService:
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
             raise Exception(f"space name:{request.name} have already named")
+        if (
+            request.vector_type == "KnowledgeGraph"
+            and self.rag_config.storage.graph is None
+        ):
+            raise ValueError(
+                "Graph storage is not configured. Configure rag.storage.graph "
+                "before creating a knowledge graph space."
+            )
         space_id = knowledge_space_dao.create_knowledge_space(request)
         return space_id
 
