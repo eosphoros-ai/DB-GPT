@@ -388,6 +388,7 @@ class DockerSandboxSession(SandboxSession):
 
     @staticmethod
     def _is_inside(root: str, path: str) -> bool:
+        """Return True if ``path`` is strictly below the ``root`` directory."""
         return path.startswith(root.rstrip("/") + "/")
 
     def _workspace_file_path(self, filename: str) -> Optional[str]:
@@ -407,13 +408,15 @@ class DockerSandboxSession(SandboxSession):
         output = result.output
         if isinstance(output, tuple):
             output = output[0]
-        resolved = (output or b"").decode("utf-8", "replace").strip()
+        # Drop only readlink's line terminator; names may end in whitespace.
+        resolved = (output or b"").decode("utf-8", "replace").removesuffix("\n")
         if result.exit_code != 0 or not resolved.startswith("/"):
             return None
         return resolved
 
     @staticmethod
     def _file_error(message: str) -> DisplayResult:
+        """Build the error result returned by ``get_file_content``."""
         return DisplayResult(
             status="error",
             output="",

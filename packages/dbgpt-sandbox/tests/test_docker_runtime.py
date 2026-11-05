@@ -336,6 +336,16 @@ async def test_get_file_reads_files_inside_workspace(filename):
 
 
 @pytest.mark.asyncio
+async def test_get_file_keeps_trailing_whitespace_in_name():
+    session, _ = _session_for_get_file(
+        {"/work/report": b"plain", "/work/report ": b"with-space"}
+    )
+    result = await session.get_file_content("report ")
+    assert result.status == "success"
+    assert base64.b64decode(result.output) == b"with-space"
+
+
+@pytest.mark.asyncio
 async def test_get_file_reports_missing_file():
     session, container = _session_for_get_file({})
     result = await session.get_file_content("missing.csv")
