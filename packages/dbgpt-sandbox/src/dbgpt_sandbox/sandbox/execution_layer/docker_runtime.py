@@ -60,6 +60,8 @@ class DockerSandboxSession(SandboxSession):
         self.docker_client = docker_client
         self.container = None
         self.image_name = config.image or self._get_image_name(config.language)
+        # Resolved working dir, recorded before any session code runs.
+        self._workspace_root: Optional[str] = None
 
     @staticmethod
     def _container_path(path: str) -> str:
@@ -106,6 +108,9 @@ class DockerSandboxSession(SandboxSession):
             self._is_active = True
 
             await self._setup_environment()
+            self._workspace_root = await asyncio.to_thread(
+                self._resolve_in_container, self.config.working_dir
+            )
             if self.config.host_working_dir:
                 # Archive transfer also works with a remote Docker daemon;
                 # never bind-mount the server's entire temporary directory.
@@ -435,13 +440,14 @@ class DockerSandboxSession(SandboxSession):
         if file_path is None:
             return self._file_error(outside)
 
-        # Session code can create symlinks in the workspace, so check the
-        # resolved path as well before reading anything.
-        real_root = self._resolve_in_container(self.config.working_dir)
+        # Session code can create symlinks in the workspace (or replace the
+        # workspace itself), so check the resolved path against the root
+        # recorded at start-up before reading anything.
+        root = self._workspace_root or posixpath.normpath(self.config.working_dir)
         real_path = self._resolve_in_container(file_path)
-        if real_root is None or real_path is None:
+        if real_path is None:
             return self._file_error(f"文件不存在: {filename}")
-        if not self._is_inside(real_root, real_path):
+        if not self._is_inside(root, real_path):
             return self._file_error(outside)
         file_path = real_path
 

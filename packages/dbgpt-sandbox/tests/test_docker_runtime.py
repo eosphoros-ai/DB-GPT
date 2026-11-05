@@ -250,7 +250,7 @@ def _session_for_get_file(files, links=None):
     ``files`` maps absolute container paths to content; ``links`` maps symlink
     paths to their targets.
     """
-    links = links or {}
+    links = {} if links is None else links
 
     def realpath(path):
         current = "/"
@@ -268,7 +268,7 @@ def _session_for_get_file(files, links=None):
             return SimpleNamespace(exit_code=0, output=f"{realpath(cmd[2])}\n".encode())
         if cmd[:2] == ["test", "-f"]:
             return SimpleNamespace(exit_code=0 if cmd[2] in files else 1, output=b"")
-        raise AssertionError(f"unexpected command: {cmd}")
+        return SimpleNamespace(exit_code=0, output=b"")
 
     def get_archive(path):
         if path not in files:
@@ -316,6 +316,23 @@ async def test_get_file_rejects_symlinks_leaving_workspace(filename):
         links={"/work/escape": "/etc", "/work/leak": "../etc/passwd"},
     )
     result = await session.get_file_content(filename)
+    assert result.status == "error"
+    assert "outside the sandbox working directory" in result.error
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_file_rejects_replaced_workspace_root():
+    links = {}
+    session, container = _session_for_get_file({"/etc/passwd": b"root:x:0:0"}, links)
+    session.container = None
+    session.docker_client = SimpleNamespace(
+        containers=SimpleNamespace(run=Mock(return_value=container))
+    )
+    assert await session.start()
+    # Session code later swaps the workspace for a symlink to /etc.
+    links["/work"] = "/etc"
+    result = await session.get_file_content("passwd")
     assert result.status == "error"
     assert "outside the sandbox working directory" in result.error
     container.get_archive.assert_not_called()
