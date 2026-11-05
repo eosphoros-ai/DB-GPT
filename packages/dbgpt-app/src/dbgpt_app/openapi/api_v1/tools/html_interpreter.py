@@ -2052,6 +2052,18 @@ def _render_template_with_bindings(
     protected_fields = set()
     protected_sources = {}
     by_artifact_id = {item.artifact_id: item for item in artifacts}
+
+    def matches_script(metadata, script_name):
+        # Historical/non-skill artifacts are candidates, not execution requests.
+        # Invalid identities cannot establish provenance or abort rendering.
+        try:
+            return (
+                normalize_script_file_name((metadata or {}).get("script_file_name", ""))
+                == script_name
+            )
+        except ValueError:
+            return False
+
     declarations = _verified_field_declarations(template)
     for upstream_script, result_script, names in declarations:
         fields = {name.strip() for name in names.split(",") if name.strip()}
@@ -2061,13 +2073,9 @@ def _render_template_with_bindings(
             if artifact.type != "python" or artifact.status != "succeeded":
                 continue
             metadata = artifact.metadata or {}
-            if not metadata.get("script_file_name"):
-                continue
-            if (
-                normalize_script_file_name(metadata["script_file_name"])
-                != result_script
-                or metadata.get("captured_input_contract") is not True
-            ):
+            if metadata.get(
+                "captured_input_contract"
+            ) is not True or not matches_script(metadata, result_script):
                 continue
             parents = [by_artifact_id.get(item) for item in artifact.input_artifact_ids]
             parents = [
@@ -2076,11 +2084,9 @@ def _render_template_with_bindings(
                 if parent is not None
                 and parent.type == "python"
                 and parent.status == "succeeded"
-                and normalize_script_file_name(
-                    parent.metadata.get("script_file_name", "")
-                )
-                == upstream_script
-                and parent.metadata.get("skill_name") == metadata.get("skill_name")
+                and matches_script(parent.metadata, upstream_script)
+                and (parent.metadata or {}).get("skill_name")
+                == metadata.get("skill_name")
             ]
             if len(parents) == 1:
                 parent = parents[0]

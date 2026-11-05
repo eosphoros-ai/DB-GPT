@@ -23,6 +23,7 @@ def complete_delivery_task(
             r"generate_report|生成.*(?:报告|报表)|(?:generate|render|compose).*report",
             content,
         )
+        or re.fullmatch(r"提交(?:最终)?(?:报告|报表)[。.!！\s]*", content)
     )
     summary_task = bool(
         re.fullmatch(

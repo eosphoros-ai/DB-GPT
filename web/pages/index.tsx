@@ -458,6 +458,7 @@ const convertToManusFormat = (
         status: getStepStatus(step.status),
         action: step.action,
         actionInput: step.actionInput,
+        todoMeta: step.todoMeta,
       };
     });
 

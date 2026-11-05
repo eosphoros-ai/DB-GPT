@@ -305,6 +305,113 @@ def test_verified_template_field_ignores_model_override(prefix):
     assert producer in html
 
 
+@pytest.mark.parametrize(
+    "parent_metadata",
+    [
+        None,
+        {},
+        {"skill_name": "finance", "script_file_name": ""},
+        {"skill_name": "finance", "script_file_name": "invalid:extract.py"},
+        {"skill_name": "finance", "script_file_name": "../extract.py"},
+        {"skill_name": "finance", "script_file_name": 42},
+    ],
+)
+@pytest.mark.parametrize("include_valid_parent", [False, True])
+def test_verified_template_skips_unusable_parent_script_names(
+    parent_metadata, include_valid_parent
+):
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+        capture_python_execution,
+    )
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _render_template_with_bindings,
+    )
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="mixed-parents"))
+    common = {
+        "duration_ms": 1,
+        "status": "succeeded",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "",
+        "artifact_sink": sink,
+    }
+    unrelated = capture_python_execution(
+        code="code_interpreter input", result_inline={"revenue": 100}, **common
+    )
+    parents = [unrelated]
+    if include_valid_parent:
+        parents.append(
+            capture_python_execution(
+                code="extract",
+                result_inline={"revenue": 100},
+                metadata={"skill_name": "finance", "script_file_name": "./extract.py"},
+                **common,
+            )
+        )
+    producer = capture_python_execution(
+        code="calculate",
+        result_inline={"VERIFIED_METRIC": "+5.9pp"},
+        input_artifact_ids=parents,
+        metadata={
+            "skill_name": "finance",
+            "script_file_name": "calculate.py",
+            "captured_input_contract": True,
+        },
+        **common,
+    )
+    artifacts = [
+        artifact.model_copy(update={"metadata": parent_metadata})
+        if artifact.artifact_id == unrelated
+        else artifact
+        for artifact in sink.snapshot()
+    ]
+    html = _render_template_with_bindings(
+        "<!-- dbgpt-verified-fields: extract.py | calculate.py | VERIFIED_METRIC -->"
+        "<p>{{VERIFIED_METRIC}}</p>",
+        {"VERIFIED_METRIC": "999"},
+        artifacts,
+    )
+    assert "999" not in html
+    if include_valid_parent:
+        assert "+5.9pp" in html
+        assert producer in html
+    else:
+        assert "未取得数据" in html
+        assert "+5.9pp" not in html
+
+
+@pytest.mark.parametrize(
+    "script_name", [None, "", "invalid:calculate.py", "../calculate.py", 42]
+)
+def test_verified_template_skips_unusable_result_script_names(script_name):
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _render_template_with_bindings,
+    )
+
+    producer = SimpleNamespace(
+        artifact_id="invalid-producer",
+        type="python",
+        status="succeeded",
+        metadata={
+            "skill_name": "finance",
+            "script_file_name": script_name,
+            "captured_input_contract": True,
+        },
+        input_artifact_ids=[],
+    )
+    html = _render_template_with_bindings(
+        "<!-- dbgpt-verified-fields: extract.py | calculate.py | VERIFIED_METRIC -->"
+        "<p>{{VERIFIED_METRIC}}</p>",
+        {"VERIFIED_METRIC": "999"},
+        [producer],
+    )
+    assert "未取得数据" in html
+    assert "999" not in html
+
+
 def test_report_with_unverified_values_is_partial():
     import json
 

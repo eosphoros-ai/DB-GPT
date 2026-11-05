@@ -54,6 +54,38 @@ def test_report_then_summary_completes_only_confirmed_delivery(prefix):
 
 
 @pytest.mark.parametrize(
+    "content", ["提交最终报告", "提交报告", "提交最终报表", "提交最终报告。"]
+)
+def test_report_submission_requires_confirmed_report_delivery(content):
+    tasks = [task(content), task("返回最终摘要", "pending")]
+    assert not complete_delivery_task(tasks)
+    assert not complete_delivery_task(tasks, summary_delivered=True)
+    assert tasks[0]["status"] == "in_progress"
+    assert complete_delivery_task(tasks, report_completed=True)
+    assert tasks[0]["status"] == "completed"
+    assert tasks[1]["status"] == "in_progress"
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "准备提交最终报告",
+        "检查提交最终报告所需数据",
+        "提交最终报告前核验数据",
+        "计算并提交最终报告",
+        "编写最终报告",
+        "提交最终报告的准备工作",
+    ],
+)
+def test_report_delivery_does_not_complete_submission_preparation(content):
+    tasks = [task(content)]
+    assert not complete_delivery_task(
+        tasks, report_completed=True, summary_delivered=True
+    )
+    assert tasks[0]["status"] == "in_progress"
+
+
+@pytest.mark.parametrize(
     "content", ["继续数据分析", "计算并返回最终摘要", "验证报告数字", "检查数据质量"]
 )
 def test_termination_or_report_does_not_complete_unrelated_work(content):
@@ -77,11 +109,13 @@ def test_pending_analysis_after_report_remains_incomplete():
     assert tasks[-1]["status"] == "in_progress"
 
 
-def test_terminal_sse_and_persisted_plan_and_timeline_are_identical():
+@pytest.mark.parametrize("report_task", ["生成网页报告", "提交最终报告"])
+def test_terminal_sse_and_persisted_plan_and_timeline_are_identical(report_task):
     from dbgpt_app.openapi.api_v1 import agentic_data_api as api
     from dbgpt_app.openapi.api_v1.react_final import AgentFinalAnswer
 
-    tasks = [task("生成网页报告", "completed"), task("取消的任务", "cancelled")]
+    tasks = [task(report_task), task("取消的任务", "cancelled")]
+    assert complete_delivery_task(tasks, report_completed=True)
     history = api._build_react_history_payload(
         final_content="报告已生成",
         task_plan=tasks,

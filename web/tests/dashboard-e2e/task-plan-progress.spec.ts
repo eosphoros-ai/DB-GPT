@@ -24,6 +24,7 @@ for (const completed of [true, false]) {
       steps: [{ id: 'plan', action: 'todowrite', title, status: 'done', todo_meta: meta, outputs: [] }],
     };
     let submitted = false;
+    let historyLoads = 0;
     await page.route('**/api/**', async route => {
       const pathname = new URL(route.request().url()).pathname;
       if (pathname === '/api/v1/chat/react-agent') {
@@ -44,6 +45,7 @@ for (const completed of [true, false]) {
       let data: unknown = [];
       if (pathname === '/api/v1/model/types') data = ['fixture-model'];
       if (pathname === '/api/v1/chat/dialogue/messages/history' && submitted) {
+        historyLoads++;
         data = [
           { role: 'human', context: '分析销售' },
           { role: 'view', context: JSON.stringify(history) },
@@ -55,11 +57,22 @@ for (const completed of [true, false]) {
     await page.locator('textarea').first().fill('分析销售');
     await page.locator('textarea').first().press('Enter');
     const label = completed ? '2 个任务全部完成' : '共 2 个任务，已完成 1 个';
-    await expect(page.getByText(label, { exact: true })).toBeVisible();
-    await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+    const localizedTitle = completed ? '任务全部完成 (2/2)' : '更新任务状态 (1/2 完成)';
+    const planStep = page.getByTestId('task-plan-step');
+    const assertVisiblePlan = async () => {
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+      await expect(planStep.getByText(localizedTitle, { exact: true })).toBeVisible();
+      await expect(planStep.getByText(`${meta.done}/${meta.total}`, { exact: true })).toBeVisible();
+      await expect(planStep.getByText(/^TODO::/)).toHaveCount(0);
+    };
+    // Wait for the final event to select the summary view, rather than matching
+    // an internal title that happens to be visible in the execution panel.
+    await expect(page.getByTestId('right-panel-content').getByText(summary, { exact: true })).toBeVisible();
+    await assertVisiblePlan();
+    const loadsBeforeReload = historyLoads;
     await page.reload();
-    await expect(page.getByText(label, { exact: true })).toBeVisible();
-    await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+    await expect.poll(() => historyLoads).toBeGreaterThan(loadsBeforeReload);
+    await assertVisiblePlan();
     expect(errors).toEqual([]);
   });
 }
