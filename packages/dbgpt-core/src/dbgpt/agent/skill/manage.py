@@ -268,6 +268,11 @@ class SkillManager(BaseComponent):
         if skill.prompt_template:
             # prompt_template might be a string or a Template object
             if hasattr(skill.prompt_template, "template"):
+                # 被转义过的技能指令直接返回原文，其它模板返回存储的模板源码。
+                # 这里不能渲染模板，否则会改变模板内容，甚至抛出渲染异常。
+                raw_template = getattr(skill.prompt_template, "raw_template", None)
+                if raw_template is not None:
+                    return raw_template
                 return skill.prompt_template.template
             return str(skill.prompt_template)
 
