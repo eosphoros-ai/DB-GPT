@@ -1,6 +1,7 @@
 """Container execution and workspace transfer tests without a Docker daemon."""
 
 import asyncio
+import base64
 import io
 import tarfile
 import threading
@@ -238,3 +239,49 @@ async def test_cancelled_creation_recovers_and_removes_container():
         assert runtime.sessions == {}
     finally:
         released.set()
+
+
+def _session_for_get_file():
+    container = _container()
+    session = DockerSandboxSession("get-file", SessionConfig(working_dir="/work"), None)
+    session.container = container
+    session._is_active = True
+    return session, container
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "/etc/passwd",
+        "../../tmp/secret",
+        "../work-other/result.csv",
+        "/work/../etc/passwd",
+        "nested/../../etc/passwd",
+        ".",
+    ],
+)
+async def test_get_file_rejects_paths_outside_workspace(filename):
+    session, container = _session_for_get_file()
+    result = await session.get_file_content(filename)
+    assert result.status == "error"
+    assert "outside the sandbox working directory" in result.error
+    container.exec_run.assert_not_called()
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename", ["chart.png", "nested/../chart.png", "/work/chart.png"]
+)
+async def test_get_file_reads_files_inside_workspace(filename):
+    session, container = _session_for_get_file()
+    container.get_archive.return_value = (
+        [_archive([("chart.png", b"image-bytes", "file")])],
+        {},
+    )
+    result = await session.get_file_content(filename)
+    assert result.status == "success"
+    assert base64.b64decode(result.output) == b"image-bytes"
+    container.exec_run.assert_called_once_with(["test", "-f", "/work/chart.png"])
+    container.get_archive.assert_called_once_with("/work/chart.png")

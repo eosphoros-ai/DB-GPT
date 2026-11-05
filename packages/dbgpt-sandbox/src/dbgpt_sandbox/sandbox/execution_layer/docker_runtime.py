@@ -7,6 +7,7 @@ import base64
 import io
 import json
 import os
+import posixpath
 import shutil
 import tarfile
 import tempfile
@@ -385,14 +386,35 @@ class DockerSandboxSession(SandboxSession):
         finally:
             self._is_active = False
 
+    def _workspace_file_path(self, filename: str) -> Optional[str]:
+        """Resolve ``filename`` inside the working dir, or None if it escapes.
+
+        The container is Linux, so paths are normalized with POSIX semantics.
+        Absolute paths and ``..`` segments are allowed only when the result
+        still lies under the session working directory.
+        """
+        root = posixpath.normpath(self.config.working_dir)
+        candidate = posixpath.normpath(posixpath.join(root, filename))
+        if not candidate.startswith(root.rstrip("/") + "/"):
+            return None
+        return candidate
+
     async def get_file_content(self, filename: str) -> Optional[DisplayResult]:
         """从容器内获取文件内容"""
         if not self.container or not self._is_active:
             return None
 
-        file_path = os.path.join(self.config.working_dir, filename)
+        file_path = self._workspace_file_path(filename)
+        if file_path is None:
+            return DisplayResult(
+                status="error",
+                output="",
+                error=f"File is outside the sandbox working directory: {filename}",
+                execution_time=0,
+                exit_code=-1,
+            )
 
-        check = self.container.exec_run(f"test -f {file_path}")
+        check = self.container.exec_run(["test", "-f", file_path])
         if check.exit_code != 0:
             return DisplayResult(
                 status="error",
