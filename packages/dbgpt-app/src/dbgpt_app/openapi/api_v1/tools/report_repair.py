@@ -41,7 +41,17 @@ async def render_saved_report(state, skills_dir, *, allow_unavailable_references
     if calculation and not calculation.get("result_artifact_id"):
         return False
     presentation = state.get("_report_presentation") or {}
-    if presentation.get("content") and not state.get("_report_html_error"):
+    partial = any(
+        str(warning).startswith(
+            ("REPORT_REFERENCE_UNAVAILABLE", "REPORT_NUMERIC_VALUE_UNAVAILABLE")
+        )
+        for warning in state.get("_report_warnings", [])
+    )
+    if (
+        presentation.get("content")
+        and not state.get("_report_html_error")
+        and (allow_unavailable_references or not partial)
+    ):
         return True
     saved = state.get("_report_saved_arguments") or {}
     if not any(saved.get(key) for key in ("template_path", "html", "file_path")):
@@ -144,6 +154,8 @@ def _save_checkpoint(state, arguments, error):
         "missing_calculation": state.get("_report_missing_calculation"),
         "calculation_requests": state.get("_report_calculation_requests", 0),
         "draft": state.get("_report_draft"),
+        "object_fields": state.get("_report_object_fields"),
+        "object_template": state.get("_report_object_template"),
         "model_output": state.get("_report_model_output"),
         "invocation_failure_count": state.get("_report_invocation_failures", 0),
         "invocation_error": state.get("_report_last_invocation_error"),
@@ -249,6 +261,8 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     state["_report_missing_calculation"] = payload.get("missing_calculation")
     state["_report_calculation_requests"] = payload.get("calculation_requests", 0)
     state["_report_draft"] = payload.get("draft")
+    state["_report_object_fields"] = payload.get("object_fields") or {}
+    state["_report_object_template"] = payload.get("object_template")
     state["_report_checkpoint_path"] = str(path)
     state["_report_pending_path"] = str(path.with_name("pending.html"))
     if state["_report_render_phase"]:

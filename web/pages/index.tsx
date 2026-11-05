@@ -2568,13 +2568,19 @@ const Playground: NextPage = () => {
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
+          const finalTaskPlan = Array.isArray(payload.task_plan) ? (payload.task_plan as TaskItem[]) : undefined;
           cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
-            const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' as const } : item,
-            );
+            const nextSteps = current.steps.map(item => {
+              const next = item.status === 'running' ? { ...item, status: 'done' as const } : item;
+              if (item.action?.toLowerCase() === 'todowrite' && payload.todo_meta) {
+                const meta = payload.todo_meta;
+                return { ...next, todoMeta: meta, title: `TODO::${meta.state}:${meta.done}/${meta.total}` };
+              }
+              return next;
+            });
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
           setMessages(prev =>
@@ -2587,6 +2593,7 @@ const Playground: NextPage = () => {
                 reportId: finalAnswer.reportId,
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
+                ...(finalTaskPlan && { taskPlan: finalTaskPlan }),
               };
             }),
           );

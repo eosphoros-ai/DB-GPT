@@ -69,6 +69,7 @@ class ReportTable(_SpecNode):
 
 class ReportChart(_SpecNode):
     refs: list[str] = Field(default_factory=list)
+    source_table: ReportTable | None = None
     img: str | None = None
     renderer: Literal["echarts"] | None = None
     host_id: str | None = None

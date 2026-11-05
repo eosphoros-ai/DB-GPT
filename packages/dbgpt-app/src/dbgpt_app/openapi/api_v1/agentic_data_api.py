@@ -90,6 +90,11 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
+from .task_progress import (
+    complete_delivery_task,
+    sync_task_plan_steps,
+    task_plan_meta,
+)
 
 _CHINESE_RECOMMENDATION_COUNTS = {
     "一": 1,
@@ -1372,6 +1377,7 @@ def _build_react_history_payload(
     storage URIs, owner ids, hashes or inspection bodies. ``citations`` comes
     from the final-answer assembler and remains display-safe metadata.
     """
+    sync_task_plan_steps(steps, task_plan)
     value = {
         "version": 2,
         "protocol_version": 2,
@@ -1609,8 +1615,13 @@ def _react_terminal_events(
     except Exception:
         logger.exception("Failed to persist ReAct agent history")
 
+    final_payload = final_answer.to_sse_payload()
+    history = json.loads(history_payload)
+    if isinstance(history.get("task_plan"), list):
+        final_payload["task_plan"] = history["task_plan"]
+        final_payload["todo_meta"] = task_plan_meta(history["task_plan"])
     return (
-        _sse_event(final_answer.to_sse_payload()),
+        _sse_event(final_payload),
         _sse_event({"type": "done"}),
     )
 
@@ -4489,9 +4500,8 @@ After partial results, finish only missing requested deliverables, then report.
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
                     yield step_meta(_stale_id, None, "terminate", None, "terminate")
-                # Do not fabricate plan completion.  Only an explicit
-                # todowrite update can mark a task complete; otherwise an
-                # early terminate must remain visibly incomplete.
+                # Termination alone does not prove any analysis/report task
+                # completed. Delivery is reconciled after verifying outcomes.
                 continue
 
             # ── TodoWrite: emit plan.update SSE and show step card ──
@@ -4519,22 +4529,10 @@ After partial results, finish only missing requested deliverables, then report.
                 if not todos_payload and _todo_list:
                     todos_payload = list(_todo_list)
 
-                _td_total = len(todos_payload)
-                _td_done = sum(
-                    1 for t in todos_payload if t.get("status") == "completed"
-                )
-                if _td_done == 0:
-                    todo_state = "init"
-                elif _td_done == _td_total and _td_total > 0:
-                    todo_state = "done"
-                else:
-                    todo_state = "progress"
-
-                todo_meta = {
-                    "state": todo_state,
-                    "done": _td_done,
-                    "total": _td_total,
-                }
+                todo_meta = task_plan_meta(todos_payload)
+                _td_total = todo_meta["total"]
+                _td_done = todo_meta["done"]
+                todo_state = todo_meta["state"]
                 _todo_step_title = (
                     f"TODO::{todo_state}:{_td_done}/{_td_total}"
                     if _td_total > 0
@@ -4780,9 +4778,19 @@ After partial results, finish only missing requested deliverables, then report.
 
             # Mark step as done and track as last completed
             yield step_done(react_step_id, status)
+            report_task_completed = False
+            action_names = {name.strip().lower() for name in (action or "").split(",")}
+            if "generate_report" in action_names:
+                if react_state.get("_report_delivery_completed"):
+                    report_task_completed = complete_delivery_task(
+                        _todo_list, report_completed=True
+                    )
+            if report_task_completed:
+                yield _sse_event({"type": "plan.update", "tasks": list(_todo_list)})
             if (
                 status == "done"
                 and action
+                and "generate_report" not in action_names
                 and action.lower() != "todowrite"
                 and should_advance_todo(
                     action, thought_text or thoughts, observation_text
@@ -5004,6 +5012,19 @@ After partial results, finish only missing requested deliverables, then report.
     if incomplete:
         yield _sse_event(incomplete)
         final_content = incomplete["message"]
+    # A valid final response completes an explicit delivery task, never pending
+    # analysis or report work. Partial reports do not complete their report task.
+    if (
+        not stopped
+        and not incomplete
+        and reply.action_report
+        and reply.action_report.terminate
+        and final_content.strip()
+        and not final_content.startswith(("任务未完成", "HTML 分析报告未生成"))
+    ):
+        if react_state.get("_report_delivery_completed"):
+            complete_delivery_task(_todo_list, report_completed=True)
+        complete_delivery_task(_todo_list, summary_delivered=True)
     final_answer = final_answer_assembler.finalize(final_content)
     final_answer = await _finalize_turn_report_persistence(
         dialogue=dialogue,

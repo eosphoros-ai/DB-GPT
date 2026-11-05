@@ -229,6 +229,38 @@ class NativeToolCallAction(ParallelToolAction):
         """Perform the action from native tool_calls or text fallback."""
         tool_calls = kwargs.get("tool_calls")
         if not tool_calls:
+            # Providers may return the textual batch protocol even when native
+            # calling was requested. Preserve each explicit name/argument pair;
+            # passing the entire argument list to one tool loses the protocol.
+            steps = self._parser(kwargs).parse_current_step(ai_message)
+            if len(steps) == 1 and isinstance(steps[0].action_input, list):
+                step = steps[0]
+                names = [name.strip() for name in (step.action or "").split(",")]
+                arguments = step.action_input
+                if (
+                    len(names) != len(arguments)
+                    or not arguments
+                    or not all(re.fullmatch(r"[A-Za-z_]\w*", n) for n in names)
+                    or not all(isinstance(args, dict) for args in arguments)
+                ):
+                    return ActionOutput(
+                        is_exe_success=False,
+                        content=(
+                            "TOOL_BATCH_INVALID: provide one JSON object for "
+                            "each comma-separated tool name"
+                        ),
+                    )
+                out = await run_tools_batch(
+                    [
+                        ToolCallSpec(name=name, args=args)
+                        for name, args in zip(names, arguments)
+                    ],
+                    self.resource,
+                    self.render_protocol,
+                    need_vis_render=need_vis_render,
+                )
+                out.thoughts = step.thought
+                return out
             # No native tool calls — fall back to text ReAct parsing.
             try:
                 return await super().run(
@@ -251,7 +283,11 @@ class NativeToolCallAction(ParallelToolAction):
             try:
                 args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
             except (json.JSONDecodeError, ValueError) as error:
-                if name in {"html_interpreter", "append_report_sections"}:
+                if name in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                }:
                     location = (
                         (
                             "JSON line "
@@ -273,7 +309,11 @@ class NativeToolCallAction(ParallelToolAction):
                     )
                 args = {}
             if not isinstance(args, dict):
-                if name in {"html_interpreter", "append_report_sections"}:
+                if name in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                }:
                     return ActionOutput(
                         is_exe_success=False,
                         action=name,
@@ -442,17 +482,18 @@ class ToolCallingReActAgent(ReActAgent):
     ) -> ActionOutput:
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
-            output.action in {"html_interpreter", "append_report_sections"}
+            output.action
+            in {"html_interpreter", "append_report_sections", "compose_report"}
             or bool(
                 re.search(
-                    r"Action\s*:\s*(?:html_interpreter|append_report_sections)\b",
+                    r"Action\s*:\s*(?:html_interpreter|append_report_sections|compose_report)\b",
                     message.content or "",
                     re.I,
                 )
             )
             or any(
                 call.get("function", {}).get("name")
-                in {"html_interpreter", "append_report_sections"}
+                in {"html_interpreter", "append_report_sections", "compose_report"}
                 for call in getattr(self, "_pending_native_tool_calls", None) or []
             )
         )

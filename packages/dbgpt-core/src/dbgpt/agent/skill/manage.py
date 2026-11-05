@@ -14,11 +14,22 @@ logger = logging.getLogger(__name__)
 
 def normalize_script_file_name(name: str) -> str:
     """Canonicalize the script path forms accepted by the skill executor."""
-    name = name.lstrip("/\\")
-    if name.startswith(("scripts/", "scripts\\")):
-        name = name[8:]
-
-    return name
+    if not isinstance(name, str) or "\x00" in name or ":" in name:
+        raise ValueError("SKILL_SCRIPT_PATH_INVALID")
+    # Keep the existing leading-separator shorthand. Both separators must
+    # identify the same target on Windows and POSIX.
+    parts = [
+        part
+        for part in name.replace("\\", "/").lstrip("/").split("/")
+        if part not in {"", "."}
+    ]
+    if ".." in parts:
+        raise ValueError("SKILL_SCRIPT_PATH_INVALID: parent traversal is unsupported")
+    if parts and parts[0] == "scripts":
+        parts = parts[1:]
+    if not parts:
+        raise ValueError("SKILL_SCRIPT_PATH_INVALID: script filename is required")
+    return "/".join(parts)
 
 
 class RegisterSkill:

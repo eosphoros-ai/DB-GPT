@@ -28,8 +28,6 @@ from ..tools.html_interpreter import (
     make_html_interpreter,
     report_template_contract,
 )
-from ..tools.read_file import make_read_file
-from ..tools.report_evidence import make_report_evidence_manifest
 from ..tools.report_repair import (
     MAX_DOCUMENT_ATTEMPTS,
     MAX_INVOCATION_FAILURES,
@@ -451,6 +449,9 @@ async def build_report_agent(
     sink = react_state.get("_report_artifact_sink")
     captured_fields = _template_result_sources(sink.snapshot() if sink else [])
     injected_fields = sorted(set(captured_fields).intersection(contract["fields"]))
+    from ..tools.report_objects import report_author_contract
+
+    author_contract = report_author_contract(contract, captured_fields)
 
     sub_gpt_memory = GptsMemory(
         plans_memory=DefaultGptsPlansMemory(),
@@ -464,15 +465,14 @@ async def build_report_agent(
         skills_dir,
         business_spec_only=spec_mode,
     )
+    from ..tools.report_objects import make_report_object_tools, report_object_prompt
+
     tool_pack = ToolPack(
-        [
-            renderer,
-            make_report_evidence_manifest(react_state),
-            make_read_file(react_state),
+        make_report_object_tools(react_state, renderer, template_path, author_contract)
+        + [
             make_request_report_calculation(react_state),
             Terminate(),
         ]
-        + ([make_append_report_sections(react_state, renderer)] if spec_mode else [])
     )
 
     if model_name:
@@ -505,11 +505,11 @@ async def build_report_agent(
         .bind(tool_pack)
         .bind(
             PromptTemplate(
-                template=report_agent_prompt(
+                template=report_object_prompt(
                     template_path,
-                    template_text,
+                    author_contract,
                     injected_fields,
-                    language=react_state.get("_report_language", "zh"),
+                    react_state.get("_report_language", "zh"),
                 )
                 + "\n\n<!-- DB-GPT INTERNAL EVIDENCE BEGIN -->\n"
                 + _load_internal_evidence_skill()
@@ -582,6 +582,36 @@ def _report_agent_failure(state: Dict[str, Any], reason: str) -> str:
     """Keep child execution failures distinct from the last renderer diagnostic."""
     from ..tools.report_repair import save_execution_checkpoint
 
+    required = set(
+        (state.get("_report_template_contract") or {}).get("prose_fields", [])
+    )
+    staged = set(state.get("_report_object_fields") or {})
+    before = set(state.get("_report_object_fields_before") or [])
+    rounds = state.get("_report_draft_continuations", 0)
+    if "AGENT_STEP_LIMIT" in reason and required & (staged - before) and rounds < 2:
+        state["_report_draft_continuations"] = rounds + 1
+        text = "REPORT_DRAFT_PENDING: validated fields saved; complete remaining fields"
+        save_execution_checkpoint(state, text)
+        return json.dumps(
+            {
+                "status": "draft_pending",
+                "retryable": True,
+                "remaining_fields": sorted(required - staged),
+                "chunks": [
+                    {
+                        "output_type": "text",
+                        "content": "报告正文草稿已保存，尚未交付完整报告。",
+                    }
+                ],
+                "instruction": (
+                    "Call generate_report again to finish the remaining fields. "
+                    "Reuse captured results and staged fields; do not rerun "
+                    "analysis or repeat completed fields."
+                ),
+            },
+            ensure_ascii=False,
+        )
+
     text = "REPORT_AGENT_FAILED: " + reason
     state["_report_agent_failure"] = text
     save_execution_checkpoint(state, text)
@@ -613,6 +643,9 @@ def _completed_report_response(state: Dict[str, Any]) -> str:
         )
         for warning in warnings
     )
+    # Record the semantic outcome before the HTML is wrapped/truncated for
+    # transport, including when this tool is part of a native call batch.
+    state["_report_delivery_completed"] = not partial
     return json.dumps(
         {
             "status": "partial" if partial else "completed",
@@ -674,6 +707,7 @@ def make_generate_report_tool(
         thought: str = "",
         metric_definitions: list[dict] | None = None,
     ) -> str:
+        react_state["_report_delivery_completed"] = False
         from dbgpt.agent import AgentMessage
 
         from ..tools.report_charts import analysis_groups, selected_chart_gaps
@@ -704,6 +738,9 @@ def make_generate_report_tool(
                 except (KeyError, ValueError, TypeError) as error:
                     logger.warning("Ignored invalid metric definition: %s", error)
         react_state["_report_generation_requested"] = True
+        react_state["_report_object_fields_before"] = list(
+            react_state.get("_report_object_fields") or {}
+        )
         data_artifacts = [
             item
             for item in artifacts
@@ -799,25 +836,31 @@ def make_generate_report_tool(
             contract = report_template_contract(
                 template_file.read_text(encoding="utf-8")
             )
-            handoff = _report_artifact_handoff(artifacts, contract["fields"])
-            if hasattr(sink, "catalog"):
-                try:
-                    visible = {
-                        item.artifact_id
-                        for item in artifacts
-                        if item.status == "succeeded"
-                    }
-                    handoff["metrics"] = [
-                        metric
-                        for metric in sink.catalog.list_metrics(sink.context.conv_uid)
-                        if metric.get("artifact_id") in visible
-                    ][-40:]
-                except Exception:
-                    logger.exception(
-                        "Unable to load session metric directory for report"
-                    )
-            message += "\n本轮已捕获的模板字段与图表来源：" + json.dumps(
-                handoff, ensure_ascii=False
+            from ..tools.report_objects import ReportObjects, report_author_contract
+
+            handoff = ReportObjects(artifacts, eager=False).manifest(
+                limit=40, kind="value" if contract["mode"] != "spec" else None
+            )
+            from ..tools.html_interpreter import _template_result_sources
+
+            injected = _template_result_sources(artifacts)
+            handoff["template_fields"] = report_author_contract(contract, injected)[
+                "fields"
+            ]
+            staged = set(react_state.get("_report_object_fields") or {})
+            handoff["staged_fields"] = sorted(staged & set(handoff["template_fields"]))
+            handoff["remaining_fields"] = sorted(
+                (
+                    set(contract.get("prose_fields", []))
+                    & set(handoff["template_fields"])
+                )
+                - staged
+            )
+            message += (
+                "\n以下是程序登记的证据对象。仅从中选择 object_id，"
+                "更多对象调用 list_report_objects 分页筛选。"
+                "原始任务中的底层引用不能直接提交给 compose_report。"
+                + json.dumps(handoff, ensure_ascii=False)
             )
         missing = react_state.get("_report_missing_calculation")
         handoff = _missing_calculation_response(react_state)
@@ -833,17 +876,14 @@ def make_generate_report_tool(
             and saved.get("template_path")
             and isinstance(saved.get("data"), dict)
         ):
-            # Revalidate in code before constructing the recovery prompt. Asking
-            # the model to submit the same empty update can exhaust the repeated
-            # candidate guard without adding any of the missing content.
-            if await render_saved_report(
-                react_state, skills_dir, allow_unavailable_references=True
-            ):
+            # Strict validation must reach the repair model while a repair
+            # attempt is available. Partial delivery is a terminal fallback.
+            if await render_saved_report(react_state, skills_dir):
                 return _completed_report_response(react_state)
             if saved["data"].get("REPORT_SPEC"):
                 message += (
                     "\n这是已保存 spec 的恢复，引擎已重新校验原始完整 spec。"
-                    "直接按最新错误追加缺失内容，"
+                    "按最新错误修复，使用对象 ID 提交完整业务报告结构，"
                     "不要用空 REPORT_SPEC 再次提交相同候选。"
                     "保留已有章节、建议、样式和绑定，不能重写为部分章节。"
                     "先前 REPORT_REPAIR_STOPPED "
@@ -869,8 +909,8 @@ def make_generate_report_tool(
                         ],
                         ensure_ascii=False,
                     )
-                    + "。校验后仅追加缺失章节。不要读取完整 checkpoint 或重发已有章节；"
-                    "建议依据可用 report_evidence_manifest 定向读取少量真实 SQL 结果。"
+                    + "。保留上述已有内容，使用 list_report_objects 查找对应证据对象。"
+                    "使用 compose_report 提交完整业务报告结构。"
                 )
         requirement = react_state.get("_report_required_recommendation_count")
         if requirement:
@@ -882,6 +922,9 @@ def make_generate_report_tool(
             message += (
                 "\n最新引擎错误（优先修复，复用已完成产物）：\n"
                 + str(latest_error)[:REPORT_AGENT_RESULT_MAX_CHARS]
+                + "\n错误中的旧工具名、artifact_id、path 是引擎内部诊断。"
+                "实际修复只使用 list_report_objects 和 compose_report "
+                "的 object_id 契约。"
             )
         if react_state.get("_report_language") == "en":
             message += (

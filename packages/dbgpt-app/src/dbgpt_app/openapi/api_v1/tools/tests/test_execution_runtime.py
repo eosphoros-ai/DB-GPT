@@ -400,17 +400,28 @@ async def test_main_and_subagent_shell_use_configured_factory(
 
 
 @pytest.mark.asyncio
-async def test_real_local_timeout_stops_the_child(tmp_path):
+async def test_real_local_timeout_stops_the_child(tmp_path, monkeypatch):
     import psutil
 
-    pid_path = tmp_path / "child.pid"
+    create_subprocess = asyncio.create_subprocess_exec
+    processes = []
+
+    async def record_subprocess(*args, **kwargs):
+        process = await create_subprocess(*args, **kwargs)
+        processes.append(process)
+        return process
+
+    # Observe the real process at creation. A short timeout may expire before
+    # Python executes any user code, so a child-written PID file is not reliable.
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", record_subprocess)
     result = await _execution.run_code(
-        "import os, time\nfrom pathlib import Path\n"
-        'Path("child.pid").write_text(str(os.getpid()))\ntime.sleep(30)',
+        "import time\ntime.sleep(30)",
         language="python",
         work_dir=str(tmp_path),
         timeout=0.2,
     )
     assert result.status == ExecutionStatus.TIMEOUT
-    assert pid_path.exists()
-    assert not psutil.pid_exists(int(pid_path.read_text()))
+    assert len(processes) == 1
+    process = processes[0]
+    assert process.returncode is not None
+    assert not psutil.pid_exists(process.pid)

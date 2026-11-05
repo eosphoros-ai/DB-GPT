@@ -1765,6 +1765,13 @@ def _standalone_proposal_texts(spec: Any) -> set[str]:
     }
 
 
+def _verified_field_declarations(template: str):
+    return re.findall(
+        r"<!--\s*dbgpt-verified-fields:\s*([\w.-]+)\s*\|\s*([\w.-]+)\s*\|\s*([A-Z_0-9,\s]+?)\s*-->",
+        template,
+    )
+
+
 def report_template_contract(template: str) -> dict:
     """Derive the input contract from the selected template, not its skill name."""
     uses_spec = bool(
@@ -1794,6 +1801,14 @@ def report_template_contract(template: str) -> dict:
         "mode": "spec" if uses_spec else "placeholders",
         "fields": fields,
         "prose_fields": sorted(set(prose_fields)),
+        "verified_fields": sorted(
+            {
+                field.strip()
+                for _, _, names in _verified_field_declarations(template)
+                for field in names.split(",")
+                if field.strip()
+            }
+        ),
     }
 
 
@@ -2037,10 +2052,7 @@ def _render_template_with_bindings(
     protected_fields = set()
     protected_sources = {}
     by_artifact_id = {item.artifact_id: item for item in artifacts}
-    declarations = re.findall(
-        r"<!--\s*dbgpt-verified-fields:\s*([\w.-]+)\s*\|\s*([\w.-]+)\s*\|\s*([A-Z_0-9,\s]+?)\s*-->",
-        template,
-    )
+    declarations = _verified_field_declarations(template)
     for upstream_script, result_script, names in declarations:
         fields = {name.strip() for name in names.split(",") if name.strip()}
         protected_fields.update(fields)
@@ -2049,8 +2061,10 @@ def _render_template_with_bindings(
             if artifact.type != "python" or artifact.status != "succeeded":
                 continue
             metadata = artifact.metadata or {}
+            if not metadata.get("script_file_name"):
+                continue
             if (
-                normalize_script_file_name(metadata.get("script_file_name", ""))
+                normalize_script_file_name(metadata["script_file_name"])
                 != result_script
                 or metadata.get("captured_input_contract") is not True
             ):

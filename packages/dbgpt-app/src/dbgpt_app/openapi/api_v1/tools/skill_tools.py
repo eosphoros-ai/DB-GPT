@@ -31,7 +31,8 @@ def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
         if artifact.type == "python"
         and artifact.status == "succeeded"
         and artifact.metadata.get("skill_name") == skill_name
-        and normalize_script_file_name(artifact.metadata.get("script_file_name", ""))
+        and artifact.metadata.get("script_file_name")
+        and normalize_script_file_name(artifact.metadata["script_file_name"])
         == upstream
         and artifact.result is not None
     ]

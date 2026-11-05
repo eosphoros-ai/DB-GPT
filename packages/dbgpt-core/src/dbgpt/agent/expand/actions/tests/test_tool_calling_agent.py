@@ -103,7 +103,65 @@ def _act_kwargs(agent, enable_parallel):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("name", ["html_interpreter", "append_report_sections"])
+async def test_native_fallback_preserves_explicit_text_batch_pairs():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    out = await agent.act(
+        AgentMessage(
+            content=(
+                'Action: add, multiply\nAction Input: [{"a":1,"b":2},{"a":3,"b":4}]'
+            )
+        ),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success
+    results = json.loads(out.observations)
+    assert [r["name"] for r in results] == ["add", "multiply"]
+    assert [r["observation"] for r in results] == ["3", "12"]
+
+
+@pytest.mark.asyncio
+async def test_native_fallback_rejects_ambiguous_batch_before_execution():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    out = await agent.act(
+        AgentMessage(content='Action: add, multiply\nAction Input: [{"a":1,"b":2}]'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert not out.is_exe_success
+    assert "TOOL_BATCH_INVALID" in out.content
+
+
+@pytest.mark.asyncio
+async def test_compose_success_finishes_report_without_extra_model_turn():
+    state = {"_report_lock_after_completion": True}
+
+    @tool(description="Compose report")
+    def compose_report(data: dict) -> str:
+        state["_report_success_response"] = '{"status":"completed"}'
+        return state["_report_success_response"]
+
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    agent.resource = ToolPack([compose_report._tool])
+    for action in agent.actions:
+        action.init_resource(agent.resource)
+    object.__setattr__(agent, "_report_repair_state", state)
+    out = await agent.act(
+        AgentMessage(content='Action: compose_report\nAction Input: {"data":{}}'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success
+    assert out.terminate
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "name", ["html_interpreter", "append_report_sections", "compose_report"]
+)
 async def test_invalid_report_call_uses_bounded_repair_handler(name):
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True

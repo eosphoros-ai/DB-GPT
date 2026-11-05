@@ -309,7 +309,13 @@ def _table_selections(spec, artifacts):
         *enumerate(spec.get("sections", [])),
     ]
     for section_index, section in scopes:
-        for source_id in chart_sources({"sections": [section]}):
+        selected_chart = (section.get("chart") or {}).get("source_table") or {}
+        source_ids = list(chart_sources({"sections": [section]}))
+        chart_source_id = selected_chart.get("artifact_id")
+        if chart_source_id in source_ids:
+            source_ids.remove(chart_source_id)
+            source_ids.insert(0, chart_source_id)
+        for source_id in source_ids:
             artifact = by_id.get(source_id)
             if (
                 artifact is None
@@ -318,6 +324,8 @@ def _table_selections(spec, artifacts):
             ):
                 continue
             candidate_groups = []
+            if selected_chart.get("artifact_id") == source_id:
+                candidate_groups.append([(selected_chart, True)])
             authored_table = section.get("table") or {}
             if authored_table.get("artifact_id") == source_id:
                 candidate_groups.append([(authored_table, True)])

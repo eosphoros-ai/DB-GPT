@@ -1,5 +1,6 @@
 """Check internal evidence guidance is injected into the actual report agent."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -52,12 +53,27 @@ async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, 
         "dbgpt_serve.agent.agents.db_gpts_memory.MetaDbGptsMessageMemory",
         DefaultGptsMessageMemory,
     ):
-        await report_agent.build_report_agent(
+        agent = await report_agent.build_report_agent(
             react_state={"conv_id": "internal-skill-test"},
             llm_client=_Client(),
             skills_dir=str(skills_dir),
             model_name="test",
         )
+    native_tools = agent._build_native_tools()
+    names = {item["function"]["name"] for item in native_tools}
+    assert names == {
+        "list_report_objects",
+        "compose_report",
+        "request_report_calculation",
+        "terminate",
+    } | ({"set_report_field"} if mode == "placeholders" else set())
+    compose_schema = next(
+        item["function"]["parameters"]
+        for item in native_tools
+        if item["function"]["name"] == "compose_report"
+    )
+    assert "object_id" in json.dumps(compose_schema)
+    assert "artifact_id" not in json.dumps(compose_schema)
     assert len(prompts) == 1
     assert prompts[0].count("# 报告证据核查") == 1
     assert "相关性不能当作因果关系" in prompts[0]

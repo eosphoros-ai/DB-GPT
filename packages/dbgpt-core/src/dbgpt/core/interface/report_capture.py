@@ -858,10 +858,10 @@ def _resolve_result_coordinate(value: Any, selector: dict) -> tuple[Any, dict]:
             raise ValueError("RESULT_SELECTOR_INVALID: field does not exist")
         value = value[field]
     path = selector.get("path", [])
-    if path and isinstance(value, str):
-        value = json.loads(value)
     coordinate = []
     for index, key in enumerate(path):
+        if isinstance(value, str):
+            value = json.loads(value)
         # JSON object keys stay strings. Only an array gives numeric text
         # the meaning of an index.
         if (

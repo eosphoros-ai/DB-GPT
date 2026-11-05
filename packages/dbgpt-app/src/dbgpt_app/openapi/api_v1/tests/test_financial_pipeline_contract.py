@@ -165,10 +165,30 @@ def test_chart_markup_resolves_only_captured_image():
 
 
 @pytest.mark.parametrize(
-    "prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+    "prefix",
+    [
+        "",
+        "scripts/",
+        "scripts\\",
+        "/scripts/",
+        "\\scripts\\",
+        "./",
+        "scripts/./",
+        "./scripts/./",
+    ],
 )
 @pytest.mark.parametrize(
-    "upstream_prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+    "upstream_prefix",
+    [
+        "",
+        "scripts/",
+        "scripts\\",
+        "/scripts/",
+        "\\scripts\\",
+        "./",
+        "scripts/./",
+        "./scripts/./",
+    ],
 )
 def test_skill_contract_uses_captured_result_instead_of_model_values(
     monkeypatch, prefix, upstream_prefix
@@ -202,6 +222,16 @@ def test_skill_contract_uses_captured_result_instead_of_model_values(
     )
     assert value == {"revenue": 100}
     assert ids == ["python-1"]
+    explicit_value, explicit_ids = _apply_skill_input_contract(
+        "financial-report-analyzer",
+        prefix + "calculate_ratios.py",
+        {"revenue": 999},
+        ["python-1"],
+        sink,
+    )
+    assert explicit_value == {"revenue": 100}
+    assert explicit_ids == ["python-1"]
+
     with pytest.raises(ValueError, match="SKILL_INPUT_REQUIRED"):
         _apply_skill_input_contract(
             "financial-report-analyzer",
@@ -213,7 +243,17 @@ def test_skill_contract_uses_captured_result_instead_of_model_values(
 
 
 @pytest.mark.parametrize(
-    "prefix", ["", "scripts/", "scripts\\", "/scripts/", "\\scripts\\"]
+    "prefix",
+    [
+        "",
+        "scripts/",
+        "scripts\\",
+        "/scripts/",
+        "\\scripts\\",
+        "./",
+        "scripts/./",
+        "./scripts/./",
+    ],
 )
 def test_verified_template_field_ignores_model_override(prefix):
     from dbgpt.core.interface.report_capture import (
@@ -284,3 +324,41 @@ def test_report_with_unverified_values_is_partial():
     )
     assert response["status"] == "partial"
     assert "未完整完成" in response["chunks"][0]["content"]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "../calculate_ratios.py",
+        "scripts/../calculate_ratios.py",
+        "C:/calculate_ratios.py",
+        "",
+        ".",
+        "scripts/",
+    ],
+)
+def test_unsupported_script_paths_fail_before_contract_or_execution(name):
+    from dbgpt.agent.skill.manage import normalize_script_file_name
+
+    with pytest.raises(ValueError, match="SKILL_SCRIPT_PATH_INVALID"):
+        normalize_script_file_name(name)
+
+
+def test_negative_table_offset_is_rejected_before_partial_render():
+    from dbgpt_app.openapi.api_v1.tools.report_spec import validate_report_spec
+
+    with pytest.raises(ValueError, match="REPORT_TEMPLATE_SPEC_INVALID"):
+        validate_report_spec(
+            {
+                "sections": [
+                    {
+                        "heading": "Invalid window",
+                        "table": {
+                            "artifact_id": "source",
+                            "columns": ["sales"],
+                            "offset": -1,
+                        },
+                    }
+                ]
+            }
+        )
