@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, Depends
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import OnceConversation
+from dbgpt_app.openapi.api_v1.datasource_visibility import is_hidden_datasource
 from dbgpt_app.openapi.api_v1.editor._chat_history.chat_hisotry_factory import (
     ChatHistory,
 )
@@ -74,11 +75,25 @@ def resolve_editor_db_name(
     return None
 
 
+def _hidden_datasource_result(db_name: Optional[str]) -> Optional[Result]:
+    """Return a failed result if ``db_name`` is a reserved, user-hidden datasource.
+
+    The datasource listing never shows these names, so the editor must not
+    open a connector for them when a caller passes one in directly.
+    """
+    if is_hidden_datasource(db_name):
+        return Result.failed(msg="Database is not available")
+    return None
+
+
 @router.get("/v1/editor/db/tables", response_model=Result[DataNode])
 async def get_editor_tables(
     db_name: str, page_index: int, page_size: int, search_str: str = ""
 ):
     logger.info(f"get_editor_tables:{db_name},{page_index},{page_size},{search_str}")
+    rejected = _hidden_datasource_result(db_name)
+    if rejected is not None:
+        return rejected
     db_conn = CFG.local_db_manager.get_connector(db_name)
     tables = db_conn.get_table_names()
     db_node: DataNode = DataNode(title=db_name, key=db_name, type="db")
@@ -216,6 +231,9 @@ async def editor_sql_run(
 
     if not db_name or not sql:
         return Result.failed(msg="SQL run param error: db_name and sql are required")
+    rejected = _hidden_datasource_result(db_name)
+    if rejected is not None:
+        return rejected
 
     # Get database connection
     conn = CFG.local_db_manager.get_connector(db_name)
@@ -258,6 +276,9 @@ async def sql_editor_submit(
 ):
     logger.info(f"sql_editor_submit:{sql_edit_context.__dict__}")
 
+    rejected = _hidden_datasource_result(sql_edit_context.db_name)
+    if rejected is not None:
+        return rejected
     conn = CFG.local_db_manager.get_connector(sql_edit_context.db_name)
     try:
         editor_service.sql_editor_submit_and_save(sql_edit_context, conn)
@@ -303,6 +324,9 @@ async def chart_run(
 
     if not db_name or not sql:
         return Result.failed(msg="SQL run param error: db_name and sql are required")
+    rejected = _hidden_datasource_result(db_name)
+    if rejected is not None:
+        return rejected
 
     # Get database connection
     db_conn = CFG.local_db_manager.get_connector(db_name)
@@ -354,6 +378,9 @@ async def chart_run(
 @router.post("/v1/chart/editor/submit", response_model=Result[bool])
 async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body()):
     logger.info(f"sql_editor_submit:{chart_edit_context.__dict__}")
+    rejected = _hidden_datasource_result(chart_edit_context.db_name)
+    if rejected is not None:
+        return rejected
 
     chat_history_fac = ChatHistory()
     history_mem = chat_history_fac.get_store_instance(chart_edit_context.conv_uid)

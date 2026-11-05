@@ -3,6 +3,7 @@ import pytest
 from dbgpt_app.openapi.api_v1.editor.api_editor_v1 import (
     chart_run,
     editor_sql_run,
+    get_editor_tables,
     resolve_editor_db_name,
 )
 from dbgpt_app.openapi.api_v1.editor.service import nonempty_db_name
@@ -80,3 +81,46 @@ async def test_editor_sql_run_missing_db_name_returns_failed_result():
     )
     assert result.success is False
     assert "db_name" in (result.err_msg or "")
+
+
+class _NoConnectorManager:
+    def get_connector(self, db_name: str):
+        raise AssertionError(f"connector for hidden datasource {db_name!r} opened")
+
+
+@pytest.fixture
+def no_connector(monkeypatch):
+    from dbgpt_app.openapi.api_v1.editor import api_editor_v1
+
+    class _Cfg:
+        local_db_manager = _NoConnectorManager()
+
+    monkeypatch.setattr(api_editor_v1, "CFG", _Cfg())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("db_name", ["dbgpt", "DBGPT", "dbgpt ", "auth"])
+async def test_editor_sql_run_rejects_hidden_datasource(no_connector, db_name):
+    result = await editor_sql_run(
+        {"db_name": db_name, "sql": "select 1"},
+        editor_service=_NoDbService(),
+    )
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")
+
+
+@pytest.mark.asyncio
+async def test_chart_run_rejects_hidden_datasource(no_connector):
+    result = await chart_run(
+        {"db_name": "dbgpt", "sql": "select 1", "chart_type": "bar"},
+        editor_service=_NoDbService(),
+    )
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")
+
+
+@pytest.mark.asyncio
+async def test_get_editor_tables_rejects_hidden_datasource(no_connector):
+    result = await get_editor_tables("dbgpt", page_index=1, page_size=10)
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")
