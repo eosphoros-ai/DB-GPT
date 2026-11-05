@@ -8,7 +8,9 @@ from fastapi import APIRouter, Body, Depends
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import OnceConversation
-from dbgpt_app.openapi.api_v1.datasource_visibility import is_hidden_datasource
+from dbgpt_app.openapi.api_v1.datasource_visibility import (
+    resolves_to_hidden_datasource,
+)
 from dbgpt_app.openapi.api_v1.editor._chat_history.chat_hisotry_factory import (
     ChatHistory,
 )
@@ -81,7 +83,7 @@ def _hidden_datasource_result(db_name: Optional[str]) -> Optional[Result]:
     The datasource listing never shows these names, so the editor must not
     open a connector for them when a caller passes one in directly.
     """
-    if is_hidden_datasource(db_name):
+    if resolves_to_hidden_datasource(CFG.local_db_manager, db_name):
         return Result.failed(msg="Database is not available")
     return None
 

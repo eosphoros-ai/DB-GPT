@@ -486,6 +486,8 @@ def _require_database_access(
     database_record = connector_manager.storage.get_by_names(database_name)
     if database_record is None:
         raise ValueError("Selected database does not exist")
+    if is_hidden_datasource(getattr(database_record, "db_name", None)):
+        raise PermissionError("Selected database is not available")
     # Match the upstream data-source listing: an empty user_id is shared.
     # A display name is not a stable ownership identifier.
     database_owner = getattr(database_record, "user_id", None)

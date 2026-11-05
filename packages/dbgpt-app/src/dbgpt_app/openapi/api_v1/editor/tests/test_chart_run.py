@@ -188,3 +188,23 @@ def test_get_editor_chart_info_rejects_hidden_datasource():
     result = EditorService.get_editor_chart_info(_Service(), "c1", "chart", _Cfg())
     assert result.success is False
     assert "not available" in (result.err_msg or "")
+
+
+@pytest.mark.asyncio
+async def test_editor_sql_run_rejects_name_stored_as_hidden_datasource(monkeypatch):
+    from types import SimpleNamespace
+
+    from dbgpt_app.openapi.api_v1.editor import api_editor_v1
+
+    manager = _NoConnectorManager()
+    # An accent-insensitive collation can match "dbĝpt" to the dbgpt row.
+    manager.storage = SimpleNamespace(
+        get_by_names=lambda name: SimpleNamespace(db_name="dbgpt")
+    )
+    monkeypatch.setattr(api_editor_v1, "CFG", SimpleNamespace(local_db_manager=manager))
+    result = await editor_sql_run(
+        {"db_name": "dbĝpt", "sql": "select 1"},
+        editor_service=_NoDbService(),
+    )
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")

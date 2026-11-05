@@ -21,3 +21,19 @@ def is_hidden_datasource(db_name: Any) -> bool:
     if not isinstance(db_name, str):
         return False
     return db_name.strip().lower() in HIDDEN_DATASOURCE_NAMES
+
+
+def resolves_to_hidden_datasource(connector_manager: Any, db_name: Any) -> bool:
+    """Return True if ``db_name`` names, or is stored as, a reserved datasource.
+
+    The metadata database may also compare names accent-insensitively (or skip
+    ignorable characters), so a name such as ``"dbĝpt"`` can still resolve to
+    the ``dbgpt`` row. Check the name of the stored row as well, before any
+    connector is built from it.
+    """
+    if is_hidden_datasource(db_name):
+        return True
+    if not isinstance(db_name, str) or not db_name.strip():
+        return False
+    record = connector_manager.storage.get_by_names(db_name)
+    return record is not None and is_hidden_datasource(getattr(record, "db_name", None))

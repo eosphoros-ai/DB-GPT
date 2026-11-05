@@ -240,3 +240,27 @@ def test_audit_redacts_sql_parameters_and_tokens(authorization):
         "share_token": "[redacted]",
         "row_count": 3,
     }
+
+
+def test_query_executor_refuses_source_stored_as_hidden_datasource(monkeypatch):
+    from types import SimpleNamespace
+
+    from dbgpt_app.openapi.api_v1.dashboard.query_executor import (
+        DashboardQueryExecutor,
+    )
+    from dbgpt_serve.datasource.manages import ConnectorManager
+
+    def _get_connector(name):
+        raise AssertionError("connector for a hidden datasource was opened")
+
+    # An accent-insensitive collation can match "dbĝpt" to the dbgpt row.
+    manager = SimpleNamespace(
+        storage=SimpleNamespace(
+            get_by_names=lambda name: SimpleNamespace(db_name="dbgpt")
+        ),
+        get_connector=_get_connector,
+    )
+    monkeypatch.setattr(ConnectorManager, "get_instance", lambda system_app: manager)
+
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        DashboardQueryExecutor()._get_connector("dbĝpt")

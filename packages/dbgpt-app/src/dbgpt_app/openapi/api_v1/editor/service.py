@@ -12,7 +12,9 @@ from dbgpt.core.interface.message import (
     StorageConversation,
     _split_messages_by_round,
 )
-from dbgpt_app.openapi.api_v1.datasource_visibility import is_hidden_datasource
+from dbgpt_app.openapi.api_v1.datasource_visibility import (
+    resolves_to_hidden_datasource,
+)
 from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_app.openapi.editor_view_model import (
     ChartDetail,
@@ -177,7 +179,7 @@ class EditorService(BaseComponent):
                         "editor!"
                     )
                 if message.type == "view":
-                    if is_hidden_datasource(db_name):
+                    if resolves_to_hidden_datasource(cfg.local_db_manager, db_name):
                         return Result.failed(msg="Database is not available")
                     view_data: dict = _parse_pure_dict(message.content)
                     charts: List = view_data.get("charts")

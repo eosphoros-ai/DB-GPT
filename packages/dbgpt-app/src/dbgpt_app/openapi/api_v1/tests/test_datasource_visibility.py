@@ -2,7 +2,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from dbgpt_app.openapi.api_v1.datasource_visibility import is_hidden_datasource
+from dbgpt_app.openapi.api_v1.datasource_visibility import (
+    is_hidden_datasource,
+    resolves_to_hidden_datasource,
+)
 
 _ROWS = [
     {"db_name": "dbgpt", "db_type": "mysql"},
@@ -45,3 +48,21 @@ async def test_db_connect_list_skips_hidden_datasources(db_rows):
         db_name=None, user_info=SimpleNamespace(user_id="alice")
     )
     assert [d["db_name"] for d in result.data] == ["walmart_sales", "dbgpt_demo"]
+
+
+def _manager_storing(stored_name):
+    def _lookup(name):
+        return None if stored_name is None else SimpleNamespace(db_name=stored_name)
+
+    return SimpleNamespace(storage=SimpleNamespace(get_by_names=_lookup))
+
+
+def test_name_resolving_to_hidden_row_is_hidden():
+    assert resolves_to_hidden_datasource(_manager_storing("dbgpt"), "dbĝpt")
+    assert resolves_to_hidden_datasource(_manager_storing(None), "DBGPT")
+
+
+def test_name_resolving_to_user_row_is_not_hidden():
+    assert not resolves_to_hidden_datasource(_manager_storing("walmart"), "walmart")
+    assert not resolves_to_hidden_datasource(_manager_storing(None), "missing")
+    assert not resolves_to_hidden_datasource(_manager_storing("dbgpt"), "  ")
