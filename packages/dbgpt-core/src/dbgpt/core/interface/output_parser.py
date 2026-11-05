@@ -141,14 +141,28 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             return response
 
     def _illegal_json_ends(self, s):
-        temp_json = s
-        illegal_json_ends_1 = [", }", ",}"]
-        illegal_json_ends_2 = ", ]", ",]"
-        for illegal_json_end in illegal_json_ends_1:
-            temp_json = temp_json.replace(illegal_json_end, " }")
-        for illegal_json_end in illegal_json_ends_2:
-            temp_json = temp_json.replace(illegal_json_end, " ]")
-        return temp_json
+        result = []
+        in_string = False
+        escaped = False
+        for i, char in enumerate(s):
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+            elif char == '"':
+                in_string = True
+            elif char == ",":
+                # Keep the existing trailing-comma formatting, but never
+                # rewrite delimiter sequences that belong to string data.
+                if s[i + 1 : i + 2] in ("}", "]"):
+                    char = " "
+                elif s[i + 1 : i + 3] in (" }", " ]"):
+                    continue
+            result.append(char)
+        return "".join(result)
 
     def _is_parsable_json(self, fragment: str) -> bool:
         if not fragment:

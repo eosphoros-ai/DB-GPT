@@ -139,7 +139,7 @@ def test_parse_prompt_response_does_not_promote_nested_fragment():
 def test_parse_prompt_response_keeps_array_tie_breaker():
     """Equal-length candidates still resolve to the array, as before."""
     parser = _parser()
-    text = "Result: {\"a\":1}; answer: [1,2,3]"
+    text = 'Result: {"a":1}; answer: [1,2,3]'
     assert parser.parse_prompt_response(text) == "[1,2,3]"
 
 
@@ -148,3 +148,35 @@ def test_parse_prompt_response_promotes_independent_duplicate():
     parser = _parser()
     text = 'Result: {"ok": true} [ {"ok": true}, invalid ]'
     assert parser.parse_prompt_response(text) == '{"ok": true}'
+
+
+@pytest.mark.parametrize("delimiter", [",}", ", }", ",]", ", ]"])
+@pytest.mark.parametrize("container", [dict, list])
+def test_parse_prompt_response_preserves_delimiters_in_strings(delimiter, container):
+    """Trailing-comma cleanup must preserve JSON keys and string values."""
+    value = f"SELECT '{delimiter}', \"quoted\" \\ path"
+    data = {delimiter: value} if container is dict else [value]
+    payload = json.dumps(data)
+    parser = _parser()
+    for text in (payload, f"Result: {payload} Done."):
+        result = parser.parse_prompt_response(text)
+        assert result == payload
+        assert json.loads(result) == data
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ('{"sql":"literal,}",}', '{"sql":"literal,}" }'),
+        ('{"sql":"literal, }", }', '{"sql":"literal, }" }'),
+        ('["literal,]",]', '["literal,]" ]'),
+        ('["literal, ]", ]', '["literal, ]" ]'),
+    ],
+)
+def test_parse_prompt_response_repairs_only_structural_trailing_commas(text, expected):
+    """Keep the existing cleanup and formatting outside JSON strings."""
+    parser = _parser()
+    result = parser.parse_prompt_response(f"Result: {text} Done.")
+    assert result == expected
+    assert parser._illegal_json_ends(result) == result
+    json.loads(result)
