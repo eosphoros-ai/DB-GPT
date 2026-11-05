@@ -6,7 +6,7 @@ from dbgpt_app.openapi.api_v1.editor.api_editor_v1 import (
     get_editor_tables,
     resolve_editor_db_name,
 )
-from dbgpt_app.openapi.api_v1.editor.service import nonempty_db_name
+from dbgpt_app.openapi.api_v1.editor.service import EditorService, nonempty_db_name
 
 
 def test_nonempty_db_name_skips_whitespace_before_fallback():
@@ -122,5 +122,69 @@ async def test_chart_run_rejects_hidden_datasource(no_connector):
 @pytest.mark.asyncio
 async def test_get_editor_tables_rejects_hidden_datasource(no_connector):
     result = await get_editor_tables("dbgpt", page_index=1, page_size=10)
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")
+
+
+class _HiddenParamConvService:
+    """Conversation whose stored ``param_value`` names a hidden datasource."""
+
+    def get_storage_conv(self, conv_uid: str):
+        class _Conv:
+            param_value = "dbgpt"
+            messages = []
+
+        return _Conv()
+
+
+class _HiddenMessageConvService:
+    """Conversation whose message ``additional_kwargs`` name a hidden datasource."""
+
+    def get_storage_conv(self, conv_uid: str):
+        class _Msg:
+            additional_kwargs = {"param_value": "DBGPT"}
+
+        class _Conv:
+            param_value = ""
+            messages = [_Msg()]
+
+        return _Conv()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "service", [_HiddenParamConvService(), _HiddenMessageConvService()]
+)
+@pytest.mark.parametrize("route", [editor_sql_run, chart_run])
+async def test_editor_rejects_hidden_datasource_from_conversation(
+    no_connector, route, service
+):
+    result = await route(
+        {"conv_uid": "c1", "sql": "select 1", "chart_type": "bar"},
+        editor_service=service,
+    )
+    assert result.success is False
+    assert "not available" in (result.err_msg or "")
+
+
+def test_get_editor_chart_info_rejects_hidden_datasource():
+    class _ViewMsg:
+        round_index = 1
+        type = "view"
+        additional_kwargs = {"param_value": "dbgpt"}
+        content = "{}"
+
+    class _Conv:
+        param_value = ""
+        messages = [_ViewMsg()]
+
+    class _Service:
+        def get_storage_conv(self, conv_uid: str):
+            return _Conv()
+
+    class _Cfg:
+        local_db_manager = _NoConnectorManager()
+
+    result = EditorService.get_editor_chart_info(_Service(), "c1", "chart", _Cfg())
     assert result.success is False
     assert "not available" in (result.err_msg or "")

@@ -127,6 +127,8 @@ def get_db_list(user_id: str = None):
     dbs = CFG.local_db_manager.get_db_list(user_id=user_id)
     db_params = []
     for item in dbs:
+        if is_hidden_datasource(item["db_name"]):
+            continue
         params: dict = {}
         params.update({"param": item["db_name"]})
         params.update({"type": item["db_type"]})
