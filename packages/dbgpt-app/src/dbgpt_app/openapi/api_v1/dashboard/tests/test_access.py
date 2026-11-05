@@ -153,6 +153,22 @@ def test_data_source_policy_can_be_checked_before_a_dashboard_exists(authorizati
         secured.require_data_sources("alice", ["sales", "payroll"])
 
 
+@pytest.mark.parametrize("source_id", ["dbgpt", "DBGPT", " dbgpt "])
+def test_hidden_internal_data_source_is_never_queryable(authorization, source_id):
+    # No platform policy is configured, so any other source would be allowed.
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        authorization.require_data_sources("alice", [source_id])
+
+    authorization.upsert_member("dashboard-rbac", "alice", "bob", DashboardRole.EDITOR)
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        authorization.require(
+            "dashboard-rbac",
+            "bob",
+            DashboardAction.QUERY,
+            data_source_ids=["sales", source_id],
+        )
+
+
 def test_strict_query_mode_fails_closed_without_platform_policy(authorization):
     authorization.upsert_member("dashboard-rbac", "alice", "bob", DashboardRole.EDITOR)
     authorization._require_data_source_authorizer = True
