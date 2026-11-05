@@ -537,6 +537,18 @@ class SkillManager(BaseComponent):
     def _get_skill_path(self, skill_name: str) -> Optional[str]:
         import os
 
+        # A skill name is the name of a skill folder, never a path: rejecting
+        # ".." and any path separator here keeps every caller inside the skills
+        # root, on every platform ("\\" and drive-relative names included).
+        if (
+            not skill_name
+            or skill_name in {".", ".."}
+            or "/" in skill_name
+            or "\\" in skill_name
+            or os.path.basename(skill_name) != skill_name
+        ):
+            return None
+
         skill = self.get_skill(name=skill_name)
         if skill and hasattr(skill, "metadata") and skill.metadata:
             metadata = skill.metadata
@@ -701,7 +713,11 @@ class SkillManager(BaseComponent):
         try:
             real_path = os.path.realpath(full_path)
             real_skill_path = os.path.realpath(skill_path)
-            if not real_path.startswith(real_skill_path):
+            # Compare whole path components: a sibling directory whose name
+            # only starts with the skill folder name is still outside of it.
+            if real_path != real_skill_path and not real_path.startswith(
+                real_skill_path + os.sep
+            ):
                 return json.dumps(
                     {
                         "error": True,
