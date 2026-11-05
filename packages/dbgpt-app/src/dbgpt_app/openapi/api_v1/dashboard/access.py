@@ -5,6 +5,7 @@ import json
 import os
 from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, Set
 
+from ..datasource_visibility import is_hidden_datasource
 from .models import (
     DashboardAccessDao,
     DashboardAccessDeniedError,
@@ -162,6 +163,13 @@ class DashboardAuthorizationService:
         source_ids = sorted({source_id for source_id in data_source_ids if source_id})
         if not source_ids:
             return
+        # Reserved names (e.g. the internal ``dbgpt`` metadata database) are
+        # never queryable, whatever the platform policy says.
+        for source_id in source_ids:
+            if is_hidden_datasource(source_id):
+                raise DashboardAccessDeniedError(
+                    f"Data source '{source_id}' is not available."
+                )
         policy = self._data_source_policy
         if policy is None and self._data_source_authorizer is not None:
             policy = CallableDashboardDataSourcePolicy(self._data_source_authorizer)
