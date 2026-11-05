@@ -386,8 +386,12 @@ class DockerSandboxSession(SandboxSession):
         finally:
             self._is_active = False
 
+    @staticmethod
+    def _is_inside(root: str, path: str) -> bool:
+        return path.startswith(root.rstrip("/") + "/")
+
     def _workspace_file_path(self, filename: str) -> Optional[str]:
-        """Resolve ``filename`` inside the working dir, or None if it escapes.
+        """Join ``filename`` onto the working dir, or None if it escapes.
 
         The container is Linux, so paths are normalized with POSIX semantics.
         Absolute paths and ``..`` segments are allowed only when the result
@@ -395,34 +399,52 @@ class DockerSandboxSession(SandboxSession):
         """
         root = posixpath.normpath(self.config.working_dir)
         candidate = posixpath.normpath(posixpath.join(root, filename))
-        if not candidate.startswith(root.rstrip("/") + "/"):
+        return candidate if self._is_inside(root, candidate) else None
+
+    def _resolve_in_container(self, path: str) -> Optional[str]:
+        """Resolve symlinks for ``path`` inside the container."""
+        result = self.container.exec_run(["readlink", "-f", path])
+        output = result.output
+        if isinstance(output, tuple):
+            output = output[0]
+        resolved = (output or b"").decode("utf-8", "replace").strip()
+        if result.exit_code != 0 or not resolved.startswith("/"):
             return None
-        return candidate
+        return resolved
+
+    @staticmethod
+    def _file_error(message: str) -> DisplayResult:
+        return DisplayResult(
+            status="error",
+            output="",
+            error=message,
+            execution_time=0,
+            exit_code=-1,
+        )
 
     async def get_file_content(self, filename: str) -> Optional[DisplayResult]:
         """从容器内获取文件内容"""
         if not self.container or not self._is_active:
             return None
 
+        outside = f"File is outside the sandbox working directory: {filename}"
         file_path = self._workspace_file_path(filename)
         if file_path is None:
-            return DisplayResult(
-                status="error",
-                output="",
-                error=f"File is outside the sandbox working directory: {filename}",
-                execution_time=0,
-                exit_code=-1,
-            )
+            return self._file_error(outside)
+
+        # Session code can create symlinks in the workspace, so check the
+        # resolved path as well before reading anything.
+        real_root = self._resolve_in_container(self.config.working_dir)
+        real_path = self._resolve_in_container(file_path)
+        if real_root is None or real_path is None:
+            return self._file_error(f"文件不存在: {filename}")
+        if not self._is_inside(real_root, real_path):
+            return self._file_error(outside)
+        file_path = real_path
 
         check = self.container.exec_run(["test", "-f", file_path])
         if check.exit_code != 0:
-            return DisplayResult(
-                status="error",
-                output="",
-                error=f"文件不存在: {filename}",
-                execution_time=0,
-                exit_code=-1,
-            )
+            return self._file_error(f"文件不存在: {filename}")
 
         try:
             bits, stat = self.container.get_archive(file_path)
@@ -432,7 +454,7 @@ class DockerSandboxSession(SandboxSession):
             file_data.seek(0)
 
             with tarfile.open(fileobj=file_data) as tar:
-                basename = os.path.basename(filename)
+                basename = posixpath.basename(file_path)
 
                 member = next((m for m in tar.getmembers() if m.name == basename), None)
 
