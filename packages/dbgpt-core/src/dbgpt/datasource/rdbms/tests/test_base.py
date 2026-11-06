@@ -70,8 +70,27 @@ def test_get_table_info_reuses_reflected_tables(db_url, monkeypatch):
     assert calls == []
 
 
+class _ContentionTrackingLock:
+    """Lock that records when an acquirer has to wait for another holder."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.contended = threading.Event()
+
+    def __enter__(self):
+        if not self._lock.acquire(blocking=False):
+            self.contended.set()
+            self._lock.acquire()
+        return self
+
+    def __exit__(self, *exc_info):
+        self._lock.release()
+
+
 def test_get_table_info_waits_for_reflection_in_other_thread(db_url, monkeypatch):
     conn = _PlainConnector.from_uri(db_url, sample_rows_in_table_info=0)
+    lock = _ContentionTrackingLock()
+    conn._metadata_lock = lock
     original_reflect = conn._metadata.reflect
     entered = threading.Event()
     release = threading.Event()
@@ -93,9 +112,10 @@ def test_get_table_info_waits_for_reflection_in_other_thread(db_url, monkeypatch
     assert entered.wait(5)
     second = threading.Thread(target=describe, args=("b",))
     second.start()
-    # The second request must not read metadata while "a" is being reflected.
-    second.join(0.3)
-    assert second.is_alive()
+    # The second request reaches the lock while "a" is still being reflected
+    # and has to wait instead of reading the metadata.
+    assert lock.contended.wait(5)
+    assert "b" not in results
 
     release.set()
     first.join(5)
