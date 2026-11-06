@@ -329,15 +329,22 @@ class RDBMSConnector(BaseConnector):
         """Information about all tables in the database."""
         return self.get_table_info()
 
-    def _reflect_tables(self, table_names: Iterable[str]) -> None:
-        """Reflect the metadata of the given tables that are not reflected yet."""
+    def _reflect_tables(self, table_names: Iterable[str]) -> List[Table]:
+        """Reflect the given tables if needed and return their metadata.
+
+        Only tables that are not reflected yet are loaded from the database.
+        Reading and reflecting happen under the same lock, because
+        ``MetaData.reflect`` registers a table before its columns are loaded.
+        """
+        names = set(table_names)
         with self._metadata_lock:
             reflected = {tbl.name for tbl in self._metadata.sorted_tables}
-            missing = set(table_names) - reflected
+            missing = names - reflected
             if missing:
                 self._metadata.reflect(
                     bind=self._engine, only=lambda name, _: name in missing
                 )
+            return [tbl for tbl in self._metadata.sorted_tables if tbl.name in names]
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
@@ -356,12 +363,10 @@ class RDBMSConnector(BaseConnector):
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
-        self._reflect_tables(all_table_names)
         meta_tables = [
             tbl
-            for tbl in self._metadata.sorted_tables
-            if tbl.name in set(all_table_names)
-            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+            for tbl in self._reflect_tables(all_table_names)
+            if not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []

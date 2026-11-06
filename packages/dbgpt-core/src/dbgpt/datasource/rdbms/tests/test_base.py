@@ -1,5 +1,7 @@
 """Tests for the lazy metadata reflection of ``RDBMSConnector``."""
 
+import threading
+
 import pytest
 from sqlalchemy import create_engine, text
 
@@ -51,5 +53,53 @@ def test_get_table_info_all_tables(db_url):
     table_info = conn.get_table_info()
     assert "CREATE TABLE a" in table_info
     assert "CREATE TABLE b" in table_info
-    # A second call reuses the reflected tables.
+
+
+def test_get_table_info_reuses_reflected_tables(db_url, monkeypatch):
+    conn = _PlainConnector.from_uri(db_url, sample_rows_in_table_info=0)
+    table_info = conn.get_table_info()
+
+    calls = []
+    original_reflect = conn._metadata.reflect
+    monkeypatch.setattr(
+        conn._metadata,
+        "reflect",
+        lambda *args, **kwargs: calls.append(1) or original_reflect(*args, **kwargs),
+    )
     assert conn.get_table_info() == table_info
+    assert calls == []
+
+
+def test_get_table_info_waits_for_reflection_in_other_thread(db_url, monkeypatch):
+    conn = _PlainConnector.from_uri(db_url, sample_rows_in_table_info=0)
+    original_reflect = conn._metadata.reflect
+    entered = threading.Event()
+    release = threading.Event()
+
+    def blocking_reflect(*args, **kwargs):
+        if not entered.is_set():
+            entered.set()
+            assert release.wait(5)
+        return original_reflect(*args, **kwargs)
+
+    monkeypatch.setattr(conn._metadata, "reflect", blocking_reflect)
+    results = {}
+
+    def describe(name):
+        results[name] = conn.get_table_info([name])
+
+    first = threading.Thread(target=describe, args=("a",))
+    first.start()
+    assert entered.wait(5)
+    second = threading.Thread(target=describe, args=("b",))
+    second.start()
+    # The second request must not read metadata while "a" is being reflected.
+    second.join(0.3)
+    assert second.is_alive()
+
+    release.set()
+    first.join(5)
+    second.join(5)
+    assert "CREATE TABLE a" in results["a"]
+    assert "CREATE TABLE b" in results["b"]
+    assert "CREATE TABLE b" not in results["a"]
