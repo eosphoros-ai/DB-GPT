@@ -343,9 +343,17 @@ class RDBMSConnector(BaseConnector):
         """
         names = set(table_names)
         schema = self._schema
+        if schema is None:
+            # ``MetaData.reflect`` falls back to the metadata's default schema,
+            # and tables supplied without a schema belong to the connector too.
+            schemas = {None, self._metadata.schema}
+        else:
+            schemas = {schema}
         with self._metadata_lock:
             reflected = {
-                tbl.name for tbl in self._metadata.sorted_tables if tbl.schema == schema
+                tbl.name
+                for tbl in self._metadata.sorted_tables
+                if tbl.schema in schemas
             }
             missing = names - reflected - self._reflection_attempted
             if missing:
@@ -358,7 +366,7 @@ class RDBMSConnector(BaseConnector):
             return [
                 tbl
                 for tbl in self._metadata.sorted_tables
-                if tbl.schema == schema and tbl.name in names
+                if tbl.schema in schemas and tbl.name in names
             ]
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:

@@ -3,7 +3,7 @@
 import threading
 
 import pytest
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import MetaData, create_engine, event, text
 
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 
@@ -160,3 +160,42 @@ def test_get_table_info_ignores_same_named_table_in_other_schema(db_url, tmp_pat
     table_info = conn.get_table_info(["a"])
     assert "name TEXT" in table_info
     assert "secret" not in table_info
+
+
+def test_get_table_info_uses_supplied_metadata_schema(db_url, monkeypatch):
+    # Without a connector schema, ``MetaData.reflect`` falls back to the
+    # supplied metadata's default schema, so tables are reflected there.
+    conn = _PlainConnector(
+        create_engine(db_url),
+        metadata=MetaData(schema="main"),
+        sample_rows_in_table_info=0,
+    )
+    table_info = conn.get_table_info(["a"])
+    assert "name TEXT" in table_info
+    assert "value REAL" not in table_info
+
+    calls = _count_reflect_calls(conn, monkeypatch)
+    assert conn.get_table_info(["a"]) == table_info
+    assert calls == []
+
+
+def test_get_table_info_recovers_after_failed_reflection(db_url, monkeypatch):
+    conn = _PlainConnector.from_uri(db_url, sample_rows_in_table_info=0)
+    original_reflect = conn._metadata.reflect
+
+    def failing_reflect(*args, only=None, **kwargs):
+        # Load "a", then fail before "b" is reflected.
+        original_reflect(*args, only=["a"], **kwargs)
+        raise RuntimeError("connection lost")
+
+    monkeypatch.setattr(conn._metadata, "reflect", failing_reflect)
+    with pytest.raises(RuntimeError, match="connection lost"):
+        conn.get_table_info()
+    assert set(conn._metadata.tables) == {"a"}
+
+    monkeypatch.setattr(conn._metadata, "reflect", original_reflect)
+    table_info = conn.get_table_info()
+    assert "CREATE TABLE a" in table_info
+    assert "name TEXT" in table_info
+    assert "CREATE TABLE b" in table_info
+    assert "value REAL" in table_info
