@@ -172,6 +172,10 @@ class RDBMSConnector(BaseConnector):
         # Connectors are cached and shared across threads; serialize reflection
         # so no caller reads a table that another thread is still reflecting.
         self._metadata_lock = Lock()
+        # Names already passed to ``MetaData.reflect``. Views are listed in
+        # ``_all_tables`` but never reflected (``views=False``), so without this
+        # every ``get_table_info`` call would retry them.
+        self._reflection_attempted: Set[str] = set()
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
 
@@ -332,19 +336,30 @@ class RDBMSConnector(BaseConnector):
     def _reflect_tables(self, table_names: Iterable[str]) -> List[Table]:
         """Reflect the given tables if needed and return their metadata.
 
-        Only tables that are not reflected yet are loaded from the database.
+        Only tables in the connector's schema that are not reflected yet are
+        loaded from the database, and each name is reflected at most once.
         Reading and reflecting happen under the same lock, because
         ``MetaData.reflect`` registers a table before its columns are loaded.
         """
         names = set(table_names)
+        schema = self._schema
         with self._metadata_lock:
-            reflected = {tbl.name for tbl in self._metadata.sorted_tables}
-            missing = names - reflected
+            reflected = {
+                tbl.name for tbl in self._metadata.sorted_tables if tbl.schema == schema
+            }
+            missing = names - reflected - self._reflection_attempted
             if missing:
                 self._metadata.reflect(
-                    bind=self._engine, only=lambda name, _: name in missing
+                    bind=self._engine,
+                    schema=schema,
+                    only=lambda name, _: name in missing,
                 )
-            return [tbl for tbl in self._metadata.sorted_tables if tbl.name in names]
+                self._reflection_attempted.update(missing)
+            return [
+                tbl
+                for tbl in self._metadata.sorted_tables
+                if tbl.schema == schema and tbl.name in names
+            ]
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.

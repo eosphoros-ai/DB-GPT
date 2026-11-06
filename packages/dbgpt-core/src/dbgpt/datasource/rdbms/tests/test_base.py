@@ -3,7 +3,7 @@
 import threading
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 
@@ -21,6 +21,17 @@ def _execute(url, *statements):
         for statement in statements:
             connection.execute(text(statement))
     engine.dispose()
+
+
+def _count_reflect_calls(conn, monkeypatch):
+    calls = []
+    original_reflect = conn._metadata.reflect
+    monkeypatch.setattr(
+        conn._metadata,
+        "reflect",
+        lambda *args, **kwargs: calls.append(1) or original_reflect(*args, **kwargs),
+    )
+    return calls
 
 
 @pytest.fixture
@@ -59,13 +70,7 @@ def test_get_table_info_reuses_reflected_tables(db_url, monkeypatch):
     conn = _PlainConnector.from_uri(db_url, sample_rows_in_table_info=0)
     table_info = conn.get_table_info()
 
-    calls = []
-    original_reflect = conn._metadata.reflect
-    monkeypatch.setattr(
-        conn._metadata,
-        "reflect",
-        lambda *args, **kwargs: calls.append(1) or original_reflect(*args, **kwargs),
-    )
+    calls = _count_reflect_calls(conn, monkeypatch)
     assert conn.get_table_info() == table_info
     assert calls == []
 
@@ -123,3 +128,35 @@ def test_get_table_info_waits_for_reflection_in_other_thread(db_url, monkeypatch
     assert "CREATE TABLE a" in results["a"]
     assert "CREATE TABLE b" in results["b"]
     assert "CREATE TABLE b" not in results["a"]
+
+
+def test_get_table_info_does_not_retry_views(db_url, monkeypatch):
+    _execute(db_url, "CREATE VIEW v AS SELECT id FROM a")
+    conn = _PlainConnector.from_uri(
+        db_url, sample_rows_in_table_info=0, view_support=True
+    )
+    assert "v" in set(conn.get_table_names())
+    table_info = conn.get_table_info()
+
+    calls = _count_reflect_calls(conn, monkeypatch)
+    assert conn.get_table_info() == table_info
+    assert calls == []
+
+
+def test_get_table_info_ignores_same_named_table_in_other_schema(db_url, tmp_path):
+    other_url = f"sqlite:///{tmp_path / 'other.db'}"
+    _execute(other_url, "CREATE TABLE a (id INTEGER PRIMARY KEY, secret TEXT)")
+    engine = create_engine(db_url)
+
+    @event.listens_for(engine, "connect")
+    def _attach(dbapi_connection, _):
+        dbapi_connection.execute(f"ATTACH DATABASE '{tmp_path / 'other.db'}' AS other")
+
+    conn = _PlainConnector(engine, sample_rows_in_table_info=0)
+    # A table of the same name reflected from another schema, as connectors
+    # that reflect a configured schema up front leave behind.
+    conn._metadata.reflect(bind=engine, schema="other", only=["a"])
+
+    table_info = conn.get_table_info(["a"])
+    assert "name TEXT" in table_info
+    assert "secret" not in table_info
