@@ -103,6 +103,51 @@ def _act_kwargs(agent, enable_parallel):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("text", ["", " ", "\n\t"])
+@pytest.mark.parametrize("native", [False, True])
+@pytest.mark.parametrize("parallel", [False, True])
+async def test_empty_text_fallback_returns_controlled_failure(text, native, parallel):
+    agent = _make_agent(enable_parallel=parallel)
+    agent.agent_context.enable_native_function_calling = native
+    out = await agent.act(
+        AgentMessage(content=text),
+        sender=agent,
+        **_act_kwargs(agent, parallel),
+    )
+    assert out.is_exe_success is False
+    assert out.terminate is not True
+    assert out.content
+
+
+@pytest.mark.asyncio
+async def test_empty_text_with_native_call_still_executes():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    calls = [{"function": {"name": "add", "arguments": '{"a":1,"b":2}'}}]
+    object.__setattr__(agent, "_pending_native_tool_calls", calls)
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    out = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+    assert out.is_exe_success, out.content
+    assert "3" in out.observations
+
+
+@pytest.mark.asyncio
+async def test_text_batch_preparse_returns_parser_failure():
+    from unittest.mock import MagicMock
+
+    from dbgpt.agent.expand.tool_calling_agent import NativeToolCallAction
+    from dbgpt.agent.util.react_parser import ReActOutputParser
+
+    parser = MagicMock(spec=ReActOutputParser)
+    parser.parse_current_step.side_effect = ValueError("Invalid text response")
+    action = NativeToolCallAction()
+    out = await action.run("invalid", parser=parser)
+    assert out.is_exe_success is False
+    assert out.content == "Invalid text response"
+
+
+@pytest.mark.asyncio
 async def test_native_fallback_preserves_explicit_text_batch_pairs():
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True
@@ -132,6 +177,72 @@ async def test_native_fallback_rejects_ambiguous_batch_before_execution():
     )
     assert not out.is_exe_success
     assert "TOOL_BATCH_INVALID" in out.content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("raw", ["[]", "{}"])
+@pytest.mark.parametrize("native", [False, True])
+@pytest.mark.parametrize("parallel", [False, True])
+async def test_text_single_no_args_preserves_legacy_parsing(raw, native, parallel):
+    from dbgpt.agent.expand.resources.host_tool import get_current_host_memory_status
+
+    agent = _make_agent(enable_parallel=parallel)
+    agent.agent_context.enable_native_function_calling = native
+    agent.resource = ToolPack([get_current_host_memory_status._tool])
+    for action in agent.actions:
+        action.init_resource(agent.resource)
+    out = await agent.act(
+        AgentMessage(
+            content=f"Action: get_current_host_memory_status\nAction Input: {raw}"
+        ),
+        sender=agent,
+        **_act_kwargs(agent, parallel),
+    )
+    assert out.is_exe_success, out.content
+    assert "Available:" in out.observations
+
+
+@pytest.mark.asyncio
+async def test_text_single_object_array_remains_supported():
+    agent = _make_agent(enable_parallel=False)
+    out = await agent.act(
+        AgentMessage(content='Action: add\nAction Input: [{"a":1,"b":2}]'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success, out.content
+    assert "3" in out.observations
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("raw", ["[]", "{}", '[{"a":1,"b":2}]'])
+async def test_text_single_array_uses_custom_argument_parser(raw):
+    from dbgpt.agent.resource.tool.base import FunctionTool
+
+    parsed = []
+
+    def parse_args(value):
+        parsed.append(value)
+        return (), {"a": 10, "b": 20}
+
+    custom = FunctionTool(
+        "custom_add",
+        lambda a, b: a + b,
+        description="Custom argument parser",
+        parse_execute_args_func=parse_args,
+    )
+    agent = _make_agent(enable_parallel=False)
+    agent.resource = ToolPack([custom])
+    for action in agent.actions:
+        action.init_resource(agent.resource)
+    out = await agent.act(
+        AgentMessage(content=f"Action: custom_add\nAction Input: {raw}"),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success, out.content
+    assert len(parsed) == 1 and json.loads(parsed[0]) == json.loads(raw)
+    assert out.observations == "30"
 
 
 @pytest.mark.asyncio

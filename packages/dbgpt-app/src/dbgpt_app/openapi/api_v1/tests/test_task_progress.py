@@ -54,7 +54,22 @@ def test_report_then_summary_completes_only_confirmed_delivery(prefix):
 
 
 @pytest.mark.parametrize(
-    "content", ["提交最终报告", "提交报告", "提交最终报表", "提交最终报告。"]
+    "content",
+    [
+        "提交最终报告",
+        "提交报告",
+        "提交最终报表",
+        "提交最终报告。",
+        "生成数据大屏",
+        "输出看板",
+        "制作可视化页面",
+        "生成交互式网页报告",
+        "generate_report",
+        "调用 generate_report",
+        "Generate the final report",
+        "render report",
+        "compose business report.",
+    ],
 )
 def test_report_submission_requires_confirmed_report_delivery(content):
     tasks = [task(content), task("返回最终摘要", "pending")]
@@ -75,14 +90,26 @@ def test_report_submission_requires_confirmed_report_delivery(content):
         "计算并提交最终报告",
         "编写最终报告",
         "提交最终报告的准备工作",
+        "准备生成数据大屏",
+        "核验看板数据",
+        "计算大屏指标",
+        "制作可视化页面前检查数据",
+        "核验生成报告所需的数据",
+        "准备生成报告的模板",
+        "检查 generate_report 的输入",
+        "生成报告前核验数据并生成报告",
+        "生成报告并检查报告",
+        "prepare to generate report",
+        "generate report and verify report",
     ],
 )
 def test_report_delivery_does_not_complete_submission_preparation(content):
-    tasks = [task(content)]
+    tasks = [task(content), task("返回最终摘要", "pending")]
+    before = [dict(item) for item in tasks]
     assert not complete_delivery_task(
         tasks, report_completed=True, summary_delivered=True
     )
-    assert tasks[0]["status"] == "in_progress"
+    assert tasks == before
 
 
 @pytest.mark.parametrize(
@@ -109,7 +136,10 @@ def test_pending_analysis_after_report_remains_incomplete():
     assert tasks[-1]["status"] == "in_progress"
 
 
-@pytest.mark.parametrize("report_task", ["生成网页报告", "提交最终报告"])
+@pytest.mark.parametrize(
+    "report_task",
+    ["生成网页报告", "提交最终报告", "生成数据大屏", "输出看板", "制作可视化页面"],
+)
 def test_terminal_sse_and_persisted_plan_and_timeline_are_identical(report_task):
     from dbgpt_app.openapi.api_v1 import agentic_data_api as api
     from dbgpt_app.openapi.api_v1.react_final import AgentFinalAnswer

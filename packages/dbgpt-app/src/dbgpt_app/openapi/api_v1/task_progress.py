@@ -18,12 +18,22 @@ def complete_delivery_task(
     if active is None:
         return False
     content = str(tasks[active].get("content", "")).strip().lower()
+    # A tool name mentioned in preparation or verification work is not a
+    # delivery task. Match the whole delivery instruction, not a substring.
     report_task = bool(
-        re.search(
-            r"generate_report|生成.*(?:报告|报表)|(?:generate|render|compose).*report",
+        re.fullmatch(
+            r"(?:(?:调用\s+)?generate_report(?:\s+生成[\w\s-]*(?:报告|报表))?|"
+            r"生成[\w\s-]*(?:报告|报表)|"
+            r"(?:generate|render|compose)\s+[\w\s-]*report|"
+            r"提交(?:最终)?(?:报告|报表)|"
+            r"(?:生成|输出|制作)(?:数据大屏|看板|可视化页面))[。.!！\s]*",
             content,
         )
-        or re.fullmatch(r"提交(?:最终)?(?:报告|报表)[。.!！\s]*", content)
+        and not re.search(
+            r"准备|检查|核验|验证|计算|校验|"
+            r"\b(?:prepare|check|verify|validate|calculate)\b",
+            content,
+        )
     )
     summary_task = bool(
         re.fullmatch(

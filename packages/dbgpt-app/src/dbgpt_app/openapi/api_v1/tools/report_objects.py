@@ -15,6 +15,41 @@ from dbgpt.core.interface.report_capture import (
 )
 
 MAX_OBJECTS = 8192
+MAX_NESTING_DEPTH = 32
+_DEPTH_ERROR = (
+    f"REPORT_OBJECT_DEPTH_EXCEEDED: maximum nesting depth is {MAX_NESTING_DEPTH}"
+)
+
+
+class _ReportObjectDepthError(ValueError):
+    """An unsupported value that must not be treated as ordinary prose."""
+
+
+def _load_report_json(value):
+    # Bound nesting before json.loads recurses. Brackets inside quoted strings
+    # (including escaped quotes/backslashes) do not contribute to JSON depth.
+    depth, quoted, escaped = 0, False, False
+    for char in value:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+        elif char in "[{":
+            depth += 1
+            if depth > MAX_NESTING_DEPTH:
+                raise _ReportObjectDepthError(_DEPTH_ERROR)
+        elif char in "]}":
+            depth -= 1
+    try:
+        return json.loads(value)
+    except RecursionError as error:
+        raise _ReportObjectDepthError(_DEPTH_ERROR) from error
+
 
 VALUE_FORMATS = [
     "text",
@@ -158,6 +193,8 @@ class ReportObjects:
         if artifact.type in {"sql", "python"} and artifact.result is not None:
             try:
                 self._visit(artifact, read_artifact_result(artifact), [], 0)
+            except RecursionError:
+                self.truncated = True
             except (ValueError, OSError):
                 return
         elif artifact.type == "chart" and artifact.output and artifact.output.uri:
@@ -216,7 +253,10 @@ class ReportObjects:
             label = ".".join(map(str, path)) or artifact.name
             if isinstance(value, str) and value.lstrip().startswith(("{", "[")):
                 try:
-                    decoded = json.loads(value)
+                    decoded = _load_report_json(value)
+                except _ReportObjectDepthError:
+                    self.truncated = True
+                    continue
                 except ValueError:
                     decoded = None
                 if isinstance(decoded, (dict, list)):
@@ -311,8 +351,9 @@ class ReportObjects:
             **(
                 {
                     "instruction": (
-                        "Catalogue capacity was reached. Narrow artifact_ids, "
-                        "kind or query; an empty page is not proof of missing data."
+                        "Catalogue size or nesting limits were reached. "
+                        "Narrow artifact_ids, kind or query; "
+                        "an empty page is not proof of missing data."
                     )
                 }
                 if truncated
@@ -383,7 +424,9 @@ def compile_report_objects(
     """Resolve handles before the renderer can see any authored content."""
     if isinstance(data, str):
         try:
-            data = json.loads(data)
+            data = _load_report_json(data)
+        except _ReportObjectDepthError:
+            raise
         except ValueError as error:
             raise ValueError("REPORT_OBJECT_INVALID: invalid JSON object") from error
     if not isinstance(data, dict):
@@ -398,15 +441,19 @@ def compile_report_objects(
                 + json.dumps(literal_errors, ensure_ascii=False)
             )
 
-    def prose(value, location):
+    def prose(value, location, depth=0):
+        if depth > MAX_NESTING_DEPTH:
+            raise _ReportObjectDepthError(f"{_DEPTH_ERROR} at {location}")
         if isinstance(value, str):
             if value.lstrip().startswith(("[", "{")):
                 try:
-                    decoded = json.loads(value)
+                    decoded = _load_report_json(value)
+                except _ReportObjectDepthError:
+                    raise
                 except ValueError:
                     decoded = None
                 if isinstance(decoded, (list, dict)):
-                    return prose(decoded, location)
+                    return prose(decoded, location, depth + 1)
             if re.search(r"<\s*[A-Za-z!/?]", value) or "{artifact_id" in value:
                 raise ValueError(
                     f"REPORT_OBJECT_INVALID: plain text required at {location}"
@@ -434,7 +481,10 @@ def compile_report_objects(
                 )
             return value
         if isinstance(value, list):
-            return [prose(child, f"{location}[{i}]") for i, child in enumerate(value)]
+            return [
+                prose(child, f"{location}[{i}]", depth + 1)
+                for i, child in enumerate(value)
+            ]
         if (
             isinstance(value, dict)
             and set(value) <= {"object_id", "format"}
@@ -676,9 +726,15 @@ def make_report_object_tools(state, renderer, template_path, contract):
                     )
                 if "LANG" in template_fields:
                     compiled["LANG"] = state.get("_report_language", "zh")
-        except (ValueError, TypeError, KeyError) as error:
+        except (ValueError, TypeError, KeyError, RecursionError) as error:
             return json.dumps(
-                {"status": "invalid_selection", "retryable": True, "error": str(error)},
+                {
+                    "status": "invalid_selection",
+                    "retryable": True,
+                    "error": _DEPTH_ERROR
+                    if isinstance(error, RecursionError)
+                    else str(error),
+                },
                 ensure_ascii=False,
             )
         return await renderer(template_path=template_path, title=title, data=compiled)
@@ -718,12 +774,14 @@ def make_report_object_tools(state, renderer, template_path, contract):
                     fields=contract["fields"],
                     interpretation_only=contract.get("interpretation_only", False),
                 )
-            except (ValueError, TypeError, KeyError) as error:
+            except (ValueError, TypeError, KeyError, RecursionError) as error:
                 return json.dumps(
                     {
                         "status": "invalid_selection",
                         "retryable": True,
-                        "error": str(error),
+                        "error": _DEPTH_ERROR
+                        if isinstance(error, RecursionError)
+                        else str(error),
                     },
                     ensure_ascii=False,
                 )

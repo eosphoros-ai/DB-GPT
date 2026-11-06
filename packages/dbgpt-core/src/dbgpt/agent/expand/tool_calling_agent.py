@@ -232,8 +232,15 @@ class NativeToolCallAction(ParallelToolAction):
             # Providers may return the textual batch protocol even when native
             # calling was requested. Preserve each explicit name/argument pair;
             # passing the entire argument list to one tool loses the protocol.
-            steps = self._parser(kwargs).parse_current_step(ai_message)
-            if len(steps) == 1 and isinstance(steps[0].action_input, list):
+            try:
+                steps = self._parser(kwargs).parse_current_step(ai_message)
+            except ValueError as error:
+                return ActionOutput(is_exe_success=False, content=str(error))
+            if (
+                len(steps) == 1
+                and "," in (steps[0].action or "")
+                and isinstance(steps[0].action_input, list)
+            ):
                 step = steps[0]
                 names = [name.strip() for name in (step.action or "").split(",")]
                 arguments = step.action_input
@@ -427,6 +434,17 @@ class ToolCallingReActAgent(ReActAgent):
         report_state = getattr(self, "_report_repair_state", None) or {}
         attempts_before = report_state.get("_report_render_attempts", 0)
         handled_calls_before = report_state.get("_report_tool_call_count", 0)
+        if (
+            not (message.content or "").strip()
+            and not kwargs.get("tool_calls")
+            and not getattr(self, "_pending_native_tool_calls", None)
+        ):
+            return self._apply_report_result(
+                ActionOutput(is_exe_success=False, content="The response is empty."),
+                message,
+                attempts_before,
+                handled_calls_before,
+            )
         if native_enabled and not getattr(self, "_pending_native_tool_calls", None):
             steps = self.parser.parse_current_step(message.content or "")
             if not steps or not all(step.action for step in steps):
@@ -455,8 +473,6 @@ class ToolCallingReActAgent(ReActAgent):
                 output, message, attempts_before, handled_calls_before
             )
 
-        if not message.content and not native_enabled:
-            raise ValueError("The response is empty.")
         # Skip ReActAgent.act's "exactly one action per turn" validation and
         # dispatch straight to ConversableAgent.act, which drives the action
         # loop and lets NativeToolCallAction batch-execute the tool calls

@@ -1,6 +1,7 @@
 """The author chooses captured objects; only the compiler constructs selectors."""
 
 import json
+import re
 
 import pytest
 
@@ -38,6 +39,107 @@ def object_id(registry, kind, label):
         for key, item in registry.objects.items()
         if item["kind"] == kind and item["label"] == label
     )
+
+
+@pytest.mark.parametrize("depth", [40, 700, 1800])
+def test_catalogue_isolates_deep_json_strings(depth):
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="deep-json"))
+    capture(sink, {"total": 100, "data": {"payload": "[" * depth + "0" + "]" * depth}})
+    registry = ReportObjects(sink.snapshot())
+    assert object_id(registry, "value", "total")
+    manifest = registry.manifest()
+    assert manifest["truncated"]
+    assert "nesting limits" in manifest["instruction"]
+    assert not any(
+        item["label"].startswith("data.payload") for item in manifest["objects"]
+    )
+
+
+@pytest.mark.parametrize("serialized", [False, True])
+@pytest.mark.parametrize("depth", [40, 700, 1800])
+def test_prose_depth_has_a_controlled_error(depth, serialized):
+    value = "A qualitative observation."
+    if serialized:
+        value = "[" * depth + json.dumps(value) + "]" * depth
+    else:
+        for _ in range(depth):
+            value = [value]
+    with pytest.raises(ValueError, match="REPORT_OBJECT_DEPTH_EXCEEDED"):
+        compile_report_objects(
+            {"SUMMARY": value},
+            ReportObjects([]),
+            spec_mode=False,
+            fields=["SUMMARY"],
+        )
+
+
+def test_deep_report_json_has_a_controlled_error():
+    data = '{"SUMMARY":' + "[" * 1800 + '"Observation"' + "]" * 1800 + "}"
+    with pytest.raises(ValueError, match="REPORT_OBJECT_DEPTH_EXCEEDED"):
+        compile_report_objects(
+            data, ReportObjects([]), spec_mode=False, fields=["SUMMARY"]
+        )
+
+
+@pytest.mark.asyncio
+async def test_deep_prose_is_rejected_at_report_tool_boundary():
+    async def renderer(**kwargs):
+        raise AssertionError("Invalid prose must not reach the renderer")
+
+    _, compose, stage = make_report_object_tools(
+        {},
+        renderer,
+        "report.html",
+        {"mode": "placeholders", "fields": ["SUMMARY"]},
+    )
+    value = "[" * 1800 + '"Observation"' + "]" * 1800
+    for response in [stage("SUMMARY", value), await compose({"SUMMARY": value})]:
+        result = json.loads(response)
+        assert result["status"] == "invalid_selection"
+        assert "REPORT_OBJECT_DEPTH_EXCEEDED" in result["error"]
+
+
+def test_json_depth_ignores_brackets_and_escaped_quotes_in_normal_text():
+    text = 'The label "' + "[" * 80 + ']" contains a backslash \\ and ordinary text.'
+    result = compile_report_objects(
+        json.dumps({"SUMMARY": json.dumps([[text]])}),
+        ReportObjects([]),
+        spec_mode=False,
+        fields=["SUMMARY"],
+    )
+    assert result == {"SUMMARY": [[text]]}
+
+
+@pytest.mark.asyncio
+async def test_generate_report_deep_field_does_not_block_agent_handoff(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+
+    (tmp_path / "report.html").write_text("<html>{{SUMMARY}}</html>", encoding="utf8")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="deep-handoff"))
+    capture(sink, {"total": 100, "data": {"payload": "[" * 1800 + "0" + "]" * 1800}})
+    generate = AsyncMock(
+        return_value=SimpleNamespace(success=True, content="Draft", context={})
+    )
+    build = AsyncMock(return_value=SimpleNamespace(generate_reply=generate))
+    monkeypatch.setattr(report_agent, "build_report_agent", build)
+    monkeypatch.setattr(
+        report_agent, "select_report_template", lambda *_: "report.html"
+    )
+    response = json.loads(
+        await report_agent.make_generate_report_tool(
+            react_state={"conv_id": "deep-handoff", "_report_artifact_sink": sink},
+            skills_dir=str(tmp_path),
+            llm_client=object(),
+        )("Build the report")
+    )
+    assert build.await_count == 1
+    assert response["status"] == "partial"
+    assert "total" in generate.call_args.kwargs["received_message"].content
 
 
 def test_author_contract_excludes_engine_owned_and_optional_data_fields():
@@ -600,7 +702,8 @@ async def test_compose_named_template_reads_value_and_rejects_before_renderer(
     )
     assert result["status"] == "completed"
     assert ">100</span>" in state["_report_presentation"]["content"]
-    assert "999" not in state["_report_presentation"]["content"]
+    # Random artifact IDs may contain 999; inspect the displayed text only.
+    assert "999" not in re.sub(r"<[^>]*>", "", state["_report_presentation"]["content"])
     assert "<h1>经营分析</h1>" in state["_report_presentation"]["content"]
 
 
