@@ -9,7 +9,7 @@ from concurrent.futures import TimeoutError as FutureTimeoutError
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import wraps
-from threading import Event
+from threading import Event, Lock
 from typing import (
     Any,
     Dict,
@@ -169,6 +169,9 @@ class RDBMSConnector(BaseConnector):
         # (including the throwaway one built to test a connection) issue
         # per-table reflection queries, which takes minutes on large databases.
         self._metadata = metadata or MetaData()
+        # Connectors are cached and shared across threads; serialize reflection
+        # so no caller reads a table that another thread is still reflecting.
+        self._metadata_lock = Lock()
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
 
@@ -328,12 +331,13 @@ class RDBMSConnector(BaseConnector):
 
     def _reflect_tables(self, table_names: Iterable[str]) -> None:
         """Reflect the metadata of the given tables that are not reflected yet."""
-        reflected = {tbl.name for tbl in self._metadata.sorted_tables}
-        missing = set(table_names) - reflected
-        if missing:
-            self._metadata.reflect(
-                bind=self._engine, only=lambda name, _: name in missing
-            )
+        with self._metadata_lock:
+            reflected = {tbl.name for tbl in self._metadata.sorted_tables}
+            missing = set(table_names) - reflected
+            if missing:
+                self._metadata.reflect(
+                    bind=self._engine, only=lambda name, _: name in missing
+                )
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
