@@ -62,6 +62,27 @@ def task_plan_meta(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
     return {"state": state, "done": done, "total": total}
 
 
+def reconcile_report_delivery(
+    tasks: List[Dict[str, Any]], state: Dict[str, Any]
+) -> bool:
+    """Apply a confirmed delivery event at most once across stream and final."""
+    delivery_id = state.get("_report_delivery_id")
+    if not state.get("_report_delivery_completed") or not delivery_id:
+        return False
+    if delivery_id in state.get("_report_applied_delivery_ids", []):
+        return False
+    active = next((task for task in tasks if task.get("status") == "in_progress"), None)
+    if not complete_delivery_task(tasks, report_completed=True):
+        return False
+    state.setdefault("_report_applied_delivery_ids", []).append(delivery_id)
+    state["_report_delivery_task"] = {
+        "delivery_id": delivery_id,
+        "task_id": active.get("id"),
+        "content": active.get("content"),
+    }
+    return True
+
+
 def sync_task_plan_steps(
     steps: List[Dict[str, Any]], tasks: List[Dict[str, Any]]
 ) -> None:

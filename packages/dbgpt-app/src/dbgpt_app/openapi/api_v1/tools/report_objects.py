@@ -1,9 +1,11 @@
 """Compile model-selected captured objects into the existing report contract."""
 
+import asyncio
 import hashlib
 import json
 import re
 from collections import deque
+from copy import deepcopy
 from itertools import islice
 from threading import Lock
 
@@ -106,7 +108,12 @@ def report_object_schema(contract):
         return {"type": "array", "items": items}
 
     text = {"type": "string"}
-    scalar_id = {"type": "string", "pattern": "^(value|reference)-[a-f0-9]{24}$"}
+    scalar_id = {
+        "type": "string",
+        "pattern": "^reference-[a-f0-9]{24}$"
+        if contract.get("interpretation_only")
+        else "^(value|reference)-[a-f0-9]{24}$",
+    }
     visual_id = {"type": "string", "pattern": "^(table|chart)-[a-f0-9]{24}$"}
     ref = obj(
         {"object_id": scalar_id, "format": {"enum": VALUE_FORMATS}}, ["object_id"]
@@ -122,11 +129,7 @@ def report_object_schema(contract):
         ["object_id"],
     )
     if contract["mode"] != "spec":
-        narrative = (
-            {"anyOf": [text, array(text), array(array(text))]}
-            if contract.get("interpretation_only")
-            else {"anyOf": [text, ref, parts, paragraphs]}
-        )
+        narrative = {"anyOf": [text, ref, parts, paragraphs]}
         return obj(
             {
                 key: (
@@ -490,7 +493,10 @@ def compile_report_objects(
             and set(value) <= {"object_id", "format"}
             and "object_id" in value
         ):
-            if interpretation_only:
+            if (
+                interpretation_only
+                and objects.get(value["object_id"])["kind"] != "reference"
+            ):
                 raise ValueError(
                     "REPORT_OBJECT_INTERPRETATION_ONLY: statistics are already "
                     "rendered by the template. Write qualitative interpretation "
@@ -550,7 +556,11 @@ def compile_report_objects(
     if isinstance(data.get("scope"), list):
         spec.pop("scope", None)
         spec["sections"].append(
-            {"heading": "数据范围", "intro": [prose(data["scope"], "scope")]}
+            {
+                "source_field": "scope",
+                "heading": "数据范围",
+                "intro": [prose(data["scope"], "scope")],
+            }
         )
     if "note" in data:
         spec["sections"].append(
@@ -633,6 +643,7 @@ def compile_report_objects(
 
 def make_report_object_tools(state, renderer, template_path, contract):
     fields_lock = Lock()
+    repair_lock = asyncio.Lock()
     required_fields = set(contract.get("prose_fields", contract["fields"])) & set(
         contract["fields"]
     )
@@ -645,6 +656,13 @@ def make_report_object_tools(state, renderer, template_path, contract):
             for field, value in state.get("_report_object_fields", {}).items()
             if field in contract["fields"]
         }
+
+    def selection_failure(error):
+        from .report_repair import record_report_object_failure
+
+        return record_report_object_failure(
+            state, _DEPTH_ERROR if isinstance(error, RecursionError) else str(error)
+        )
 
     def catalogue(*, eager=True):
         sink = state.get("_report_artifact_sink")
@@ -669,7 +687,14 @@ def make_report_object_tools(state, renderer, template_path, contract):
         return json.dumps(
             {
                 **registry.manifest(
-                    kind=kind or ("value" if contract["mode"] != "spec" else None),
+                    kind=kind
+                    or (
+                        "reference"
+                        if contract.get("interpretation_only")
+                        else "value"
+                        if contract["mode"] != "spec"
+                        else None
+                    ),
                     query=query,
                     artifact_ids=artifact_ids,
                     offset=offset,
@@ -693,6 +718,11 @@ def make_report_object_tools(state, renderer, template_path, contract):
     )
     async def compose_report(data: dict | None = None, title: str = "Report") -> str:
         try:
+            if contract["mode"] == "spec" and saved_spec() is not None:
+                raise ValueError(
+                    "REPORT_OBJECT_REPAIR_REQUIRED: use patch_report to modify "
+                    "the saved report; omitted content must be preserved"
+                )
             if data is None:
                 data = state.get("_report_object_fields")
                 if not data or contract["mode"] == "spec":
@@ -727,16 +757,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
                 if "LANG" in template_fields:
                     compiled["LANG"] = state.get("_report_language", "zh")
         except (ValueError, TypeError, KeyError, RecursionError) as error:
-            return json.dumps(
-                {
-                    "status": "invalid_selection",
-                    "retryable": True,
-                    "error": _DEPTH_ERROR
-                    if isinstance(error, RecursionError)
-                    else str(error),
-                },
-                ensure_ascii=False,
-            )
+            return selection_failure(error)
         return await renderer(template_path=template_path, title=title, data=compiled)
 
     for name, schema in {
@@ -755,6 +776,219 @@ def make_report_object_tools(state, renderer, template_path, contract):
     parameter.json_schema = schema
     parameter.type = json.dumps(schema, ensure_ascii=False)
     result = [list_report_objects, compose_report]
+
+    def saved_spec():
+        saved = state.get("_report_saved_arguments") or {}
+        if saved.get("template_path") != template_path:
+            return None
+        data = saved.get("data") or {}
+        if isinstance(data, str):
+            data = _load_report_json(data)
+        spec = data.get("REPORT_SPEC") if isinstance(data, dict) else None
+        if isinstance(spec, str):
+            spec = _load_report_json(spec)
+        return spec if isinstance(spec, dict) else None
+
+    if contract["mode"] == "spec":
+
+        @tool(
+            description=(
+                "Repair the saved report without replacing untouched content. "
+                "section_index is zero-based. section changes only supplied fields; "
+                "append_recommendations adds to that section; append_sections adds "
+                "new sections. report edits top-level title, subtitle, scope or kpis. "
+                "remove_fields removes obsolete top-level fields, except sections. "
+                "remove_section_fields removes named fields from section_index. "
+                "When editing scope in an old report without compiler provenance, "
+                "scope_section_index explicitly identifies its old scope section. "
+                "All new content uses the compose_report object grammar."
+            )
+        )
+        async def patch_report(
+            section_index: int | None = None,
+            section: dict | None = None,
+            append_recommendations: list[dict] | None = None,
+            append_sections: list[dict] | None = None,
+            report: dict | None = None,
+            remove_fields: list[str] | None = None,
+            remove_section_fields: list[str] | None = None,
+            scope_section_index: int | None = None,
+        ) -> str:
+            async with repair_lock:
+                try:
+                    previous = saved_spec()
+                    if previous is None:
+                        raise ValueError(
+                            "REPORT_OBJECT_INVALID: no saved report to repair"
+                        )
+                    repaired = deepcopy(previous)
+                    scope_sections = None
+                    if "scope" in (remove_fields or []):
+                        scope_sections = []
+                    if remove_fields:
+                        if "sections" in remove_fields:
+                            raise ValueError("REPORT_OBJECT_INVALID: preserve sections")
+                        for field in remove_fields:
+                            # The renderer merges root objects. An explicit null
+                            # deletes a field; omission would restore the old one.
+                            repaired[field] = None
+                    if report is not None:
+                        if set(report) - {"title", "subtitle", "scope", "kpis"}:
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: report edits accept "
+                                "title, subtitle, scope and kpis"
+                            )
+                        root = compile_report_objects(
+                            report, catalogue(), spec_mode=True, fields=[]
+                        )["REPORT_SPEC"]
+                        for field in report:
+                            if field in root:
+                                repaired[field] = root[field]
+                            else:
+                                repaired[field] = None
+                        # Structured scope parts are compiled into a source-bound
+                        # section rather than an unsupported scalar scope.
+                        if "scope" in report:
+                            scope_sections = root["sections"]
+                    sections = repaired.setdefault("sections", [])
+                    if scope_section_index is not None:
+                        if (
+                            scope_sections is None
+                            or type(scope_section_index) is not int
+                            or not 0 <= scope_section_index < len(sections)
+                            or not isinstance(sections[scope_section_index], dict)
+                        ):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: scope_section_index requires "
+                                "a scope edit and a valid saved section index"
+                            )
+                        sections[scope_section_index]["source_field"] = "scope"
+                    if (
+                        section is not None
+                        or append_recommendations is not None
+                        or remove_section_fields
+                    ):
+                        if (
+                            type(section_index) is not int
+                            or not 0 <= section_index < len(sections)
+                            or not isinstance(sections[section_index], dict)
+                        ):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: invalid section_index"
+                            )
+                        source = dict(section or {})
+                        if set(remove_section_fields or []) & (
+                            set(source)
+                            | (
+                                {"recommendations"}
+                                if append_recommendations is not None
+                                else set()
+                            )
+                        ):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: cannot edit and remove "
+                                "the same field"
+                            )
+                        if "source_field" in (remove_section_fields or []):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: preserve compiler provenance"
+                            )
+                        for field in remove_section_fields or []:
+                            sections[section_index].pop(field, None)
+                        if append_recommendations is not None:
+                            if "recommendations" in source:
+                                raise ValueError(
+                                    "REPORT_OBJECT_INVALID: replace or append "
+                                    "recommendations, not both"
+                                )
+                            source["recommendations"] = append_recommendations
+                        compiled = compile_report_objects(
+                            {"sections": [source]},
+                            catalogue(),
+                            spec_mode=True,
+                            fields=[],
+                        )["REPORT_SPEC"]["sections"][0]
+                        for key in source:
+                            if (
+                                key == "recommendations"
+                                and append_recommendations is not None
+                            ):
+                                sections[section_index].setdefault(key, []).extend(
+                                    compiled[key]
+                                )
+                            else:
+                                sections[section_index][key] = compiled[key]
+                    if scope_sections is not None:
+                        # Apply after indexed edits so callers' section indices
+                        # still refer to the saved report. Preserve user sections
+                        # even when they happen to share the generated heading.
+                        position = next(
+                            (
+                                i
+                                for i, item in enumerate(sections)
+                                if isinstance(item, dict)
+                                and item.get("source_field") == "scope"
+                            ),
+                            0,
+                        )
+                        sections[:] = [
+                            item
+                            for item in sections
+                            if not isinstance(item, dict)
+                            or item.get("source_field") != "scope"
+                        ]
+                        sections[position:position] = scope_sections
+                    if append_sections:
+                        sections.extend(
+                            compile_report_objects(
+                                {"sections": append_sections},
+                                catalogue(),
+                                spec_mode=True,
+                                fields=[],
+                            )["REPORT_SPEC"]["sections"]
+                        )
+                    if (
+                        section is None
+                        and not append_recommendations
+                        and not append_sections
+                        and not report
+                        and not remove_fields
+                        and not remove_section_fields
+                    ):
+                        raise ValueError(
+                            "REPORT_OBJECT_INVALID: supply a report change"
+                        )
+                    saved = state["_report_saved_arguments"]
+                    data = saved.get("data") or {}
+                    if isinstance(data, str):
+                        data = _load_report_json(data)
+                    updated = {**deepcopy(data), "REPORT_SPEC": repaired}
+                except (ValueError, TypeError, KeyError, RecursionError) as error:
+                    return selection_failure(error)
+                return await renderer(
+                    template_path=template_path,
+                    title=saved.get("title", "Report"),
+                    data=updated,
+                )
+
+        section_schema = schema["anyOf"][0]["properties"]["sections"]["items"]
+        for name, value in {
+            "report": {
+                "type": "object",
+                "properties": {
+                    key: schema["anyOf"][0]["properties"][key]
+                    for key in ("title", "subtitle", "scope", "kpis")
+                },
+                "additionalProperties": False,
+            },
+            "section": {**section_schema, "required": []},
+            "append_sections": {"type": "array", "items": section_schema},
+            "append_recommendations": section_schema["properties"]["recommendations"],
+        }.items():
+            parameter = patch_report._tool.args[name]
+            parameter.json_schema = {"anyOf": [value, {"type": "null"}]}
+            parameter.type = json.dumps(parameter.json_schema)
+        result.append(patch_report)
     if contract["mode"] != "spec":
 
         @tool(
@@ -775,16 +1009,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
                     interpretation_only=contract.get("interpretation_only", False),
                 )
             except (ValueError, TypeError, KeyError, RecursionError) as error:
-                return json.dumps(
-                    {
-                        "status": "invalid_selection",
-                        "retryable": True,
-                        "error": _DEPTH_ERROR
-                        if isinstance(error, RecursionError)
-                        else str(error),
-                    },
-                    ensure_ascii=False,
-                )
+                return selection_failure(error)
             from .report_repair import _save_checkpoint
 
             with fields_lock:
@@ -829,6 +1054,12 @@ def report_object_prompt(template_path, contract, injected_fields, language):
         instructions += [
             "先调用 list_report_objects 获取对象，"
             "再用 compose_report 提交完整业务报告。",
+            "已有保存报告时使用 patch_report 局部修复或追加，"
+            "section_index 为从零开始的章节索引；顶层 KPI、标题和范围使用 report 参数。"
+            "删除章节内的错误字段使用 remove_section_fields，并指定 section_index。"
+            "旧报告未标记范围章节时，修改范围须用 scope_section_index "
+            "明确指定旧范围章节。"
+            "引擎保留所有未修改内容。",
             "使用 title、kpis[{label,object_id}]、sections。"
             "正文段落为普通文字与 {object_id,format?} 组成的 parts 数组。",
             "表格选择 table={object_id:表格ID}，"
@@ -849,7 +1080,8 @@ def report_object_prompt(template_path, contract, injected_fields, language):
         if contract.get("interpretation_only"):
             instructions += [
                 "本模板的完整统计、数据表和图表已由程序生成，正文只做定性解读。",
-                "正文只能使用普通文字或文字段落数组，禁止数值对象引用和手写统计数字。",
+                "正文可使用普通文字、文字段落数组与知识库 reference 对象；"
+                "禁止 value 数值对象和手写统计数字。",
                 "不要为重复统计值逐项查询目录；直接解释趋势、差异、局限与行动建议。",
             ]
         else:

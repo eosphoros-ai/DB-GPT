@@ -100,6 +100,8 @@ class ReportNote(_SpecNode):
 
 
 class ReportSection(_SpecNode):
+    # Compiler provenance, retained in checkpoints; never inferred from headings.
+    source_field: Literal["scope"] | None = None
     heading: str | None = None
     kpis: List[ReportKPI] = Field(default_factory=list)
     intro: List[List[ReportPart]] = Field(default_factory=list)

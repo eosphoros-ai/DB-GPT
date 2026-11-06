@@ -172,3 +172,35 @@ def test_terminal_sse_and_persisted_plan_and_timeline_are_identical(report_task)
     )
     assert stored["steps"][0]["title"] == "TODO::done:1/1"
     assert json.loads(done.removeprefix("data: "))["type"] == "done"
+
+
+def test_one_delivery_is_idempotent_across_stream_and_terminal_reconciliation():
+    from dbgpt_app.openapi.api_v1.subagent.report_agent import (
+        _completed_report_response,
+    )
+    from dbgpt_app.openapi.api_v1.task_progress import reconcile_report_delivery
+
+    tasks = [
+        dict(task("生成月度报告"), id="monthly"),
+        dict(task("生成季度报告", "pending"), id="quarterly"),
+        task("返回最终摘要", "pending"),
+    ]
+    state = {
+        "_report_presentation": {"content": "<html>Monthly</html>", "title": "Monthly"},
+    }
+    _completed_report_response(state)
+    assert reconcile_report_delivery(tasks, state)
+    _completed_report_response(state)  # Reusing the same result is the same event.
+    assert not reconcile_report_delivery(tasks, state)
+    assert [t["status"] for t in tasks] == ["completed", "in_progress", "pending"]
+    assert state["_report_delivery_task"]["task_id"] == "monthly"
+    state["_report_presentation"]["content"] = "<html>Quarterly</html>"
+    state["_report_warnings"] = ["REPORT_REFERENCE_UNAVAILABLE: missing value"]
+    _completed_report_response(state)
+    assert not reconcile_report_delivery(tasks, state)
+    state["_report_warnings"] = []
+    _completed_report_response(state)
+    assert reconcile_report_delivery(tasks, state)
+    assert not reconcile_report_delivery(tasks, state)
+    assert state["_report_delivery_task"]["task_id"] == "quarterly"
+    assert [t["status"] for t in tasks] == ["completed", "completed", "in_progress"]

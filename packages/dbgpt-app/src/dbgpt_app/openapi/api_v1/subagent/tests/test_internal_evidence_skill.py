@@ -66,7 +66,7 @@ async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, 
         "compose_report",
         "request_report_calculation",
         "terminate",
-    } | ({"set_report_field"} if mode == "placeholders" else set())
+    } | ({"set_report_field"} if mode == "placeholders" else {"patch_report"})
     compose_schema = next(
         item["function"]["parameters"]
         for item in native_tools
@@ -74,6 +74,14 @@ async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, 
     )
     assert "object_id" in json.dumps(compose_schema)
     assert "artifact_id" not in json.dumps(compose_schema)
+    if mode == "spec":
+        repair_schema = next(
+            item["function"]["parameters"]
+            for item in native_tools
+            if item["function"]["name"] == "patch_report"
+        )
+        assert "object_id" in json.dumps(repair_schema)
+        assert "artifact_id" not in json.dumps(repair_schema)
     assert len(prompts) == 1
     assert prompts[0].count("# 报告证据核查") == 1
     assert "相关性不能当作因果关系" in prompts[0]

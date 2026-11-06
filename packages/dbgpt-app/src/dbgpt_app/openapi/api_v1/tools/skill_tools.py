@@ -22,9 +22,38 @@ def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
     if not contract_path.is_file():
         return args, input_ids
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    upstream = contract.get(normalize_script_file_name(script_name))
+    script_name = normalize_script_file_name(script_name)
+    scripts = contract_path.parent / "scripts"
+    if script_name not in contract:
+        # Compare filesystem identity, not lowercased paths: two differently
+        # cased files can legitimately coexist on case-sensitive filesystems.
+        requested = scripts / script_name
+        for declared in contract:
+            try:
+                if requested.samefile(scripts / declared):
+                    raise ValueError(
+                        "SKILL_SCRIPT_ALIAS_UNSUPPORTED: use the contract script "
+                        f"name {declared!r}"
+                    )
+            except OSError:
+                continue
+    upstream = contract.get(script_name)
     if not upstream:
         return args, input_ids
+
+    def matches_upstream(artifact):
+        try:
+            return (
+                normalize_script_file_name(
+                    artifact.metadata.get("script_file_name", "")
+                )
+                == upstream
+            )
+        except ValueError:
+            # Historical metadata is not a new execution request. One obsolete
+            # record must not block explicitly selected, valid captured input.
+            return False
+
     candidates = [
         artifact
         for artifact in (sink.snapshot() if sink else [])
@@ -32,12 +61,12 @@ def _apply_skill_input_contract(skill_name, script_name, args, input_ids, sink):
         and artifact.status == "succeeded"
         and artifact.metadata.get("skill_name") == skill_name
         and artifact.metadata.get("script_file_name")
-        and normalize_script_file_name(artifact.metadata["script_file_name"])
-        == upstream
+        and matches_upstream(artifact)
         and artifact.result is not None
     ]
     selected = [item for item in candidates if item.artifact_id in (input_ids or [])]
-    if not selected and len(candidates) == 1:
+    # An explicit selection must never silently switch to another source.
+    if not input_ids and len(candidates) == 1:
         selected = candidates
     if len(selected) != 1:
         raise ValueError(

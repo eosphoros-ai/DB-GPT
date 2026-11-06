@@ -469,3 +469,141 @@ def test_negative_table_offset_is_rejected_before_partial_render():
                 ]
             }
         )
+
+
+@pytest.mark.parametrize(
+    "legacy_name",
+    ["../scripts/extract_financials.py", "", None, "C:/old/extract_financials.py"],
+)
+def test_invalid_history_does_not_block_selected_contract_source(
+    monkeypatch, legacy_name
+):
+    from dbgpt.agent import claude_skill
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import _apply_skill_input_contract
+
+    skill = SimpleNamespace(
+        file_path=str(ROOT / "skills/financial-report-analyzer/SKILL.md")
+    )
+    monkeypatch.setattr(
+        claude_skill, "get_registry", lambda: SimpleNamespace(get_skill=lambda _: skill)
+    )
+
+    def artifact(identity, name, revenue):
+        return SimpleNamespace(
+            artifact_id=identity,
+            type="python",
+            status="succeeded",
+            metadata={
+                "skill_name": "financial-report-analyzer",
+                "script_file_name": name,
+            },
+            result=SimpleNamespace(inline={"revenue": revenue}, uri=None),
+        )
+
+    sink = SimpleNamespace(
+        snapshot=lambda: [
+            artifact("legacy", legacy_name, 999),
+            artifact("valid", "extract_financials.py", 100),
+        ]
+    )
+    args, ids = _apply_skill_input_contract(
+        "financial-report-analyzer",
+        "calculate_ratios.py",
+        {"revenue": 999},
+        ["valid"],
+        sink,
+    )
+    assert args == {"revenue": 100} and ids == ["valid"]
+    for explicit_ids in (["legacy"], ["missing"]):
+        with pytest.raises(ValueError, match="SKILL_INPUT_REQUIRED"):
+            _apply_skill_input_contract(
+                "financial-report-analyzer",
+                "calculate_ratios.py",
+                {"revenue": 999},
+                explicit_ids,
+                sink,
+            )
+    for implicit_ids in (None, []):
+        value, selected_ids = _apply_skill_input_contract(
+            "financial-report-analyzer",
+            "calculate_ratios.py",
+            {"revenue": 999},
+            implicit_ids,
+            sink,
+        )
+        assert value == {"revenue": 100}
+        assert selected_ids == ["valid"]
+    with pytest.raises(ValueError, match="SKILL_SCRIPT_PATH_INVALID"):
+        _apply_skill_input_contract(
+            "financial-report-analyzer",
+            "../scripts/calculate_ratios.py",
+            {},
+            ["valid"],
+            sink,
+        )
+
+
+def test_same_file_contract_alias_cannot_bypass_captured_input(monkeypatch, tmp_path):
+    from dbgpt.agent import claude_skill
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import _apply_skill_input_contract
+
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    canonical = scripts / "calculate_ratios.py"
+    canonical.write_text("print('test')", encoding="utf-8")
+    alias = scripts / "CALCULATE_RATIOS.PY"
+    if not alias.exists():
+        # On a case-sensitive filesystem a hard link provides the same-file
+        # alias; Windows naturally resolves this case variant to the same file.
+        alias.hardlink_to(canonical)
+    (tmp_path / "script_input_contract.json").write_text(
+        '{"calculate_ratios.py":"extract_financials.py"}', encoding="utf-8"
+    )
+    skill = SimpleNamespace(file_path=str(tmp_path / "SKILL.md"))
+    monkeypatch.setattr(
+        claude_skill, "get_registry", lambda: SimpleNamespace(get_skill=lambda _: skill)
+    )
+    assert alias.samefile(canonical)
+    with pytest.raises(ValueError, match="SKILL_SCRIPT_ALIAS_UNSUPPORTED"):
+        _apply_skill_input_contract("finance", alias.name, {"revenue": 999}, [], None)
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "母公司利润表",
+        "2 母公司利润表",
+        "2、母公司利润表",
+        "（二）母公司利润表",
+        "母公司利润表（续）",
+    ],
+)
+def test_parent_statement_boundary_never_inherits_consolidated_scope(tmp_path, heading):
+    path = tmp_path / "report.txt"
+    path.write_text(
+        "2019年年度报告\n1、合并利润表\n单位：元\n"
+        "项目 2019年度 2018年度\n营业成本 100 90\n"
+        + heading
+        + "\n单位：元\n项目 2019年度 2018年度\n营业收入 999 888\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] is None
+    assert "revenue" not in result["_meta"]["sources"]
+    assert result["cost_of_sales"] == 100
+
+
+@pytest.mark.parametrize(
+    "heading", ["合并利润表", "1 合并利润表", "1、合并利润表", "（一）合并利润表"]
+)
+def test_supported_consolidated_heading_variants_keep_provenance(tmp_path, heading):
+    path = tmp_path / "report.txt"
+    path.write_text(
+        "2019年年度报告\n"
+        + heading
+        + "\n单位：元\n项目 2019年度 2018年度\n营业收入 100 90\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] == 100 and result["prev_revenue"] == 90
+    assert result["_meta"]["sources"]["revenue"]["statement"] == "合并利润表"

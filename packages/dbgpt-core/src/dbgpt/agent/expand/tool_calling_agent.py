@@ -294,6 +294,7 @@ class NativeToolCallAction(ParallelToolAction):
                     "html_interpreter",
                     "append_report_sections",
                     "compose_report",
+                    "patch_report",
                 }:
                     location = (
                         (
@@ -320,6 +321,7 @@ class NativeToolCallAction(ParallelToolAction):
                     "html_interpreter",
                     "append_report_sections",
                     "compose_report",
+                    "patch_report",
                 }:
                     return ActionOutput(
                         is_exe_success=False,
@@ -499,17 +501,27 @@ class ToolCallingReActAgent(ReActAgent):
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
             output.action
-            in {"html_interpreter", "append_report_sections", "compose_report"}
+            in {
+                "html_interpreter",
+                "append_report_sections",
+                "compose_report",
+                "patch_report",
+            }
             or bool(
                 re.search(
-                    r"Action\s*:\s*(?:html_interpreter|append_report_sections|compose_report)\b",
+                    r"Action\s*:\s*(?:html_interpreter|append_report_sections|compose_report|patch_report)\b",
                     message.content or "",
                     re.I,
                 )
             )
             or any(
                 call.get("function", {}).get("name")
-                in {"html_interpreter", "append_report_sections", "compose_report"}
+                in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                    "patch_report",
+                }
                 for call in getattr(self, "_pending_native_tool_calls", None) or []
             )
         )
@@ -522,6 +534,7 @@ class ToolCallingReActAgent(ReActAgent):
                 ("no valid react step"),
                 ("no correct response found"),
                 ("only one action is allowed"),
+                ("the response is empty"),
             )
         )
         requested = requested or bool(

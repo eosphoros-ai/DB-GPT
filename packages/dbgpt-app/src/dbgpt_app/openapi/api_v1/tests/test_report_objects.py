@@ -332,7 +332,7 @@ async def test_table_and_chart_preserve_independent_sources_and_windows(
     assert compiled["chart"]["source_table"]["artifact_id"] == chart_id
     assert compiled["chart"]["source_table"]["limit"] == 2
     state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
-    _, compose = make_report_object_tools(
+    _, compose, *_ = make_report_object_tools(
         state,
         make_html_interpreter(state, str(repository / "skills")),
         "business-report/templates/business_report.html",
@@ -372,7 +372,7 @@ async def test_full_catalogue_filters_and_renders_new_result_after_restore(
         capture(sink, {f"historical_{i}_{j}": j for j in range(512)})
     latest = capture(sink, {"net_profit": 777})
     state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
-    listing, compose = make_report_object_tools(
+    listing, compose, *_ = make_report_object_tools(
         state,
         make_html_interpreter(state, str(repository / "skills")),
         "business-report/templates/business_report.html",
@@ -416,7 +416,7 @@ def test_query_and_handle_resolution_do_not_share_unfiltered_source_limit(
     source = capture(
         sink, {**{f"padding_{i}": i for i in range(field_count)}, "net_profit": 777}
     )
-    listing, _ = make_report_object_tools(
+    listing, *_ = make_report_object_tools(
         {"_report_artifact_sink": sink}, None, "unused", {"mode": "spec", "fields": []}
     )
     unfiltered = json.loads(listing(artifact_ids=[source]))
@@ -450,7 +450,7 @@ async def test_zero_row_table_with_headers_can_be_selected_and_rendered(
     )
     registry = ReportObjects(sink.snapshot())
     state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
-    listing, compose = make_report_object_tools(
+    listing, compose, *_ = make_report_object_tools(
         state,
         make_html_interpreter(state, str(repository / "skills")),
         "business-report/templates/business_report.html",
@@ -729,7 +729,7 @@ async def test_compiled_table_and_chart_use_captured_columns(tmp_path):
     )
     state = {"conv_id": "compose-spec", "_report_artifact_sink": sink}
     renderer = make_html_interpreter(state, str(repository / "skills"))
-    _, compose = make_report_object_tools(
+    _, compose, *_ = make_report_object_tools(
         state,
         renderer,
         "business-report/templates/business_report.html",
@@ -790,3 +790,254 @@ def test_compose_schema_exposes_objects_and_hides_selector_contract():
         )
     assert "artifact_id" not in json.dumps(schema)
     assert '"option"' not in json.dumps(schema)
+
+
+@pytest.mark.asyncio
+async def test_csv_qualitative_prose_can_bind_selected_knowledge(
+    tmp_path, monkeypatch, capsys
+):
+    import importlib.util
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    import jsonschema
+
+    from dbgpt.core.interface.report_capture import (
+        bind_artifact_sink,
+        capture_reference_artifact,
+    )
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+    from dbgpt_app.openapi.api_v1.tools._helpers import _extract_auto_data_markers
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import report_template_contract
+    from dbgpt_app.openapi.api_v1.tools.report_objects import report_object_schema
+    from dbgpt_serve.rag.tools import kb_file_tools
+
+    chunk = SimpleNamespace(
+        id=1, meta_info={"chunk_id": "slice"}, content="销售口径按区域复核。"
+    )
+    monkeypatch.setattr(
+        kb_file_tools,
+        "_get_all_file_paths",
+        lambda _: [{"doc_id": 1, "file_path": "policy.txt", "vector_ids": ["slice"]}],
+    )
+    monkeypatch.setattr(
+        kb_file_tools,
+        "_get_chunk_dao",
+        lambda: (
+            SimpleNamespace(get_document_chunks=lambda *a, **k: [chunk]),
+            SimpleNamespace,
+        ),
+    )
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    script = root / "skills/csv-data-analysis/scripts/csv_analyzer.py"
+    module_spec = importlib.util.spec_from_file_location(
+        "csv_knowledge_regression", script
+    )
+    analyzer = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(analyzer)
+    csv = tmp_path / "sales.csv"
+    csv.write_text("region,sales\nEast,100\nWest,200\nEast,150\n", encoding="utf-8")
+    analyzer.analyze_csv(str(csv))
+    output = json.loads(capsys.readouterr().out)
+    _, fields = _extract_auto_data_markers(output["chunks"][0]["content"])
+    assert "CHART_DATA_JSON" in fields
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="csv-knowledge"))
+    capture(sink, fields)
+    with bind_artifact_sink(sink):
+        reference = capture_reference_artifact(
+            reference_type="knowledge",
+            source_id="slice",
+            action="knowledge_retrieve",
+            duration_ms=1,
+            source_name="Sales policy",
+            locator={"knowledge_id": "selected", "document_id": 1, "chunk_id": "slice"},
+            excerpt="销售口径按区域复核。",
+        )
+    state = {
+        "conv_id": "csv-knowledge",
+        "_report_artifact_sink": sink,
+        "_report_knowledge_requested": True,
+        "_report_knowledge_space": "selected",
+        "_report_require_knowledge_bindings": True,
+    }
+    template_path = "csv-data-analysis/templates/report_template.html"
+    template = (root / "skills" / template_path).read_text(encoding="utf-8")
+    contract = report_author_contract(report_template_contract(template), fields)
+    assert contract["interpretation_only"]
+    listing, compose, stage = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(root / "skills")),
+        template_path,
+        contract,
+    )
+    listed = json.loads(listing())["objects"]
+    assert len(listed) == 1 and listed[0]["kind"] == "reference"
+    token = listed[0]["object_id"]
+    plain = {field: "按区域核验业务表现。" for field in contract["fields"]}
+    failed = await compose(plain)
+    assert "KB_REPORT_BINDING_REQUIRED" in failed
+    field = contract["fields"][0]
+    plain[field] = ["销售口径按区域复核。", {"object_id": token}]
+    jsonschema.validate(plain, report_object_schema(contract))
+    result = json.loads(await compose(plain))
+    assert result.get("status") == "completed", result
+    assert reference in state["_report_presentation"]["content"]
+    assert not state.get("_report_warnings")
+    forged = {field: [{"object_id": "reference-" + "0" * 24}]}
+    assert json.loads(await compose(forged))["status"] == "invalid_selection"
+    value = "value-" + "0" * 24
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(
+            {field: [{"object_id": value}]}, report_object_schema(contract)
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("append", [False, True])
+async def test_generate_report_repairs_table_without_replacing_saved_prose(
+    tmp_path, monkeypatch, append
+):
+    from copy import deepcopy
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    template = "business-report/templates/business_report.html"
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="repair-preserve"))
+    source = capture(sink, {"total": 100, "rows": [{"region": "East", "sales": 100}]})
+    state = {"conv_id": "repair-preserve", "_report_artifact_sink": sink}
+    original = {
+        "title": "Business report",
+        "kpis": [{"label": "Total", "ref": {"artifact_id": source, "field": "total"}}],
+        "sections": [
+            {
+                "heading": "Regional results",
+                "intro": [["保留重点客户名单并安排区域复核"]],
+                "table": {
+                    "artifact_id": source,
+                    "field": "rows",
+                    "columns": ["region", "salse"],
+                },
+                "recommendations": [
+                    {
+                        "title": "Follow up",
+                        "lines": [{"parts": ["由区域负责人逐店跟进"]}],
+                    }
+                ],
+            },
+            {"heading": "Untouched", "intro": [["原有独立结论保持不变"]]},
+        ],
+    }
+    renderer = make_html_interpreter(state, str(root / "skills"))
+    await renderer(
+        template_path=template,
+        title="Original title",
+        data={"REPORT_SPEC": deepcopy(original)},
+    )
+    assert state.get("_report_html_error")
+    before = deepcopy(state["_report_saved_arguments"]["data"]["REPORT_SPEC"])
+    monkeypatch.setattr(report_agent, "select_report_template", lambda *_: template)
+
+    async def build(**kwargs):
+        listing, compose, patch = make_report_object_tools(
+            state, renderer, template, {"mode": "spec", "fields": []}
+        )
+
+        async def generate_reply(**kwargs):
+            message = kwargs["received_message"].content
+            assert "patch_report" in message and '"section_index": 0' in message
+            rejected = json.loads(
+                await compose({"sections": [{"heading": "Replacement"}]})
+            )
+            assert rejected["status"] == "invalid_selection"
+            tables = json.loads(listing(kind="table"))["objects"]
+            arguments = {
+                "section_index": 0,
+                "section": {"table": {"object_id": tables[0]["object_id"]}},
+            }
+            if append:
+                arguments["append_recommendations"] = [
+                    {"title": "Additional action", "lines": [["新增复核安排"]]}
+                ]
+                arguments["append_sections"] = [
+                    {"heading": "Additional section", "intro": [["新增结论"]]}
+                ]
+            response = json.loads(await patch(**arguments))
+            assert response["status"] == "completed", response
+            return SimpleNamespace(success=True, content="Repaired", context={})
+
+        return SimpleNamespace(generate_reply=generate_reply)
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build)
+    response = json.loads(
+        await report_agent.make_generate_report_tool(
+            react_state=state, skills_dir=str(root / "skills"), llm_client=object()
+        )("Repair the invalid table")
+    )
+    assert response["status"] == "completed", response
+    after = state["_report_saved_arguments"]["data"]["REPORT_SPEC"]
+    assert after["kpis"] == before["kpis"]
+    assert after["sections"][1] == before["sections"][1]
+    assert after["sections"][0]["intro"] == before["sections"][0]["intro"]
+    assert (
+        after["sections"][0]["recommendations"][:1]
+        == before["sections"][0]["recommendations"]
+    )
+    html = state["_report_presentation"]["content"]
+    assert "保留重点客户名单并安排区域复核" in html and "由区域负责人逐店跟进" in html
+    assert source in html
+    if append:
+        assert "新增复核安排" in html and "新增结论" in html
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("text", ["", " ", "\n\t"])
+@pytest.mark.parametrize("pending_report", [False, True])
+async def test_empty_report_reply_uses_existing_invocation_budget(
+    tmp_path, monkeypatch, text, pending_report
+):
+    from functools import partial
+
+    from dbgpt.agent import AgentContext, AgentMessage
+    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    state = {"conv_id": "empty-repair"}
+    if pending_report:
+        state.update(
+            _report_html_error="REPORT_TEMPLATE_SPEC_INVALID: fix table",
+            _report_saved_arguments={
+                "template_path": "report.html",
+                "data": {"REPORT_SPEC": {"sections": []}},
+            },
+        )
+    state["_report_invalid_call_handler"] = partial(
+        report_repair.record_report_invocation_failure, state
+    )
+    agent = ToolCallingReActAgent()
+    agent.agent_context = AgentContext(
+        conv_id="empty-repair", enable_native_function_calling=True
+    )
+    agent.resource = ToolPack([])
+    for action in agent.actions:
+        action.init_resource(agent.resource)
+    object.__setattr__(agent, "_report_repair_state", state)
+    for _ in range(2):
+        out = await agent.act(
+            AgentMessage(content=text),
+            sender=agent,
+            parser=agent.parser,
+            tool_calls=None,
+        )
+        assert not out.is_exe_success
+    assert state.get("_report_invocation_failures", 0) == (2 if pending_report else 0)
+    assert bool(state.get("_report_retry_exhausted")) is pending_report
+    if pending_report:
+        assert out.have_retry is False

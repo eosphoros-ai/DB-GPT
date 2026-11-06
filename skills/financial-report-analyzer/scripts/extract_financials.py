@@ -184,7 +184,8 @@ def extract_financials(file_path):
     years = []
     candidates = {}
     heading = re.compile(
-        r"^\s*\d+[、.．]\s*((?:合并|母公司)(?:资产负债表|利润表|现金流量表))\s*$"
+        r"^\s*(?:(?:[（(]?[一二三四五六七八九十百\d]+[）)、.．]?)[\s]*)?"
+        r"((?:合并|母公司)(?:资产负债表|利润表|现金流量表))\s*$"
     )
     number = r"[-−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?"
     for page_number, page in enumerate(pages, 1):
@@ -194,6 +195,13 @@ def extract_financials(file_path):
             if match:
                 active = match.group(1)
                 unit, years = None, []
+                continue
+            if re.search(
+                r"(?:资产负债表|利润表|现金流量表|所有者权益变动表)(?:[（(](?:续|续表)[）)])?\s*$",
+                line,
+            ):
+                # An unsupported statement heading still ends the old scope.
+                active, unit, years = None, None, []
                 continue
             if active not in fields:
                 continue
@@ -282,6 +290,6 @@ if __name__ == "__main__":
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(
-            'Usage: python3 extract_financials.py '
+            "Usage: python3 extract_financials.py "
             '\'{"file_path": "/path/to/report.pdf"}\''
         )

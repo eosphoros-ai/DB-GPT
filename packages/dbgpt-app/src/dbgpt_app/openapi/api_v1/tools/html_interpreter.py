@@ -1750,7 +1750,12 @@ def _standalone_proposal_texts(spec: Any) -> set[str]:
     if not isinstance(spec, dict):
         return set()
     return {
-        "建议目标（非观测值）：" + part["proposal"]
+        (
+            "Proposed target (not observed): "
+            if spec.get("language") == "en"
+            else "建议目标（非观测值）："
+        )
+        + part["proposal"]
         for section in spec.get("sections", [])
         if isinstance(section, dict)
         for recommendation in section.get("recommendations", [])

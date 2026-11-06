@@ -92,6 +92,7 @@ from .subagent.history import (
 )
 from .task_progress import (
     complete_delivery_task,
+    reconcile_report_delivery,
     sync_task_plan_steps,
     task_plan_meta,
 )
@@ -4807,8 +4808,8 @@ After partial results, finish only missing requested deliverables, then report.
             action_names = {name.strip().lower() for name in (action or "").split(",")}
             if "generate_report" in action_names:
                 if react_state.get("_report_delivery_completed"):
-                    report_task_completed = complete_delivery_task(
-                        _todo_list, report_completed=True
+                    report_task_completed = reconcile_report_delivery(
+                        _todo_list, react_state
                     )
             if report_task_completed:
                 yield _sse_event({"type": "plan.update", "tasks": list(_todo_list)})
@@ -5048,7 +5049,7 @@ After partial results, finish only missing requested deliverables, then report.
         and not final_content.startswith(("任务未完成", "HTML 分析报告未生成"))
     ):
         if react_state.get("_report_delivery_completed"):
-            complete_delivery_task(_todo_list, report_completed=True)
+            reconcile_report_delivery(_todo_list, react_state)
         complete_delivery_task(_todo_list, summary_delivered=True)
     final_answer = final_answer_assembler.finalize(final_content)
     final_answer = await _finalize_turn_report_persistence(

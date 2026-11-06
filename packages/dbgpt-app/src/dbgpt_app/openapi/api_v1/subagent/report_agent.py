@@ -646,6 +646,12 @@ def _completed_report_response(state: Dict[str, Any]) -> str:
     # Record the semantic outcome before the HTML is wrapped/truncated for
     # transport, including when this tool is part of a native call batch.
     state["_report_delivery_completed"] = not partial
+    if not partial:
+        import hashlib
+
+        state["_report_delivery_id"] = hashlib.sha256(
+            presentation["content"].encode("utf-8")
+        ).hexdigest()
     return json.dumps(
         {
             "status": "partial" if partial else "completed",
@@ -883,7 +889,7 @@ def make_generate_report_tool(
             if saved["data"].get("REPORT_SPEC"):
                 message += (
                     "\n这是已保存 spec 的恢复，引擎已重新校验原始完整 spec。"
-                    "按最新错误修复，使用对象 ID 提交完整业务报告结构，"
+                    "按最新错误使用 patch_report 局部修复，新增内容使用对象 ID，"
                     "不要用空 REPORT_SPEC 再次提交相同候选。"
                     "保留已有章节、建议、样式和绑定，不能重写为部分章节。"
                     "先前 REPORT_REPAIR_STOPPED "
@@ -900,17 +906,21 @@ def make_generate_report_tool(
                     + json.dumps(
                         [
                             {
+                                "section_index": index,
                                 "heading": section.get("heading"),
+                                "source_field": section.get("source_field"),
                                 "recommendations": len(
                                     section.get("recommendations") or []
                                 ),
                             }
-                            for section in sections
+                            for index, section in enumerate(sections)
                         ],
                         ensure_ascii=False,
                     )
                     + "。保留上述已有内容，使用 list_report_objects 查找对应证据对象。"
-                    "使用 compose_report 提交完整业务报告结构。"
+                    "使用 patch_report 修改指定章节字段，或追加章节和建议；"
+                    "删除章节非法字段用 section_index 与 remove_section_fields；"
+                    "未修改内容由引擎保留，不要重新提交整份报告。"
                 )
         requirement = react_state.get("_report_required_recommendation_count")
         if requirement:
@@ -923,7 +933,7 @@ def make_generate_report_tool(
                 "\n最新引擎错误（优先修复，复用已完成产物）：\n"
                 + str(latest_error)[:REPORT_AGENT_RESULT_MAX_CHARS]
                 + "\n错误中的旧工具名、artifact_id、path 是引擎内部诊断。"
-                "实际修复只使用 list_report_objects 和 compose_report "
+                "实际修复使用 list_report_objects、patch_report 和 compose_report "
                 "的 object_id 契约。"
             )
         if react_state.get("_report_language") == "en":

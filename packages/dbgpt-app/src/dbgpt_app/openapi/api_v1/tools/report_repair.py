@@ -556,6 +556,25 @@ def _record_failure(
     return result
 
 
+def record_report_object_failure(state, reason):
+    """Count compiler rejection before it reaches the renderer or agent adapter."""
+    if not state.get("_report_retry_exhausted"):
+        state["_report_tool_call_count"] = state.get("_report_tool_call_count", 0) + 1
+    # Rejected input can itself be too deep to serialize. The bounded diagnostic
+    # supplies the fingerprint without checkpointing unsupported raw content.
+    result = json.loads(
+        _record_failure(
+            state,
+            {"object_error": str(reason)},
+            str(reason),
+            reached_renderer=False,
+            preflight=True,
+        )
+    )
+    result.update(status="invalid_selection", success=False, error=str(reason))
+    return json.dumps(result, ensure_ascii=False)
+
+
 def _truncation_hint(state) -> str | None:
     """Tell the model its arguments were cut off by the output limit.
 
