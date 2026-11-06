@@ -164,8 +164,11 @@ class RDBMSConnector(BaseConnector):
         self._sample_rows_in_table_info = sample_rows_in_table_info
         self._indexes_in_table_info = indexes_in_table_info
 
+        # Table metadata is reflected lazily, per table, in ``get_table_info``.
+        # Reflecting the whole schema here made every connector construction
+        # (including the throwaway one built to test a connection) issue
+        # per-table reflection queries, which takes minutes on large databases.
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
 
@@ -323,6 +326,15 @@ class RDBMSConnector(BaseConnector):
         """Information about all tables in the database."""
         return self.get_table_info()
 
+    def _reflect_tables(self, table_names: Iterable[str]) -> None:
+        """Reflect the metadata of the given tables that are not reflected yet."""
+        reflected = {tbl.name for tbl in self._metadata.sorted_tables}
+        missing = set(table_names) - reflected
+        if missing:
+            self._metadata.reflect(
+                bind=self._engine, only=lambda name, _: name in missing
+            )
+
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
 
@@ -340,6 +352,7 @@ class RDBMSConnector(BaseConnector):
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
+        self._reflect_tables(all_table_names)
         meta_tables = [
             tbl
             for tbl in self._metadata.sorted_tables
