@@ -66,7 +66,7 @@ EXAMPLE_KNOWLEDGE = {
     "olist_ecommerce_report": {
         "source_path": "examples/olist/olist-analytics-metric-governance.md",
         "builtin_path": "knowledge/olist-analytics-metric-governance.md",
-        "name": "Olist_Analytics_Governance",
+        "name": "Olist_Analytics_Governance_Demo_v2",
     },
 }
 _knowledge_prepare_lock = asyncio.Lock()

@@ -185,8 +185,13 @@ async def run_tool(
                 )
                 if parsed and isinstance(parsed, tuple):
                     args = parsed[1]
-                if args is not None and isinstance(args, list) and len(args) == 0:
-                    args = {}
+                if isinstance(args, list):
+                    if not args:
+                        args = {}
+                    elif len(args) == 1 and isinstance(args[0], dict):
+                        # Preserve singleton-object compatibility after giving
+                        # the tool's own parser the original array input.
+                        args = args[0]
             except Exception:
                 pass
 

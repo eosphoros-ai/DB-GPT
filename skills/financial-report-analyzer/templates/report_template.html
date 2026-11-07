@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- dbgpt-required: PROFITABILITY_ANALYSIS, SOLVENCY_ANALYSIS, EFFICIENCY_ANALYSIS, CASHFLOW_ANALYSIS, ADVANTAGES_LIST, RISKS_LIST, OVERALL_ASSESSMENT -->
+<!-- dbgpt-verified-fields: extract_financials.py | calculate_ratios.py | REVENUE, REVENUE_GROWTH, NET_PROFIT, NET_PROFIT_GROWTH, NON_RECURRING_NET_PROFIT, NON_RECURRING_GROWTH, GROSS_MARGIN, GROSS_MARGIN_CHANGE, ROE, ROE_CHANGE -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -142,7 +144,7 @@
     <tr>
       <th>指标</th>
       <th>本期数值</th>
-      <th>同比增长</th>
+      <th>同比增长 / 变动</th>
       <th>行业平均 (参考)</th>
     </tr>
   </thead>
@@ -172,7 +174,7 @@
       <td>{{GROSS_MARGIN_INDUSTRY_AVG}}</td>
     </tr>
     <tr>
-      <td>ROE</td>
+      <td>ROE（期末归母净资产口径）</td>
       <td>{{ROE}}</td>
       <td class="{{ROE_CHANGE_CLASS}}">{{ROE_CHANGE}}</td>
       <td>{{ROE_INDUSTRY_AVG}}</td>

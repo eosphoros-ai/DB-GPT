@@ -61,7 +61,10 @@ async def test_live_docker_python_files_json_plot_and_persistent_workspace(
     tmp_path, docker_runtime
 ):
     _, create, selected = docker_runtime
-    source = tmp_path / 'sales";name.csv'
+    # Windows forbids double quotes in filenames; retain quoting and shell
+    # metacharacters in the portable variant as well.
+    filename = "sales'; name.csv" if os.name == "nt" else 'sales";name.csv'
+    source = tmp_path / filename
     source.write_text("sales\n2\n3\n")
     files = tmp_path / "files.json"
     files.write_text(json.dumps({"sf_sales": str(source)}))

@@ -229,6 +229,45 @@ class NativeToolCallAction(ParallelToolAction):
         """Perform the action from native tool_calls or text fallback."""
         tool_calls = kwargs.get("tool_calls")
         if not tool_calls:
+            # Providers may return the textual batch protocol even when native
+            # calling was requested. Preserve each explicit name/argument pair;
+            # passing the entire argument list to one tool loses the protocol.
+            try:
+                steps = self._parser(kwargs).parse_current_step(ai_message)
+            except ValueError as error:
+                return ActionOutput(is_exe_success=False, content=str(error))
+            if (
+                len(steps) == 1
+                and "," in (steps[0].action or "")
+                and isinstance(steps[0].action_input, list)
+            ):
+                step = steps[0]
+                names = [name.strip() for name in (step.action or "").split(",")]
+                arguments = step.action_input
+                if (
+                    len(names) != len(arguments)
+                    or not arguments
+                    or not all(re.fullmatch(r"[A-Za-z_]\w*", n) for n in names)
+                    or not all(isinstance(args, dict) for args in arguments)
+                ):
+                    return ActionOutput(
+                        is_exe_success=False,
+                        content=(
+                            "TOOL_BATCH_INVALID: provide one JSON object for "
+                            "each comma-separated tool name"
+                        ),
+                    )
+                out = await run_tools_batch(
+                    [
+                        ToolCallSpec(name=name, args=args)
+                        for name, args in zip(names, arguments)
+                    ],
+                    self.resource,
+                    self.render_protocol,
+                    need_vis_render=need_vis_render,
+                )
+                out.thoughts = step.thought
+                return out
             # No native tool calls — fall back to text ReAct parsing.
             try:
                 return await super().run(
@@ -251,7 +290,12 @@ class NativeToolCallAction(ParallelToolAction):
             try:
                 args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
             except (json.JSONDecodeError, ValueError) as error:
-                if name in {"html_interpreter", "append_report_sections"}:
+                if name in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                    "patch_report",
+                }:
                     location = (
                         (
                             "JSON line "
@@ -273,7 +317,12 @@ class NativeToolCallAction(ParallelToolAction):
                     )
                 args = {}
             if not isinstance(args, dict):
-                if name in {"html_interpreter", "append_report_sections"}:
+                if name in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                    "patch_report",
+                }:
                     return ActionOutput(
                         is_exe_success=False,
                         action=name,
@@ -387,6 +436,17 @@ class ToolCallingReActAgent(ReActAgent):
         report_state = getattr(self, "_report_repair_state", None) or {}
         attempts_before = report_state.get("_report_render_attempts", 0)
         handled_calls_before = report_state.get("_report_tool_call_count", 0)
+        if (
+            not (message.content or "").strip()
+            and not kwargs.get("tool_calls")
+            and not getattr(self, "_pending_native_tool_calls", None)
+        ):
+            return self._apply_report_result(
+                ActionOutput(is_exe_success=False, content="The response is empty."),
+                message,
+                attempts_before,
+                handled_calls_before,
+            )
         if native_enabled and not getattr(self, "_pending_native_tool_calls", None):
             steps = self.parser.parse_current_step(message.content or "")
             if not steps or not all(step.action for step in steps):
@@ -415,8 +475,6 @@ class ToolCallingReActAgent(ReActAgent):
                 output, message, attempts_before, handled_calls_before
             )
 
-        if not message.content and not native_enabled:
-            raise ValueError("The response is empty.")
         # Skip ReActAgent.act's "exactly one action per turn" validation and
         # dispatch straight to ConversableAgent.act, which drives the action
         # loop and lets NativeToolCallAction batch-execute the tool calls
@@ -442,17 +500,28 @@ class ToolCallingReActAgent(ReActAgent):
     ) -> ActionOutput:
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
-            output.action in {"html_interpreter", "append_report_sections"}
+            output.action
+            in {
+                "html_interpreter",
+                "append_report_sections",
+                "compose_report",
+                "patch_report",
+            }
             or bool(
                 re.search(
-                    r"Action\s*:\s*(?:html_interpreter|append_report_sections)\b",
+                    r"Action\s*:\s*(?:html_interpreter|append_report_sections|compose_report|patch_report)\b",
                     message.content or "",
                     re.I,
                 )
             )
             or any(
                 call.get("function", {}).get("name")
-                in {"html_interpreter", "append_report_sections"}
+                in {
+                    "html_interpreter",
+                    "append_report_sections",
+                    "compose_report",
+                    "patch_report",
+                }
                 for call in getattr(self, "_pending_native_tool_calls", None) or []
             )
         )
@@ -465,6 +534,7 @@ class ToolCallingReActAgent(ReActAgent):
                 ("no valid react step"),
                 ("no correct response found"),
                 ("only one action is allowed"),
+                ("the response is empty"),
             )
         )
         requested = requested or bool(

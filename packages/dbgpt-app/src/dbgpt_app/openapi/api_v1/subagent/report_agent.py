@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import uuid
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
@@ -27,8 +28,6 @@ from ..tools.html_interpreter import (
     make_html_interpreter,
     report_template_contract,
 )
-from ..tools.read_file import make_read_file
-from ..tools.report_evidence import make_report_evidence_manifest
 from ..tools.report_repair import (
     MAX_DOCUMENT_ATTEMPTS,
     MAX_INVOCATION_FAILURES,
@@ -58,48 +57,18 @@ REPORT_AGENT_PROMPT_TEMPLATE = """\
 
 严格按以下流程执行：
 
-1. 先调用 `report_evidence_manifest(artifact_types=["sql","python","chart"])` 拿到
-   结果目录，按章节的列名和产物语义选择真实 ID。
-   再用 artifact_ids + detail=true 读取所需结果（每次至多十二个产物）；目录不是结果。
-   大型嵌套结果用 selectors={"真实ID":{"field":"真实字段","path":["子结果"]}}
-   在同一清单工具中定向读取，避免只读到截断预览就误认结果缺失。
-   同时读取用于指标口径的知识库切片。没有拿到结果字段和原文就不要猜数字或引用。
-   知识库检索不等于正文引用。先用 artifact_types=["reference"] 查看切片目录，
-   再选择与当前口径有关的 artifact_ids + detail=true 阅读原文。
-   每个实际采用的口径在对应章节增加 note={label:"知识库口径",
-   parts:["本章采用的定义或方法"],ref:{artifact_id:"真实 reference ID",quote:"原文中的短句"}}。
-   不把所有切片挂到整页，不把知识库 reference 用作计算数值的来源。
-   知识库是分析依据，不是报告正文素材清单。只解释本次实际使用、影响解读的口径，
-   每个口径仅解释一次；只用简短的章节 note（黄色说明框），全文通常不超过五条。
-   不逐条复制治理规则、质量检查清单或工具约束，不添加未分析指标的定义。
-   不连续追加“口径提示”段落，不重复已有分析章节。完整原文由引用来源抽屉查看。
-   不在 intro 中放置知识库原文、示例口径写法或重复说明；note.ref 提供溯源链接，
-   note.parts 用自己的话概括实际采用的口径，不输出整段切片或 Markdown 表格。
-   SQL、函数参数和示例常量放在 code 标签中；它们是方法示例，不是观测指标。
-   目录或详情出现 persisted-output 时，用 read_file 读取对应文件，不能根据截断
-   预览认定某个分析产物不存在。目录缓存不代表新子代理已经读到结果。
+1. 根据内部证据规则读取来源，按当前模板组织报告。
 2. 首次提交：`html_interpreter(template_path="__TEMPLATE_PATH__",
-   title=<报告标题>, data={"REPORT_SPEC": {...}})`。`data` 必须是 JSON **对象**，
-   不能是转义后的 JSON 字符串。所有展示值都是引用节点
-   `{"artifact_id": "<manifest 里的 ID>", "field"/"path": ...}`；表格只写
-   `{"artifact_id": ..., "columns": [...]}` 让引擎展开行，绝不要逐个单元格粘贴。
-   Python 的嵌套表在 table 中提供真实 field/path，优先选含 rows 和 columns 的对象；
-   表格和每个单元格都会保留完整来源路径。
-   正文里的每个实际数值都必须是引用节点，不能把记忆里的数值写到普通字符串。
-   同一段里别的值有引用，也不能替代这个值的引用。若某个指标不值得单独写，展示
-   产物驱动表格并作无数字总结。未捕获的合计/差值不得伪造引用，可先作定性说明。
-   标题、scope、KPI 标签、建议标题使用描述性文字，观测数值和门店编号放在支持引用
-   的 intro/parts 或表格中，不把这些数值塞进纯文本标签。
-   REPORT_TEMPLATE_SPEC_INVALID 会一次列出全部未绑定位置和结果产物目录；全部修好
-   后再提交，不能仅增加一个 section/KPI 引用来遮盖未绑定数字。
-   选择器按产物类型选：SQL 产物用
-   `{"path": ["rows", <i>, "<column>"]}`；`{"field": ...}` 用于 Python 产物
-   （字段名抄 manifest 的 `result_selector_examples`）。写错会得到
-   `RESULT_SELECTOR_INVALID` 并列出可用字段。
+   title=<报告标题>, data={"REPORT_SPEC": {...}})`。data 必须是 JSON 对象。
+   KPI 使用 ref，正文使用引用节点；表格用
+   {"artifact_id": ..., "columns": [...]} 由引擎展开行。
+   Python 嵌套表按真实字段提供 field/path。标题、scope 和标签使用描述性文字。
+   知识库口径放在相关章节的 note，例如
+   {"label":"知识库口径","parts":["本章采用的口径"],
+   "ref":{"artifact_id":"真实切片ID"}}；只有逐字引用原文时才提供 quote。
 3. 渲染返回错误时只改 spec：`retry_saved=true` + `data`。REPORT_SPEC 只替换给出的
    顶层字段；sections/kpis 是完整替换列表。删除旧的错误顶层字段时将它设为 null。
    添加新片段用 REPORT_SPEC_APPEND。
-   错误信息里已给出 artifact、selector 以及 `Available result keys`，直接用这些名字。
    若提示参数被输出上限截断，就把 spec 改小再发。
 4. 报告较长时分片构建：先 `data={"REPORT_SPEC": <第一部分>}`，再用
    `append_report_sections(sections=[<一个新章节>])` 追加，避免重发整份报告。
@@ -118,7 +87,6 @@ REPORT_AGENT_PROMPT_TEMPLATE = """\
    这一项，再由你复用已保存 spec 继续；不得编造引用或重做完整分析。
 8. 图表产物仅放 sections[].chart，不能放 KPI/intro 数值引用。图片图表只需
    {"refs":["真实 chart ID"],"caption":"标题"}，引擎从产物读取图片地址。
-   生产 Python 的 ID 与图片 chart ID 不同，按目录中的 input_artifact_ids 查找对应图表。
    若 Python 已输出完整 ECharts option，可用 chart={refs:["该 Python ID"],caption:"标题"}；
    引擎直接绘制已捕获配置。没有有效图表时保留已有表格和解读，不要猜图片地址或重跑分析。
    SQL/Python 二维结果无需再查询或画图片：章节 table 选择真实产物和列名，
@@ -127,17 +95,7 @@ REPORT_AGENT_PROMPT_TEMPLATE = """\
    按分析目的自由选择完整 ECharts 的图表类型，不限于自动选择的类型。
    用 chart={caption:"标题",producer:{artifact_id:"真实ID",field/path:...},
    option:{...完整 ECharts JSON 配置...}}；不需要重复查询或编写画图 Python。
-   option 支持所有内置 series 类型及组合、多坐标系、dataset/encode、dataZoom 等。
-   默认 dataset 从 producer 的 rows/columns 注入；用 encode 指定真实列名。
-   series.data/nodes/links 或 dataset.source 必须用 {artifact_id,field/path} 引用
-   已捕获数据，也可以用引用节点组合结构，禁止手填观测数据。
-   树图、桑基图、关系图、箱线图、K线等选择已经捕获的对应结构；缺失转换数据时
-   用 request_report_calculation 请求明确转换，不能把它们退化成柱状图。
-   地图用 chart.maps={地图名称:{artifact_id,field/path}} 选择捕获的 GeoJSON，
-   option 中 map 使用同名。无需 refs，工具自动补齐全部来源和图表 ID。
-   JavaScript 函数和第三方扩展不能写进 JSON option；这类可复用分析生成的图片。
-   若建议包含人为设定的数值目标，在建议的引用节点增加 proposal 字段；它会显示为
-   “建议目标（非观测值）”，artifact_id + field/path 仍指向支持建议的真实依据。
+   数据来源、复杂图表和建议目标遵照内部证据规则；根据工具返回的具体路径修复。
 
 必须使用模板实际支持的结构，不能根据名称猜测字段：
 `{"title":"报告标题","kpis":[{"label":"指标","ref":{"artifact_id":"真实ID",
@@ -191,15 +149,7 @@ def report_agent_prompt(
                 "程序自动注入的字段（不要提交或复制）："
                 + json.dumps(list(injected_fields), ensure_ascii=False)
                 + "。\n"
-                "先调用 report_evidence_manifest 查看产物目录，再用 artifact_ids + "
-                "detail=true "
-                "读取所需统计结果和真实选择器。Available result keys 是实际结果字段。\n"
-                "result_structure 给出真实字段和数组长度；预览截断不代表结果缺失。"
-                "用 selectors 定向读取需要的子结果；错误中的 valid_references "
-                "是可直接复制的实际路径，"
-                "不要盲信主代理提供的路径，更不能因为预览截断而要求重跑分析。\n"
-                "JSON 数据可能包在一个字段中；引用必须包含该 field 和内部 "
-                "path，不能猜字段。\n"
+                "按内部证据规则选择来源和结果，再按本模板格式组织内容。\n"
                 "把字段直接放在 data 对象中，调用 html_interpreter(template_path="
                 + json.dumps(template_path)
                 + ", title=报告标题, data=字段对象)。\n"
@@ -213,25 +163,11 @@ def report_agent_prompt(
                 "每项用 {caption,producer:{artifact_id,field/path},option:完整ECharts配"
                 "置}，"
                 "类型不限于模板预设；默认 dataset 注入 producer 的实际 rows/columns。"
-                "series.data/nodes/links、dataset.source 用 "
-                "{artifact_id,field/path} "
-                "引用，"
-                "禁止手填观测数据。地图 maps={名称:{artifact_id,field/path}} "
-                "选择捕获的 "
-                "GeoJSON。"
+                "图表数据和地图来源遵照内部证据规则。"
                 "图表缺少数据转换时调用 request_report_calculation，只补算所需结构。\n"
-                '有知识库切片时，用 artifact_types=["reference"] 查看目录，再按真实 ID '
-                "阅读原文。"
-                "每个采用的口径必须在对应正文段落加入 {artifact_id:真实referenc"
-                "eID,quote:原文短句} "
-                "引用节点。"
-                "这是知识库依据的可点击链接；计算数值仍用 SQL/Python "
-                "引用。只引用支持该段的切片。\n"
-                "仅简要说明本次实际采用且影响解读的口径，同一口径只解释一次，"
-                "全文通常不超过五条。不得逐条复制知识库检查清单、工具约束或未分析"
-                "指标的定义，不连续追加口径提示或重复分析章节。完整原文在来源抽屉"
-                "查看。知识库口径仅放在黄色说明框，不在正文重复输出原文、方法示例"
-                "或整段切片。SQL、函数参数和示例常量放在 code 标签中。\n"
+                "本模板采用的知识库口径在对应段落加入 "
+                "{artifact_id:真实referenceID,quote:原文短句} 引用；"
+                "只在逐字引用已读原文时提供 quote，计算数值使用结果引用。\n"
                 "可以分次提交较短的 data，每次只补充几个正文占位符，程序保留此前内容。"
                 "局部无法核验的文字数值会标注缺失；不要为了这类问题重跑分析或重复整份报告。\n"
                 "必须补齐各维度解读和结论建议，不只写摘要；分别解释现象、可能原因、"
@@ -249,6 +185,40 @@ def report_agent_prompt(
 
 
 REPORT_AGENT_PROMPT = report_agent_prompt()
+
+
+def _report_artifact_handoff(
+    artifacts: Sequence[Any], template_fields: Sequence[str]
+) -> dict:
+    """Provide only captured template fields and chart identities to the author."""
+    from ..tools.html_interpreter import _template_result_sources
+
+    sources = _template_result_sources(list(artifacts))
+    fields = {
+        key: {"artifact_id": source["artifact_id"], "field": source["field"]}
+        for key, source in sources.items()
+        if key in template_fields
+    }
+    charts = []
+    seen = set()
+    for item in artifacts:
+        if item.status != "succeeded" or item.type != "chart":
+            continue
+        output = item.output
+        uri = getattr(output, "uri", None)
+        digest = getattr(output, "sha256", None)
+        identity = (uri, digest) if uri and digest else (item.artifact_id,)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        charts.append(
+            {
+                "artifact_id": item.artifact_id,
+                "uri": uri,
+                "input_artifact_ids": list(item.input_artifact_ids),
+            }
+        )
+    return {"template_fields": fields, "charts": charts[:30]}
 
 
 def _knowledge_binding_error(state: Dict[str, Any]) -> str | None:
@@ -431,6 +401,18 @@ def make_append_report_sections(react_state: Dict[str, Any], renderer: Any):
     return append_report_sections
 
 
+def _load_internal_evidence_skill() -> str:
+    """Load report evidence guidance without registering a public skill."""
+    resource = files("dbgpt_app").joinpath("_internal", "report_evidence", "SKILL.md")
+    try:
+        content = resource.read_text(encoding="utf-8").strip()
+    except (FileNotFoundError, OSError) as error:
+        raise ValueError("INTERNAL_REPORT_EVIDENCE_SKILL_MISSING") from error
+    if not content:
+        raise ValueError("INTERNAL_REPORT_EVIDENCE_SKILL_EMPTY")
+    return content
+
+
 async def build_report_agent(
     *,
     react_state: Dict[str, Any],
@@ -467,6 +449,9 @@ async def build_report_agent(
     sink = react_state.get("_report_artifact_sink")
     captured_fields = _template_result_sources(sink.snapshot() if sink else [])
     injected_fields = sorted(set(captured_fields).intersection(contract["fields"]))
+    from ..tools.report_objects import report_author_contract
+
+    author_contract = report_author_contract(contract, captured_fields)
 
     sub_gpt_memory = GptsMemory(
         plans_memory=DefaultGptsPlansMemory(),
@@ -479,17 +464,15 @@ async def build_report_agent(
         react_state,
         skills_dir,
         business_spec_only=spec_mode,
-        allow_unavailable_references=True,
     )
+    from ..tools.report_objects import make_report_object_tools, report_object_prompt
+
     tool_pack = ToolPack(
-        [
-            renderer,
-            make_report_evidence_manifest(react_state),
-            make_read_file(react_state),
+        make_report_object_tools(react_state, renderer, template_path, author_contract)
+        + [
             make_request_report_calculation(react_state),
             Terminate(),
         ]
-        + ([make_append_report_sections(react_state, renderer)] if spec_mode else [])
     )
 
     if model_name:
@@ -522,12 +505,15 @@ async def build_report_agent(
         .bind(tool_pack)
         .bind(
             PromptTemplate(
-                template=report_agent_prompt(
+                template=report_object_prompt(
                     template_path,
-                    template_text,
+                    author_contract,
                     injected_fields,
-                    language=react_state.get("_report_language", "zh"),
-                ),
+                    react_state.get("_report_language", "zh"),
+                )
+                + "\n\n<!-- DB-GPT INTERNAL EVIDENCE BEGIN -->\n"
+                + _load_internal_evidence_skill()
+                + "\n<!-- DB-GPT INTERNAL EVIDENCE END -->",
                 input_variables=[],
                 template_format="jinja2",
             )
@@ -596,6 +582,36 @@ def _report_agent_failure(state: Dict[str, Any], reason: str) -> str:
     """Keep child execution failures distinct from the last renderer diagnostic."""
     from ..tools.report_repair import save_execution_checkpoint
 
+    required = set(
+        (state.get("_report_template_contract") or {}).get("prose_fields", [])
+    )
+    staged = set(state.get("_report_object_fields") or {})
+    before = set(state.get("_report_object_fields_before") or [])
+    rounds = state.get("_report_draft_continuations", 0)
+    if "AGENT_STEP_LIMIT" in reason and required & (staged - before) and rounds < 2:
+        state["_report_draft_continuations"] = rounds + 1
+        text = "REPORT_DRAFT_PENDING: validated fields saved; complete remaining fields"
+        save_execution_checkpoint(state, text)
+        return json.dumps(
+            {
+                "status": "draft_pending",
+                "retryable": True,
+                "remaining_fields": sorted(required - staged),
+                "chunks": [
+                    {
+                        "output_type": "text",
+                        "content": "报告正文草稿已保存，尚未交付完整报告。",
+                    }
+                ],
+                "instruction": (
+                    "Call generate_report again to finish the remaining fields. "
+                    "Reuse captured results and staged fields; do not rerun "
+                    "analysis or repeat completed fields."
+                ),
+            },
+            ensure_ascii=False,
+        )
+
     text = "REPORT_AGENT_FAILED: " + reason
     state["_report_agent_failure"] = text
     save_execution_checkpoint(state, text)
@@ -620,19 +636,40 @@ def _report_agent_failure(state: Dict[str, Any], reason: str) -> str:
 
 def _completed_report_response(state: Dict[str, Any]) -> str:
     presentation = state["_report_presentation"]
+    warnings = state.get("_report_warnings", [])
+    partial = any(
+        str(warning).startswith(
+            ("REPORT_REFERENCE_UNAVAILABLE", "REPORT_NUMERIC_VALUE_UNAVAILABLE")
+        )
+        for warning in warnings
+    )
+    # Record the semantic outcome before the HTML is wrapped/truncated for
+    # transport, including when this tool is part of a native call batch.
+    state["_report_delivery_completed"] = not partial
+    if not partial:
+        import hashlib
+
+        state["_report_delivery_id"] = hashlib.sha256(
+            presentation["content"].encode("utf-8")
+        ).hexdigest()
     return json.dumps(
         {
-            "status": "completed",
+            "status": "partial" if partial else "completed",
             "retryable": False,
             "chunks": [
-                {"output_type": "text", "content": "已复用现有分析生成报告。"},
+                {
+                    "output_type": "text",
+                    "content": "报告已生成，部分数值无法核验，报告未完整完成。"
+                    if partial
+                    else "已复用现有分析生成报告。",
+                },
                 {
                     "output_type": "html",
                     "content": presentation["content"],
                     "title": presentation["title"],
                 },
             ],
-            "warnings": state.get("_report_warnings", []),
+            "warnings": warnings,
             "artifact_ids": list(
                 dict.fromkeys(
                     artifact_id
@@ -664,18 +701,52 @@ def make_generate_report_tool(
             "status=completed "
             "表示正式报告完成。"
             '参数: {"instructions": "报告标题、必须包含的章节与建议条数"}'
+            "。可选 metric_definitions 一次提交已确认的业务含义与粒度："
+            '[{"artifact_id":"真实ID","selector":{"field":"字段",'
+            '"path":[]},"meaning":"指标含义","grain":"数据粒度"}]。'
+            "不知道口径时省略，不能猜。"
         )
     )
     async def generate_report(
-        instructions: str = "", intention: str = "", thought: str = ""
+        instructions: str = "",
+        intention: str = "",
+        thought: str = "",
+        metric_definitions: list[dict] | None = None,
     ) -> str:
+        react_state["_report_delivery_completed"] = False
         from dbgpt.agent import AgentMessage
 
         from ..tools.report_charts import analysis_groups, selected_chart_gaps
 
         sink = react_state.get("_report_artifact_sink")
         artifacts = list(sink.snapshot()) if sink else []
+        if isinstance(metric_definitions, list) and hasattr(sink, "catalog"):
+            available = {
+                item.artifact_id: item
+                for item in artifacts
+                if item.status == "succeeded" and item.type in {"sql", "python"}
+            }
+            for definition in metric_definitions[:40]:
+                try:
+                    artifact = available[definition["artifact_id"]]
+                    meaning = definition["meaning"]
+                    grain = definition["grain"]
+                    if not isinstance(meaning, str) or not meaning.strip():
+                        raise ValueError("EVIDENCE_MEANING_INVALID")
+                    sink.catalog.register(
+                        sink.context.conv_uid,
+                        artifact,
+                        definition["selector"],
+                        label=meaning,
+                        grain=grain,
+                        meaning_source="agent_declared",
+                    )
+                except (KeyError, ValueError, TypeError) as error:
+                    logger.warning("Ignored invalid metric definition: %s", error)
         react_state["_report_generation_requested"] = True
+        react_state["_report_object_fields_before"] = list(
+            react_state.get("_report_object_fields") or {}
+        )
         data_artifacts = [
             item
             for item in artifacts
@@ -730,15 +801,9 @@ def make_generate_report_tool(
         else:
             if await render_saved_report(react_state, skills_dir):
                 return _completed_report_response(react_state)
-            if await render_saved_report(
-                react_state, skills_dir, allow_unavailable_references=True
-            ):
-                return _completed_report_response(react_state)
 
         if react_state.get("_report_agent_failure"):
-            if await render_saved_report(
-                react_state, skills_dir, allow_unavailable_references=True
-            ):
+            if await render_saved_report(react_state, skills_dir):
                 return _completed_report_response(react_state)
             return json.dumps(
                 {
@@ -770,6 +835,37 @@ def make_generate_report_tool(
             if isinstance(instructions, str) and instructions.strip()
             else "请生成可追溯的分析报告。"
         )
+        selected_template = select_report_template(react_state, skills_dir)
+        root = Path(skills_dir).expanduser().resolve()
+        template_file = (root / selected_template).resolve()
+        contract = {}
+        if template_file.is_relative_to(root) and template_file.is_file():
+            contract = report_template_contract(
+                template_file.read_text(encoding="utf-8")
+            )
+            from ..tools.report_objects import ReportObjects, report_author_contract
+
+            handoff = ReportObjects(artifacts, eager=False).manifest(
+                limit=40, kind="value" if contract["mode"] != "spec" else None
+            )
+            from ..tools.html_interpreter import _template_result_sources
+
+            injected = _template_result_sources(artifacts)
+            handoff["template_fields"] = report_author_contract(contract, injected)[
+                "fields"
+            ]
+            staged = set(react_state.get("_report_object_fields") or {})
+            if staged:
+                handoff["previously_staged_fields"] = sorted(
+                    staged & set(handoff["template_fields"])
+                )
+            message += (
+                "\n以下是程序登记的证据对象。仅从中选择 object_id，"
+                "更多对象调用 list_report_objects 分页筛选。"
+                "原始任务中的底层引用不能直接提交给 compose_report。"
+                "这是本次调用开始时的快照；后续字段进度以工具执行结果为准。"
+                + json.dumps(handoff, ensure_ascii=False)
+            )
         missing = react_state.get("_report_missing_calculation")
         handoff = _missing_calculation_response(react_state)
         if handoff:
@@ -783,51 +879,57 @@ def make_generate_report_tool(
             isinstance(saved, dict)
             and saved.get("template_path")
             and isinstance(saved.get("data"), dict)
-            and saved["data"].get("REPORT_SPEC")
-            and (react_state.get("_report_template_contract") or {}).get("mode", "spec")
-            == "spec"
         ):
-            # Revalidate in code before constructing the recovery prompt. Asking
-            # the model to submit the same empty update can exhaust the repeated
-            # candidate guard without adding any of the missing content.
-            if await render_saved_report(
-                react_state, skills_dir, allow_unavailable_references=True
-            ):
+            # Strict validation must reach the repair model while a repair
+            # attempt is available. Partial delivery is a terminal fallback.
+            if await render_saved_report(react_state, skills_dir):
                 return _completed_report_response(react_state)
-            message += (
-                "\n这是已保存 spec 的恢复，引擎已重新校验原始完整 spec。"
-                "直接按最新错误追加缺失内容，不要用空 REPORT_SPEC 再次提交相同候选。"
-                "保留已有章节、建议、样式和绑定，不能重写为部分章节。"
-                "先前 REPORT_REPAIR_STOPPED "
-                "属于已结束的旧轮预算；本轮以工具返回 retryable "
-                "为准。"
-            )
-            sections = saved["data"]["REPORT_SPEC"].get("sections", [])
-            message += (
-                "\n已保存章节摘要（完整内容仍保存在引擎内，不必读取 checkpoint）："
-                + json.dumps(
-                    [
-                        {
-                            "heading": section.get("heading"),
-                            "recommendations": len(
-                                section.get("recommendations") or []
-                            ),
-                        }
-                        for section in sections
-                    ],
-                    ensure_ascii=False,
+            if saved["data"].get("REPORT_SPEC"):
+                message += (
+                    "\n这是已保存 spec 的恢复，引擎已重新校验原始完整 spec。"
+                    "按最新错误使用 patch_report 局部修复，新增内容使用对象 ID，"
+                    "不要用空 REPORT_SPEC 再次提交相同候选。"
+                    "保留已有章节、建议、样式和绑定，不能重写为部分章节。"
+                    "先前 REPORT_REPAIR_STOPPED "
+                    "属于已结束的旧轮预算；本轮以工具返回 retryable "
+                    "为准。"
                 )
-                + "。校验后仅追加缺失章节。不要读取完整 checkpoint 或重发已有章节；"
-                "建议依据可用 report_evidence_manifest 定向读取少量真实 SQL 结果。"
+            saved_spec = saved["data"].get("REPORT_SPEC")
+            sections = (
+                saved_spec.get("sections", []) if isinstance(saved_spec, dict) else []
             )
+            if sections:
+                message += (
+                    "\n已保存章节摘要（完整内容仍保存在引擎内，不必读取 checkpoint）："
+                    + json.dumps(
+                        [
+                            {
+                                "section_index": index,
+                                "heading": section.get("heading"),
+                                "source_field": section.get("source_field"),
+                                "recommendations": len(
+                                    section.get("recommendations") or []
+                                ),
+                            }
+                            for index, section in enumerate(sections)
+                        ],
+                        ensure_ascii=False,
+                    )
+                    + "。保留上述已有内容，使用 list_report_objects 查找对应证据对象。"
+                    "使用 patch_report 修改指定章节字段，或追加章节和建议；"
+                    "删除章节非法字段用 section_index 与 remove_section_fields；"
+                    "未修改内容由引擎保留，不要重新提交整份报告。"
+                )
         requirement = react_state.get("_report_required_recommendation_count")
         if requirement:
             message += f"\n用户要求至少 {requirement} 条具体建议，必须渲染到建议章节。"
-        if react_state["_report_analysis_groups"]:
-            message += (
-                "\n必须在正文覆盖的已完成分析任务（选择各任务相关结果，不要重跑）："
-                + json.dumps(react_state["_report_analysis_groups"], ensure_ascii=False)
-            )
+            if contract.get("mode") == "placeholders":
+                message += (
+                    "\n将行动建议写入结论与建议章节对应的正文字段，使用段落数组，"
+                    "每条建议独占一段，分别以‘建议一：’、‘建议二：’等开头；"
+                    "英文使用 ‘Recommendation A:’、‘Recommendation B:’ 等。"
+                    "每段标签后必须包含具体行动，不要将多条建议合并为一个长段落。"
+                )
         latest_error = react_state.get("_report_html_error") or react_state.get(
             "_report_last_render_error"
         )
@@ -835,6 +937,9 @@ def make_generate_report_tool(
             message += (
                 "\n最新引擎错误（优先修复，复用已完成产物）：\n"
                 + str(latest_error)[:REPORT_AGENT_RESULT_MAX_CHARS]
+                + "\n错误中的旧工具名、artifact_id、path 是引擎内部诊断。"
+                "实际修复使用 list_report_objects、patch_report 和 compose_report "
+                "的 object_id 契约。"
             )
         if react_state.get("_report_language") == "en":
             message += (
