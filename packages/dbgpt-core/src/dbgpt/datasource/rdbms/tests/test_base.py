@@ -223,3 +223,26 @@ def test_get_table_info_recovers_after_failed_reflection(db_url, monkeypatch):
     assert "name TEXT" in table_info
     assert "CREATE TABLE b" in table_info
     assert "value REAL" in table_info
+
+
+class _FallbackSchemaConnector(_PlainConnector):
+    """Reflects a fallback schema up front, like the PostgreSQL connector."""
+
+    def _reflection_schema(self):
+        return self._schema or "main"
+
+    def _sync_tables_from_db(self):
+        self._metadata.reflect(bind=self._engine, schema=self._reflection_schema())
+        return super()._sync_tables_from_db()
+
+
+def test_get_table_info_reuses_tables_reflected_in_fallback_schema(db_url, monkeypatch):
+    conn = _FallbackSchemaConnector.from_uri(db_url, sample_rows_in_table_info=0)
+    assert set(conn._metadata.tables) == {"main.a", "main.b"}
+
+    calls = _count_reflect_calls(conn, monkeypatch)
+    table_info = conn.get_table_info(["a"])
+    assert "name TEXT" in table_info
+    assert calls == []
+    # No schema-less duplicate is reflected next to the fallback-schema table.
+    assert set(conn._metadata.tables) == {"main.a", "main.b"}

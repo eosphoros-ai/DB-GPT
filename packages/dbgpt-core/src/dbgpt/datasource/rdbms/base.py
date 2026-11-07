@@ -333,6 +333,15 @@ class RDBMSConnector(BaseConnector):
         """Information about all tables in the database."""
         return self.get_table_info()
 
+    def _reflection_schema(self) -> Optional[str]:
+        """Return the schema the connector's tables are reflected into.
+
+        Subclasses whose ``_sync_tables_from_db`` reflects into a fallback
+        schema when none is configured (e.g. ``"public"``) override this, so
+        lazy reflection recognizes those tables as already loaded.
+        """
+        return self._schema
+
     def _reflect_tables(self, table_names: Iterable[str]) -> List[Table]:
         """Reflect the given tables if needed and return their metadata.
 
@@ -342,7 +351,7 @@ class RDBMSConnector(BaseConnector):
         ``MetaData.reflect`` registers a table before its columns are loaded.
         """
         names = set(table_names)
-        schema = self._schema
+        schema = self._reflection_schema()
         # ``MetaData.reflect`` falls back to the metadata's default schema.
         target_schema = self._metadata.schema if schema is None else schema
         if schema is None:
