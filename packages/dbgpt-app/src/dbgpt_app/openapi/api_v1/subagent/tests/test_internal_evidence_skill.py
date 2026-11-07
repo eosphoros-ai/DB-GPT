@@ -74,6 +74,7 @@ async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, 
     )
     assert "object_id" in json.dumps(compose_schema)
     assert "artifact_id" not in json.dumps(compose_schema)
+    assert ("data" in compose_schema["required"]) == (mode == "spec")
     if mode == "spec":
         repair_schema = next(
             item["function"]["parameters"]

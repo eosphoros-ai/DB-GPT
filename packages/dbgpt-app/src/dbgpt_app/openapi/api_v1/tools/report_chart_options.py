@@ -82,6 +82,7 @@ def _option_configurations(value):
 def option_chart_spec(node, artifacts):
     by_id = {artifact.artifact_id: artifact for artifact in artifacts}
     references = []
+    dataset_dimensions = {}
 
     def read(reference):
         identifier = reference.get("artifact_id")
@@ -114,18 +115,49 @@ def option_chart_spec(node, artifacts):
             references.append(selected)
         return value, selected
 
-    def read_chart_data(reference, path):
-        resolved = read(reference)[0]
+    def captured_columns(value, selected):
+        if isinstance(value, list):
+            selected_path = selected.get("path") or []
+            if selected_path and selected_path[-1] == "rows":
+                parent = {**selected, "path": selected_path[:-1]}
+            elif not selected_path and selected.get("field") == "rows":
+                parent = {"artifact_id": selected["artifact_id"], "path": []}
+            else:
+                return None
+            value = select_artifact_result(
+                by_id[parent["artifact_id"]],
+                {key: parent[key] for key in ("field", "path") if key in parent},
+            )
+            if isinstance(value, str):
+                value = json.loads(value)
+        columns = (
+            value.get("columns", value.get("headers"))
+            if isinstance(value, dict)
+            else None
+        )
         if (
-            path[-2:] == ("dataset", "source")
-            and isinstance(resolved, dict)
-            and isinstance(resolved.get("rows"), list)
+            isinstance(columns, list)
+            and columns
+            and all(isinstance(column, str) for column in columns)
         ):
-            reference = {
-                **reference,
-                "path": [*(reference.get("path") or []), "rows"],
-            }
-            resolved = read(reference)[0]
+            return columns
+        return None
+
+    def read_chart_data(reference, path):
+        resolved, selected = read(reference)
+        if path[-2:] == ("dataset", "source") or (
+            len(path) >= 3
+            and path[-3] == "dataset"
+            and path[-2].isdecimal()
+            and path[-1] == "source"
+        ):
+            columns = captured_columns(resolved, selected)
+            if columns:
+                dataset_dimensions[path[:-1]] = columns
+            if isinstance(resolved, dict) and isinstance(resolved.get("rows"), list):
+                resolved = read(
+                    {**selected, "path": [*(selected.get("path") or []), "rows"]}
+                )[0]
         return resolved
 
     def resolve(value, data=False, path=()):
@@ -189,7 +221,7 @@ def option_chart_spec(node, artifacts):
                         )
                         selected_path.append(key)
                         current = read({**reference, "path": selected_path.copy()})[0]
-                    return current
+                    return read_chart_data({**reference, "path": selected_path}, path)
                 if value["$ref"] == "producer":
                     if not producer.get("artifact_id") or len(value) != 1:
                         raise ValueError(
@@ -229,7 +261,7 @@ def option_chart_spec(node, artifacts):
                         )
                     )
                 return read_chart_data(value, path)
-            return {
+            resolved = {
                 key: resolve(
                     item,
                     data
@@ -245,6 +277,9 @@ def option_chart_spec(node, artifacts):
                 )
                 for key, item in value.items()
             }
+            if path in dataset_dimensions:
+                resolved.setdefault("dimensions", dataset_dimensions[path])
+            return resolved
         if isinstance(value, list):
             # Models often repeat a captured column as literals. Recover its
             # provenance only when the entire ordered column matches uniquely.
@@ -374,10 +409,14 @@ def option_chart_spec(node, artifacts):
             continue
         if isinstance(dataset, dict) and isinstance(dataset.get("rows"), list):
             configuration["dataset"] = {"source": dataset["rows"]}
-            if dataset.get("columns"):
-                configuration["dataset"]["dimensions"] = dataset["columns"]
+            columns = captured_columns(dataset, primary)
+            if columns:
+                configuration["dataset"]["dimensions"] = columns
         elif isinstance(dataset, list):
             configuration["dataset"] = {"source": dataset}
+            columns = captured_columns(dataset, primary)
+            if columns:
+                configuration["dataset"]["dimensions"] = columns
         else:
             raise ValueError(
                 (

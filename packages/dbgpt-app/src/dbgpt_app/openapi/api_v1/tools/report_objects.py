@@ -775,6 +775,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
     parameter = compose_report._tool.args["data"]
     parameter.json_schema = schema
     parameter.type = json.dumps(schema, ensure_ascii=False)
+    parameter.required = contract["mode"] == "spec"
     result = [list_report_objects, compose_report]
 
     def saved_spec():
@@ -799,6 +800,10 @@ def make_report_object_tools(state, renderer, template_path, contract):
                 "new sections. report edits top-level title, subtitle, scope or kpis. "
                 "remove_fields removes obsolete top-level fields, except sections. "
                 "remove_section_fields removes named fields from section_index. "
+                "A non-object legacy section can be replaced using section, or "
+                "deleted with remove_invalid_section=true and section_index. "
+                "replace_invalid_sections supplies a corrected list only when "
+                "the saved sections field is not a list. Other root fields remain. "
                 "When editing scope in an old report without compiler provenance, "
                 "scope_section_index explicitly identifies its old scope section. "
                 "All new content uses the compose_report object grammar."
@@ -813,6 +818,8 @@ def make_report_object_tools(state, renderer, template_path, contract):
             remove_fields: list[str] | None = None,
             remove_section_fields: list[str] | None = None,
             scope_section_index: int | None = None,
+            remove_invalid_section: bool = False,
+            replace_invalid_sections: list[dict] | None = None,
         ) -> str:
             async with repair_lock:
                 try:
@@ -851,6 +858,41 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         if "scope" in report:
                             scope_sections = root["sections"]
                     sections = repaired.setdefault("sections", [])
+                    if replace_invalid_sections is not None:
+                        if isinstance(sections, list):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: preserve valid section lists"
+                            )
+                        sections = repaired["sections"] = compile_report_objects(
+                            {"sections": replace_invalid_sections},
+                            catalogue(),
+                            spec_mode=True,
+                            fields=[],
+                        )["REPORT_SPEC"]["sections"]
+                    if sections is None or sections == "" or sections == {}:
+                        # Empty malformed legacy drafts contain no sections to
+                        # preserve. Normalize them before applying public edits.
+                        sections = repaired["sections"] = []
+                    if not isinstance(sections, list):
+                        raise ValueError(
+                            "REPORT_OBJECT_INVALID: saved sections must be a list"
+                        )
+                    if remove_invalid_section:
+                        if (
+                            type(section_index) is not int
+                            or not 0 <= section_index < len(sections)
+                            or isinstance(sections[section_index], dict)
+                            or section is not None
+                            or append_recommendations is not None
+                            or remove_section_fields
+                            or scope_section_index is not None
+                        ):
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: remove_invalid_section "
+                                "requires a non-object saved section and no "
+                                "other indexed edits"
+                            )
+                        del sections[section_index]
                     if scope_section_index is not None:
                         if (
                             scope_sections is None
@@ -868,14 +910,19 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         or append_recommendations is not None
                         or remove_section_fields
                     ):
-                        if (
-                            type(section_index) is not int
-                            or not 0 <= section_index < len(sections)
-                            or not isinstance(sections[section_index], dict)
-                        ):
+                        if type(
+                            section_index
+                        ) is not int or not 0 <= section_index < len(sections):
                             raise ValueError(
                                 "REPORT_OBJECT_INVALID: invalid section_index"
                             )
+                        if not isinstance(sections[section_index], dict):
+                            if section is None or not section.get("heading"):
+                                raise ValueError(
+                                    "REPORT_OBJECT_INVALID: replace a non-object "
+                                    "section with a section containing heading"
+                                )
+                            sections[section_index] = {}
                         source = dict(section or {})
                         if set(remove_section_fields or []) & (
                             set(source)
@@ -954,6 +1001,8 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         and not report
                         and not remove_fields
                         and not remove_section_fields
+                        and not remove_invalid_section
+                        and replace_invalid_sections is None
                     ):
                         raise ValueError(
                             "REPORT_OBJECT_INVALID: supply a report change"
@@ -983,6 +1032,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
             },
             "section": {**section_schema, "required": []},
             "append_sections": {"type": "array", "items": section_schema},
+            "replace_invalid_sections": {"type": "array", "items": section_schema},
             "append_recommendations": section_schema["properties"]["recommendations"],
         }.items():
             parameter = patch_report._tool.args[name]

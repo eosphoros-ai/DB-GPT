@@ -607,3 +607,459 @@ def test_supported_consolidated_heading_variants_keep_provenance(tmp_path, headi
     result = load_script("extract_financials").extract_financials(str(path))
     assert result["revenue"] == 100 and result["prev_revenue"] == 90
     assert result["_meta"]["sources"]["revenue"]["statement"] == "合并利润表"
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "（单位：元）",
+        " ( 单位: 元 )。",
+        "：单位：元",
+        "（续）",
+        "（续表）（单位：元）",
+        "（单位：万元）",
+        "（未知后缀）",
+    ],
+)
+@pytest.mark.parametrize(
+    "heading", ["母公司利润表", "【母公司利 润 表{}】", "其他：母公司利 润 表{}"]
+)
+def test_parent_heading_suffix_cannot_inherit_consolidated_income(
+    tmp_path, suffix, heading
+):
+    path = tmp_path / "report.txt"
+    path.write_text(
+        "2019年年度报告\n主要会计数据和财务指标（合并）\n营业收入（元） 500 400 300\n"
+        "合并利润表\n单位：元\n项目 2019年度 2018年度\n"
+        "营业收入 附注七、61 500 400\n营业成本 100 90\n"
+        + (heading.format(suffix) if "{}" in heading else heading + suffix)
+        + "\n项目 2019年度 2018年度\n营业收入 999 888\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] == 500
+    assert result["_meta"]["sources"]["revenue"]["statement"] == "合并利润表"
+    assert result["cost_of_sales"] == 100
+    calculated = load_script("calculate_ratios").calculate_template_data(result)
+    assert calculated["REVENUE"] != "999.00元"
+    assert calculated["GROSS_MARGIN"] != "89.99%"
+    assert_financial_template_binding(result, calculated)
+
+
+@pytest.mark.parametrize("suffix", ["（续）", "（续表）", "（续表）（单位：元）"])
+def test_consolidated_continuation_keeps_its_own_context(tmp_path, suffix):
+    path = tmp_path / "report.txt"
+    path.write_text(
+        "2019年年度报告\n合并利润表\n单位：元\n"
+        "项目 2019年度 2018年度\n营业成本 100 90\n"
+        + "合并利润表"
+        + suffix
+        + "\n营业收入 500 400\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] == 500
+    assert result["_meta"]["sources"]["revenue"]["statement"] == "合并利润表"
+    calculated = load_script("calculate_ratios").calculate_template_data(result)
+    assert calculated["GROSS_MARGIN"] == "80.00%"
+    assert_financial_template_binding(result, calculated)
+
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        "./financial-report-analyzer",
+        "financial-report-analyzer/.",
+        "financial-report-analyzer\\.",
+    ],
+)
+@pytest.mark.asyncio
+async def test_skill_directory_alias_rejected_by_public_tool(alias):
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import (
+        make_execute_skill_script_file,
+    )
+
+    execute = make_execute_skill_script_file({})
+    result = await execute(
+        skill_name=alias, script_file_name="calculate_ratios.py", args={"revenue": 999}
+    )
+    assert "SKILL_NAME_INVALID" in result
+    assert "999.00" not in result
+
+
+def assert_financial_template_binding(extracted, calculated):
+    from unittest.mock import patch
+
+    from dbgpt.agent import claude_skill
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+        capture_python_execution,
+    )
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _render_template_with_bindings,
+    )
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import _apply_skill_input_contract
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="boundary-binding"))
+    common = dict(
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        artifact_sink=sink,
+    )
+    upstream = capture_python_execution(
+        code="extract_financials",
+        result_inline=extracted,
+        metadata={
+            "skill_name": "financial-report-analyzer",
+            "script_file_name": "extract_financials.py",
+        },
+        **common,
+    )
+    skill = SimpleNamespace(
+        file_path=str(ROOT / "skills/financial-report-analyzer/SKILL.md")
+    )
+    model_args = {"revenue": 999, "cost_of_sales": 100}
+    with patch.object(
+        claude_skill, "get_registry", lambda: SimpleNamespace(get_skill=lambda _: skill)
+    ):
+        resolved, dependencies = _apply_skill_input_contract(
+            "financial-report-analyzer",
+            "calculate_ratios.py",
+            model_args,
+            [upstream],
+            sink,
+        )
+    assert resolved == extracted
+    assert dependencies == [upstream]
+    assert (
+        load_script("calculate_ratios").calculate_template_data(resolved) == calculated
+    )
+    producer = capture_python_execution(
+        code="calculate_ratios",
+        result_inline=calculated,
+        input_artifact_ids=dependencies,
+        metadata={
+            "skill_name": "financial-report-analyzer",
+            "script_file_name": "calculate_ratios.py",
+            "captured_input_contract": resolved is not model_args,
+        },
+        **common,
+    )
+    template = (
+        ROOT / "skills/financial-report-analyzer/templates/report_template.html"
+    ).read_text(encoding="utf-8")
+    fields = {
+        key: "Qualitative explanation."
+        for key in (
+            "PROFITABILITY_ANALYSIS",
+            "SOLVENCY_ANALYSIS",
+            "EFFICIENCY_ANALYSIS",
+            "CASHFLOW_ANALYSIS",
+            "ADVANTAGES_LIST",
+            "RISKS_LIST",
+            "OVERALL_ASSESSMENT",
+        )
+    }
+    html = _render_template_with_bindings(template, fields, sink.snapshot())
+    assert "999.00" not in html
+    assert "89.99%" not in html
+    if extracted["revenue"] is not None:
+        assert calculated["REVENUE"] in html
+        assert calculated["GROSS_MARGIN"] in html
+        assert producer in html
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("subdir", ["", "user", "claude", "project"])
+async def test_contract_directory_case_alias_rejected_before_execution(
+    monkeypatch, tmp_path, subdir
+):
+    from dbgpt.agent import claude_skill
+    from dbgpt.configs import model_config
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import (
+        make_execute_skill_script_file,
+    )
+
+    canonical = tmp_path / subdir / "financial-report-analyzer"
+    canonical.mkdir(parents=True)
+    (canonical / "script_input_contract.json").write_text(
+        '{"calculate_ratios.py":"extract_financials.py"}', encoding="utf-8"
+    )
+    alias = canonical.with_name("FINANCIAL-REPORT-ANALYZER")
+    if not alias.exists():
+        alias.symlink_to(canonical, target_is_directory=True)
+    assert alias.samefile(canonical)
+    registry = claude_skill.SkillRegistry()
+    registry.register_skill(
+        SimpleNamespace(
+            metadata=SimpleNamespace(name="financial-report-analyzer"),
+            file_path=str(canonical / "SKILL.md"),
+        )
+    )
+    monkeypatch.setattr(claude_skill, "get_registry", lambda: registry)
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(tmp_path))
+    execute = make_execute_skill_script_file({})
+    result = await execute(
+        skill_name=alias.name,
+        script_file_name="calculate_ratios.py",
+        args={"revenue": 999},
+    )
+    assert "SKILL_IDENTITY_MISMATCH" in result
+    assert "999.00" not in result
+
+
+@pytest.mark.parametrize(
+    "units,expected",
+    [(["万元"], 5000000), (["未知"], None), (["万元", "元"], 500), (["元"], 500)],
+)
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        "单位：{}",
+        "（单位：{}）",
+        "(单位：{})",
+        "单 位：{}",
+        "【（ 单 位 : {} ）】。",
+        "币种：人民币；单位：{}",
+    ],
+)
+def test_continuation_unit_declaration_supersedes_previous_unit(
+    tmp_path, units, expected, declaration
+):
+    path = tmp_path / "report.txt"
+    path.write_text(
+        "2019年年度报告\n合并利润表\n单位：元\n"
+        "项目 2019年度 2018年度\n营业成本 100 90\n合并利润表（续）\n"
+        + "\n".join(declaration.format(unit) for unit in units)
+        + "\n项目 2019年度 2018年度\n营业收入 500 400\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] == expected
+    if expected is None:
+        assert "revenue" not in result["_meta"]["sources"]
+    calculated = load_script("calculate_ratios").calculate_template_data(result)
+    assert calculated["GROSS_MARGIN"] == (
+        "N/A" if expected is None else "100.00%" if expected == 5000000 else "80.00%"
+    )
+    assert_financial_template_binding(result, calculated)
+
+
+@pytest.mark.parametrize(
+    "wrapper", ["{}", "（{}）", "【{}】", "[ {} ]", "（【 {} 】）"]
+)
+@pytest.mark.parametrize(
+    "transition", ["parent", "unit", "unknown_unit", "year", "valid"]
+)
+@pytest.mark.parametrize("spacing", [False, True])
+def test_financial_context_transition_matrix(tmp_path, wrapper, transition, spacing):
+    parser = load_script("extract_financials")
+    label = {
+        "parent": "母公司利润表（单位：元）",
+        "unit": "单位：万元",
+        "unknown_unit": "单位：未知",
+        "year": "项目 2020年度 2018年度",
+        "valid": "单位：元",
+    }[transition]
+    if spacing:
+        label = " ".join(label)
+    path = tmp_path / "matrix.txt"
+    path.write_text(
+        "2019年年度报告\n合并利润表\n单位：元\n"
+        "项目 2019年度 2018年度\n营业成本 100 90\n合并利润表（续）\n"
+        + wrapper.format(label)
+        + "\n营业收入 500 400\n",
+        encoding="utf-8",
+    )
+    result = parser.extract_financials(str(path))
+    assert result["revenue"] == (
+        500 if transition == "valid" else 5000000 if transition == "unit" else None
+    )
+    assert ("revenue" in result["_meta"]["sources"]) == (
+        transition in {"valid", "unit"}
+    )
+    assert result["cost_of_sales"] == 100
+
+
+@pytest.mark.parametrize("contract_location", ["registered", "actual", "both"])
+def test_execution_directory_must_match_contract_identity(
+    tmp_path, monkeypatch, contract_location
+):
+    from dbgpt.agent import claude_skill
+    from dbgpt_app.openapi.api_v1.tools.skill_tools import _apply_skill_input_contract
+
+    registered = tmp_path / "registered"
+    actual = tmp_path / "actual"
+    registered.mkdir()
+    actual.mkdir()
+    for directory, name in [(registered, "registered"), (actual, "actual")]:
+        if contract_location in (name, "both"):
+            (directory / "script_input_contract.json").write_text(
+                "{}", encoding="utf-8"
+            )
+    skill = SimpleNamespace(file_path=str(registered / "SKILL.md"))
+    monkeypatch.setattr(
+        claude_skill, "get_registry", lambda: SimpleNamespace(get_skill=lambda _: skill)
+    )
+    with pytest.raises(ValueError, match="SKILL_IDENTITY_MISMATCH"):
+        _apply_skill_input_contract(
+            "finance", "calculate.py", {}, [], None, execution_path=str(actual)
+        )
+    # Exact filesystem identity remains usable, including registered contracts.
+    args = {}
+    assert _apply_skill_input_contract(
+        "finance", "calculate.py", args, [], None, execution_path=str(registered)
+    ) == (args, [])
+
+
+@pytest.mark.parametrize(
+    "unit,factor",
+    [
+        ("元", 1),
+        ("千元", 1000),
+        ("万元", 10000),
+        ("百万元", 1000000),
+        ("亿元", 100000000),
+    ],
+)
+@pytest.mark.parametrize("note", ["", "附注七、61 ", "61 ", "七、61 ", "（七） "])
+def test_scaled_units_and_note_columns_preserve_source(tmp_path, unit, factor, note):
+    path = tmp_path / "financial.txt"
+    path.write_text(
+        "2019年年度报告\n合并利润表\n单位："
+        + unit
+        + "\n项目 附注 2019年度 2018年度\n营业收入 "
+        + note
+        + "500.25 400.10\n营业成本 "
+        + note
+        + "100.05 80.02\n母公司利润表\n单位：元\n"
+        "项目 2019年度 2018年度\n营业收入 999 888\n",
+        encoding="utf-8",
+    )
+    extracted = load_script("extract_financials").extract_financials(str(path))
+    assert extracted["revenue"] == 500.25 * factor
+    assert extracted["cost_of_sales"] == 100.05 * factor
+    source = extracted["_meta"]["sources"]["revenue"]
+    assert source["unit"] == unit and source["normalized_unit"] == "元"
+    assert source["unit_multiplier"] == factor
+    assert source["raw_values"] == ["500.25", "400.10"]
+    calculated = load_script("calculate_ratios").calculate_template_data(extracted)
+    assert calculated["GROSS_MARGIN"] == "80.00%"
+    assert_financial_template_binding(extracted, calculated)
+
+
+@pytest.mark.parametrize("ambiguous", [False, True])
+def test_engine_resolves_captured_chart_for_hidden_template_field(ambiguous):
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+        capture_chart_execution,
+    )
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _render_template_with_bindings,
+    )
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="chart-field"))
+    capture_chart_execution(
+        input_artifact_ids=[],
+        chart_type="image",
+        spec={},
+        action="test",
+        output_inline="first image",
+        output_uri="/images/financial_overview.png",
+        name="financial_overview.png",
+        media_type="image/png",
+        artifact_sink=sink,
+    )
+    if ambiguous:
+        capture_chart_execution(
+            input_artifact_ids=[],
+            chart_type="image",
+            spec={},
+            action="test",
+            output_inline="different image",
+            output_uri="/images/other.png",
+            name="financial_overview.png",
+            media_type="image/png",
+            artifact_sink=sink,
+        )
+        with pytest.raises(ValueError, match="ambiguous captured chart"):
+            _render_template_with_bindings(
+                '<img src="{{CHART_FINANCIAL_OVERVIEW}}">', {}, sink.snapshot()
+            )
+    else:
+        html = _render_template_with_bindings(
+            '<img src="{{CHART_FINANCIAL_OVERVIEW}}">', {}, sink.snapshot()
+        )
+        assert "/images/financial_overview.png" in html
+
+
+@pytest.mark.parametrize(
+    "fmt,expected",
+    [
+        (None, "80.00%"),
+        ("percent", "80.00%"),
+        ("pct1", "80.0%"),
+        ("pct0", "80%"),
+        ("percentage", "80.00%"),
+        ("raw", "0.8"),
+    ],
+)
+def test_captured_ratio_unit_controls_percent_display(fmt, expected):
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+        capture_python_execution,
+    )
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import _resolve_reference_node
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="ratio-display"))
+    source = capture_python_execution(
+        code="metrics",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        artifact_sink=sink,
+        result_inline={"metric": {"value": 0.8, "unit": "ratio"}, "untyped": 0.8},
+    )
+    by_id = {a.artifact_id: a for a in sink.snapshot()}
+    result = _resolve_reference_node(
+        {"artifact_id": source, "path": ["metric", "value"], "format": fmt}, by_id
+    )
+    assert result["value"] == expected
+    assert result["raw"] == 0.8
+    assert result["selector"]["path"] == ["metric", "value"]
+    untyped = _resolve_reference_node(
+        {"artifact_id": source, "path": ["untyped"], "format": "percent"}, by_id
+    )
+    assert untyped["value"] == "0.80%"
+
+
+@pytest.mark.parametrize("currency", ["人民币", "美元", "USD", "港币", "未知", ""])
+@pytest.mark.parametrize("inline", [False, True])
+def test_currency_label_does_not_add_input_restrictions(tmp_path, currency, inline):
+    # Match main's acceptance policy: a currency label does not reject amounts.
+    path = tmp_path / "currency.txt"
+    heading = (
+        "合并利润表（单位：元；币种：" + currency + "）\n"
+        if inline
+        else "合并利润表\n单位：元\n币种：" + currency + "\n"
+    )
+    path.write_text(
+        "2019年年度报告\n"
+        + heading
+        + "项目 2019年度 2018年度\n营业收入 500 400\n营业成本 100 90\n",
+        encoding="utf-8",
+    )
+    result = load_script("extract_financials").extract_financials(str(path))
+    assert result["revenue"] == 500
+    assert result["cost_of_sales"] == 100
+    assert "warnings" not in result["_meta"]
+    calculated = load_script("calculate_ratios").calculate_template_data(result)
+    assert calculated["GROSS_MARGIN"] == "80.00%"

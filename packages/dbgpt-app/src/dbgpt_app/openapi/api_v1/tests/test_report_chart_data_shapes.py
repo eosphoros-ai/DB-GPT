@@ -226,6 +226,135 @@ def test_producer_alias_uses_declared_sql_rows_and_rejects_ambiguous_alias():
         option_chart_spec(node, sink.snapshot())
 
 
+@pytest.mark.parametrize("count", [1, 2])
+@pytest.mark.parametrize("alias", [False, True])
+def test_dataset_arrays_unwrap_captured_sql_rows(count, alias):
+    sink, artifact_id, _ = _source()
+    reference = {"$ref": "producer"} if alias else {"artifact_id": artifact_id}
+    node = {
+        "producer": {"artifact_id": artifact_id},
+        "option": {
+            "dataset": [{"source": dict(reference)} for _ in range(count)],
+            "series": [
+                {
+                    "type": "bar",
+                    "datasetIndex": index,
+                    "encode": {"x": "month", "y": "gmv"},
+                }
+                for index in range(count)
+            ],
+        },
+    }
+    chart = option_chart_spec(node, sink.snapshot())
+    expected = [
+        {"month": "2017-01", "gmv": 100, "orders": 2},
+        {"month": "2017-02", "gmv": 120, "orders": 3},
+    ]
+    for dataset in chart["option"]["dataset"]:
+        assert dataset["source"] == expected
+    assert {"artifact_id": artifact_id, "path": ["rows"]} in chart["source_references"]
+
+
+@pytest.mark.parametrize("as_array", [False, True])
+@pytest.mark.parametrize("explicit_dimensions", [False, True])
+@pytest.mark.parametrize("alias", [False, True])
+def test_explicit_dataset_preserves_captured_column_names(
+    as_array, explicit_dimensions, alias
+):
+    sink = InMemoryArtifactSink(
+        ArtifactCaptureContext(conv_uid="dataset-columns", run_id="turn-1")
+    )
+    columns = ["category", "orders", "amount"]
+    rows = [["A", 99, 10], ["B", 88, 20]]
+    artifact_id = capture_sql_execution(
+        sql="SELECT category, orders, amount FROM t",
+        database="test",
+        duration_ms=1,
+        columns=columns,
+        rows=rows,
+        artifact_sink=sink,
+    )
+    reference = {"$ref": "producer"} if alias else {"artifact_id": artifact_id}
+    dataset = {"source": reference}
+    dimensions = ["label", "order_count", "sales"] if explicit_dimensions else columns
+    if explicit_dimensions:
+        dataset["dimensions"] = dimensions
+    node = {
+        "producer": {"artifact_id": artifact_id},
+        "option": {
+            "dataset": [dataset] if as_array else dataset,
+            "series": [
+                {"type": "bar", "encode": {"x": dimensions[0], "y": dimensions[2]}}
+            ],
+        },
+    }
+    chart = option_chart_spec(node, sink.snapshot())
+    actual = chart["option"]["dataset"]
+    if as_array:
+        actual = actual[0]
+    assert actual["source"] == rows
+    assert actual["dimensions"] == dimensions
+    assert actual["dimensions"].index(chart["option"]["series"][0]["encode"]["y"]) == 2
+    assert node["option"]["dataset"] == ([dataset] if as_array else dataset)
+    if not explicit_dimensions:
+        assert "dimensions" not in dataset
+
+
+@pytest.mark.parametrize("dataset_mode", ["auto", "object", "array"])
+@pytest.mark.parametrize(
+    "selection", ["sql_field", "sql_path", "python_nested", "python_table"]
+)
+def test_selected_rows_inherit_only_their_parent_table_columns(dataset_mode, selection):
+    sink = InMemoryArtifactSink(
+        ArtifactCaptureContext(conv_uid="selected-rows", run_id="turn-1")
+    )
+    columns = ["category", "orders", "amount"]
+    rows = [["A", 99, 10], ["B", 88, 20]]
+    if selection in {"python_nested", "python_table"}:
+        artifact_id = capture_python_execution(
+            code="result = tables",
+            duration_ms=1,
+            status="succeeded",
+            exit_code=0,
+            stdout="",
+            stderr="",
+            result_inline={
+                "columns": ["wrong"],
+                "table": {"headers": columns, "rows": rows},
+            },
+            artifact_sink=sink,
+        )
+        selector = (
+            {"field": "table", "path": ["rows"]}
+            if selection == "python_nested"
+            else {"field": "table"}
+        )
+    else:
+        artifact_id = capture_sql_execution(
+            sql="SELECT category, orders, amount FROM t",
+            database="test",
+            duration_ms=1,
+            columns=columns,
+            rows=rows,
+            artifact_sink=sink,
+        )
+        selector = {"field": "rows"} if selection == "sql_field" else {"path": ["rows"]}
+    option = {"series": [{"type": "bar", "encode": {"x": "category", "y": "amount"}}]}
+    if dataset_mode != "auto":
+        dataset = {"source": {"$ref": "producer"}}
+        option["dataset"] = [dataset] if dataset_mode == "array" else dataset
+    chart = option_chart_spec(
+        {"producer": {"artifact_id": artifact_id, **selector}, "option": option},
+        sink.snapshot(),
+    )
+    dataset = chart["option"]["dataset"]
+    if dataset_mode == "array":
+        dataset = dataset[0]
+    assert dataset["source"] == rows
+    assert dataset["dimensions"] == columns
+    assert chart["source_selector"] == selector
+
+
 def test_relative_captured_paths_and_sql_column_projection():
     sink, sql_id, _ = _source()
     py_id = capture_python_execution(

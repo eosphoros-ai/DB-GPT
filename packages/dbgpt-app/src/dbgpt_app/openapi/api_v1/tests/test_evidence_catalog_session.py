@@ -183,6 +183,69 @@ def test_metric_id_is_expanded_before_report_spec_validation(tmp_path):
         )
 
 
+@pytest.mark.parametrize("row_objects", [False, True])
+def test_truncated_sql_preview_cannot_register_shifted_row_coordinates(
+    tmp_path, monkeypatch, row_objects
+):
+    from dbgpt_app.openapi.api_v1.tools import evidence_catalog
+
+    catalog = EvidenceCatalog(tmp_path / "catalog.sqlite3")
+    sink = SessionArtifactSink(
+        ArtifactCaptureContext(conv_uid="truncated-session", run_id="turn-1"), catalog
+    )
+    oversized = "X" * (report_capture.MAX_SQL_PREVIEW_BYTES + 1)
+    rows = [{"value": oversized}, {"value": 42}] if row_objects else [[oversized], [42]]
+
+    def forbidden_read(*args):
+        raise AssertionError("automatic indexing must not reload a large result")
+
+    with monkeypatch.context() as indexing_patch:
+        indexing_patch.setattr(
+            evidence_catalog, "select_artifact_result", forbidden_read
+        )
+        identifier = capture_sql_execution(
+            sql="SELECT value FROM t",
+            database="test",
+            duration_ms=1,
+            columns=["value"],
+            rows=rows,
+            artifact_sink=sink,
+        )
+    artifact = next(a for a in sink.snapshot() if a.artifact_id == identifier)
+    assert artifact.result.inline["rows"] == rows[1:]
+    assert artifact.result.inline["truncated"] is True
+    assert catalog.list_metrics("truncated-session") == []
+    column = "value" if row_objects else 0
+    with pytest.raises(ValueError, match="EVIDENCE_METRIC_SCALAR_REQUIRED"):
+        catalog.register("truncated-session", artifact, {"path": ["rows", 0, column]})
+    assert catalog.list_metrics("truncated-session") == []
+    metric = catalog.register(
+        "truncated-session", artifact, {"path": ["rows", 1, column]}
+    )
+    restarted = SessionArtifactSink(
+        ArtifactCaptureContext(conv_uid="truncated-session", run_id="turn-2"),
+        catalog,
+        include_prior=True,
+    )
+    restored = next(a for a in restarted.snapshot() if a.artifact_id == identifier)
+    assert (
+        catalog.register("truncated-session", restored, {"path": ["rows", 1, column]})[
+            "metric_id"
+        ]
+        == metric["metric_id"]
+    )
+    bound = _resolve_template_references(
+        {"kpi": {"metric_id": metric["metric_id"]}},
+        restarted.snapshot(),
+        metric_map={
+            item["metric_id"]: item
+            for item in catalog.list_metrics("truncated-session")
+        },
+    )
+    assert bound["kpi"]["raw"] == 42
+    assert bound["kpi"]["selector"] == {"path": ["rows", 1, column]}
+
+
 def test_parallel_child_artifacts_keep_parent_session_and_child_attribution(tmp_path):
     catalog = EvidenceCatalog(tmp_path / "catalog.sqlite3")
     parent = SessionArtifactSink(

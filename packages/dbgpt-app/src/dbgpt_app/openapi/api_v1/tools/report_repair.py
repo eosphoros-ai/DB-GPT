@@ -210,7 +210,56 @@ def is_report_resume_request(text):
     )
 
 
+def _archive_corrupt_checkpoint(conv_uid, state):
+    """Keep damaged bytes when possible without blocking recovery on backup I/O."""
+    try:
+        path = _checkpoint_path(conv_uid)
+        if not path.is_file():
+            return
+        raw = path.read_bytes()
+        backup = path.with_name(
+            "checkpoint.corrupt-" + hashlib.sha256(raw).hexdigest()[:16] + ".json"
+        )
+        backup.write_bytes(raw)
+    except OSError as error:
+        state["_report_checkpoint_backup_error"] = (
+            "REPORT_CHECKPOINT_BACKUP_FAILED: " + type(error).__name__
+        )
+        logger.warning("Could not archive damaged report checkpoint", exc_info=True)
+    else:
+        state["_report_corrupt_checkpoint_path"] = str(backup)
+
+
 def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
+    """Restore atomically, retaining damaged bytes for inspection/rebuilding."""
+
+    candidate = dict(state)
+    try:
+        sink = _restore_report_checkpoint(
+            conv_uid, candidate, include_completed=include_completed
+        )
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        OSError,
+        RecursionError,
+    ) as error:
+        _archive_corrupt_checkpoint(conv_uid, state)
+        state["_report_checkpoint_error"] = (
+            "REPORT_CHECKPOINT_INVALID: "
+            + type(error).__name__
+            + "; rebuild the report from available captured evidence"
+        )
+        return None
+    if candidate.get("_report_checkpoint_recovery_warnings"):
+        _archive_corrupt_checkpoint(conv_uid, candidate)
+    state.update(candidate)
+    return sink
+
+
+def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     """Resume an explicitly requested report repair without changing artifact IDs."""
     from pydantic import TypeAdapter
 
@@ -220,6 +269,20 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not isinstance(
+        payload.get("arguments", {}), dict
+    ):
+        raise ValueError("Invalid checkpoint structure")
+    for key in ("pending_html", "last_attempt_html", "title", "error", "render_error"):
+        if payload.get(key) is not None and not isinstance(payload[key], str):
+            raise ValueError("Invalid checkpoint text field")
+    for key in ("execution_step_map", "execution_progress", "object_fields"):
+        if payload.get(key) is not None and not isinstance(payload[key], dict):
+            raise ValueError("Invalid checkpoint mapping field")
+    if payload.get("missing_calculation") is not None and not isinstance(
+        payload["missing_calculation"], dict
+    ):
+        raise ValueError("Invalid checkpoint calculation field")
     if payload.get("conv_uid") != conv_uid or (
         payload.get("complete") and not include_completed
     ):
@@ -228,13 +291,28 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
         ArtifactCaptureContext(conv_uid=conv_uid, run_id=payload["run_id"])
     )
     adapter = TypeAdapter(Artifact)
+    invalid_artifacts = []
     for raw in payload["artifacts"]:
-        sink.restore_artifact(adapter.validate_python(raw))
-    state["_report_pending_html"] = payload.get("pending_html", "")
-    state["_report_last_attempt_html"] = payload.get(
-        "last_attempt_html", state["_report_pending_html"]
+        try:
+            artifact = adapter.validate_python(raw)
+        except ValueError:
+            invalid_artifacts.append(len(invalid_artifacts) + 1)
+            continue
+        sink.restore_artifact(artifact)
+    if invalid_artifacts:
+        if not sink.snapshot():
+            raise ValueError("No valid checkpoint artifacts remain")
+        state["_report_checkpoint_recovery_warnings"] = (
+            f"Skipped {len(invalid_artifacts)} invalid artifact records; "
+            "references to missing artifacts require repair"
+        )
+    state["_report_pending_html"] = payload.get("pending_html") or ""
+    state["_report_last_attempt_html"] = (
+        payload.get("last_attempt_html")
+        if payload.get("last_attempt_html") is not None
+        else state["_report_pending_html"]
     )
-    state["_report_pending_title"] = payload.get("title", "Report")
+    state["_report_pending_title"] = payload.get("title") or "Report"
     state["_report_saved_template_scripts"] = payload.get(
         "trusted_template_scripts", False
     )

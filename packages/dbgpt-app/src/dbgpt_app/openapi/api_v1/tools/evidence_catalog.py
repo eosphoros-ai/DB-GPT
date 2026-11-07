@@ -26,6 +26,15 @@ def catalog_path() -> Path:
     return Path(PILOT_PATH) / "data" / "report-evidence-catalog.sqlite3"
 
 
+def _truncated_sql_preview(artifact):
+    if artifact.type != "sql":
+        return False
+    preview = artifact.result.inline if artifact.result is not None else None
+    return artifact.metadata.get("output_summary", {}).get(
+        "preview_truncated", False
+    ) or (isinstance(preview, dict) and preview.get("truncated", False))
+
+
 class EvidenceCatalog:
     """Persist exact result locations without guessing their business meaning."""
 
@@ -106,7 +115,9 @@ class EvidenceCatalog:
             raise ValueError("EVIDENCE_ARTIFACT_INVALID")
         if not isinstance(selector, dict) or not selector:
             raise ValueError("EVIDENCE_SELECTOR_REQUIRED")
-        if selector.get("kind") == "sql":
+        if selector.get("kind") == "sql" or _truncated_sql_preview(artifact):
+            # A truncated SQL preview can omit rows, so its indices are not
+            # necessarily coordinates in the complete captured result.
             selector = normalize_artifact_result_selector(artifact, selector)
             value = select_artifact_result(artifact, selector)
         else:
@@ -190,6 +201,8 @@ class EvidenceCatalog:
     def register_observed_scalars(self, session_id, artifact):
         """Index simple scalars; field names remain unverified semantics."""
         if artifact.status != "succeeded" or artifact.type not in {"sql", "python"}:
+            return
+        if _truncated_sql_preview(artifact):
             return
         # The capture already holds a bounded preview in memory. Never reload
         # a large result file just to build a small directory.

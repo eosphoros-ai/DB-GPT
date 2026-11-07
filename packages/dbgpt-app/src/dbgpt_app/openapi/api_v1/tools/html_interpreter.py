@@ -1103,7 +1103,21 @@ def _resolve_reference_node(
             + _available_result_hint(artifact)
             + context
         ) from error
-    text = _format_reference_value(raw, node.get("format"))
+    fmt = node.get("format")
+    display_raw = raw
+    # Captured metric units take precedence over ambiguous percent aliases.
+    # A ratio of 0.8 represents 80%, whereas an untyped value may already be
+    # expressed in percent. Do not change the raw value or evidence selector.
+    path = selector.get("path") or []
+    if path and path[-1] == "value":
+        parent = select_artifact_result(artifact, {**selector, "path": path[:-1]})
+        if isinstance(parent, dict) and parent.get("unit") == "ratio":
+            if fmt is None:
+                fmt = "percentage"
+            elif fmt in {"pct", "percent", "pct1", "pct2", "pct0"}:
+                if isinstance(raw, (int, float, Decimal)) and not isinstance(raw, bool):
+                    display_raw = Decimal(str(raw)) * 100
+    text = _format_reference_value(display_raw, fmt)
     if node.get("proposal"):
         if not ("field" in selector or "path" in selector):
             raise ValueError(
@@ -2127,6 +2141,28 @@ def _render_template_with_bindings(
 
     contract = report_template_contract(template)
     if contract["mode"] == "placeholders":
+        # Chart placeholders are engine-owned in the author contract. Resolve
+        # exact filename identities instead of asking the author for hidden fields.
+        for field in contract["fields"]:
+            if not field.startswith("CHART_") or field in data:
+                continue
+            matching = [
+                artifact
+                for artifact in artifacts
+                if artifact.type == "chart"
+                and artifact.status == "succeeded"
+                and getattr(artifact.output, "uri", None)
+                and "CHART_" + Path(artifact.name or "").stem.upper() == field
+            ]
+            if len(matching) > 1:
+                hashes = {getattr(item.output, "sha256", None) for item in matching}
+                if len(hashes) != 1 or None in hashes:
+                    raise ValueError(
+                        "REPORT_TEMPLATE_CHART_INVALID: ambiguous captured chart "
+                        + field
+                    )
+            if matching:
+                data[field] = matching[-1].output.uri
         # A named image placeholder consumes a URL, not a chart specification.
         # Resolve an explicitly named chart ID to its captured URL before HTML
         # interpolation; later image binding records the chart lineage.
