@@ -41,6 +41,66 @@ def object_id(registry, kind, label):
     )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("language", ["zh", "en"])
+async def test_named_template_completes_with_numbered_advice_in_one_submission(
+    monkeypatch, tmp_path, language
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import report_template_contract
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    template = (
+        "<html><body><!-- dbgpt-required: SUMMARY, ADVICE -->"
+        '<div class="prose">{{SUMMARY}}</div><h2>Recommendations</h2>'
+        '<div class="prose">{{ADVICE}}</div></body></html>'
+    )
+    (tmp_path / "report.html").write_text(template, encoding="utf-8")
+    sink = InMemoryArtifactSink(
+        ArtifactCaptureContext(conv_uid="one-submission-advice")
+    )
+    capture(sink, {"total": 100})
+    token = object_id(ReportObjects(sink.snapshot()), "value", "total")
+    state = {
+        "conv_id": sink.context.conv_uid,
+        "_report_artifact_sink": sink,
+        "_report_required_recommendation_count": 3,
+    }
+    _, compose, _ = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(tmp_path)),
+        "report.html",
+        report_template_contract(template),
+    )
+    advice = (
+        [
+            "建议一：建立成本复核机制。",
+            "建议二：跟踪逾期回款。",
+            "建议三：复核融资期限。",
+        ]
+        if language == "zh"
+        else [
+            "Recommendation A: Review operating costs.",
+            "Recommendation B: Track overdue receivables.",
+            "Recommendation C: Review debt maturities.",
+        ]
+    )
+    result = json.loads(
+        await compose(
+            data={
+                "SUMMARY": ["Total: ", {"object_id": token}],
+                "ADVICE": [[a] for a in advice],
+            }
+        )
+    )
+    assert not state.get("_report_html_error"), result
+    assert len([c for c in result["chunks"] if c["output_type"] == "html"]) == 1
+    html = state["_report_presentation"]["content"]
+    assert all(a in html for a in advice)
+    assert ">100</span>" in html
+
+
 @pytest.mark.parametrize("depth", [40, 700, 1800])
 def test_catalogue_isolates_deep_json_strings(depth):
     sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="deep-json"))

@@ -838,6 +838,7 @@ def make_generate_report_tool(
         selected_template = select_report_template(react_state, skills_dir)
         root = Path(skills_dir).expanduser().resolve()
         template_file = (root / selected_template).resolve()
+        contract = {}
         if template_file.is_relative_to(root) and template_file.is_file():
             contract = report_template_contract(
                 template_file.read_text(encoding="utf-8")
@@ -854,18 +855,15 @@ def make_generate_report_tool(
                 "fields"
             ]
             staged = set(react_state.get("_report_object_fields") or {})
-            handoff["staged_fields"] = sorted(staged & set(handoff["template_fields"]))
-            handoff["remaining_fields"] = sorted(
-                (
-                    set(contract.get("prose_fields", []))
-                    & set(handoff["template_fields"])
+            if staged:
+                handoff["previously_staged_fields"] = sorted(
+                    staged & set(handoff["template_fields"])
                 )
-                - staged
-            )
             message += (
                 "\n以下是程序登记的证据对象。仅从中选择 object_id，"
                 "更多对象调用 list_report_objects 分页筛选。"
                 "原始任务中的底层引用不能直接提交给 compose_report。"
+                "这是本次调用开始时的快照；后续字段进度以工具执行结果为准。"
                 + json.dumps(handoff, ensure_ascii=False)
             )
         missing = react_state.get("_report_missing_calculation")
@@ -925,6 +923,13 @@ def make_generate_report_tool(
         requirement = react_state.get("_report_required_recommendation_count")
         if requirement:
             message += f"\n用户要求至少 {requirement} 条具体建议，必须渲染到建议章节。"
+            if contract.get("mode") == "placeholders":
+                message += (
+                    "\n将行动建议写入结论与建议章节对应的正文字段，使用段落数组，"
+                    "每条建议独占一段，分别以‘建议一：’、‘建议二：’等开头；"
+                    "英文使用 ‘Recommendation A:’、‘Recommendation B:’ 等。"
+                    "每段标签后必须包含具体行动，不要将多条建议合并为一个长段落。"
+                )
         latest_error = react_state.get("_report_html_error") or react_state.get(
             "_report_last_render_error"
         )

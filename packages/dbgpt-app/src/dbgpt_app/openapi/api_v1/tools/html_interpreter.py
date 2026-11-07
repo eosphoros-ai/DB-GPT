@@ -172,6 +172,19 @@ def _validate_recommendation_requirement(
             re.I,
         )
         numbered = {next(value for value in label if value) for label in labels}
+        # Named templates accept paragraph arrays through the authoring tool.
+        # Count explicitly labelled, nonempty action paragraphs as well as cards.
+        # Ordinary analysis paragraphs and repeated labels do not add items.
+        for paragraph in re.findall(r"<p\b[^>]*>(.*?)</p\s*>", section, re.I | re.S):
+            text = " ".join(unescape_html(re.sub(r"<[^>]+>", " ", paragraph)).split())
+            label = re.match(
+                r"^(?:建议\s*([0-9一二三四五六七八九十]+)|"
+                r"recommendation\s+([0-9]+|[A-Z]))\s*[：:、.．—-]\s*\S",
+                text,
+                re.I,
+            )
+            if label:
+                numbered.add(next(value for value in label.groups() if value).lower())
         found_count += max(count, len(numbered))
         if found_count >= required_count:
             return None

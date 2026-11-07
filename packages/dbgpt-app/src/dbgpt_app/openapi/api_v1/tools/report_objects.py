@@ -1121,9 +1121,12 @@ def report_object_prompt(template_path, contract, injected_fields, language):
     else:
         instructions += [
             "本模板采用的知识库口径放入相应正文。",
-            "优先调用 set_report_field 逐字段提交，多个字段可并行；"
-            "有效字段已保存，不要重发。",
-            "remaining_fields 为空后调用 compose_report，不传 data；"
+            "首次成稿优先调用 compose_report，用 data 一次提交全部正文字段；"
+            "无需先逐字段调用 set_report_field。",
+            "已有草稿时可用 set_report_field 补充或修复字段；有效字段保留，不要重发。"
+            "并行调用的 remaining_fields 是各自执行时的快照，"
+            "返回顺序不代表执行顺序，不能据此判断其他字段丢失。",
+            "逐字段提交时，remaining_fields 为空后调用 compose_report，不传 data；"
             "标题用 title 参数填写。",
             "正文只填写：" + json.dumps(contract["fields"]),
         ]

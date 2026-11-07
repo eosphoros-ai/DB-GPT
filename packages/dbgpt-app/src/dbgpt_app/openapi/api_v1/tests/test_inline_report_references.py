@@ -42,6 +42,35 @@ def test_explicit_english_recommendation_count_is_recognized():
     assert _requested_recommendation_count("please give recommendations") is None
 
 
+@pytest.mark.parametrize(
+    "body",
+    [
+        "<p>建议一：复核成本。</p>" * 3,
+        "<p>建议一：</p><p>建议二： </p><p>建议三：</p>",
+        "<p>收入增长。</p><p>负债较高。</p><p>行业数据缺失。</p>",
+        "<p>建议一：复核成本。</p><p>建议二：跟踪回款。</p>",
+    ],
+)
+def test_recommendation_paragraphs_still_require_distinct_nonempty_actions(body):
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _validate_recommendation_requirement,
+    )
+
+    assert _validate_recommendation_requirement("<h2>结论与建议</h2>" + body, 3)
+
+
+def test_labelled_advice_outside_recommendation_section_does_not_count():
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _validate_recommendation_requirement,
+    )
+
+    html = (
+        "<h2>数据口径</h2><p>建议一：复核成本。</p><p>建议二：跟踪回款。</p>"
+        "<p>建议三：复核融资期限。</p><h2>结论与建议</h2><p>继续观察。</p>"
+    )
+    assert _validate_recommendation_requirement(html, 3)
+
+
 def test_stdout_only_python_is_not_advertised_as_a_result_producer():
     from dbgpt_app.openapi.api_v1.tools.report_evidence import result_evidence_catalog
 
