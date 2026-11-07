@@ -19,6 +19,24 @@ from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
+_TRUST_REMOTE_CODE_WARNING_EMITTED = False
+
+
+def _warn_trust_remote_code() -> None:
+    """Warn once when a model is loaded with remote code execution enabled."""
+    global _TRUST_REMOTE_CODE_WARNING_EMITTED
+
+    if _TRUST_REMOTE_CODE_WARNING_EMITTED:
+        return
+
+    _TRUST_REMOTE_CODE_WARNING_EMITTED = True
+    logger.warning(
+        "Loading a Hugging Face model with trust_remote_code=True: Python code "
+        "shipped in the model repository will be executed. Only load models from "
+        "sources you trust, and set trust_remote_code=False in the model "
+        "parameters to disable remote code execution."
+    )
+
 
 @dataclass
 class HFLLMDeployModelParameters(LLMDeployModelParameters):
@@ -44,7 +62,14 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
     )
 
     trust_remote_code: Optional[bool] = field(
-        default=True, metadata={"help": _("Trust remote code or not.")}
+        default=True,
+        metadata={
+            "help": _(
+                "Trust remote code or not. When enabled, Python code shipped in the "
+                "model repository is executed when the model is loaded; only enable "
+                "it for repositories you trust."
+            )
+        },
     )
     quantization: Optional[BaseHFQuantization] = field(
         default=None,
@@ -255,6 +280,9 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def load_from_params(self, params: LLMDeployModelParameters):
         """Load the model from the parameters."""
         from .loader import huggingface_loader
+
+        if getattr(params, "trust_remote_code", False):
+            _warn_trust_remote_code()
 
         return huggingface_loader(self, params)
 
