@@ -3,7 +3,16 @@
 import threading
 
 import pytest
-from sqlalchemy import MetaData, create_engine, event, text
+from sqlalchemy import (
+    BLANK_SCHEMA,
+    Column,
+    Integer,
+    MetaData,
+    Table,
+    create_engine,
+    event,
+    text,
+)
 
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 
@@ -177,6 +186,21 @@ def test_get_table_info_uses_supplied_metadata_schema(db_url, monkeypatch):
     calls = _count_reflect_calls(conn, monkeypatch)
     assert conn.get_table_info(["a"]) == table_info
     assert calls == []
+
+
+def test_get_table_info_reflects_default_schema_despite_schemaless_table(db_url):
+    # A schema-less table supplied by the caller must not stop the table of
+    # the same name in the metadata's default schema from being reflected.
+    metadata = MetaData(schema="main")
+    Table("a", metadata, Column("id", Integer, primary_key=True), schema=BLANK_SCHEMA)
+    conn = _PlainConnector(
+        create_engine(db_url),
+        metadata=metadata,
+        sample_rows_in_table_info=0,
+    )
+    table_info = conn.get_table_info(["a"])
+    assert "name TEXT" in table_info
+    assert "main.a" in conn._metadata.tables
 
 
 def test_get_table_info_recovers_after_failed_reflection(db_url, monkeypatch):

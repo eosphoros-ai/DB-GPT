@@ -343,17 +343,20 @@ class RDBMSConnector(BaseConnector):
         """
         names = set(table_names)
         schema = self._schema
+        # ``MetaData.reflect`` falls back to the metadata's default schema.
+        target_schema = self._metadata.schema if schema is None else schema
         if schema is None:
-            # ``MetaData.reflect`` falls back to the metadata's default schema,
-            # and tables supplied without a schema belong to the connector too.
-            schemas = {None, self._metadata.schema}
+            # Tables supplied without a schema belong to the connector too.
+            schemas = {None, target_schema}
         else:
             schemas = {schema}
         with self._metadata_lock:
+            # Only tables in the schema ``reflect`` writes to count as loaded,
+            # so a supplied schema-less table never hides the reflected one.
             reflected = {
                 tbl.name
                 for tbl in self._metadata.sorted_tables
-                if tbl.schema in schemas
+                if tbl.schema == target_schema
             }
             missing = names - reflected - self._reflection_attempted
             if missing:
