@@ -7,6 +7,7 @@ from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
 from dbgpt.model.adapter.model_metadata import COMMON_HF_MODELS
 from dbgpt.model.adapter.template import ConversationAdapter, ConversationAdapterFactory
+from dbgpt.model.adapter.trust_remote_code import warn_trust_remote_code
 from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import (
@@ -96,7 +97,14 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
         return real_params
 
     trust_remote_code: Optional[bool] = field(
-        default=True, metadata={"help": _("Trust remote code or not.")}
+        default=True,
+        metadata={
+            "help": _(
+                "Trust remote code or not. When enabled, Python code shipped in the "
+                "model repository may be executed when the model is loaded; only "
+                "enable it for repositories you trust."
+            )
+        },
     )
     download_dir: Optional[str] = field(
         default=None,
@@ -483,6 +491,11 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
         )
 
         vllm_engine_args_dict = params.to_vllm_params(AsyncEngineArgs)
+        if vllm_engine_args_dict.get("trust_remote_code"):
+            # Check the resolved vLLM kwargs (not just `params.trust_remote_code`)
+            # so that an override in `extras` is respected, and warn at the point
+            # where vLLM is actually told to execute code from the model repository.
+            warn_trust_remote_code()
         # Set the attributes from the parsed arguments.
         engine_args = AsyncEngineArgs(**vllm_engine_args_dict)
         engine = AsyncLLMEngine.from_engine_args(engine_args)
