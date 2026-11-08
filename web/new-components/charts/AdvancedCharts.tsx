@@ -241,7 +241,7 @@ const getCommonConfig = (config: ChartConfig) => ({
     ? {
         paddingTop: 28,
         paddingBottom: config.chartType === 'bar' ? 54 : 76,
-        paddingLeft: config.chartType === 'bar' ? Math.min(150, Math.max(92, (config.width || 600) * .28)) : 70,
+        paddingLeft: config.chartType === 'bar' ? Math.min(150, Math.max(92, (config.width || 600) * 0.28)) : 70,
         paddingRight: config.chartType === 'dual-axes' ? 70 : config.chartType === 'bar' ? 40 : 24,
       }
     : {}),
@@ -260,22 +260,27 @@ const getCommonConfig = (config: ChartConfig) => ({
   },
 });
 
-/** G2 5 axes: never auto-hide categorical ticks to accommodate the plot. */
+/** Keep category ticks; space date ticks without dropping any trend data. */
 export const getDashboardAxisConfig = (config: ChartConfig) => {
   const horizontal = config.chartType === 'bar';
   const xField = config.xField || 'x';
   const categories = Array.from(new Set(config.data.map(row => row[xField])));
-  const temporalLine =
-    config.chartType === 'line' &&
-    categories.length > 10 &&
-    categories.every(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(?:[T ].*)?$/.test(value));
-  const dateStride = temporalLine
-    ? Math.max(1, Math.ceil(categories.length / Math.max(2, Math.floor(((config.width || 600) - 94) / 100))))
-    : 1;
-  const visibleTick = (_value: unknown, index: number) =>
-    !temporalLine || index % dateStride === 0 || index === categories.length - 1;
   const longest = Math.max(0, ...categories.map(value => String(value ?? '').length));
   const slot = Math.max(1, (config.width || 600) - 94) / Math.max(1, categories.length);
+  const dateAxis =
+    !horizontal &&
+    config.chartType !== 'scatter' &&
+    categories.length > 0 &&
+    categories.every(value => /^\d{4}-\d{2}(?:-\d{2}(?:[ T].*)?)?$/.test(String(value)));
+  const dateTickBudget = Math.max(2, Math.floor(((config.width || 600) - 94) / Math.max(84, longest * 7 + 16)));
+  const dateTickCount = Math.min(categories.length, dateTickBudget);
+  const dateTicks = dateAxis
+    ? new Set(
+        Array.from({ length: dateTickCount }, (_, i) =>
+          String(categories[Math.round((i * (categories.length - 1)) / Math.max(1, dateTickCount - 1))]),
+        ),
+      )
+    : null;
   return {
     axis: {
       x: {
@@ -289,11 +294,13 @@ export const getDashboardAxisConfig = (config: ChartConfig) => {
         labelAutoHide: false,
         labelAutoEllipsis: false,
         labelAutoRotate: false,
-        labelTransform: !temporalLine && !horizontal && slot < 40 && slot < longest * 7 ? 'rotate(-65)' : undefined,
-        labelWordWrap: !temporalLine && (horizontal || slot >= 40),
-        labelWordWrapWidth: horizontal ? Math.min(150, Math.max(92, (config.width || 600) * .28)) - 16 : Math.max(40, slot - 8),
+        labelTransform: !dateAxis && !horizontal && slot < 40 && slot < longest * 7 ? 'rotate(-65)' : undefined,
+        labelWordWrap: horizontal || (!dateAxis && slot >= 40),
+        labelWordWrapWidth: horizontal
+          ? Math.min(150, Math.max(92, (config.width || 600) * 0.28)) - 16
+          : Math.max(40, slot - 8),
         labelMaxLines: 3,
-        tickFilter: visibleTick,
+        tickFilter: (value?: unknown) => !dateTicks || dateTicks.has(String(value)),
         labelFilter: () => true,
         grid: false,
       },
@@ -386,23 +393,26 @@ const getAxisConfig = (config: ChartConfig) =>
       };
 
 // Legend configuration
-const getLegendConfig = (config: ChartConfig) => config.dashboardSurface ? dashboardLegendConfig(config) : ({
-  legend:
-    config.showLegend !== false
-      ? {
-          position: 'top-right' as const,
-          itemName: {
-            style: {
-              fill: config.visualTheme?.text || '#374151',
-              fontSize: 12,
-            },
-          },
-          marker: {
-            symbol: 'circle',
-          },
-        }
-      : false,
-});
+const getLegendConfig = (config: ChartConfig) =>
+  config.dashboardSurface
+    ? dashboardLegendConfig(config)
+    : {
+        legend:
+          config.showLegend !== false
+            ? {
+                position: 'top-right' as const,
+                itemName: {
+                  style: {
+                    fill: config.visualTheme?.text || '#374151',
+                    fontSize: 12,
+                  },
+                },
+                marker: {
+                  symbol: 'circle',
+                },
+              }
+            : false,
+      };
 
 // Enhanced tooltip configuration with crosshairs
 const getTooltipConfig = (config: ChartConfig) =>
@@ -921,13 +931,23 @@ const DualAxesChart: React.FC<{ config: ChartConfig; chartRef: React.MutableRefO
             pointerEvents: 'auto',
           }}
         >
-          <span title={config.fieldLabels?.[primaryField] || primaryField} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span
+            title={config.fieldLabels?.[primaryField] || primaryField}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}
+          >
             <span aria-hidden style={{ flexShrink: 0, width: 9, height: 9, borderRadius: 2, background: primary }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{config.fieldLabels?.[primaryField] || primaryField}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {config.fieldLabels?.[primaryField] || primaryField}
+            </span>
           </span>
-          <span title={config.fieldLabels?.[secondaryField] || secondaryField} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span
+            title={config.fieldLabels?.[secondaryField] || secondaryField}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}
+          >
             <span aria-hidden style={{ flexShrink: 0, width: 15, height: 0, borderTop: `2px dashed ${secondary}` }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{config.fieldLabels?.[secondaryField] || secondaryField}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {config.fieldLabels?.[secondaryField] || secondaryField}
+            </span>
           </span>
         </div>
       )}

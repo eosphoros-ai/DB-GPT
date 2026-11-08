@@ -87,6 +87,8 @@ import {
   artifactIdentity,
   mergeArtifacts,
 } from '@/new-components/financial-analysis/report-delivery';
+import { dashboardText as dt } from '@/new-components/dashboard/dashboard-i18n';
+import { DASHBOARD_INTERNAL_SKILLS, dashboardTemplateEntry } from '@/new-components/dashboard/dashboard-template-entry';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { IFlow } from '@/types/flow';
@@ -195,6 +197,11 @@ const generateUUID = () => {
 
 const cleanFinalContent = (text: string): string => {
   let cleaned = text.replace(/\\n/g, '\n').trim();
+  // Actions come from structured dashboard events, never from model prose.
+  cleaned = cleaned.replace(
+    /\[\[(?:confirm-dashboard|revise-dashboard-plan):[^\]]+\]\]/g,
+    dt('请使用看板计划卡片操作'),
+  );
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
   // Strip raw ReAct prefixes that may leak from the backend
@@ -766,6 +773,7 @@ const convertToManusFormat = (
         status: getStepStatus(step.status),
         action: step.action,
         actionInput: step.actionInput,
+        todoMeta: step.todoMeta,
       };
     });
 
@@ -820,8 +828,11 @@ const convertToManusFormat = (
 const Playground: NextPage = () => {
   useFinancialLocale();
   const router = useRouter();
+  const templateEntry = dashboardTemplateEntry(router.query);
+  const initializedTemplate = useRef<string | null>(null);
+  const [selectedDashboardTemplate, setSelectedDashboardTemplate] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
-  const { model, modelList, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList, unviewedResults, markConvCompleted, markConvViewed, clearConvAttention } =
+  const { model, modelList, modelListLoading, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList, unviewedResults, markConvCompleted, markConvViewed, clearConvAttention } =
     useContext(ChatContext);
   const [query, setQuery] = useState('');
   const suiteCommandMenuRef = useRef<SuiteCommandPopoverHandle>(null);
@@ -918,6 +929,7 @@ const Playground: NextPage = () => {
   const sendInFlightRef = useRef(false);
 
   // Selection State
+  const [isDatabaseRequiredOpen, setIsDatabaseRequiredOpen] = useState(false);
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
   const [isKnowledgeModalOpen, setIsKnowledgeModalOpen] = useState(false);
 
@@ -1678,6 +1690,7 @@ const Playground: NextPage = () => {
     setSelectedSuiteCommand(null);
     setSuiteCommandBindings({});
     setLoading(false);
+    setSelectedDashboardTemplate(null);
     setHistoryLoading(false);
     setQueuedSendAfterUpload(false);
     setIsFileDragActive(false);
@@ -1713,6 +1726,7 @@ const Playground: NextPage = () => {
     setSelectedFlow(null);
     selectedFlowRef.current = null;
     setSelectedConnectors([]);
+    setIsDatabaseRequiredOpen(false);
     setIsDbModalOpen(false);
     setIsKnowledgeModalOpen(false);
     setIsSkillPanelOpen(false);
@@ -1860,7 +1874,7 @@ const Playground: NextPage = () => {
       const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
       // ctx-axios interceptor returns response.data directly
       if (response?.success && Array.isArray(response.data)) {
-        return response.data.map((item: any) => ({
+        const skills = response.data.map((item: any) => ({
           id: String(item.id || item.name),
           name: normalizeText(item.name),
           description: normalizeText(item.description),
@@ -1878,6 +1892,7 @@ const Playground: NextPage = () => {
                       ? '💬'
                       : '⚡',
         })) as Skill[];
+        return skills.filter(skill => !DASHBOARD_INTERNAL_SKILLS.has(skill.name));
       }
       return [];
     } catch (e) {
@@ -1945,6 +1960,22 @@ const Playground: NextPage = () => {
       resetTaskSession();
     }
   }, [rehydrateSessionFiles, resetTaskSession, router.isReady, router.query.id]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const entry = dashboardTemplateEntry(router.query);
+    const key = entry ? `${router.query.template || router.query.skill}` : null;
+    if (!key) {
+      initializedTemplate.current = null;
+      return;
+    }
+    if (!entry || initializedTemplate.current === key || router.query.id) return;
+    initializedTemplate.current = key;
+    resetTaskSession();
+    setSelectedDashboardTemplate(entry.selection);
+    setSelectedSkill({ id: 'dashboard-builder', name: 'dashboard-builder', description: '', type: 'official' });
+    setQuery(entry.prompt);
+  }, [router.isReady, router.query, resetTaskSession]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -2944,16 +2975,35 @@ const Playground: NextPage = () => {
     explicitLegacyFile?: LegacyServerFile | null,
     overrideKnowledge?: KnowledgeSpace | null,
     overrideExtInfo?: Record<string, any>,
+    overrideDashboardTemplate?: string | null,
   ) => {
     const effectiveSkill = suiteCreationMode ? null : overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     const effectiveKnowledge = overrideKnowledge !== undefined ? overrideKnowledge : selectedKnowledge;
+    const effectiveDashboardTemplate =
+      overrideDashboardTemplate !== undefined ? overrideDashboardTemplate : selectedDashboardTemplate;
+    const dashboardContinuation = /^\[\[(?:confirm-dashboard|revise-dashboard-plan):/.test(inputQuery.trim());
+    if (
+      effectiveSkill?.name === 'dashboard-builder' &&
+      !dashboardContinuation &&
+      !effectiveDb &&
+      !hasSessionFileDrafts &&
+      !hasLegacyFile &&
+      !explicitLegacyFile
+    ) {
+      setIsDatabaseRequiredOpen(true);
+      return;
+    }
     // A browser tab can retain a model name from an older backend config.
     // Only send a model currently advertised by the server. The first
     // advertised model is also the normal ChatContext default.
+    if (modelListLoading) {
+      message.info(dt('正在加载可用模型…'));
+      return;
+    }
     const effectiveModel = modelList.includes(model) ? model : modelList[0];
     if (!effectiveModel) {
-      message.error('当前服务未配置可用模型，请先在服务端配置并启动模型');
+      message.error(dt('暂无可用模型，请检查模型服务后重试。'));
       return;
     }
     const draftInputFiles = explicitLegacyFile
@@ -3173,6 +3223,10 @@ const Playground: NextPage = () => {
     const baseExtInfo: Record<string, any> = {
       locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
+      ...(effectiveSkill?.name === 'dashboard-builder' ? { creation_mode: 'dashboard' } : {}),
+      ...(effectiveSkill?.name === 'dashboard-builder' && effectiveDashboardTemplate
+        ? { dashboard_template: effectiveDashboardTemplate }
+        : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
       ...(effectiveKnowledge
         ? { knowledge_space_name: effectiveKnowledge.name, knowledge_space_id: effectiveKnowledge.id }
@@ -3265,8 +3319,8 @@ const Playground: NextPage = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
-
       const acceptDashboardEvent = createDashboardGenerationEventGate();
+
       const processEvent = (raw: string) => {
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
@@ -3325,6 +3379,9 @@ const Playground: NextPage = () => {
             }));
           }
           return;
+        }
+        if (payload.type === 'error') {
+          throw new Error(payload.message || payload.error || dt('生成失败，请重试'));
         }
         if (payload.type === 'context.status') {
           const budget = Number(payload.budget ?? 0);
@@ -3768,13 +3825,19 @@ const Playground: NextPage = () => {
           receivedFinal = true;
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
+          const finalTaskPlan = Array.isArray(payload.task_plan) ? (payload.task_plan as TaskItem[]) : undefined;
           cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
-            const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' as const } : item,
-            );
+            const nextSteps = current.steps.map(item => {
+              const next = item.status === 'running' ? { ...item, status: 'done' as const } : item;
+              if (item.action?.toLowerCase() === 'todowrite' && payload.todo_meta) {
+                const meta = payload.todo_meta;
+                return { ...next, todoMeta: meta, title: `TODO::${meta.state}:${meta.done}/${meta.total}` };
+              }
+              return next;
+            });
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
           setMessages(prev =>
@@ -3788,6 +3851,7 @@ const Playground: NextPage = () => {
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
                 executionStatus: payload.execution_status,
+                ...(finalTaskPlan && { taskPlan: finalTaskPlan }),
               };
             }),
           );
@@ -3845,6 +3909,7 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
+      if (buffer.trim()) processEvent(buffer);
     } catch (err: any) {
       if (err?.name === 'AbortError' || controller.signal.aborted) {
         // User-initiated stop (stop button, or the conversation-switch effect
@@ -4216,6 +4281,25 @@ const Playground: NextPage = () => {
       }
       if (taskEpochRef.current === taskEpoch) {
         setLoading(false);
+        setMessages(previous =>
+          previous.map(msg =>
+            msg.id !== responseId
+              ? msg
+              : {
+                  ...msg,
+                  thinking: false,
+                  dashboardGenerations: msg.dashboardGenerations?.map(state =>
+                    state.status === 'planning' || state.status === 'generating'
+                      ? {
+                          ...state,
+                          status: 'failed',
+                          errorMessage: dt('生成已中断，已完成的计划或草稿仍保留，请重试。'),
+                        }
+                      : state,
+                  ),
+                },
+          ),
+        );
       }
     }
   };
@@ -4488,12 +4572,12 @@ const Playground: NextPage = () => {
             citations: historyAnswer.citations,
             reportId: historyAnswer.reportId,
             reportRunId: historyAnswer.reportRunId,
-            order: msg.order,
-            thinking: false,
-            executionStatus: payload.execution_status,
             dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
               .map(dashboardGenerationFromHistoryRef)
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
+            order: msg.order,
+            thinking: false,
+            executionStatus: payload.execution_status,
             taskPlan: savedTasks?.map((task: TaskItem) =>
               payload.execution_status && task.status === 'in_progress'
                 ? {
@@ -4988,6 +5072,13 @@ const Playground: NextPage = () => {
 
           {/* From Task Banner - shown when navigating from a scheduled task */}
           {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
+          {templateEntry && selectedDashboardTemplate && !messages.length && (
+            <Alert
+              type='info'
+              showIcon
+              message={dt('已选择模板：{{name}}。请选择数据后发送需求。', { name: dt(templateEntry.title) })}
+            />
+          )}
 
           {/* Chat Messages or Hero Section */}
           {/* Keep conversation recovery visible instead of flashing the new-task hero. */}
@@ -7059,12 +7150,27 @@ const Playground: NextPage = () => {
           )}
         </div>
 
+        <Modal
+          title={t('database_required_title')}
+          open={isDatabaseRequiredOpen}
+          onCancel={() => setIsDatabaseRequiredOpen(false)}
+          onOk={() => {
+            setIsDatabaseRequiredOpen(false);
+            setIsDbModalOpen(true);
+          }}
+          okText={t('select_database')}
+          cancelText={t('database_required_continue_editing')}
+          centered
+        >
+          <p>{t('database_required_description')}</p>
+        </Modal>
+
         {/* Database Selection Modal */}
         <Modal
           title={
             <div className='flex items-center gap-2'>
-              <DatabaseOutlined />
-              Select Data Source
+              <DatabaseOutlined aria-hidden />
+              {t('select_database')}
             </div>
           }
           open={isDbModalOpen}
@@ -7091,11 +7197,11 @@ const Playground: NextPage = () => {
                 />
               </List.Item>
             )}
-            locale={{ emptyText: 'No data sources found' }}
+            locale={{ emptyText: t('picker_database_empty') }}
           />
           <div className='mt-4 pt-4 border-t border-gray-100 text-center'>
             <Button type='dashed' block icon={<PlusOutlined />} onClick={() => router.push('/construct/database')}>
-              Add New Data Source
+              {t('add_database')}
             </Button>
           </div>
         </Modal>

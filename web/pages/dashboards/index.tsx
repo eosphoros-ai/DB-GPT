@@ -9,6 +9,11 @@ import {
 import { listDashboardFolders, moveDashboardToFolder, type DashboardFolder } from '@/client/api/dashboard';
 import { AVAILABLE_CREATION_MODES, TEMPLATE_GALLERY_ENABLED } from '@/new-components/dashboard/dashboard-catalog';
 import { describeDashboardError } from '@/new-components/dashboard/dashboard-errors';
+import {
+  dashboardDateLocale,
+  dashboardText as dt,
+  useDashboardTranslation,
+} from '@/new-components/dashboard/dashboard-i18n';
 import { dashboardSourceLabel } from '@/new-components/dashboard/dashboard-source-label';
 import { readDashboardVisits, rememberDashboardVisit } from '@/new-components/dashboard/dashboard-visits';
 import DashboardAssetCover from '@/new-components/dashboard/DashboardAssetCover';
@@ -36,10 +41,34 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LibraryTab = 'templates' | 'folders' | 'all' | 'recent' | 'tests' | 'archived';
 const tabs: { key: LibraryTab; label: string }[] = [
-  ...(TEMPLATE_GALLERY_ENABLED ? [{ key: 'templates' as const, label: '模板' }] : []),
-  { key: 'folders', label: '所有文件夹' },
-  { key: 'all', label: '全部看板' },
-  { key: 'recent', label: '最近使用' },
+  ...(TEMPLATE_GALLERY_ENABLED
+    ? [
+        {
+          key: 'templates' as const,
+          get label() {
+            return dt('模板');
+          },
+        },
+      ]
+    : []),
+  {
+    key: 'folders',
+    get label() {
+      return dt('所有文件夹');
+    },
+  },
+  {
+    key: 'all',
+    get label() {
+      return dt('全部看板');
+    },
+  },
+  {
+    key: 'recent',
+    get label() {
+      return dt('最近使用');
+    },
+  },
 ];
 const toItem = (r: DashboardRecord): DashboardListItem => ({
   id: r.id,
@@ -54,9 +83,15 @@ const toItem = (r: DashboardRecord): DashboardListItem => ({
   updated_at: r.updated_at,
 });
 const formatTime = (value: string) =>
-  new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  new Date(value).toLocaleString(dashboardDateLocale(), {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 export default function DashboardListPage() {
+  useDashboardTranslation();
   const router = useRouter();
   const { message } = App.useApp();
   const requestedTab = router.query.tab;
@@ -73,12 +108,12 @@ export default function DashboardListPage() {
   const [moving, setMoving] = useState(false);
   const loadFolders = useCallback(async () => {
     const response = await listDashboardFolders();
-    if (!response.data.success) throw new Error(response.data.err_msg || '文件夹加载失败');
+    if (!response.data.success) throw new Error(response.data.err_msg || dt('文件夹加载失败'));
     setFolders(response.data.data);
   }, []);
   useEffect(() => {
     // Initial page mount starts an external API read; state is set after it resolves.
-    void loadFolders().catch(() => message.error('文件夹加载失败，请刷新重试'));
+    void loadFolders().catch(() => message.error(dt('文件夹加载失败，请刷新重试')));
   }, [loadFolders, message]);
   const [items, setItems] = useState<DashboardListItem[]>([]);
   const [search, setSearch] = useState('');
@@ -113,7 +148,7 @@ export default function DashboardListPage() {
       setCoverJob(null);
       setCoverQueue(q => q.slice(1));
       setCoverRefresh(n => n + 1);
-      if (error) message.warning('此看板预览未更新：' + error);
+      if (error) message.warning(dt('此看板预览未更新：') + error);
     },
     [message],
   );
@@ -124,19 +159,19 @@ export default function DashboardListPage() {
       try {
         activeCoverId.current = coverQueue[0].id;
         const r = await getDashboard(coverQueue[0].id);
-        if (!r.data.success) throw new Error(r.data.err_msg || '读取看板失败');
+        if (!r.data.success) throw new Error(r.data.err_msg || dt('读取看板失败'));
         const snap = await refreshDashboard(r.data.data.id, {});
-        if (!snap.data.success) throw new Error(snap.data.err_msg || '查询失败');
+        if (!snap.data.success) throw new Error(snap.data.err_msg || dt('查询失败'));
         if (
           !r.data.data.schema.widgets.length ||
           r.data.data.schema.widgets.some(
             w => !snap.data.data.widgets[w.id]?.rows.length || snap.data.data.widgets[w.id].error,
           )
         )
-          throw new Error('存在不可用组件，保留已有预览');
+          throw new Error(dt('存在不可用组件，保留已有预览'));
         if (active) setCoverJob({ record: r.data.data, snapshot: snap.data.data });
       } catch (e) {
-        if (active) finishCover(null, describeDashboardError(e, '无法生成预览'));
+        if (active) finishCover(null, describeDashboardError(e, dt('无法生成预览')));
       }
     }, 0);
     return () => {
@@ -166,7 +201,7 @@ export default function DashboardListPage() {
         if (networkFailure?.status === 'rejected') throw networkFailure.reason;
         const businessFailure = results.find(result => result.status === 'fulfilled' && !result.value.data.success);
         if (businessFailure?.status === 'fulfilled')
-          throw new Error(businessFailure.value.data.err_msg || '最近看板加载失败');
+          throw new Error(businessFailure.value.data.err_msg || dt('最近看板加载失败'));
         const matches = available.filter(
           item =>
             item.status !== 'archived' &&
@@ -187,14 +222,14 @@ export default function DashboardListPage() {
           limit: pageSize,
           offset: (page - 1) * pageSize,
         });
-        if (!response.data.success) throw new Error(response.data.err_msg || '加载看板失败');
+        if (!response.data.success) throw new Error(response.data.err_msg || dt('加载看板失败'));
         if (id === requestId.current) {
           setItems(response.data.data.items);
           setTotal(response.data.data.total);
         }
       }
     } catch (reason) {
-      if (id === requestId.current) setError(describeDashboardError(reason, '无法加载看板'));
+      if (id === requestId.current) setError(describeDashboardError(reason, dt('无法加载看板')));
     } finally {
       if (id === requestId.current) setLoading(false);
     }
@@ -215,7 +250,7 @@ export default function DashboardListPage() {
     try {
       if (key === 'copy') {
         const r = await copyDashboard(item.id);
-        if (!r.data.success) throw new Error(r.data.err_msg || '复制失败');
+        if (!r.data.success) throw new Error(r.data.err_msg || dt('复制失败'));
         await router.push('/dashboards/' + r.data.data.id);
         return;
       }
@@ -223,59 +258,58 @@ export default function DashboardListPage() {
         key === 'archive'
           ? await archiveDashboard(item.id, item.current_revision)
           : await restoreDashboard(item.id, item.current_revision);
-      if (!response.data.success) throw new Error(response.data.err_msg || '操作失败');
+      if (!response.data.success) throw new Error(response.data.err_msg || dt('操作失败'));
       await load();
     } catch (reason) {
-      message.error(describeDashboardError(reason, '操作失败'));
+      message.error(describeDashboardError(reason, dt('操作失败')));
     }
   };
   const menu = (item: DashboardListItem) => ({
     items: [
       {
         key: 'folder',
-        label: '移动到文件夹',
+        label: dt('移动到文件夹'),
       },
-      { key: 'copy', label: '复制为草稿', icon: <CopyOutlined /> },
-      { key: 'lifecycle', label: '版本与分享', icon: <HistoryOutlined /> },
-      { key: 'access', label: '权限与审计', icon: <SafetyCertificateOutlined /> },
-      { key: 'schedule', label: '定时刷新', icon: <ScheduleOutlined /> },
-      ...(item.conversation_id ? [{ key: 'task', label: '返回来源对话', icon: <HistoryOutlined /> }] : []),
+      { key: 'copy', label: dt('复制为草稿'), icon: <CopyOutlined /> },
+      { key: 'lifecycle', label: dt('版本与分享'), icon: <HistoryOutlined /> },
+      { key: 'access', label: dt('权限与审计'), icon: <SafetyCertificateOutlined /> },
+      { key: 'schedule', label: dt('定时刷新'), icon: <ScheduleOutlined /> },
+      ...(item.conversation_id ? [{ key: 'task', label: dt('返回来源对话'), icon: <HistoryOutlined /> }] : []),
       { type: 'divider' as const },
       item.status === 'archived'
-        ? { key: 'restore', label: '恢复看板', icon: <UndoOutlined /> }
-        : { key: 'archive', label: '归档看板', icon: <InboxOutlined /> },
+        ? { key: 'restore', label: dt('恢复看板'), icon: <UndoOutlined /> }
+        : { key: 'archive', label: dt('归档看板'), icon: <InboxOutlined /> },
     ],
     onClick: ({ key }: { key: string }) => {
       if (key === 'folder') {
         setMoveTarget(folders.some(folder => folder.id === folderId) ? folderId! : '');
         setMovingItem(item);
       } else if (key === 'access' || key === 'lifecycle' || key === 'schedule') open(item, key);
-      else if (key === 'task')
-        void router.push({ pathname: '/', query: { conversation_id: item.conversation_id } });
+      else if (key === 'task') void router.push({ pathname: '/', query: { conversation_id: item.conversation_id } });
       else void action(key, item);
     },
   });
   return (
     <div className={styles.page}>
       <Modal
-        title='移动到文件夹'
+        title={dt('移动到文件夹')}
         open={!!movingItem}
         onCancel={() => {
           if (!moving) setMovingItem(null);
         }}
-        okText='移动'
+        okText={dt('移动')}
         confirmLoading={moving}
         onOk={async () => {
           if (!movingItem || moving) return;
           setMoving(true);
           try {
             const r = await moveDashboardToFolder(movingItem.id, moveTarget || null);
-            if (!r.data.success) throw new Error(r.data.err_msg || '移动失败');
+            if (!r.data.success) throw new Error(r.data.err_msg || dt('移动失败'));
             await loadFolders();
             await load();
             setMovingItem(null);
           } catch (reason) {
-            message.error(describeDashboardError(reason, '移动失败，请重试'));
+            message.error(describeDashboardError(reason, dt('移动失败，请重试')));
           } finally {
             setMoving(false);
           }
@@ -283,14 +317,14 @@ export default function DashboardListPage() {
       >
         <p className='mb-3 break-words'>{movingItem?.title}</p>
         <Select
-          aria-label='目标文件夹'
+          aria-label={dt('目标文件夹')}
           className='w-full'
           showSearch
           optionFilterProp='label'
           value={moveTarget}
           onChange={setMoveTarget}
           options={[
-            { value: '', label: '未分类' },
+            { value: '', label: dt('未分类') },
             ...folders.map(folder => ({ value: folder.id, label: folder.name })),
           ]}
         />
@@ -304,23 +338,25 @@ export default function DashboardListPage() {
         />
       )}
       <Head>
-        <title>数据看板 · DB-GPT</title>
+        <title>{dt('数据看板 · DB-GPT')}</title>
       </Head>
       <div className={styles.container}>
         <header className={styles.header}>
           <div>
-            <h1>数据看板</h1>
+            <h1>{dt('数据看板')}</h1>
             <p>
-              {TEMPLATE_GALLERY_ENABLED ? '选一个模板开始，或继续编辑已有看板。' : '找到你的看板，继续分析与编辑。'}
+              {TEMPLATE_GALLERY_ENABLED
+                ? dt('选一个模板开始，或继续编辑已有看板。')
+                : dt('找到你的看板，继续分析与编辑。')}
             </p>
           </div>
           {AVAILABLE_CREATION_MODES.some(mode => mode.id === 'dashboard') && (
             <Button type='primary' icon={<PlusOutlined />} onClick={() => router.push('/dashboards/new')}>
-              创建看板
+              {dt('创建看板')}
             </Button>
           )}
         </header>
-        <nav className={styles.tabs} aria-label='看板分类'>
+        <nav className={styles.tabs} aria-label={dt('看板分类')}>
           {tabs.map(item => (
             <button
               type='button'
@@ -347,11 +383,11 @@ export default function DashboardListPage() {
         ) : (
           <>
             {(tab === 'all' || tab === 'tests' || tab === 'archived') && (
-              <nav className={styles.categories} aria-label='全部看板分类' style={{ marginBottom: 20 }}>
+              <nav className={styles.categories} aria-label={dt('全部看板分类')} style={{ marginBottom: 20 }}>
                 {[
-                  { key: 'all', label: '所有看板' },
-                  { key: 'tests', label: '验收测试' },
-                  { key: 'archived', label: '已归档' },
+                  { key: 'all', label: dt('所有看板') },
+                  { key: 'tests', label: dt('验收测试') },
+                  { key: 'archived', label: dt('已归档') },
                 ].map(item => (
                   <button
                     key={item.key}
@@ -389,8 +425,8 @@ export default function DashboardListPage() {
                   <Input
                     className={styles.search}
                     prefix={<SearchOutlined />}
-                    placeholder='搜索看板'
-                    aria-label='搜索看板'
+                    placeholder={dt('搜索看板')}
+                    aria-label={dt('搜索看板')}
                     allowClear
                     value={search}
                     onChange={event => {
@@ -400,20 +436,22 @@ export default function DashboardListPage() {
                   />
                   <span className='flex-1 text-xs text-[var(--app-muted)]'>
                     {tab === 'recent'
-                      ? '本浏览器最近打开的看板'
+                      ? dt('本浏览器最近打开的看板')
                       : tab === 'tests'
-                        ? '验收看板集中展示，原始记录与版本均保留'
-                        : '按最近更新排序'}
+                        ? dt('验收看板集中展示，原始记录与版本均保留')
+                        : dt('按最近更新排序')}
                   </span>
                   <Button
                     disabled={!items.length || !!coverQueue.length}
                     loading={!!coverQueue.length}
                     onClick={() => items.forEach(item => enqueueCover(item, true))}
                   >
-                    {coverQueue.length ? `正在生成（剩余 ${coverQueue.length}）` : '更新本页预览'}
+                    {coverQueue.length
+                      ? dt('正在生成（剩余 {{value0}}）', { value0: coverQueue.length })
+                      : dt('更新本页预览')}
                   </Button>
                   <Button icon={<ReloadOutlined />} loading={loading} onClick={() => void load()}>
-                    刷新
+                    {dt('刷新')}
                   </Button>
                 </div>
                 {error && (
@@ -424,12 +462,12 @@ export default function DashboardListPage() {
                     message={error}
                     description={
                       items.length
-                        ? '已保留上次加载的内容。恢复连接后可重试。'
-                        : '暂时无法读取看板，请检查服务连接后重试。'
+                        ? dt('已保留上次加载的内容。恢复连接后可重试。')
+                        : dt('暂时无法读取看板，请检查服务连接后重试。')
                     }
                     action={
                       <Button onClick={() => void load()} loading={loading}>
-                        重试
+                        {dt('重试')}
                       </Button>
                     }
                   />
@@ -447,7 +485,7 @@ export default function DashboardListPage() {
                         <button
                           type='button'
                           className={styles.cover}
-                          aria-label={`打开看板 ${item.title}`}
+                          aria-label={dt('打开看板 {{value0}}', { value0: item.title })}
                           onClick={() => open(item)}
                         >
                           <DashboardAssetCover
@@ -457,11 +495,11 @@ export default function DashboardListPage() {
                             generating={coverQueue.some(queued => queued.id === item.id)}
                             failure={coverErrors[item.id]}
                           />
-                          <span className={styles.coverAction}>打开看板</span>
+                          <span className={styles.coverAction}>{dt('打开看板')}</span>
                         </button>
                         {coverErrors[item.id] && (
                           <Button size='small' onClick={() => enqueueCover(item, true)}>
-                            重试预览
+                            {dt('重试预览')}
                           </Button>
                         )}
                         <div className={styles.cardTitle}>
@@ -472,12 +510,12 @@ export default function DashboardListPage() {
                             <Button
                               size='small'
                               type='text'
-                              aria-label={item.title + '更多操作'}
+                              aria-label={item.title + dt('更多操作')}
                               icon={<MoreOutlined />}
                             />
                           </Dropdown>
                         </div>
-                        <p className={styles.description}>{item.description || '暂无看板说明'}</p>
+                        <p className={styles.description}>{item.description || dt('暂无看板说明')}</p>
                         <div className={styles.meta}>
                           <span title={item.data_source_id}>{dashboardSourceLabel(item.data_source_id)}</span>
                           <span>{formatTime(item.updated_at)}</span>
@@ -491,12 +529,12 @@ export default function DashboardListPage() {
                       className={styles.empty}
                       description={
                         search
-                          ? '没有找到匹配的看板'
+                          ? dt('没有找到匹配的看板')
                           : tab === 'recent'
-                            ? '打开一个看板后，会在这里留下记录'
+                            ? dt('打开一个看板后，会在这里留下记录')
                             : tab === 'archived'
-                              ? '暂无归档看板'
-                              : '还没有已保存的看板'
+                              ? dt('暂无归档看板')
+                              : dt('还没有已保存的看板')
                       }
                     />
                   )

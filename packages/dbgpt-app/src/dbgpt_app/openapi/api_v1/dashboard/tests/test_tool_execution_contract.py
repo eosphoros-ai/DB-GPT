@@ -155,6 +155,7 @@ async def test_non_dashboard_tools_keep_existing_unknown_argument_behavior():
             "Build a dashboard",
             False,
             {
+                "load_dashboard_style",
                 "plan_dashboard",
                 "sql_query",
                 "load_dashboard_draft",
@@ -166,6 +167,7 @@ async def test_non_dashboard_tools_keep_existing_unknown_argument_behavior():
             "请生成 2030 年看板，不要改成有记录的年份",
             False,
             {
+                "load_dashboard_style",
                 "plan_dashboard",
                 "sql_query",
                 "load_dashboard_draft",
@@ -177,6 +179,7 @@ async def test_non_dashboard_tools_keep_existing_unknown_argument_behavior():
             "继续修改现有看板 c852b9417fea4b5ebcdf933df452857a",
             False,
             {
+                "load_dashboard_style",
                 "plan_dashboard",
                 "sql_query",
                 "load_dashboard_draft",

@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Optional
 
 logger = logging.getLogger(__name__)
-DEFAULT_GENERATION_TIMEOUT_SECONDS = 180
+DEFAULT_GENERATION_TIMEOUT_SECONDS = 600
 _active_budget: ContextVar[Optional["GenerationBudget"]] = ContextVar(
     "dashboard_generation_budget", default=None
 )
@@ -19,14 +19,14 @@ class DashboardGenerationTimeout(TimeoutError):
 
 
 def generation_timeout_seconds() -> int:
-    raw = os.getenv("DBGPT_DASHBOARD_GENERATION_TIMEOUT_SECONDS", "180")
+    raw = os.getenv("DBGPT_DASHBOARD_GENERATION_TIMEOUT_SECONDS", "600")
     try:
         value = int(raw)
-        if 60 <= value <= 300:
+        if 60 <= value <= 1000:
             return value
     except (ValueError, TypeError):
         pass
-    logger.warning("Invalid Dashboard generation timeout; using 180 seconds")
+    logger.warning("Invalid Dashboard generation timeout; using 600 seconds")
     return DEFAULT_GENERATION_TIMEOUT_SECONDS
 
 

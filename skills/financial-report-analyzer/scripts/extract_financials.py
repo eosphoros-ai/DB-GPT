@@ -1,16 +1,39 @@
 """Skill entry point for deterministic, page-backed annual-report extraction."""
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
-from financial_document import extract_document
+
+def _load_sibling(name):
+    """Support both CLI execution and importlib-based skill callers."""
+    scripts = Path(__file__).resolve().parent
+    path = str(scripts)
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    spec = importlib.util.spec_from_file_location(name, scripts / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_text = _load_sibling("financial_text")
+_column_date = _text._column_date
+_column_periods = _text._column_periods
+_opening_restatement = _text._opening_restatement
+_select_balance_sheet_candidate = _text._select_balance_sheet_candidate
 
 
 def extract_financials(file_path):
     """Extract annual-report facts or return a JSON-serializable error."""
     try:
-        return extract_document(Path(file_path))
+        path = Path(file_path)
+        if path.suffix.lower() != ".pdf":
+            return _text.extract_text_report(path)
+        from financial_document import extract_document
+
+        return extract_document(path)
     except Exception as exc:
         # This is the tool boundary: damaged/encrypted PDFs must return JSON too.
         # stderr may also be captured by a tool runner; keep paths out of both streams.

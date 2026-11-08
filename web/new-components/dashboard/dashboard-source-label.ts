@@ -1,5 +1,7 @@
-export const dashboardSourceLabel = (id: string) =>
-  ({
+import { dashboardText as dt } from './dashboard-i18n';
+
+export const dashboardSourceLabel = (id: string) => {
+  const known = {
     Walmart_Sales: 'Walmart 零售数据',
     walmart_sales_demo: 'Walmart 零售数据',
     olist_ecommerce_demo: 'Olist 电商数据',
@@ -15,4 +17,6 @@ export const dashboardSourceLabel = (id: string) =>
     sqlite_maintenance: 'UCI 合成工业样本',
     sqlite_students: 'UCI 葡语课程成绩',
     upload_001_3a6ee8a2d1ad4a2a: 'Northwind 订单数据',
-  })[id] || (id.startsWith('upload_') ? '上传的数据集' : id);
+  }[id];
+  return known ? dt(known) : id.startsWith('upload_') ? dt('上传的数据集') : id;
+};

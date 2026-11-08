@@ -194,10 +194,11 @@ The lead computes only that missing result with code_interpreter using the injec
 REPORT_CALCULATION_INPUTS JSON file and prints JSON for normal artifact capture.
 Resume the saved spec and bind the new Python artifact; never rerun full analysis.
 
-For an authored recommendation target, a reference node in recommendation lines
-may add `"proposal":"reduce the rate to 5%"`. The engine labels it explicitly as
-a proposed, unobserved target. The node's artifact_id and field/path still select
-the real rationale; proposal is forbidden in KPI and observed-value paragraphs.
+Recommendation lines may contain a standalone `{"proposal":"reduce the rate
+to 5%"}` or a qualitative goal. The engine labels these as proposed, unobserved
+targets. A reference node may also carry `proposal`; its artifact_id and
+field/path select the rationale. Proposal nodes are not allowed in KPI or
+observed-value paragraphs, where actual measurements still require sources.
 
 On failure, a labelled draft can preview independently validated blocks through
 the existing HTML preview. It does not create a report_id or indicate completion.

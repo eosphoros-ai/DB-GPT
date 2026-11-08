@@ -822,7 +822,9 @@ def make_react_tools(
         ]
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
+    @tool
     async def knowledge_retrieve(query: str) -> str:
+        """Retrieve evidence from the selected knowledge bases."""
         if get_current_artifact_sink() is None:
             return await legacy_knowledge_retrieve(query=query)
         return await shared_knowledge_retrieve(query=query)

@@ -5,6 +5,7 @@ import {
   removeDashboardMember,
   upsertDashboardMember,
 } from '@/client/api';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import {
   DashboardAction,
   DashboardAuditRecord,
@@ -38,35 +39,81 @@ interface DashboardAccessPanelProps {
 }
 
 const roleLabels: Record<DashboardRole, string> = {
-  owner: '所有者',
-  editor: '编辑者',
-  viewer: '查看者',
+  get owner() {
+    return dt('所有者');
+  },
+  get editor() {
+    return dt('编辑者');
+  },
+  get viewer() {
+    return dt('查看者');
+  },
 };
 
 const actionLabels: Record<DashboardAction, string> = {
-  view: '查看',
-  edit: '编辑',
-  query: '刷新数据',
-  publish: '发布与分享',
-  manage_access: '管理成员',
-  manage_schedule: '管理定时任务',
+  get view() {
+    return dt('查看');
+  },
+  get edit() {
+    return dt('编辑');
+  },
+  get query() {
+    return dt('刷新数据');
+  },
+  get publish() {
+    return dt('发布与分享');
+  },
+  get manage_access() {
+    return dt('管理成员');
+  },
+  get manage_schedule() {
+    return dt('管理定时任务');
+  },
 };
 
 const auditLabels: Record<string, string> = {
-  'dashboard.created': '创建看板',
-  'dashboard.updated': '保存看板',
-  'dashboard.archived': '归档看板',
-  'dashboard.restored': '恢复看板',
-  'dashboard.refreshed': '刷新数据',
-  'dashboard.published': '发布看板',
-  'dashboard.revision_restored': '恢复历史版本',
-  'member.upserted': '更新成员权限',
-  'member.removed': '移除成员',
-  'publication.rotated': '轮换分享链接',
-  'publication.revoked': '撤销分享链接',
-  'schedule.created': '创建定时任务',
-  'schedule.updated': '更新定时任务',
-  'schedule.deleted': '删除定时任务',
+  get 'dashboard.created'() {
+    return dt('创建看板');
+  },
+  get 'dashboard.updated'() {
+    return dt('保存看板');
+  },
+  get 'dashboard.archived'() {
+    return dt('归档看板');
+  },
+  get 'dashboard.restored'() {
+    return dt('恢复看板');
+  },
+  get 'dashboard.refreshed'() {
+    return dt('刷新数据');
+  },
+  get 'dashboard.published'() {
+    return dt('发布看板');
+  },
+  get 'dashboard.revision_restored'() {
+    return dt('恢复历史版本');
+  },
+  get 'member.upserted'() {
+    return dt('更新成员权限');
+  },
+  get 'member.removed'() {
+    return dt('移除成员');
+  },
+  get 'publication.rotated'() {
+    return dt('轮换分享链接');
+  },
+  get 'publication.revoked'() {
+    return dt('撤销分享链接');
+  },
+  get 'schedule.created'() {
+    return dt('创建定时任务');
+  },
+  get 'schedule.updated'() {
+    return dt('更新定时任务');
+  },
+  get 'schedule.deleted'() {
+    return dt('删除定时任务');
+  },
 };
 
 const roleColor: Record<DashboardRole, string> = {
@@ -80,10 +127,11 @@ const describeError = (error: unknown) => {
     const detail = error.response?.data?.detail || error.response?.data?.err_msg;
     if (typeof detail === 'string') return detail;
   }
-  return error instanceof Error ? error.message : '管理信息加载失败';
+  return error instanceof Error ? error.message : dt('管理信息加载失败');
 };
 
 export default function DashboardAccessPanel({ dashboardId, open, onClose }: DashboardAccessPanelProps) {
+  useDashboardTranslation();
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -130,14 +178,14 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
   const addMember = async () => {
     const cleanPrincipal = principalId.trim();
     if (!cleanPrincipal) {
-      message.warning('请输入成员账号');
+      message.warning(dt('请输入成员账号'));
       return;
     }
     setSaving(true);
     try {
       await upsertDashboardMember(dashboardId, cleanPrincipal, role);
       setPrincipalId('');
-      message.success('成员权限已保存');
+      message.success(dt('成员权限已保存'));
       await load();
     } catch (reason) {
       message.error(describeError(reason));
@@ -149,7 +197,7 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
   const updateRole = async (member: DashboardMemberRecord, nextRole: Exclude<DashboardRole, 'owner'>) => {
     try {
       await upsertDashboardMember(dashboardId, member.principal_id, nextRole);
-      message.success('成员角色已更新');
+      message.success(dt('成员角色已更新'));
       await load();
     } catch (reason) {
       message.error(describeError(reason));
@@ -159,7 +207,7 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
   const removeMember = async (member: DashboardMemberRecord) => {
     try {
       await removeDashboardMember(dashboardId, member.principal_id);
-      message.success('成员已移除');
+      message.success(dt('成员已移除'));
       await load();
     } catch (reason) {
       message.error(describeError(reason));
@@ -172,32 +220,32 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
       title={
         <span className='inline-flex items-center gap-2'>
           <SafetyCertificateOutlined className='text-blue-500' />
-          权限与审计
+          {dt('权限与审计')}
         </span>
       }
       open={open}
       onClose={onClose}
-      extra={<Button aria-label='刷新权限信息' icon={<ReloadOutlined />} onClick={() => void load()} />}
+      extra={<Button aria-label={dt('刷新权限信息')} icon={<ReloadOutlined />} onClick={() => void load()} />}
     >
       {loading ? (
         <Skeleton active paragraph={{ rows: 8 }} />
       ) : error ? (
-        <Alert type='error' showIcon message='无法读取管理信息' description={error} />
+        <Alert type='error' showIcon message={dt('无法读取管理信息')} description={error} />
       ) : permission ? (
         <Tabs
           items={[
             {
               key: 'members',
-              label: '成员权限',
+              label: dt('成员权限'),
               children: (
                 <div className='space-y-5'>
                   <div className='rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20'>
                     <Descriptions size='small' column={1} colon={false}>
-                      <Descriptions.Item label='当前账号'>{permission.actor_id}</Descriptions.Item>
-                      <Descriptions.Item label='当前角色'>
+                      <Descriptions.Item label={dt('当前账号')}>{permission.actor_id}</Descriptions.Item>
+                      <Descriptions.Item label={dt('当前角色')}>
                         <Tag color={roleColor[permission.role]}>{roleLabels[permission.role]}</Tag>
                       </Descriptions.Item>
-                      <Descriptions.Item label='可执行操作'>
+                      <Descriptions.Item label={dt('可执行操作')}>
                         <Space size={[4, 6]} wrap>
                           {permission.actions.map(action => (
                             <Tag key={action}>{actionLabels[action]}</Tag>
@@ -209,23 +257,23 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
 
                   {canManage ? (
                     <div>
-                      <div className='mb-2 font-medium'>添加或更新成员</div>
+                      <div className='mb-2 font-medium'>{dt('添加或更新成员')}</div>
                       <Space.Compact block>
                         <Input
-                          aria-label='成员账号'
-                          placeholder='输入 DB-GPT 用户账号'
+                          aria-label={dt('成员账号')}
+                          placeholder={dt('输入 DB-GPT 用户账号')}
                           value={principalId}
                           onChange={event => setPrincipalId(event.target.value)}
                           onPressEnter={() => void addMember()}
                         />
                         <select
-                          aria-label='成员角色'
+                          aria-label={dt('成员角色')}
                           className='w-32 border border-gray-300 bg-white px-3 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900'
                           value={role}
                           onChange={event => setRole(event.target.value as Exclude<DashboardRole, 'owner'>)}
                         >
-                          <option value='viewer'>查看者</option>
-                          <option value='editor'>编辑者</option>
+                          <option value='viewer'>{dt('查看者')}</option>
+                          <option value='editor'>{dt('编辑者')}</option>
                         </select>
                         <Button
                           type='primary'
@@ -233,15 +281,15 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
                           loading={saving}
                           onClick={() => void addMember()}
                         >
-                          保存成员
+                          {dt('保存成员')}
                         </Button>
                       </Space.Compact>
                       <p className='mt-2 text-xs text-gray-400'>
-                        查看者只能浏览；编辑者可以编辑并刷新；发布、成员管理和定时任务仅所有者可用。
+                        {dt('查看者只能浏览；编辑者可以编辑并刷新；发布、成员管理和定时任务仅所有者可用。')}
                       </p>
                     </div>
                   ) : (
-                    <Alert type='info' showIcon message='你可以访问此看板，但没有成员管理权限。' />
+                    <Alert type='info' showIcon message={dt('你可以访问此看板，但没有成员管理权限。')} />
                   )}
 
                   {canManage ? (
@@ -254,14 +302,15 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
                           <div className='min-w-[180px] flex-1'>
                             <div className='font-medium text-gray-800 dark:text-gray-100'>{member.principal_id}</div>
                             <div className='mt-0.5 text-xs text-gray-400'>
-                              由 {member.created_by} 添加 · {new Date(member.updated_at).toLocaleString()}
+                              {dt('由')} {member.created_by} {dt('添加 ·')}{' '}
+                              {new Date(member.updated_at).toLocaleString()}
                             </div>
                           </div>
                           {member.role === 'owner' ? (
                             <Tag color={roleColor.owner}>{roleLabels.owner}</Tag>
                           ) : (
                             <select
-                              aria-label={`${member.principal_id}角色`}
+                              aria-label={dt('{{value0}}角色', { value0: member.principal_id })}
                               value={member.role}
                               className='h-8 w-28 rounded-md border border-gray-300 bg-white px-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900'
                               onChange={event =>
@@ -274,16 +323,16 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
                           )}
                           {member.role === 'owner' ? null : (
                             <Popconfirm
-                              title={`移除成员 ${member.principal_id}？`}
-                              description='移除后，该成员将不能再访问这个看板。'
-                              okText='移除'
-                              cancelText='取消'
+                              title={dt('移除成员 {{value0}}？', { value0: member.principal_id })}
+                              description={dt('移除后，该成员将不能再访问这个看板。')}
+                              okText={dt('移除')}
+                              cancelText={dt('取消')}
                               onConfirm={() => void removeMember(member)}
                             >
                               <Button
                                 danger
                                 type='text'
-                                aria-label={`移除成员 ${member.principal_id}`}
+                                aria-label={dt('移除成员 {{value0}}', { value0: member.principal_id })}
                                 icon={<DeleteOutlined />}
                               />
                             </Popconfirm>
@@ -297,7 +346,7 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
             },
             {
               key: 'audit',
-              label: `操作记录${audit.length ? ` (${audit.length})` : ''}`,
+              label: dt('操作记录{{value0}}', { value0: audit.length ? ` (${audit.length})` : '' }),
               disabled: !canManage,
               children: audit.length ? (
                 <Timeline
@@ -323,7 +372,7 @@ export default function DashboardAccessPanel({ dashboardId, open, onClose }: Das
                   }))}
                 />
               ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='暂无操作记录' />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={dt('暂无操作记录')} />
               ),
             },
           ]}

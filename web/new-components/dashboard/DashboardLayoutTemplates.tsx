@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardSchemaV1, DashboardSnapshot } from '@/types/dashboard';
 import { ArrowRightOutlined, CheckOutlined, ExportOutlined } from '@ant-design/icons';
 import { Checkbox, Modal } from 'antd';
@@ -17,6 +18,7 @@ import { DASHBOARD_TEMPLATES, DashboardTemplate } from './dashboard-templates';
 
 /** A schematic of the actual packing policy; no sample values are presented as business data. */
 export function DashboardLayoutThumbnail({ template }: { template: DashboardLayoutTemplate }) {
+  useDashboardTranslation();
   const widgets = [
     ...Array.from({ length: template.metric_columns }, (_, index) => ({ id: `metric-${index}`, type: 'kpi' as const })),
     { id: 'trend', type: 'line' as const },
@@ -28,7 +30,12 @@ export function DashboardLayoutThumbnail({ template }: { template: DashboardLayo
   const maxY = Math.max(...layouts.map(item => item.y + item.h));
   const unitY = 156 / maxY;
   return (
-    <svg viewBox='0 0 304 212' role='img' aria-label={`${template.title}布局示意`} className={styles.thumbnail}>
+    <svg
+      viewBox='0 0 304 212'
+      role='img'
+      aria-label={dt('{{value0}}布局示意', { value0: template.title })}
+      className={styles.thumbnail}
+    >
       <rect width='304' height='212' rx='8' fill={theme.canvas} />
       <rect x='14' y='14' width='76' height='5' rx='2' fill={theme.text} opacity='.85' />
       <rect x='14' y='24' width='112' height='3' rx='1.5' fill={theme.muted} opacity='.35' />
@@ -124,13 +131,14 @@ export function DashboardLayoutThumbnail({ template }: { template: DashboardLayo
         );
       })}
       <text x='290' y='206' textAnchor='end' fontSize='6' fill={theme.muted}>
-        布局示意
+        {dt('布局示意')}
       </text>
     </svg>
   );
 }
 
 export function DashboardTemplateGallery({ onChoose }: { onChoose: (template: DashboardTemplate) => void }) {
+  useDashboardTranslation();
   return (
     <div className={styles.gallery}>
       {DASHBOARD_TEMPLATES.map(business => {
@@ -148,12 +156,12 @@ export function DashboardTemplateGallery({ onChoose }: { onChoose: (template: Da
                 <p>{business.question}</p>
                 <div className={styles.structure}>{template.structure}</div>
                 <span className={styles.cta}>
-                  生成规划 <ArrowRightOutlined />
+                  {dt('生成规划')} <ArrowRightOutlined />
                 </span>
               </div>
             </button>
             <a href={template.source_url} target='_blank' rel='noreferrer' className={styles.source}>
-              布局参考 · {template.source} <ExportOutlined />
+              {dt('布局参考 ·')} {template.source} <ExportOutlined />
             </a>
           </article>
         );
@@ -173,6 +181,7 @@ export function DashboardLayoutTemplatePicker({
   onApply: (id: DashboardLayoutTemplateId, withAppearance: boolean) => void;
   onClose: () => void;
 }) {
+  useDashboardTranslation();
   const [selectedId, setSelectedId] = useState<DashboardLayoutTemplateId>('trend-focus');
   const [withAppearance, setWithAppearance] = useState(true);
   const selected = getDashboardLayoutTemplate(selectedId)!;
@@ -183,18 +192,18 @@ export function DashboardLayoutTemplatePicker({
   return (
     <Modal
       open
-      title='选择看板布局'
+      title={dt('选择看板布局')}
       width={1180}
       style={{ top: 24 }}
       styles={{ body: { maxHeight: 'calc(100dvh - 180px)', overflowY: 'auto' } }}
-      okText='应用模板'
-      cancelText='取消'
+      okText={dt('应用模板')}
+      cancelText={dt('取消')}
       okButtonProps={{ disabled: schema.widgets.length === 0 }}
       onOk={() => onApply(selectedId, withAppearance)}
       onCancel={onClose}
     >
-      <p className={styles.intro}>按当前组件预览布局。应用后可继续拖拽调整，也可一键撤销。</p>
-      <div className={styles.choices} role='group' aria-label='布局模板'>
+      <p className={styles.intro}>{dt('按当前组件预览布局。应用后可继续拖拽调整，也可一键撤销。')}</p>
+      <div className={styles.choices} role='group' aria-label={dt('布局模板')}>
         {DASHBOARD_LAYOUT_TEMPLATES.map(template => (
           <button
             key={template.id}
@@ -214,21 +223,23 @@ export function DashboardLayoutTemplatePicker({
       </div>
       <div className={styles.previewHeading}>
         <div>
-          <h3>{selected.title} · 当前看板预览</h3>
+          <h3>
+            {selected.title} {dt('· 当前看板预览')}
+          </h3>
           <p>{selected.description}</p>
           <a href={selected.source_url} target='_blank' rel='noreferrer'>
-            查看布局参考 <ExportOutlined />
+            {dt('查看布局参考')} <ExportOutlined />
           </a>
         </div>
         <Checkbox checked={withAppearance} onChange={event => setWithAppearance(event.target.checked)}>
-          同时应用配套样式
+          {dt('同时应用配套样式')}
         </Checkbox>
       </div>
       <div className={styles.preview} data-testid='dashboard-layout-preview'>
         {schema.widgets.length ? (
           <DashboardRenderer schema={preview} snapshot={snapshot} />
         ) : (
-          <p>添加组件后即可预览和应用布局。</p>
+          <p>{dt('添加组件后即可预览和应用布局。')}</p>
         )}
       </div>
     </Modal>

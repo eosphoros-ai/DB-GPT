@@ -111,7 +111,6 @@ export const ChatZh: Resources['translation'] = {
   evidence_quoted_text: '报告引用原文',
   evidence_view_cited_chunk: '查看引用切片内容',
   evidence_view_cited_document: '查看引用文档内容',
-  evidence_result_snapshot: '结果快照',
   evidence_chart_spec: '图表规格与数据选择器',
   evidence_browser_observation_failed: '浏览器观测保存失败',
   evidence_unavailable: '当前报告证据尚不可用',
@@ -139,7 +138,7 @@ export const ChatZh: Resources['translation'] = {
   evidence_real_artifact: '真实执行产物',
   evidence_close: '关闭',
   evidence_citation_content: '引用内容',
-  evidence_no_snapshot: '暂无可展示的结果快照',
+  evidence_no_result: '暂无可展示的结果',
   evidence_legacy_unbound:
     '这是旧版未绑定摘要 Run：已保存 {{count}} 个执行产物，但报告块尚未建立证据关联。请重新执行任务以生成可追溯分析报告。',
   evidence_artifacts_revision: '真实执行产物 {{count}} 个 · ReportRun Revision {{revision}}',
@@ -195,7 +194,6 @@ export const ChatZh: Resources['translation'] = {
   evidence_graph_skill: '技能',
   evidence_graph_specific_source: '具体来源',
   evidence_graph_location: '引用位置：',
-  evidence_graph_result_snapshot: '结果快照',
   evidence_graph_chart_spec: '图表规格与数据选择器',
   evidence_graph_upstream: '上游',
   evidence_graph_downstream: '下游',
@@ -241,9 +239,9 @@ export const ChatZh: Resources['translation'] = {
   evidence_source_knowledge_missing: '知识库名称未记录',
   evidence_source_reference_missing: '引用文件名称未记录',
   example_olist_ecommerce_report_title: 'Olist 巴西电商经营诊断',
-  example_olist_ecommerce_report_desc: '使用内置离线演示库分析电商经营；也可连接完整 Olist 数据',
+  example_olist_ecommerce_report_desc: '使用简化的离线演示数据分析电商经营',
   example_olist_ecommerce_report_query:
-    '帮我看看巴西站这段时间的生意怎么样，重点看 2017 年 1 月到 2018 年 8 月：销售额和订单量有什么变化？哪些品类、哪些地区表现比较好？送货慢会不会影响客户评分？最后给我三个最值得先做的改进建议，再整理成一份带图表的报告。',
+    '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
   example_walmart_sales_title: '沃尔玛销售数据分析',
   example_walmart_sales_desc: '分析沃尔玛销售CSV数据，生成可视化网页报告',
   example_walmart_sales_query:
@@ -257,6 +255,10 @@ export const ChatZh: Resources['translation'] = {
   example_fin_report_query:
     '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
   example_create_sql_skill_title: '创建SQL分析技能',
+  example_ecommerce_dashboard_title: '电商经营分析看板',
+  example_ecommerce_dashboard_desc: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
+  example_ecommerce_dashboard_query:
+    '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
   example_create_sql_skill_desc: '使用skill-creator创建一个实用的SQL数据分析技能',
   example_create_sql_skill_query:
     '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
@@ -400,6 +402,10 @@ export const ChatZh: Resources['translation'] = {
   select_skill: '选择技能',
   skill_selected: '技能：{{name}}',
   select_database: '选择数据库',
+  database_required_title: '请先选择数据库',
+  database_required_description:
+    '当前看板还没有可用数据。请选择一个数据库，或上传 CSV / Excel 文件后再发送。已输入的内容会保留。',
+  database_required_continue_editing: '继续编辑',
   database_selected: '数据库：{{name}}',
   select_knowledge: '选择知识库',
   knowledge_selected: '知识库：{{name}}',
