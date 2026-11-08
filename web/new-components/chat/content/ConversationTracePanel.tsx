@@ -106,7 +106,10 @@ function extractMessages(spans: SpanNode[]): TraceMessage[] {
           messages.push({
             id: span.span_id + '-sys',
             kind: 'system',
-            content: String(sys.content),
+            content: String(sys.content).replace(
+              /<!-- DB-GPT INTERNAL EVIDENCE BEGIN -->[\s\S]*?<!-- DB-GPT INTERNAL EVIDENCE END -->/g,
+              '',
+            ),
             modelName: span.metadata?.model_name || span.model_name,
           });
           systemEmitted = true;

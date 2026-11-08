@@ -307,6 +307,35 @@ async def test_local_shell_executes_pipeline_and_preserves_artifact(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_failed_python_does_not_publish_partially_written_image(tmp_path):
+    from dbgpt.core.interface.report_capture import (
+        ArtifactCaptureContext,
+        InMemoryArtifactSink,
+    )
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="failed-chart"))
+    state = {"conv_id": "failed-chart", "_report_artifact_sink": sink}
+    tool = make_code_interpreter(state)
+    output = json.loads(
+        await tool(
+            code=(
+                'import matplotlib\nmatplotlib.use("Agg")\n'
+                "import matplotlib.pyplot as plt\nplt.plot([1, 2])\n"
+                'plt.savefig(os.path.join(PLOT_DIR, "partial.png"))\n'
+                'raise KeyError("category")'
+            )
+        )
+    )
+    assert not any(item["output_type"] == "image" for item in output["chunks"])
+    assert not state.get("generated_images")
+    assert not any(item.type == "chart" for item in sink.snapshot())
+    assert any(
+        item.type == "python" and item.status == "failed" for item in sink.snapshot()
+    )
+    assert any("KeyError" in str(item.get("content")) for item in output["chunks"])
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("subagent", [False, True])
 async def test_main_and_subagent_python_analyze_upload_and_return_image(
     tmp_path, subagent
@@ -371,17 +400,28 @@ async def test_main_and_subagent_shell_use_configured_factory(
 
 
 @pytest.mark.asyncio
-async def test_real_local_timeout_stops_the_child(tmp_path):
+async def test_real_local_timeout_stops_the_child(tmp_path, monkeypatch):
     import psutil
 
-    pid_path = tmp_path / "child.pid"
+    create_subprocess = asyncio.create_subprocess_exec
+    processes = []
+
+    async def record_subprocess(*args, **kwargs):
+        process = await create_subprocess(*args, **kwargs)
+        processes.append(process)
+        return process
+
+    # Observe the real process at creation. A short timeout may expire before
+    # Python executes any user code, so a child-written PID file is not reliable.
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", record_subprocess)
     result = await _execution.run_code(
-        "import os, time\nfrom pathlib import Path\n"
-        'Path("child.pid").write_text(str(os.getpid()))\ntime.sleep(30)',
+        "import time\ntime.sleep(30)",
         language="python",
         work_dir=str(tmp_path),
         timeout=0.2,
     )
     assert result.status == ExecutionStatus.TIMEOUT
-    assert pid_path.exists()
-    assert not psutil.pid_exists(int(pid_path.read_text()))
+    assert len(processes) == 1
+    process = processes[0]
+    assert process.returncode is not None
+    assert not psutil.pid_exists(process.pid)

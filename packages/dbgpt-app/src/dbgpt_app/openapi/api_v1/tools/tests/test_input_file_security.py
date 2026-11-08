@@ -463,6 +463,23 @@ def test_code_environment_reads_selected_authorized_snapshots(runtime):
     assert "selected snapshots read successfully" in result.stdout
     refs = sink.snapshot()
     assert all(a.locator.get("path") != str(second.resolve()) for a in refs)
+    assert len(json.loads(env["DBGPT_INPUT_ARTIFACT_IDS"])) == 1
+    assert all(a.locator.get("path") != str(manifest.resolve()) for a in refs)
+
+
+def test_uploaded_json_is_retained_while_internal_manifest_is_not(runtime):
+    csv_file = runtime / "dataset.csv"
+    csv_file.write_text("value\n42\n")
+    user_json = runtime / "settings.json"
+    user_json.write_text('{"threshold": 42}')
+    manifest = runtime / "files.json"
+    manifest.write_text(json.dumps({"csv": str(csv_file), "json": str(user_json)}))
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="two-user-files"))
+    env = build_execution_env(
+        work_dir=str(runtime), files_json_path=str(manifest), artifact_sink=sink
+    )
+    refs = sink.snapshot()
+    assert {item.source_name for item in refs} == {"dataset.csv", "settings.json"}
     assert len(json.loads(env["DBGPT_INPUT_ARTIFACT_IDS"])) == 2
 
 

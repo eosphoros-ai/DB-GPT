@@ -458,6 +458,7 @@ const convertToManusFormat = (
         status: getStepStatus(step.status),
         action: step.action,
         actionInput: step.actionInput,
+        todoMeta: step.todoMeta,
       };
     });
 
@@ -513,11 +514,11 @@ const EXAMPLE_CARDS = [
     id: 'olist_ecommerce_report',
     icon: '🛍️',
     title: 'Olist 巴西电商经营诊断',
-    description: '使用内置离线演示库分析电商经营；也可连接完整 Olist 数据',
+    description: '使用简化的离线演示数据分析电商经营',
     query:
-      '帮我看看巴西站这段时间的生意怎么样，重点看 2017 年 1 月到 2018 年 8 月：销售额和订单量有什么变化？哪些品类、哪些地区表现比较好？送货慢会不会影响客户评分？最后给我三个最值得先做的改进建议，再整理成一份带图表的报告。',
+      '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
     dbName: 'Olist_Ecommerce',
-    knowledgeName: 'Olist_Analytics_Governance',
+    knowledgeName: 'Olist_Analytics_Governance_Demo_v2',
     color: 'from-rose-500/10 to-orange-500/10',
     borderColor: 'border-rose-200/60 dark:border-rose-800/40',
     iconBg: 'bg-rose-100 dark:bg-rose-900/40',
@@ -2568,13 +2569,19 @@ const Playground: NextPage = () => {
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
+          const finalTaskPlan = Array.isArray(payload.task_plan) ? (payload.task_plan as TaskItem[]) : undefined;
           cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
-            const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' as const } : item,
-            );
+            const nextSteps = current.steps.map(item => {
+              const next = item.status === 'running' ? { ...item, status: 'done' as const } : item;
+              if (item.action?.toLowerCase() === 'todowrite' && payload.todo_meta) {
+                const meta = payload.todo_meta;
+                return { ...next, todoMeta: meta, title: `TODO::${meta.state}:${meta.done}/${meta.total}` };
+              }
+              return next;
+            });
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
           setMessages(prev =>
@@ -2587,6 +2594,7 @@ const Playground: NextPage = () => {
                 reportId: finalAnswer.reportId,
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
+                ...(finalTaskPlan && { taskPlan: finalTaskPlan }),
               };
             }),
           );

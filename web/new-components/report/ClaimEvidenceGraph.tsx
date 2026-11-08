@@ -5,6 +5,7 @@ import type { ReportArtifact, ReportRun } from '@/types/report';
 import type { Datum } from '@antv/ava';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { artifactTitle } from './artifact-title';
+import { useInternalManifests } from './use-internal-manifests';
 import { referenceLocation } from './reference-location';
 import {
   buildGraph,
@@ -340,14 +341,6 @@ function Details({
                   {code}
                 </pre>
               ) : null}
-              {artifact.result?.inline !== undefined ? (
-                <details className='mt-3 text-xs'>
-                  <summary className='cursor-pointer'>{i18n.t('evidence_graph_result_snapshot')}</summary>
-                  <pre className='mt-2 max-h-60 overflow-auto whitespace-pre-wrap'>
-                    {JSON.stringify(artifact.result.inline, null, 2)}
-                  </pre>
-                </details>
-              ) : null}
               {spec ? (
                 <div className='mt-3 overflow-hidden rounded border p-2'>
                   <ChartView data={spec.data} type={spec.type} sql={spec.sql} />
@@ -393,9 +386,16 @@ export default function ClaimEvidenceGraph({
   onArtifactFocus?: (stepId: string) => void;
 }) {
   const activeRun = reportRun || run;
+  const internalManifests = useInternalManifests(activeRun);
+  const visibleRun = useMemo(
+    () => activeRun && internalManifests.size
+      ? { ...activeRun, document: { ...activeRun.document, artifacts: activeRun.document.artifacts.filter(a => !internalManifests.has(a.artifact_id)) } }
+      : activeRun,
+    [activeRun, internalManifests],
+  );
   const graph = useMemo(
-    () => buildGraph(activeRun, generatedFiles, knowledgeNames),
-    [activeRun, generatedFiles, knowledgeNames],
+    () => buildGraph(visibleRun, generatedFiles, knowledgeNames),
+    [visibleRun, generatedFiles, knowledgeNames],
   );
   const [hovered, setHovered] = useState<string>();
   const [focus, setFocus] = useState<string>();
