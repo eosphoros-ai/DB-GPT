@@ -787,6 +787,7 @@ def test_knowledge_note_paragraphs_compile_to_flat_bound_parts(root_note):
     paragraphs = [
         ["口径说明：", {"object_id": token}],
         ["无评价记录为空值，不按 0 分处理。"],
+        ["平均评分排除空值且不可当 0 分。"],
     ]
     data = (
         {"note": paragraphs}
@@ -805,6 +806,95 @@ def test_knowledge_note_paragraphs_compile_to_flat_bound_parts(root_note):
         compile_report_objects(
             {"note": [["收入999元"]]}, registry, spec_mode=True, fields=[]
         )
+    with pytest.raises(ValueError, match="REPORT_OBJECT_LITERAL"):
+        compile_report_objects(
+            {"note": [["缺失评分按 0 分统计。"]]}, registry, spec_mode=True, fields=[]
+        )
+
+
+@pytest.mark.asyncio
+async def test_corrected_named_draft_clears_stale_error_and_renders(
+    monkeypatch, tmp_path
+):
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    (tmp_path / "report.html").write_text(
+        "<html><body>{{SUMMARY}}{{INSIGHTS}}</body></html>", encoding="utf-8"
+    )
+    state = {"conv_id": "clear-stale-error"}
+    contract = {"mode": "placeholders", "fields": ["SUMMARY", "INSIGHTS"]}
+    wrappers = make_report_object_tools(
+        state, make_html_interpreter(state, str(tmp_path)), "report.html", contract
+    )
+    pack = ToolPack([entry._tool for entry in wrappers])
+    await pack.async_execute(
+        resource_name="set_report_field", field="INSIGHTS", content="旧的有效分析。"
+    )
+    rejected = json.loads(
+        await pack.async_execute(
+            resource_name="compose_report",
+            data={"SUMMARY": "真实业务概况。", "INSIGHTS": "收入 999"},
+        )
+    )
+    assert rejected["status"] == "invalid_selection"
+    assert state["_report_html_error"].startswith("REPORT_OBJECT_LITERAL")
+    attempts = state["_report_tool_call_count"]
+    unrelated = json.loads(
+        await pack.async_execute(
+            resource_name="set_report_field", field="SUMMARY", content="更新后的概况。"
+        )
+    )
+    assert unrelated["remaining_fields"] == []
+    assert not unrelated["ready_to_compose"]
+    assert state["_report_html_error"].startswith("REPORT_OBJECT_LITERAL")
+    staged = json.loads(
+        await pack.async_execute(
+            resource_name="set_report_field",
+            field="INSIGHTS",
+            content="修正后的定性分析。",
+        )
+    )
+    assert staged["remaining_fields"] == [] and staged["ready_to_compose"]
+    assert "compose_report()" in staged["instruction"]
+    assert not state.get("_report_html_error")
+    assert not state.get("_report_last_render_error")
+    assert state["_report_preflight_attempts"] == 0
+    assert state["_report_tool_call_count"] == attempts
+    checkpoint = json.loads(
+        (tmp_path / "tmp/clear-stale-error/report-repair/checkpoint.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert checkpoint["render_error"] is None
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    assert completed["status"] == "completed", completed
+    assert "修正后的定性分析" in state["_report_presentation"]["content"]
+
+
+@pytest.mark.parametrize(
+    "error",
+    ["KB_REPORT_BINDING_REQUIRED: missing source", "REPORT_OBJECT_LITERAL: old error"],
+)
+def test_named_field_does_not_clear_other_failures_or_exhaustion(error):
+    state = {
+        "_report_object_template": "report.html",
+        "_report_object_fields": {},
+        "_report_html_error": error,
+        "_report_last_render_error": error,
+        "_report_retry_exhausted": error.startswith("REPORT_OBJECT_"),
+    }
+    _, _, stage = make_report_object_tools(
+        state,
+        None,
+        "report.html",
+        {"mode": "placeholders", "fields": ["SUMMARY", "INSIGHTS"]},
+    )
+    stage("SUMMARY", "定性说明。")
+    assert state["_report_html_error"] == error
+    assert state["_report_last_render_error"] == error
 
 
 @pytest.mark.asyncio
@@ -1053,6 +1143,98 @@ async def test_compose_named_template_reads_value_and_rejects_before_renderer(
     # Random artifact IDs may contain 999; inspect the displayed text only.
     assert "999" not in re.sub(r"<[^>]*>", "", state["_report_presentation"]["content"])
     assert "<h1>经营分析</h1>" in state["_report_presentation"]["content"]
+
+
+@pytest.mark.asyncio
+async def test_financial_named_fields_recover_after_progress_without_weakening_binding(
+    monkeypatch, tmp_path
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    fields = [
+        "PROFITABILITY_ANALYSIS",
+        "SOLVENCY_ANALYSIS",
+        "EFFICIENCY_ANALYSIS",
+        "RISKS_LIST",
+    ]
+    state = {"conv_id": "financial-preflight-progress"}
+    _, _, stage = make_report_object_tools(
+        state, None, "financial.html", {"mode": "placeholders", "fields": fields}
+    )
+    for index, field in enumerate(fields[:3]):
+        for suffix in range(2):
+            rejected = json.loads(
+                stage(field, f"净利润同比增长 {20 + index * 2 + suffix}%")
+            )
+            assert rejected["status"] == "invalid_selection" and rejected["retryable"]
+        assert (
+            json.loads(stage(field, f"需要结合实际业务核验{'。' * (index + 1)}"))[
+                "status"
+            ]
+            == "staged"
+        )
+        assert state["_report_preflight_attempts"] == 0
+    assert state["_report_tool_call_count"] == 6
+    rejected = json.loads(
+        stage("RISKS_LIST", ["净利润同比增长27.40%，现金流下降22.62%。"])
+    )
+    assert rejected["status"] == "invalid_selection" and rejected["retryable"]
+    assert "RISKS_LIST" not in state["_report_object_fields"]
+    staged = json.loads(stage("RISKS_LIST", ["盈利与现金流变化存在差异，应持续核验。"]))
+    assert staged["status"] == "staged" and staged["ready_to_compose"]
+    assert state["_report_tool_call_count"] == 7
+
+
+@pytest.mark.asyncio
+async def test_business_progress_renews_preflight_but_not_total_budget(
+    monkeypatch, tmp_path
+):
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    state = {"conv_id": "preflight-progress"}
+    tools = make_report_object_tools(
+        state, None, "report.html", {"mode": "spec", "fields": []}
+    )
+    pack = ToolPack([entry._tool for entry in tools])
+
+    async def append(text):
+        return json.loads(
+            await pack.async_execute(
+                resource_name="patch_report",
+                render=False,
+                append_sections=[{"heading": "配送分析", "intro": [[text]]}],
+            )
+        )
+
+    for i in range(3):
+        for j in range(2):
+            result = await append(f"平均时长为 {100 + i * 2 + j} 天。")
+            assert result["status"] == "invalid_selection"
+            assert result["retryable"]
+            assert "request_report_calculation" in result["error"]
+            assert "source_artifact_ids" in result["error"]
+        assert (await append(f"配送表现需要持续复核{'。' * (i + 1)}"))[
+            "status"
+        ] == "staged"
+        assert state["_report_preflight_attempts"] == 0
+        assert state["_report_tool_call_count"] == (i + 1) * 2
+    assert len(state["_report_object_spec"]["sections"]) == 3
+    await append("平均时长为 999 天。")
+    # A no-op metadata patch must not renew the budget.
+    await pack.async_execute(resource_name="patch_report", report={"title": "报告"})
+    await append("平均时长为 998 天。")
+    count = state["_report_preflight_attempts"]
+    assert count == 1
+    await pack.async_execute(resource_name="patch_report", report={"title": "报告"})
+    assert state["_report_preflight_attempts"] == count
+    state["_report_tool_call_count"] = report_repair.MAX_REPORT_CALLS - 1
+    await append("新的定性说明。")
+    result = await append("平均时长为 1234 天。")
+    assert not result["retryable"]
+    assert state["_report_tool_call_count"] == report_repair.MAX_REPORT_CALLS
 
 
 @pytest.mark.asyncio

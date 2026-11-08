@@ -156,7 +156,11 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
         )
         or (
             re.fullmatch(r"\d+", value)
-            and re.search(r"(?:门店|\bstore)\s*(?:编号|ID|#)?\s*$", prefix, re.I)
+            and re.search(
+                r"(?:门店|\bstore)\s*(?:编号|ID|#)?\s*(?:\d+\s*[,，、/]\s*)*$",
+                prefix,
+                re.I,
+            )
             and not re.match(r"\s*(?:家|个|间|%|元|万元|亿元|stores?\b)", suffix, re.I)
         )
         or (
@@ -182,7 +186,7 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
             and re.search(
                 r"(?:缺失|无评价|空值|missing|null).{0,24}"
                 r"(?:不应|不可|不得|不能|不允许|不要|不|而非).{0,12}"
-                r"(?:当[作成]|视[为作]|填(?:充)?(?:为|成)?|记[作为]|计[作为入]|"
+                r"(?:当[作成]?|视[为作]|填(?:充)?(?:为|成)?|记[作为]|计[作为入]|"
                 r"算[作为]|作为|替换[为成]|按|以)\s*$",
                 prefix,
                 re.I,

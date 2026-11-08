@@ -16,10 +16,30 @@ from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
     _bind_generated_chart_images,
     _render_placeholder_parts,
     _resolve_inline_report_references,
+    _resolve_reference_node,
     _resolve_template_references,
     make_html_interpreter,
     report_template_contract,
 )
+
+
+def test_knowledge_reference_displays_compact_link_and_preserves_quote():
+    excerpt = "指标说明：\n| 商品 GMV | SUM(price) |\n知识库原始口径。"
+    source = SimpleNamespace(type="reference", excerpt=excerpt)
+    by_id = {"reference-example": source}
+    bound = _resolve_reference_node({"artifact_id": "reference-example"}, by_id)
+    assert bound["value"] == "知识库来源"
+    assert bound["raw"] == excerpt
+    assert bound["artifact_id"] == "reference-example"
+    quoted = _resolve_reference_node(
+        {"artifact_id": "reference-example", "quote": "知识库原始口径。"}, by_id
+    )
+    assert quoted["value"] == "知识库原始口径。"
+    assert quoted["selectors"]["reference-example"]["quote"] == "知识库原始口径。"
+    with pytest.raises(ValueError, match="quote must be text"):
+        _resolve_reference_node(
+            {"artifact_id": "reference-example", "quote": "不存在的口径"}, by_id
+        )
 
 
 def test_english_month_year_is_a_date_not_a_metric():
@@ -34,6 +54,8 @@ def test_english_month_year_is_a_date_not_a_metric():
     "value,prefix,suffix",
     [
         ("0", "无评价为空，不可当作 ", " 分"),
+        ("0", "平均评分排除空值且不可当 ", " 分"),
+        ("0", "缺失评分不能当 ", " 分处理"),
         ("0", "无评价记录为空值，不按 ", " 分处理"),
         ("0", "缺失评分不能将其当成 ", " 分"),
         ("0", "无评价不计为 ", " 分"),
@@ -41,6 +63,8 @@ def test_english_month_year_is_a_date_not_a_metric():
         ("1", "Holiday_Flag 为 0/", " 标记"),
         ("1", "Holiday_Flag 为 ", " 的记录共"),
         ("1", "节假日标记为 ", " 的记录共"),
+        ("35", "对门店 7、", "、15 等高敏感门店"),
+        ("15", "对门店 7、35、", " 等高敏感门店"),
         ("1", "on_time 定义：实际送达不晚于预计送达为 ", "，逾期为 0；"),
         ("0", "on_time 定义：实际送达不晚于预计送达为 1，逾期为 ", "；"),
         ("0", "无评价订单为空值而非 ", " 分"),
@@ -62,8 +86,10 @@ def test_report_definition_numbers_are_not_measured_values(value, prefix, suffix
     [
         ("0", "评分为 ", " 分"),
         ("0", "缺失评分按 ", " 分统计"),
+        ("0", "空值按 ", " 分统计"),
         ("20", "门店 ", " 家"),
         ("20", "门店收入为 ", " 万元"),
+        ("15", "门店 7、35、", " 万元"),
         ("1", "Holiday_Flag 为 ", "%"),
         ("1", "节假日标记为 ", "%"),
         ("13", "截至 ", " 月"),

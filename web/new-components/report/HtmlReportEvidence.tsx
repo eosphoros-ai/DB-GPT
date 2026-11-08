@@ -381,6 +381,17 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
         });
       }
       function decorateEvidenceTargets() {
+        // Older generated reports may inline an entire unquoted KB Markdown
+        // excerpt as a span. Keep its artifact binding and expose the source
+        // through the existing evidence control instead of duplicating it.
+        Array.prototype.forEach.call(document.querySelectorAll('span[data-dbgpt-artifacts]'), function (node) {
+          var ids = (node.getAttribute('data-dbgpt-artifacts') || '').split(',').map(function (id) { return id.trim(); }).filter(Boolean);
+          var text = (node.textContent || '').trim();
+          if (ids.length !== 1 || ids[0].indexOf('reference-') !== 0 || node.children.length || node.hasAttribute('data-dbgpt-artifact-selectors')) return;
+          if (text.length < 160 || text !== (node.getAttribute('data-dbgpt-evidence-label') || '').trim() || text.indexOf('|') < 0) return;
+          node.textContent = '知识库来源';
+          node.setAttribute('data-dbgpt-evidence-label', '知识库来源');
+        });
         Array.prototype.forEach.call(document.querySelectorAll('[data-dbgpt-artifacts], [_echarts_instance_]'), function (node) {
           if (node.hasAttribute('data-dbgpt-evidence-summary') || node.getAttribute('data-dbgpt-evidence-control') === 'true') return;
           if (node.getAttribute('data-dbgpt-evidence-decorated') === 'true') return;

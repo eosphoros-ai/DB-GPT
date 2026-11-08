@@ -1080,7 +1080,10 @@ def _resolve_reference_node(
                     f"selector={json.dumps(selector, ensure_ascii=False)}; quote "
                     "must be text from this captured excerpt"
                 )
-        text = quote if isinstance(quote, str) and quote.strip() else excerpt
+        # An unquoted reference is an evidence link, not authored prose. Showing
+        # the entire raw Markdown excerpt duplicates the author's explanation
+        # and leaks table/source syntax into the report body.
+        text = quote if isinstance(quote, str) and quote.strip() else "知识库来源"
         proposal = node.get("proposal")
         if proposal:
             selector.setdefault("quote", excerpt)

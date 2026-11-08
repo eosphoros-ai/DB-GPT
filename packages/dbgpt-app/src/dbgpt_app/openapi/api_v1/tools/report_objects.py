@@ -505,6 +505,14 @@ def compile_report_objects(
                 "REPORT_OBJECT_LITERAL: replace measured literals with captured "
                 "value objects; capture derived calculations before writing results. "
                 + json.dumps(literal_errors, ensure_ascii=False)
+                + "\nDo not resubmit the same numeric prose. For existing metrics, "
+                "use list_report_objects(kind='value') and replace each measured "
+                "number with {object_id,format}. For a derived ratio/difference "
+                "not captured yet, call request_report_calculation with the "
+                "source_artifact_ids, then terminate for the calculation handoff. "
+                "Alternatively retain qualitative conclusions and the selected "
+                "evidence tables/charts without repeating measured numbers. "
+                "Never guess a numeric object's identity or bind by value alone."
             )
 
     def prose(value, location, depth=0):
@@ -741,6 +749,7 @@ def compile_report_objects(
 
 def make_report_object_tools(state, renderer, template_path, contract):
     fields_lock = Lock()
+    corrected_fields = set()
     repair_lock = asyncio.Lock()
     required_fields = set(contract.get("prose_fields", contract["fields"])) & set(
         contract["fields"]
@@ -759,6 +768,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
     def selection_failure(error):
         from .report_repair import record_report_object_failure
 
+        corrected_fields.clear()
         return record_report_object_failure(
             state, _DEPTH_ERROR if isinstance(error, RecursionError) else str(error)
         )
@@ -1230,6 +1240,9 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         state["_report_object_spec"] = candidate
                         state.pop("_report_html_error", None)
                         if candidate != previous:
+                            # Successful document progress renews the local
+                            # preflight allowance; the shared total call cap stays.
+                            state["_report_preflight_attempts"] = 0
                             state["_report_invocation_failures"] = 0
                             state.pop("_report_last_invocation_error_fingerprint", None)
                             state.pop("_report_last_preflight_fingerprint", None)
@@ -1326,7 +1339,49 @@ def make_report_object_tools(state, renderer, template_path, contract):
 
             with fields_lock:
                 draft = state.setdefault("_report_object_fields", {})
+                changed = field not in draft or draft[field] != content
                 draft[field] = content
+                corrected_fields.add(field)
+                if changed:
+                    # Accepted progress renews only the local preflight budget;
+                    # repeated content and the shared total cap stay bounded.
+                    state["_report_preflight_attempts"] = 0
+                    state.pop("_report_last_preflight_fingerprint", None)
+                validation_error = None
+                try:
+                    compile_report_objects(
+                        draft,
+                        catalogue(),
+                        spec_mode=False,
+                        fields=contract["fields"],
+                        interpretation_only=contract.get("interpretation_only", False),
+                    )
+                except (ValueError, TypeError, KeyError, RecursionError) as error:
+                    validation_error = str(error)
+                # A validated correction supersedes compiler diagnostics, not
+                # renderer/knowledge errors or an exhausted repair budget.
+                if not state.get("_report_retry_exhausted"):
+                    for key in ("_report_html_error", "_report_last_render_error"):
+                        if str(state.get(key) or "").startswith("REPORT_OBJECT_"):
+                            if validation_error:
+                                state[key] = validation_error
+                            else:
+                                affected = set(
+                                    re.findall(
+                                        r'"location"\s*:\s*"([^"\[.]+)', state[key]
+                                    )
+                                ) & set(contract["fields"])
+                                if affected <= corrected_fields:
+                                    state.pop(key, None)
+                remaining = sorted(required_fields - set(draft))
+                ready = not (
+                    remaining
+                    or validation_error
+                    or state.get("_report_retry_exhausted")
+                    or str(state.get("_report_html_error") or "").startswith(
+                        "REPORT_OBJECT_"
+                    )
+                )
                 _save_checkpoint(
                     state,
                     state.get("_report_saved_arguments") or {},
@@ -1335,7 +1390,20 @@ def make_report_object_tools(state, renderer, template_path, contract):
                 return json.dumps(
                     {
                         "status": "staged",
-                        "remaining_fields": sorted(required_fields - set(draft)),
+                        "remaining_fields": remaining,
+                        "ready_to_compose": ready,
+                        "instruction": (
+                            "All required fields are validated. Call compose_report() "
+                            "now without data; do not rewrite staged fields."
+                            if ready
+                            else "Preserve validated fields and repair or stage "
+                            "only the remaining content before compose_report()."
+                        ),
+                        **(
+                            {"validation_error": validation_error}
+                            if validation_error
+                            else {}
+                        ),
                     }
                 )
 
@@ -1383,6 +1451,10 @@ def report_object_prompt(template_path, contract, injected_fields, language):
             "正文段落为普通文字与 {object_id,format?} 组成的 parts 数组。",
             "正文优先做定性解释，统计数值已由 KPI、数据表和图表展示，无需逐项重复。"
             "不要反复扩写已暂存的范围与口径；先完成所有分析维度及建议章节。",
+            "若正文确需倍数、差值、占比等派生数值而目录中没有对应结果，"
+            "调用 request_report_calculation，提供公式和 source_artifact_ids，"
+            "然后 terminate 交回主代理补算。不得自行心算写入正文；"
+            "也可保留定性解释及真实表图，不重复数字。",
             "表格选择 table={object_id:表格ID}，"
             "图表选择 chart={object_id:表格或图表ID}。"
             "table 和 chart 对象只能放在对应字段，不能当作正文中的来源引用；"
@@ -1407,6 +1479,12 @@ def report_object_prompt(template_path, contract, injected_fields, language):
             "标题用 title 参数填写。",
             "正文只填写：" + json.dumps(contract["fields"]),
         ]
+        if {"RISKS_LIST", "ADVANTAGES_LIST"} <= set(contract["fields"]):
+            instructions.append(
+                "财务指标已由模板和捕获结果展示。优势与风险优先写定性判断和具体行动；"
+                "如需在正文重复数字，只能引用对应 value 对象，"
+                "缺少派生数值则先请求补算。"
+            )
         if contract.get("interpretation_only"):
             instructions += [
                 "本模板的完整统计、数据表和图表已由程序生成，正文只做定性解读。",
