@@ -342,12 +342,32 @@ class OpenAILLMClient(ProxyLLMClient):
         async for r in self.generate_stream_v1(messages, payload):
             yield r
 
+    async def _create_chat_completion(
+        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
+    ) -> Any:
+        from openai import BadRequestError
+
+        try:
+            return await self.client.chat.completions.create(
+                messages=messages, **payload
+            )
+        except BadRequestError:
+            if payload.get("tool_choice") != "required" or not payload.get("tools"):
+                raise
+            # Some compatible endpoints accept tools but reject "required".
+            # Retry once with auto; agent protocol/workflow checks still enforce
+            # legal calls and completion. Do not mutate the caller's payload.
+            logger.warning(
+                "Model endpoint rejected required tool choice; retrying with auto"
+            )
+            return await self.client.chat.completions.create(
+                messages=messages, **{**payload, "tool_choice": "auto"}
+            )
+
     async def generate_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> ModelOutput:
-        chat_completion = await self.client.chat.completions.create(
-            messages=messages, **payload
-        )
+        chat_completion = await self._create_chat_completion(messages, payload)
         reasoning_content = ""
         message_obj = chat_completion.choices[0].message
         if hasattr(message_obj, "reasoning_content"):
@@ -379,9 +399,7 @@ class OpenAILLMClient(ProxyLLMClient):
     async def generate_stream_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> AsyncIterator[ModelOutput]:
-        chat_completion = await self.client.chat.completions.create(
-            messages=messages, **payload
-        )
+        chat_completion = await self._create_chat_completion(messages, payload)
         text = ""
         reasoning_content = ""
         usage = None

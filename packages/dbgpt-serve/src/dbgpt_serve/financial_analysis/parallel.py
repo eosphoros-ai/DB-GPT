@@ -70,7 +70,9 @@ class TopicGenerator:
                     ),
                 ],
                 temperature=0,
-                max_new_tokens=4000,
+                # Reasoning models count thinking against this budget too.
+                # Leave room for the findings JSON after reasoning completes.
+                max_new_tokens=8000,
                 context=ModelRequestContext(
                     user_name=self.owner, conv_uid=self.session_id, stream=False
                 ),

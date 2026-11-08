@@ -779,7 +779,7 @@
     padding-left: 0;
   }
 }
-@container (max-width: 580px) {
+@container (max-width: 880px) {
   .reportContext,
   .reportBody,
   .evidencePanel {

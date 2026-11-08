@@ -1,6 +1,7 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
+import MessageCopyButton from '@/new-components/common/MessageCopyButton';
 import { AttachedConnector } from '@/new-components/connector/types';
 import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
 import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
@@ -10,6 +11,7 @@ import { dashboardUserDisplayText } from '@/utils/dashboard-user-message';
 import type { QuerySource, SemanticReadGap, SemanticSource } from '@/utils/semantic-provenance';
 import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
 import { envelopeReadableText } from '@/utils/tool-envelope';
+import { userMessageCopyText } from '@/utils/user-message-copy';
 import {
   ApartmentOutlined,
   ApiOutlined,
@@ -1100,6 +1102,18 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     confirm: t('dashboard_chat_confirm'),
     revise: t('dashboard_chat_revise'),
   });
+  const userCopyText = userMessageCopyText(
+    {
+      userQuery: displayUserQuery,
+      attachedSuite,
+      attachedKnowledge,
+      attachedSkill,
+      attachedDb,
+      attachedConnectors,
+      attachedFiles,
+    },
+    key => t(key),
+  );
 
   // ------------------------------------------------------------------
   // TaskFlow run: parse per-node sections (SQL / tables / conclusions)
@@ -1252,11 +1266,14 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         className='group px-4 py-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-[#1a1b1e]/50 transition-colors'
       >
         {/* User query bubble (compact) */}
-        {userQuery && (
+        {userCopyText && (
           <div className='flex justify-end mb-2'>
             <div className='max-w-[85%]'>
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-3 py-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed line-clamp-2'>
-                {displayUserQuery}
+                {displayUserQuery || userCopyText}
+              </div>
+              <div className='flex justify-end mt-1'>
+                <MessageCopyButton text={userCopyText} label={t('copy_user_message')} />
               </div>
             </div>
           </div>
@@ -1283,7 +1300,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   return (
     <div className='flex flex-col'>
       <div className='px-4 py-4 space-y-4'>
-        {userQuery && (
+        {userCopyText && (
           <div className='flex justify-end'>
             <div className='max-w-[85%] space-y-2'>
               {attachedSuite && (
@@ -1301,6 +1318,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                     </div>
                     <div className='text-[11px] text-gray-400 dark:text-gray-500'>{t('suite_reference_label')}</div>
                   </div>
+                  <MessageCopyButton
+                    text={userMessageCopyText({ attachedSuite }, key => t(key))}
+                    label={t('copy_reference', { name: attachedSuite.display })}
+                  />
                 </div>
               )}
               {attachedKnowledge && (
@@ -1316,6 +1337,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                       {attachedKnowledge.desc || attachedKnowledge.vector_type}
                     </div>
                   </div>
+                  <MessageCopyButton
+                    text={userMessageCopyText({ attachedKnowledge }, key => t(key))}
+                    label={t('copy_reference', { name: attachedKnowledge.name })}
+                  />
                 </div>
               )}
               {attachedSkill && (
@@ -1329,6 +1354,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                     </div>
                     <div className='text-[11px] text-gray-400 dark:text-gray-500'>{t('skill_label')}</div>
                   </div>
+                  <MessageCopyButton
+                    text={userMessageCopyText({ attachedSkill }, key => t(key))}
+                    label={t('copy_reference', { name: attachedSkill.name })}
+                  />
                 </div>
               )}
               {attachedDb && (
@@ -1344,6 +1373,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                       {attachedDb.db_type || t('database_label')}
                     </div>
                   </div>
+                  <MessageCopyButton
+                    text={userMessageCopyText({ attachedDb }, key => t(key))}
+                    label={t('copy_reference', { name: attachedDb.db_name })}
+                  />
                 </div>
               )}
               {(attachedConnectors ?? []).map(c => (
@@ -1360,11 +1393,20 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                     </div>
                     <div className='text-[11px] text-gray-400 dark:text-gray-500'>{c.connector_type}</div>
                   </div>
+                  <MessageCopyButton
+                    text={userMessageCopyText({ attachedConnectors: [c] }, key => t(key))}
+                    label={t('copy_reference', { name: c.display_name })}
+                  />
                 </div>
               ))}
               <AttachmentMessageCards files={attachedFiles} />
-              <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm'>
-                {displayUserQuery}
+              {displayUserQuery && (
+                <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm whitespace-pre-wrap break-words'>
+                  {displayUserQuery}
+                </div>
+              )}
+              <div className='flex justify-end' data-testid='user-message-actions'>
+                <MessageCopyButton text={userCopyText} label={t('copy_user_message')} />
               </div>
             </div>
           </div>

@@ -305,38 +305,50 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / GB).toFixed(2)} GB`;
 }
 
-export type FileIconKey = 'table' | 'image' | 'slide' | 'text' | 'file';
+export type FileIconKey = 'pdf' | 'markdown' | 'csv' | 'excel' | 'word' | 'table' | 'image' | 'slide' | 'text' | 'file';
 
-const TABLE_EXTS = new Set(['csv', 'tsv', 'xls', 'xlsx', 'parquet', 'json', 'jsonl']);
+const TABLE_EXTS = new Set(['parquet', 'json', 'jsonl']);
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']);
 const SLIDE_EXTS = new Set(['ppt', 'pptx']);
-const TEXT_EXTS = new Set(['txt', 'md', 'markdown', 'log', 'doc', 'docx', 'rtf', 'pdf']);
+const TEXT_EXTS = new Set(['txt', 'log', 'rtf']);
 
 export function fileIconKey(input: { name?: string; mediaType?: string; kind?: string }): FileIconKey {
-  const mediaType = (input.mediaType ?? '').toLowerCase();
-  if (
-    input.kind === 'table' ||
-    mediaType.includes('spreadsheet') ||
-    mediaType.includes('excel') ||
-    mediaType.includes('csv')
-  ) {
-    return 'table';
+  const mediaType = (input.mediaType ?? '').toLowerCase().split(';')[0].trim();
+  const name = (input.name ?? '').toLowerCase();
+  const ext = name.includes('.') ? (name.split('.').pop() ?? '') : '';
+  // Local uploads often have an empty or generic MIME type. Keep their
+  // concrete extension ahead of broad server categories such as "table".
+  switch (ext) {
+    case 'pdf':
+      return 'pdf';
+    case 'md':
+    case 'markdown':
+      return 'markdown';
+    case 'csv':
+    case 'tsv':
+      return 'csv';
+    case 'xls':
+    case 'xlsx':
+    case 'xlsm':
+    case 'xlsb':
+      return 'excel';
+    case 'doc':
+    case 'docx':
+    case 'dot':
+    case 'dotx':
+      return 'word';
   }
-  if (mediaType.startsWith('image/')) return 'image';
-  if (mediaType.includes('presentation')) return 'slide';
-  const ext = (input.name ?? '').toLowerCase().split('.').pop() ?? '';
-  if (TABLE_EXTS.has(ext)) return 'table';
   if (IMAGE_EXTS.has(ext)) return 'image';
   if (SLIDE_EXTS.has(ext)) return 'slide';
-  if (
-    TEXT_EXTS.has(ext) ||
-    mediaType.startsWith('text/') ||
-    mediaType.includes('pdf') ||
-    mediaType.includes('word') ||
-    mediaType.includes('markdown')
-  ) {
-    return 'text';
-  }
+  if (mediaType.includes('pdf')) return 'pdf';
+  if (mediaType.includes('markdown')) return 'markdown';
+  if (mediaType.includes('csv') || mediaType.includes('tab-separated-values')) return 'csv';
+  if (mediaType.includes('spreadsheet') || mediaType.includes('excel')) return 'excel';
+  if (mediaType.includes('word')) return 'word';
+  if (mediaType.startsWith('image/')) return 'image';
+  if (mediaType.includes('presentation') || mediaType.includes('powerpoint')) return 'slide';
+  if (TABLE_EXTS.has(ext) || input.kind === 'table') return 'table';
+  if (TEXT_EXTS.has(ext) || mediaType.startsWith('text/')) return 'text';
   return 'file';
 }
 

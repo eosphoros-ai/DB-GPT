@@ -23,16 +23,22 @@ import {
   InboxOutlined,
   PictureOutlined,
 } from '@ant-design/icons';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import DashboardArtifactPreview from '@/new-components/dashboard/DashboardArtifactPreview';
+import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
 
 import { downloadArtifact } from './ArtifactCards';
 import { resolveHtmlImageUrls, resolveImageUrl } from './image-url';
 import QueryArtifactBlock from './QueryArtifactBlock';
 import SuiteArtifactCard from './SuiteArtifactCard';
+
+const FinancialReportArtifact = dynamic(() => import('@/new-components/financial-analysis/FinancialReportArtifact'), {
+  ssr: false,
+});
 
 export interface RailArtifact {
   id: string;
@@ -184,6 +190,9 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
   if (artifact.type === 'artifact_bundle') {
     return <BundlePreview key={artifact.id} artifact={artifact} />;
   }
+  if (isFinancialReportReference(artifact.content)) {
+    return <FinancialReportArtifact reference={artifact.content} />;
+  }
   if (ext === 'svg' && text) {
     return (
       <img
@@ -321,7 +330,8 @@ function BundlePreview({ artifact }: { artifact: RailArtifact }) {
     item => (item.tier !== 'process' && item.type !== 'query' && item.type !== 'code') || isExport(item),
   );
   const process = items.filter(item => !outputs.includes(item));
-  const downloadable = (item: RailArtifact) => item.type !== 'query' && (textOf(item) != null || item.type === 'code');
+  const downloadable = (item: RailArtifact) =>
+    item.type !== 'query' && (isFinancialReportReference(item.content) || textOf(item) != null || item.type === 'code');
   const open = (item: RailArtifact) => {
     setSelectedId(item.id);
     setTab('preview');

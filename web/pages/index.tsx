@@ -145,6 +145,7 @@ import {
   FileImageOutlined,
   FileOutlined,
   FilePptOutlined,
+  FilePdfOutlined,
   FileTextOutlined,
   InboxOutlined,
   LeftOutlined,
@@ -4836,13 +4837,20 @@ const Playground: NextPage = () => {
     />
   );
   const suiteMaterialGuide = suiteInputHint ? (
-    <p className='mb-2 text-xs leading-5 text-gray-500 dark:text-gray-400' data-testid='suite-material-guide'>
-      {suiteInputHint}
-      {effectiveSuite?.scenario_id === 'financial' &&
-        (i18n.language.startsWith('en')
-          ? '. For saved-report follow-ups, ask directly without selecting a new-analysis command.'
-          : '；追问已有报告时直接输入问题，无需重新选择分析命令。')}
-    </p>
+    <div className='mb-2 flex flex-wrap items-center gap-2'>
+      <p className='text-xs leading-5 text-gray-500 dark:text-gray-400' data-testid='suite-material-guide'>
+        {suiteInputHint}
+        {effectiveSuite?.scenario_id === 'financial' &&
+          (i18n.language.startsWith('en')
+            ? '. For saved-report follow-ups, ask directly without selecting a new-analysis command.'
+            : '；追问已有报告时直接输入问题，无需重新选择分析命令。')}
+      </p>
+      <Upload {...uploadProps}>
+        <Button size='small' icon={<FilePdfOutlined />} data-testid='suite-upload-files'>
+          {suiteInputHint}
+        </Button>
+      </Upload>
+    </div>
   ) : null;
   const composerContextProps = {
     suites,
@@ -5336,21 +5344,6 @@ const Playground: NextPage = () => {
                     <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
-                        {activeViewMsgId && suiteCommandBindings[activeViewMsgId] && (
-                          <Tag color={suiteCommandBindings[activeViewMsgId].error ? 'red' : 'green'}>
-                            {suiteCommandBindings[activeViewMsgId].error ||
-                              t('suite_command_bound', {
-                                command: suiteCommandBindings[activeViewMsgId].command,
-                                skill: suiteCommandBindings[activeViewMsgId].skill,
-                              })}
-                          </Tag>
-                        )}
-                        {activeViewMsgId &&
-                          (suiteCommandBindings[activeViewMsgId]?.documents || []).map(doc => (
-                            <Tag key={doc.path} color='green' data-testid='suite-loaded-document'>
-                              {doc.path}
-                            </Tag>
-                          ))}
                         {selectedFlow && (
                           <Tag
                             closable
@@ -6958,7 +6951,11 @@ const Playground: NextPage = () => {
                         {t('suite_usage_hint')}
                       </p>
                       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                        {rotatedSuiteQuestions.map((q, idx) => (
+                        {rotatedSuiteQuestions.map((q, idx) => {
+                          const command = activeSuite.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command);
+                          const fileHint = suiteCommandFileHint(command, i18n.language);
+                          const needsDatabase = activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional';
+                          return (
                           <div
                             key={`${activeSuite?.name}-${idx}-${q.text}`}
                             role='button'
@@ -6998,6 +6995,15 @@ const Playground: NextPage = () => {
                                     ?.display || q.command}
                                 </span>
                               )}
+                              {fileHint ? (
+                                <span
+                                  className='flex min-w-0 items-center gap-1.5 text-gray-400 dark:text-gray-500'
+                                  title={fileHint}
+                                >
+                                  <FilePdfOutlined aria-hidden='true' />
+                                  <span className='truncate'>{fileHint}</span>
+                                </span>
+                              ) : needsDatabase ? (
                               <span
                                 className='flex min-w-0 items-center gap-1.5 text-gray-400 dark:text-gray-500'
                                 title={t('suite_database_label', {
@@ -7009,12 +7015,14 @@ const Playground: NextPage = () => {
                                   {q.database_name || selectedDb?.db_name || t('suite_database_choose')}
                                 </span>
                               </span>
+                              ) : null}
                             </div>
                             <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
                               <RightOutlined className='text-xs text-gray-400' />
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                         {rotatedSuiteQuestions.length === 0 && (
                           <div className='col-span-2 text-center text-xs text-gray-400 dark:text-gray-500 py-6'>
                             {t('suite_questions_empty')}

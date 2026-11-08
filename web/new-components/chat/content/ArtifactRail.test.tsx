@@ -7,6 +7,27 @@ vi.mock('react-i18next', () => ({
 }));
 vi.mock('@/new-components/common/MarkdownContext', () => ({ default: () => null }));
 vi.mock('@/new-components/dashboard/DashboardArtifactPreview', () => ({ default: () => null }));
+vi.mock('next/dynamic', async () => {
+  const { lazy, Suspense } = await import('react');
+  return {
+    default: (loader: Parameters<typeof lazy>[0]) => {
+      const Component = lazy(loader);
+      return (props: any) => (
+        <Suspense fallback={null}>
+          <Component {...props} />
+        </Suspense>
+      );
+    },
+  };
+});
+vi.mock('@/new-components/financial-analysis/FinancialReportArtifact', () => ({
+  default: ({ reference }: any) => (
+    <div data-testid='financial-report' data-revision={reference.revision}>
+      {reference.title}
+    </div>
+  ),
+  downloadFinancialReport: vi.fn(),
+}));
 
 const html = '<body data-dbgpt-er="1"><svg /></body>';
 const items: RailArtifact[] = [
@@ -45,4 +66,32 @@ describe('artifact bundle right panel', () => {
     fireEvent.click(screen.getByText('er-diagram.dbml'));
     expect(container.querySelector('pre')?.textContent).toBe('Table orders {}');
   });
+
+  it.each([false, true])(
+    'loads a persisted financial report instead of an empty HTML frame (bundle=%s)',
+    async bundled => {
+      const reference = {
+        kind: 'financial-report',
+        sessionId: 'session',
+        runId: '12345678-1234-4234-8234-123456789012',
+        revision: 'published-v1',
+        title: '海翔药业财报分析',
+        published: true,
+      };
+      const report: RailArtifact = { id: 'financial', type: 'html', name: '财报分析.html', content: reference };
+      const preview = bundled
+        ? { id: 'financial-bundle', type: 'artifact_bundle', name: report.name, content: { items: [report] } }
+        : report;
+      const { container } = render(<ArtifactRail {...props} artifacts={[report]} previewArtifact={preview} />);
+      expect((await screen.findByTestId('financial-report')).getAttribute('data-revision')).toBe('published-v1');
+      expect(container.querySelector('iframe')).toBeNull();
+      if (bundled) {
+        fireEvent.click(screen.getByText('下载'));
+        const { downloadFinancialReport } = await import('@/new-components/financial-analysis/FinancialReportArtifact');
+        expect(downloadFinancialReport).toHaveBeenCalledWith(reference);
+        fireEvent.click(screen.getByText('文件'));
+        expect(screen.getByTitle('下载')).toBeTruthy();
+      }
+    },
+  );
 });

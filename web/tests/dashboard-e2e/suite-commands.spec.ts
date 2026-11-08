@@ -27,7 +27,10 @@ const financialSuite: SuiteItem = {
         input_files: { min: 2, max: 5, types: ['application/pdf'] },
       },
     ],
-    recommended_questions: [{ text: '解读这份年报的现金流', command: '/读年报' }],
+    recommended_questions: [
+      { text: '解读这份年报的现金流', command: '/读年报' },
+      { text: '比较多份财报', command: '/财报对比' },
+    ],
   },
 };
 const suites: SuiteItem[] = [
@@ -197,17 +200,33 @@ test('home and conversation slash menus bind financial commands and preserve upl
 });
 
 test('suite detail links, home shortcuts and questions share the command context', async ({ page }) => {
-  const { sends } = await setup(page);
+  const { sends, files } = await setup(page);
   await page.goto('/?suite=financial-analysis&suite_command=%2Fcompare-reports');
   await expect(page.getByTestId('suite-composer-prefix')).toContainText('/财报对比');
   await expect(page.locator('textarea').first()).toHaveValue('请比较这些财报的经营表现。');
   await page.getByRole('button', { name: '/读年报', exact: true }).click();
   await expect(page.getByTestId('suite-material-guide')).toContainText('上传 1 份 PDF');
   await expect(page.locator('textarea').first()).toHaveValue('请分析这份年报的营收利润和现金流。');
-  await page.getByRole('button', { name: /解读这份年报的现金流/ }).click();
+  const readCard = page.getByRole('button', { name: '解读这份年报的现金流', exact: true });
+  const compareCard = page.getByRole('button', { name: '比较多份财报', exact: true });
+  await expect(readCard).toContainText('上传 1 份 PDF 文件');
+  await expect(compareCard).toContainText('上传 2–5 份 PDF 文件');
+  await expect(readCard).not.toContainText('请选择数据库');
+  await expect(compareCard).not.toContainText('请选择数据库');
+  await readCard.click();
   await expect(page.locator('textarea').first()).toHaveValue('解读这份年报的现金流');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(sends).toHaveLength(0);
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByTestId('suite-upload-files').click();
+  const fileChooser = await chooser;
+  expect(await fileChooser.element().getAttribute('accept')).toBe('application/pdf');
+  await fileChooser.setFiles(pdf('annual.pdf'));
+  await expect.poll(() => files.length).toBe(1);
+  await page.locator('textarea').first().press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  expect(sends[0].ext_info.file_ids).toEqual(['file-1']);
+  expect(sends[0].ext_info.database_name).toBeUndefined();
 });
 
 test('escape, Chinese composition and ordinary paths do not accidentally select or send', async ({ page }) => {
