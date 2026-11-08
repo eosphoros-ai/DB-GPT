@@ -103,6 +103,65 @@ def _act_kwargs(agent, enable_parallel):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("report", [False, True])
+@pytest.mark.parametrize("catalogue_reads", [0, 6])
+async def test_report_requires_native_call_with_latest_progress_only(
+    report, catalogue_reads
+):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from dbgpt.core import ModelOutput
+
+    agent = _make_agent(enable_parallel=False)
+
+    @tool(description="Read captured report objects")
+    def list_report_objects() -> str:
+        return "[]"
+
+    agent.resource = ToolPack([add._tool, list_report_objects._tool])
+    calls = [{"function": {"name": "add", "arguments": '{"a":1,"b":2}'}}]
+    generate = AsyncMock(
+        return_value=ModelOutput(error_code=0, text="", tool_calls=calls)
+    )
+    object.__setattr__(
+        agent, "llm_client", SimpleNamespace(create_with_output=generate)
+    )
+    object.__setattr__(agent, "memory", SimpleNamespace(gpts_memory=None))
+    object.__setattr__(
+        agent, "_a_select_llm_model", AsyncMock(return_value="test-model")
+    )
+    state = {
+        "_report_template_contract": {"prose_fields": ["SUMMARY", "ADVICE"]},
+        "_report_object_fields": {"SUMMARY": "Validated summary"},
+        "_report_html_error": "Correct the ADVICE field",
+        "_report_catalogue_reads": catalogue_reads,
+    }
+    object.__setattr__(agent, "_report_repair_state", state)
+    agent.agent_context.gpts_app_code = (
+        "react_agent_report" if report else "react_agent"
+    )
+    for remaining in (["ADVICE"], []):
+        if not remaining:
+            state["_report_object_fields"]["ADVICE"] = "Validated advice"
+        await agent._thinking_native([AgentMessage(content="Initial task snapshot")])
+        request = generate.call_args.kwargs
+        assert request["tool_choice"] == ("required" if report else "auto")
+        offered = {item["function"]["name"] for item in request["tools"]}
+        assert ("list_report_objects" not in offered) == (
+            report and catalogue_reads >= 6
+        )
+        if report:
+            progress = request["messages"][-1]["content"]
+            assert json.dumps(remaining) in progress
+            assert "Correct the ADVICE field" in progress
+            assert "supersedes the initial handoff" in progress
+        else:
+            assert len(request["messages"]) == 1
+        assert agent._pending_native_tool_calls == calls
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("text", ["", " ", "\n\t"])
 @pytest.mark.parametrize("native", [False, True])
 @pytest.mark.parametrize("parallel", [False, True])

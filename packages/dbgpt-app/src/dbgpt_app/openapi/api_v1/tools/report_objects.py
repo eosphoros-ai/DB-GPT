@@ -9,7 +9,7 @@ from copy import deepcopy
 from itertools import islice
 from threading import Lock
 
-from dbgpt.agent.resource.tool.base import tool
+from dbgpt.agent.resource.tool.base import BaseTool, tool
 from dbgpt.core.interface.report_capture import (
     normalize_artifact_result_selector,
     read_artifact_result,
@@ -21,6 +21,59 @@ MAX_NESTING_DEPTH = 32
 _DEPTH_ERROR = (
     f"REPORT_OBJECT_DEPTH_EXCEEDED: maximum nesting depth is {MAX_NESTING_DEPTH}"
 )
+
+
+class _CheckedReportTool(BaseTool):
+    """Reject unknown arguments before ToolPack can silently discard them."""
+
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @property
+    def name(self):
+        return self.delegate.name
+
+    @property
+    def description(self):
+        return self.delegate.description
+
+    @property
+    def args(self):
+        return self.delegate.args
+
+    @property
+    def is_async(self):
+        return self.delegate.is_async
+
+    def validate_call_args(self, arguments):
+        unknown = sorted(set(arguments) - set(self.args))
+        if unknown:
+            hint = (
+                " Put heading, intro, bullets, note, table and chart inside "
+                "section when editing a section; put title, subtitle, scope "
+                "and kpis inside report."
+                if self.name == "patch_report"
+                else ""
+            )
+            raise ValueError(
+                f"REPORT_OBJECT_INVALID: unknown arguments for {self.name}: "
+                + ", ".join(unknown)
+                + ". No changes were applied."
+                + hint
+            )
+        self.delegate.validate_call_args(arguments)
+
+    def parse_execute_args(self, **kwargs):
+        return self.delegate.parse_execute_args(**kwargs)
+
+    async def get_prompt(self, **kwargs):
+        return await self.delegate.get_prompt(**kwargs)
+
+    def execute(self, *args, **kwargs):
+        return self.delegate.execute(*args, **kwargs)
+
+    async def async_execute(self, *args, **kwargs):
+        return await self.delegate.async_execute(*args, **kwargs)
 
 
 class _ReportObjectDepthError(ValueError):
@@ -155,7 +208,7 @@ def report_object_schema(contract):
             "table": selection,
             "chart": selection,
             "recommendations": array(recommendation),
-            "note": parts,
+            "note": {"anyOf": [parts, paragraphs]},
         },
         ["heading"],
     )
@@ -164,7 +217,7 @@ def report_object_schema(contract):
             "title": text,
             "subtitle": text,
             "scope": {"anyOf": [text, parts]},
-            "note": parts,
+            "note": {"anyOf": [parts, paragraphs]},
             "kpis": array(kpi),
             "sections": array(section),
         },
@@ -334,6 +387,10 @@ class ReportObjects:
         items.sort(
             key=lambda item: (
                 priority[item["kind"]],
+                0
+                if isinstance(item["preview"], (int, float))
+                and not isinstance(item["preview"], bool)
+                else 1,
                 len(item["selector"].get("path", [])),
                 item["artifact_id"],
                 item["label"],
@@ -387,16 +444,13 @@ class ReportObjects:
     def reference(self, token, format=None):
         item = self.get(token)
         if item["kind"] not in {"value", "reference"}:
-            examples = [
-                {"object_id": key, "label": child["label"]}
-                for key, child in self.objects.items()
-                if child["kind"] == "value"
-                and child["artifact_id"] == item["artifact_id"]
-            ][:8]
             raise ValueError(
                 f"REPORT_OBJECT_INVALID: {token} is a {item['kind']} object. "
-                "Prose requires a value or reference object. Example scalar objects: "
-                + json.dumps(examples, ensure_ascii=False)
+                "Remove this object from prose; keep the qualitative text. "
+                "Put table/chart objects only in the section's table/chart field. "
+                "For a specific measured value, query list_report_objects with "
+                f"kind='value', artifact_ids=['{item['artifact_id']}']. "
+                "Do not replace a table citation with an arbitrary scalar."
             )
         node = {"artifact_id": item["artifact_id"], **item["selector"]}
         if item["kind"] == "value":
@@ -435,8 +489,17 @@ def compile_report_objects(
     if not isinstance(data, dict):
         raise ValueError("REPORT_OBJECT_INVALID: data must be an object")
     literal_errors = []
+    object_errors = []
 
     def validate_literals():
+        if object_errors:
+            raise ValueError(
+                "REPORT_OBJECT_INVALID: repair every invalid prose reference "
+                "listed below in the same call. Remove table/chart citations "
+                "from prose and retain the text; tables/charts belong in "
+                "section.table/section.chart. "
+                + json.dumps(object_errors, ensure_ascii=False)
+            )
         if literal_errors:
             raise ValueError(
                 "REPORT_OBJECT_LITERAL: replace measured literals with captured "
@@ -502,14 +565,46 @@ def compile_report_objects(
                     "rendered by the template. Write qualitative interpretation "
                     "without numeric references or measured literals."
                 )
-            return objects.reference(value["object_id"], value.get("format"))
+            try:
+                return objects.reference(value["object_id"], value.get("format"))
+            except ValueError as error:
+                object_errors.append({"location": location, "error": str(error)})
+                return ""
         raise ValueError(
             f"REPORT_OBJECT_INVALID: expected text or object_id at {location}"
         )
 
+    def note_parts(value, location):
+        compiled = prose(value, location)
+        if not isinstance(compiled, list):
+            raise ValueError(
+                "REPORT_OBJECT_INVALID: note requires text/object_id parts "
+                "or paragraphs"
+            )
+        flattened = []
+        for part in compiled:
+            if isinstance(part, list):
+                if any(isinstance(item, list) for item in part):
+                    raise ValueError(
+                        "REPORT_OBJECT_INVALID: note paragraphs contain only "
+                        "text/object_id parts"
+                    )
+                if flattened:
+                    flattened.append("\n\n")
+                flattened.extend(part)
+            else:
+                flattened.append(part)
+        return flattened
+
     if not spec_mode:
         if set(data) - set(fields):
-            raise ValueError("REPORT_OBJECT_INVALID: use listed template fields")
+            raise ValueError(
+                "REPORT_OBJECT_INVALID: unsupported template fields "
+                f"{sorted(set(data) - set(fields))}; "
+                f"allowed fields are {sorted(fields)}. "
+                "Pass the report title as compose_report's title argument, "
+                "outside data. Preserve the allowed fields."
+            )
         result = {}
         for key, value in data.items():
             if isinstance(value, dict) and set(value) == {"object_id"}:
@@ -566,7 +661,10 @@ def compile_report_objects(
         spec["sections"].append(
             {
                 "heading": "口径说明",
-                "note": {"label": "知识库口径", "parts": prose(data["note"], "note")},
+                "note": {
+                    "label": "知识库口径",
+                    "parts": note_parts(data["note"], "note"),
+                },
             }
         )
     for index, source in enumerate(data.get("sections", [])):
@@ -590,7 +688,7 @@ def compile_report_objects(
         if "note" in source:
             section["note"] = {
                 "label": "知识库口径",
-                "parts": prose(source["note"], "note"),
+                "parts": note_parts(source["note"], f"sections[{index}].note"),
             }
         for key in ("table", "chart"):
             if key not in source:
@@ -650,6 +748,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
     if state.get("_report_object_template") != template_path:
         state["_report_object_template"] = template_path
         state["_report_object_fields"] = {}
+        state.pop("_report_object_spec", None)
     else:
         state["_report_object_fields"] = {
             field: value
@@ -683,6 +782,10 @@ def make_report_object_tools(state, renderer, template_path, contract):
     ) -> str:
         if offset < 0 or not 1 <= limit <= 100:
             raise ValueError("REPORT_OBJECT_INVALID: invalid pagination")
+        with fields_lock:
+            state["_report_catalogue_reads"] = (
+                state.get("_report_catalogue_reads", 0) + 1
+            )
         registry = catalogue(eager=False)
         return json.dumps(
             {
@@ -717,8 +820,23 @@ def make_report_object_tools(state, renderer, template_path, contract):
         )
     )
     async def compose_report(data: dict | None = None, title: str = "Report") -> str:
+        state["_report_catalogue_reads"] = 0
+        draft = state.get("_report_object_spec")
+        if contract["mode"] == "spec" and data is None and draft is not None:
+            state.pop("_report_object_spec", None)
+            try:
+                return await renderer(
+                    template_path=template_path,
+                    title=draft.get("title") or title,
+                    data={"REPORT_SPEC": deepcopy(draft)},
+                )
+            except BaseException:
+                state["_report_object_spec"] = draft
+                raise
         try:
-            if contract["mode"] == "spec" and saved_spec() is not None:
+            if contract["mode"] == "spec" and (
+                saved_spec() is not None or draft is not None
+            ):
                 raise ValueError(
                     "REPORT_OBJECT_REPAIR_REQUIRED: use patch_report to modify "
                     "the saved report; omitted content must be preserved"
@@ -736,9 +854,60 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         "REPORT_OBJECT_INVALID: stage the remaining fields: "
                         + json.dumps(sorted(missing))
                     )
+            registry = catalogue()
+            if contract["mode"] != "spec":
+                supplied = _load_report_json(data) if isinstance(data, str) else data
+                if not isinstance(supplied, dict) or set(supplied) - set(
+                    contract["fields"]
+                ):
+                    # Keep the compiler's precise unknown-field/root diagnostic.
+                    compile_report_objects(
+                        supplied, registry, spec_mode=False, fields=contract["fields"]
+                    )
+                valid, errors = {}, []
+                for field, value in supplied.items():
+                    try:
+                        compile_report_objects(
+                            {field: value},
+                            registry,
+                            spec_mode=False,
+                            fields=contract["fields"],
+                            interpretation_only=contract.get(
+                                "interpretation_only", False
+                            ),
+                        )
+                        valid[field] = value
+                    except (ValueError, TypeError, KeyError, RecursionError) as error:
+                        errors.append(str(error))
+                from .report_repair import _save_checkpoint
+
+                with fields_lock:
+                    staged = state.setdefault("_report_object_fields", {})
+                    staged.update(deepcopy(valid))
+                    if valid:
+                        _save_checkpoint(
+                            state,
+                            state.get("_report_saved_arguments") or {},
+                            "REPORT_DRAFT_STAGED: validated fields retained",
+                        )
+                    data = deepcopy(staged)
+                if errors:
+                    raise ValueError(
+                        "\n".join(errors)
+                        + "\nValidated fields retained: "
+                        + json.dumps(sorted(data))
+                        + ". Correct only the rejected fields with set_report_field, "
+                        "then call compose_report without data."
+                    )
+                missing = required_fields - set(data)
+                if missing:
+                    raise ValueError(
+                        "REPORT_OBJECT_INVALID: stage the remaining fields: "
+                        + json.dumps(sorted(missing))
+                    )
             compiled = compile_report_objects(
                 data,
-                catalogue(),
+                registry,
                 spec_mode=contract["mode"] == "spec",
                 fields=contract["fields"],
                 interpretation_only=contract.get("interpretation_only", False),
@@ -775,7 +944,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
     parameter = compose_report._tool.args["data"]
     parameter.json_schema = schema
     parameter.type = json.dumps(schema, ensure_ascii=False)
-    parameter.required = contract["mode"] == "spec"
+    parameter.required = False
     result = [list_report_objects, compose_report]
 
     def saved_spec():
@@ -794,7 +963,14 @@ def make_report_object_tools(state, renderer, template_path, contract):
 
         @tool(
             description=(
-                "Repair the saved report without replacing untouched content. "
+                "Write or repair a report, preserving validated content. "
+                "Start a NEW draft with render=false AND append_sections=["
+                '{"heading":"Analysis","intro":[["qualitative analysis"]]}]. '
+                "Include report={title:...} in this same call, not a separate call. "
+                "Then append missing sections and recommendations; finally call "
+                "compose_report() without data. Put numeric value objects in kpis "
+                "and table/chart objects in section.table/section.chart. "
+                "Keep prose qualitative; never put table/chart IDs in prose. "
                 "section_index is zero-based. section changes only supplied fields; "
                 "append_recommendations adds to that section; append_sections adds "
                 "new sections. report edits top-level title, subtitle, scope or kpis. "
@@ -807,6 +983,10 @@ def make_report_object_tools(state, renderer, template_path, contract):
                 "When editing scope in an old report without compiler provenance, "
                 "scope_section_index explicitly identifies its old scope section. "
                 "All new content uses the compose_report object grammar."
+                "To draft a new report, use render=false with report metadata "
+                "and append_sections. Submit one section per call. Draft edits "
+                "are validated and retained without publishing HTML; finish "
+                "all requested sections, then call compose_report without data."
             )
         )
         async def patch_report(
@@ -820,14 +1000,41 @@ def make_report_object_tools(state, renderer, template_path, contract):
             scope_section_index: int | None = None,
             remove_invalid_section: bool = False,
             replace_invalid_sections: list[dict] | None = None,
+            render: bool = True,
         ) -> str:
+            state["_report_catalogue_reads"] = 0
             async with repair_lock:
                 try:
-                    previous = saved_spec()
-                    if previous is None:
+                    if section is not None and not isinstance(section, dict):
                         raise ValueError(
-                            "REPORT_OBJECT_INVALID: no saved report to repair"
+                            "REPORT_OBJECT_INVALID: section must be an object, "
+                            'for example {"intro":["analysis"]}. Put heading, '
+                            "intro, note, table and chart inside section; "
+                            "section_index selects the existing section."
                         )
+                    if report is not None and not isinstance(report, dict):
+                        raise ValueError(
+                            "REPORT_OBJECT_INVALID: report must be an object"
+                        )
+                    if type(render) is not bool:
+                        raise ValueError(
+                            "REPORT_OBJECT_INVALID: render must be boolean"
+                        )
+                    draft = state.get("_report_object_spec")
+                    previous = draft if draft is not None else saved_spec()
+                    if previous is None:
+                        if render:
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: no saved report to repair; "
+                                "start a draft with render=false"
+                            )
+                        previous = {"sections": []}
+                        if not append_sections:
+                            raise ValueError(
+                                "REPORT_OBJECT_INVALID: a new draft requires "
+                                "append_sections with an analysis section, not "
+                                "only report metadata. Submit one section now."
+                            )
                     repaired = deepcopy(previous)
                     scope_sections = None
                     if "scope" in (remove_fields or []):
@@ -1007,12 +1214,66 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         raise ValueError(
                             "REPORT_OBJECT_INVALID: supply a report change"
                         )
-                    saved = state["_report_saved_arguments"]
+                    saved = state.get("_report_saved_arguments") or {}
                     data = saved.get("data") or {}
                     if isinstance(data, str):
                         data = _load_report_json(data)
                     updated = {**deepcopy(data), "REPORT_SPEC": repaired}
+                    if not render or draft is not None:
+                        from .report_repair import _save_checkpoint
+                        from .report_spec import validate_report_spec
+
+                        # Validate the complete candidate before committing it.
+                        # Drafts are separate from renderable saved arguments:
+                        # finalization must never publish a half-written report.
+                        candidate = validate_report_spec(repaired)
+                        state["_report_object_spec"] = candidate
+                        state.pop("_report_html_error", None)
+                        if candidate != previous:
+                            state["_report_invocation_failures"] = 0
+                            state.pop("_report_last_invocation_error_fingerprint", None)
+                            state.pop("_report_last_preflight_fingerprint", None)
+                        _save_checkpoint(
+                            state,
+                            saved,
+                            "REPORT_DRAFT_STAGED: finish sections, then compose_report",
+                        )
+                        return json.dumps(
+                            {
+                                "status": "staged",
+                                "sections": [
+                                    {"section_index": i, "heading": item.get("heading")}
+                                    for i, item in enumerate(
+                                        candidate.get("sections", [])
+                                    )
+                                ],
+                                "instruction": (
+                                    "Preserve staged sections. Add or repair only "
+                                    "missing content with patch_report. After all "
+                                    "requested sections are complete, call "
+                                    "compose_report without data. Required "
+                                    "recommendations: "
+                                    + str(
+                                        state.get(
+                                            "_report_required_recommendation_count", 0
+                                        )
+                                    )
+                                    + ". Put these in a section headed 建议, "
+                                    "using recommendations=[{title,lines:[[text]]}]."
+                                ),
+                            },
+                            ensure_ascii=False,
+                        )
                 except (ValueError, TypeError, KeyError, RecursionError) as error:
+                    if append_sections:
+                        error = ValueError(
+                            str(error)
+                            + " This append_sections call was rejected atomically; "
+                            "none of its sections were saved. Correct and resubmit "
+                            "append_sections. Diagnostic sections[0] refers to "
+                            "the submitted new sections, not existing section 0. "
+                            "Preserve the already staged report and its metadata."
+                        )
                     return selection_failure(error)
                 return await renderer(
                     template_path=template_path,
@@ -1050,6 +1311,7 @@ def make_report_object_tools(state, renderer, template_path, contract):
             )
         )
         def set_report_field(field: str, content: str | list | dict) -> str:
+            state["_report_catalogue_reads"] = 0
             try:
                 compile_report_objects(
                     {field: content},
@@ -1087,6 +1349,8 @@ def make_report_object_tools(state, renderer, template_path, contract):
             parameter.json_schema = {"anyOf": list(schema["properties"].values())}
             parameter.type = json.dumps(parameter.json_schema)
         result.append(set_report_field)
+    for entry in result:
+        entry._tool = _CheckedReportTool(entry._tool)
     return result
 
 
@@ -1102,8 +1366,13 @@ def report_object_prompt(template_path, contract, injected_fields, language):
     ]
     if contract["mode"] == "spec":
         instructions += [
-            "先调用 list_report_objects 获取对象，"
-            "再用 compose_report 提交完整业务报告。",
+            "先调用 list_report_objects 获取对象。"
+            "新报告使用 patch_report(render=false) "
+            "分章节写草稿：首次用 report 填 title、scope、kpis，"
+            "用 append_sections 提交一个章节；之后每次只追加一个章节。",
+            "草稿经过校验并保存，不会发布 HTML。覆盖全部用户要求后调用 "
+            "compose_report()，不传 data，统一渲染完整报告。"
+            "不要为了修正一个字段而重写整份报告。",
             "已有保存报告时使用 patch_report 局部修复或追加，"
             "section_index 为从零开始的章节索引；顶层 KPI、标题和范围使用 report 参数。"
             "删除章节内的错误字段使用 remove_section_fields，并指定 section_index。"
@@ -1112,8 +1381,16 @@ def report_object_prompt(template_path, contract, injected_fields, language):
             "引擎保留所有未修改内容。",
             "使用 title、kpis[{label,object_id}]、sections。"
             "正文段落为普通文字与 {object_id,format?} 组成的 parts 数组。",
+            "正文优先做定性解释，统计数值已由 KPI、数据表和图表展示，无需逐项重复。"
+            "不要反复扩写已暂存的范围与口径；先完成所有分析维度及建议章节。",
             "表格选择 table={object_id:表格ID}，"
-            "图表选择 chart={object_id:表格或图表ID}。",
+            "图表选择 chart={object_id:表格或图表ID}。"
+            "table 和 chart 对象只能放在对应字段，不能当作正文中的来源引用；"
+            "正文引用仅接受 value 或 reference 对象，不需要给每段定性解读附表格引用。",
+            "修改章节示例：patch_report(section_index=0, "
+            'section={"intro":["修正后的分析"]})。section 必须是对象，'
+            "intro、note、table、chart 放在 section 内，不能放在工具顶层。"
+            "已成功暂存的章节无需重复修改；继续追加缺失维度和建议，然后提交。",
             "知识库口径使用 note=[文字,{object_id:reference对象ID}]，"
             '程序采用 "label":"知识库口径"。',
             "建议目标放在独立 goal 字符串；不得在事实正文手写统计数字。",

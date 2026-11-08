@@ -37,6 +37,9 @@ async def render_saved_report(state, skills_dir, *, allow_unavailable_references
     the same document, result and citation validation even after that budget is
     exhausted, so a policy fix can unblock an existing complete report.
     """
+    if state.get("_report_object_spec") is not None:
+        # Only compose_report commits the author's complete draft for rendering.
+        return False
     calculation = state.get("_report_missing_calculation")
     if calculation and not calculation.get("result_artifact_id"):
         return False
@@ -140,6 +143,7 @@ def _save_checkpoint(state, arguments, error):
         if state.get("_report_render_phase")
         or state.get("_report_html_attempted")
         or state.get("_report_pending_html")
+        or state.get("_report_object_spec") is not None
         else "analysis",
         "original_request": state.get("_report_original_request"),
         "execution_progress": state.get("_report_execution_progress", {}),
@@ -155,6 +159,7 @@ def _save_checkpoint(state, arguments, error):
         "calculation_requests": state.get("_report_calculation_requests", 0),
         "draft": state.get("_report_draft"),
         "object_fields": state.get("_report_object_fields"),
+        "object_spec": state.get("_report_object_spec"),
         "object_template": state.get("_report_object_template"),
         "model_output": state.get("_report_model_output"),
         "invocation_failure_count": state.get("_report_invocation_failures", 0),
@@ -276,7 +281,12 @@ def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     for key in ("pending_html", "last_attempt_html", "title", "error", "render_error"):
         if payload.get(key) is not None and not isinstance(payload[key], str):
             raise ValueError("Invalid checkpoint text field")
-    for key in ("execution_step_map", "execution_progress", "object_fields"):
+    for key in (
+        "execution_step_map",
+        "execution_progress",
+        "object_fields",
+        "object_spec",
+    ):
         if payload.get(key) is not None and not isinstance(payload[key], dict):
             raise ValueError("Invalid checkpoint mapping field")
     if payload.get("missing_calculation") is not None and not isinstance(
@@ -340,6 +350,10 @@ def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     state["_report_calculation_requests"] = payload.get("calculation_requests", 0)
     state["_report_draft"] = payload.get("draft")
     state["_report_object_fields"] = payload.get("object_fields") or {}
+    if payload.get("object_spec") is not None:
+        state["_report_object_spec"] = payload["object_spec"]
+    else:
+        state.pop("_report_object_spec", None)
     state["_report_object_template"] = payload.get("object_template")
     state["_report_checkpoint_path"] = str(path)
     state["_report_pending_path"] = str(path.with_name("pending.html"))

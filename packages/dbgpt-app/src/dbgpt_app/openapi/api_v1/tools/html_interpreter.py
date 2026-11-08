@@ -1885,6 +1885,10 @@ def _render_placeholder_parts(value: Any) -> str:
             "unsupported prose fields: " + ", ".join(sorted(map(str, value)))
         )
     if isinstance(value, list):
+        if value and all(isinstance(item, str) for item in value):
+            return "".join(
+                "<p>" + _render_placeholder_parts(item) + "</p>" for item in value
+            )
         return "".join(
             "<p>" + "".join(_render_placeholder_parts(part) for part in item) + "</p>"
             if isinstance(item, list)

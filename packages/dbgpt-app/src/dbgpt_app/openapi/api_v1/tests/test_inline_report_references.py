@@ -30,6 +30,52 @@ def test_english_month_year_is_a_date_not_a_metric():
     assert not is_document_number("2017", " orders", "Total ", None)
 
 
+@pytest.mark.parametrize(
+    "value,prefix,suffix",
+    [
+        ("0", "无评价为空，不可当作 ", " 分"),
+        ("0", "无评价记录为空值，不按 ", " 分处理"),
+        ("0", "缺失评分不能将其当成 ", " 分"),
+        ("0", "无评价不计为 ", " 分"),
+        ("0", "Holiday_Flag 为 ", "/1 标记"),
+        ("1", "Holiday_Flag 为 0/", " 标记"),
+        ("1", "Holiday_Flag 为 ", " 的记录共"),
+        ("1", "节假日标记为 ", " 的记录共"),
+        ("1", "on_time 定义：实际送达不晚于预计送达为 ", "，逾期为 0；"),
+        ("0", "on_time 定义：实际送达不晚于预计送达为 1，逾期为 ", "；"),
+        ("0", "无评价订单为空值而非 ", " 分"),
+        ("10", "截至 ", " 月"),
+        ("12", "", " 月为高峰"),
+        ("20", "门店 ", "、门店"),
+        ("33", "Store ", " is a category"),
+        ("10", "销售额排名前 ", " 的门店"),
+    ],
+)
+def test_report_definition_numbers_are_not_measured_values(value, prefix, suffix):
+    from dbgpt_app.openapi.api_v1.tools.report_binding import is_document_number
+
+    assert is_document_number(value, suffix, prefix, None)
+
+
+@pytest.mark.parametrize(
+    "value,prefix,suffix",
+    [
+        ("0", "评分为 ", " 分"),
+        ("0", "缺失评分按 ", " 分统计"),
+        ("20", "门店 ", " 家"),
+        ("20", "门店收入为 ", " 万元"),
+        ("1", "Holiday_Flag 为 ", "%"),
+        ("1", "节假日标记为 ", "%"),
+        ("13", "截至 ", " 月"),
+        ("999", "收入 ", " 元"),
+    ],
+)
+def test_observed_numbers_still_need_evidence(value, prefix, suffix):
+    from dbgpt_app.openapi.api_v1.tools.report_binding import is_document_number
+
+    assert not is_document_number(value, suffix, prefix, None)
+
+
 def test_explicit_english_recommendation_count_is_recognized():
     from dbgpt_app.openapi.api_v1.agentic_data_api import (
         _requested_recommendation_count,
@@ -69,6 +115,36 @@ def test_labelled_advice_outside_recommendation_section_does_not_count():
         "<p>建议三：复核融资期限。</p><h2>结论与建议</h2><p>继续观察。</p>"
     )
     assert _validate_recommendation_requirement(html, 3)
+
+
+def test_financial_template_marks_missing_charts_without_empty_image_hosts():
+    from pathlib import Path
+
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+        _render_template_with_bindings,
+    )
+
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    template = (
+        root / "skills/financial-report-analyzer/templates/report_template.html"
+    ).read_text(encoding="utf-8")
+    contract = report_template_contract(template)
+    html = _render_template_with_bindings(
+        template,
+        {field: "定性分析，缺失数据不作推断。" for field in contract["prose_fields"]},
+        [],
+    )
+    assert '<img src=""' not in html
+    assert 'class="chart-container"' not in html
+    assert all(
+        label in html
+        for label in [
+            "核心财务指标对比图未生成",
+            "盈利能力指标图未生成",
+            "资产结构图未生成",
+        ]
+    )
+    assert "现金流与利润质量" in html and "营运效率分析" in html
 
 
 def test_stdout_only_python_is_not_advertised_as_a_result_producer():

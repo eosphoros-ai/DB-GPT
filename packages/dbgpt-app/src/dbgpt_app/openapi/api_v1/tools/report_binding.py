@@ -147,8 +147,59 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
         r"Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
     )
     return bool(
-        # Positional arguments in a SQL date-grouping example are not metrics.
+        # Calendar months, category identifiers and explicit missing-value rules
+        # describe the document/metric definition, not observed measurements.
         (
+            re.fullmatch(r"\d{1,2}", value)
+            and 1 <= int(value) <= 12
+            and re.match(r"\s*月", suffix)
+        )
+        or (
+            re.fullmatch(r"\d+", value)
+            and re.search(r"(?:门店|\bstore)\s*(?:编号|ID|#)?\s*$", prefix, re.I)
+            and not re.match(r"\s*(?:家|个|间|%|元|万元|亿元|stores?\b)", suffix, re.I)
+        )
+        or (
+            re.fullmatch(r"\d+", value)
+            and re.search(r"(?:排名前|排行前|位居前|^\s*前)\s*$", prefix)
+        )
+        or (
+            value in {"0", "1"}
+            and re.search(
+                r"(?:\b(?:\w+_flag|on_time)|节假日标记|假日标记)"
+                r"\s*(?:为|=|取值为|is)\s*"
+                r"(?:[01]\s*[/、或]\s*)?$",
+                prefix,
+                re.I,
+            )
+            and re.match(
+                r"\s*(?:[/、或]\s*[01]|的(?:记录|订单)|标记|编码|类别|[,，;；。()（）]|$)",
+                suffix,
+            )
+        )
+        or (
+            value == "0"
+            and re.search(
+                r"(?:缺失|无评价|空值|missing|null).{0,24}"
+                r"(?:不应|不可|不得|不能|不允许|不要|不|而非).{0,12}"
+                r"(?:当[作成]|视[为作]|填(?:充)?(?:为|成)?|记[作为]|计[作为入]|"
+                r"算[作为]|作为|替换[为成]|按|以)\s*$",
+                prefix,
+                re.I,
+            )
+        )
+        or (
+            value in {"0", "1"}
+            and re.search(r"\bon_time\s*定义[：:].{0,50}为\s*$", prefix, re.I)
+            and re.match(r"\s*[,，;；。]", suffix)
+        )
+        or (
+            value == "0"
+            and re.search(r"(?:缺失|无评价|空值).{0,24}而非\s*$", prefix)
+            and re.match(r"\s*分", suffix)
+        )
+        # Positional arguments in a SQL date-grouping example are not metrics.
+        or (
             re.fullmatch(r"\d+", value)
             and re.search(
                 r"\b(?:substr|substring)\(\s*[A-Za-z_][\w.]*\s*,\s*"

@@ -843,17 +843,44 @@ def make_generate_report_tool(
             contract = report_template_contract(
                 template_file.read_text(encoding="utf-8")
             )
+            from ..tools.html_interpreter import _template_result_sources
             from ..tools.report_objects import ReportObjects, report_author_contract
 
-            handoff = ReportObjects(artifacts, eager=False).manifest(
-                limit=40, kind="value" if contract["mode"] != "spec" else None
-            )
-            from ..tools.html_interpreter import _template_result_sources
-
             injected = _template_result_sources(artifacts)
-            handoff["template_fields"] = report_author_contract(contract, injected)[
-                "fields"
-            ]
+            author = report_author_contract(contract, injected)
+            handoff = ReportObjects(artifacts, eager=False).manifest(
+                limit=40,
+                kind="reference"
+                if author["interpretation_only"]
+                else ("value" if contract["mode"] != "spec" else None),
+            )
+            handoff["template_fields"] = author["fields"]
+            if contract["mode"] == "spec":
+                handoff["scalar_values"] = ReportObjects(
+                    artifacts, eager=False
+                ).manifest(kind="value", limit=40)["objects"]
+            if author["interpretation_only"]:
+                statistics = injected.get("CHART_DATA_JSON", {}).get("value")
+                if isinstance(statistics, str):
+                    try:
+                        statistics = json.loads(statistics)
+                    except ValueError:
+                        statistics = None
+                if isinstance(statistics, dict):
+                    # Read-only context for interpretation, not selectable values.
+                    # Bound previews per group so raw scatter rows cannot dominate.
+                    handoff["statistics_for_interpretation"] = {}
+                    for key, value in list(statistics.items())[:40]:
+                        text = json.dumps(value, ensure_ascii=False, default=str)
+                        handoff["statistics_for_interpretation"][key] = {
+                            "preview": text[:1000],
+                            "truncated": len(text) > 1000,
+                        }
+                message += (
+                    "\n本模板已自动展示全部统计与图表。下面的统计预览仅供理解，"
+                    "正文只写定性解读，不重复统计数字、不提交 value 数值对象。"
+                    "reference 目录为空也可直接提交正文，不要反复检索数值对象。"
+                )
             staged = set(react_state.get("_report_object_fields") or {})
             if staged:
                 handoff["previously_staged_fields"] = sorted(

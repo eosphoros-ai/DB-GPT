@@ -682,6 +682,69 @@ class ToolCallingReActAgent(ReActAgent):
                 "Do not return only reasoning or describe an intended tool call. "
                 "Call terminate with the final result when the task is complete."
             )
+        state = getattr(self, "_report_repair_state", None)
+        is_report_author = (
+            state is not None
+            and self.not_null_agent_context.gpts_app_code == "react_agent_report"
+        )
+        if is_report_author:
+            # A long sequence of catalogue reads can consume the entire author
+            # budget without saving any prose. Require a writing step using
+            # the evidence already returned; writing re-enables catalogue reads.
+            if state.get("_report_catalogue_reads", 0) >= 6:
+                tools = [
+                    tool
+                    for tool in tools
+                    if tool.get("function", {}).get("name") != "list_report_objects"
+                ]
+            contract = state.get("_report_template_contract") or {}
+            required = set(contract.get("prose_fields") or [])
+            staged = set(state.get("_report_object_fields") or {})
+            llm_messages.append(
+                {
+                    "role": "human",
+                    "content": "Current report engine state "
+                    "(after all completed tools; "
+                    "supersedes the initial handoff and per-call progress snapshots): "
+                    + json.dumps(
+                        {
+                            "staged_fields": sorted(staged),
+                            "remaining_fields": sorted(required - staged),
+                            "required_recommendations": state.get(
+                                "_report_required_recommendation_count", 0
+                            ),
+                            "write_before_more_catalogue_reads": state.get(
+                                "_report_catalogue_reads", 0
+                            )
+                            >= 6,
+                            "staged_sections": [
+                                {
+                                    "section_index": i,
+                                    "heading": section.get("heading"),
+                                    "fields": sorted(section),
+                                    "has_methodology_note": bool(section.get("note")),
+                                }
+                                for i, section in enumerate(
+                                    (state.get("_report_object_spec") or {}).get(
+                                        "sections", []
+                                    )
+                                )
+                                if isinstance(section, dict)
+                            ],
+                            "latest_error": str(state.get("_report_html_error") or "")[
+                                :2000
+                            ],
+                        },
+                        ensure_ascii=False,
+                    )
+                    + ". Preserve validated fields. Repair only the latest error, "
+                    "then call compose_report to deliver the complete report. "
+                    "When drafting sections, cover every dimension in the original "
+                    "request before composing. A staged acknowledgment is not a "
+                    "completed report. "
+                    "Use native tool calls, not a textual Action/Action Input example.",
+                }
+            )
         while retry_count < 3:
             try:
                 llm_model = await self._a_select_llm_model(last_model)
@@ -705,7 +768,7 @@ class ToolCallingReActAgent(ReActAgent):
                     stream_out=self.stream_out,
                     stream_callback=stream_callback,
                     tools=tools,
-                    tool_choice="auto",
+                    tool_choice="required" if is_report_author else "auto",
                 )
                 state = getattr(self, "_report_repair_state", None)
                 if state is not None and state.get("_report_render_phase") and response:

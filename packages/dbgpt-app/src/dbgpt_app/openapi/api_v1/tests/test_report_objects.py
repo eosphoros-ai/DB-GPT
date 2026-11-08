@@ -42,9 +42,140 @@ def object_id(registry, kind, label):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("unknown", ["intro", "note", "table", "chart", "title"])
+async def test_public_repair_rejects_unknown_arguments_and_renders_corrections(
+    monkeypatch, tmp_path, unknown
+):
+    from copy import deepcopy
+    from pathlib import Path
+
+    from dbgpt.agent.resource.tool.exceptions import ToolExecutionException
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="public-repair"))
+    capture(sink, {"columns": ["region", "sales"], "rows": [["East", 100]]})
+    objects = ReportObjects(sink.snapshot())
+    table = object_id(objects, "table", "table")
+    value = object_id(objects, "value", "rows.0.1")
+    state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
+    wrappers = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([entry._tool for entry in wrappers])
+    await pack.async_execute(
+        resource_name="patch_report",
+        render=False,
+        report={"title": "旧标题"},
+        append_sections=[
+            {
+                "heading": "地区分析",
+                "intro": [["原有错误说明"]],
+                "table": {"object_id": table},
+            }
+        ],
+    )
+    for field, content in [
+        ("title", "已修正标题"),
+        ("subtitle", "已修正副标题"),
+        ("scope", "已修正范围"),
+        ("kpis", [{"label": "销售额", "object_id": value}]),
+    ]:
+        sections = deepcopy(state["_report_object_spec"]["sections"])
+        result = json.loads(
+            await pack.async_execute(
+                resource_name="patch_report",
+                report={field: content},
+            )
+        )
+        assert result["status"] == "staged"
+        assert state["_report_object_spec"]["sections"] == sections
+    # Rebuilding a ToolPack must retain argument validation on the resource.
+    pack = ToolPack([entry._tool for entry in wrappers])
+    before = deepcopy(state["_report_object_spec"])
+    checkpoint = (
+        tmp_path / "tmp/public-repair/report-repair/checkpoint.json"
+    ).read_bytes()
+    with pytest.raises(
+        ToolExecutionException, match="REPORT_OBJECT_INVALID: unknown arguments"
+    ):
+        await pack.async_execute(
+            resource_name="patch_report",
+            section_index=0,
+            section={"heading": "不应生效的标题"},
+            **{unknown: "放错层级的内容"},
+        )
+    assert state["_report_object_spec"] == before
+    assert (
+        tmp_path / "tmp/public-repair/report-repair/checkpoint.json"
+    ).read_bytes() == checkpoint
+    result = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report",
+            section_index=0,
+            section={"intro": [["新的正确说明"]]},
+        )
+    )
+    assert result["status"] == "staged"
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    assert completed["status"] == "completed", completed
+    html = state["_report_presentation"]["content"]
+    for expected in (
+        "已修正标题",
+        "已修正副标题",
+        "已修正范围",
+        "新的正确说明",
+        "East",
+        "100",
+    ):
+        assert expected in html
+    assert "原有错误说明" not in html and "不应生效的标题" not in html
+
+
+def test_numeric_values_precede_column_names_in_value_catalogue():
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="numeric-catalogue"))
+    capture(sink, {"columns": ["region", "revenue"], "rows": [["East", 100]]})
+    page = ReportObjects(sink.snapshot()).manifest(kind="value", limit=1)
+    assert page["objects"][0]["preview"] == "100"
+    assert page["objects"][0]["label"] == "rows.0.1"
+
+
+def test_all_invalid_prose_references_are_reported_before_repair():
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="reference-errors"))
+    capture(sink, {"columns": ["region", "revenue"], "rows": [["East", 100]]})
+    objects = ReportObjects(sink.snapshot())
+    table = object_id(objects, "table", "table")
+    with pytest.raises(ValueError) as failure:
+        compile_report_objects(
+            {
+                "sections": [
+                    {
+                        "heading": "地区分析",
+                        "intro": [["地区表现。", {"object_id": table}]],
+                        "bullets": [["复核差异。", {"object_id": table}]],
+                    }
+                ]
+            },
+            objects,
+            spec_mode=True,
+            fields=[],
+        )
+    assert "sections[0].intro[0][1]" in str(failure.value)
+    assert "sections[0].bullets[0][1]" in str(failure.value)
+    assert "repair every invalid prose reference" in str(failure.value)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("language", ["zh", "en"])
+@pytest.mark.parametrize("flat", [False, True])
 async def test_named_template_completes_with_numbered_advice_in_one_submission(
-    monkeypatch, tmp_path, language
+    monkeypatch, tmp_path, language, flat
 ):
     from dbgpt_app.openapi.api_v1.tools import report_repair
     from dbgpt_app.openapi.api_v1.tools.html_interpreter import report_template_contract
@@ -90,7 +221,7 @@ async def test_named_template_completes_with_numbered_advice_in_one_submission(
         await compose(
             data={
                 "SUMMARY": ["Total: ", {"object_id": token}],
-                "ADVICE": [[a] for a in advice],
+                "ADVICE": advice if flat else [[a] for a in advice],
             }
         )
     )
@@ -113,6 +244,33 @@ def test_catalogue_isolates_deep_json_strings(depth):
     assert not any(
         item["label"].startswith("data.payload") for item in manifest["objects"]
     )
+
+
+@pytest.mark.asyncio
+async def test_correcting_unknown_template_field_is_not_repeated_failure(
+    monkeypatch, tmp_path
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    state = {"conv_id": "correct-template-field"}
+    rendered = []
+
+    async def renderer(**arguments):
+        rendered.append(arguments)
+        return json.dumps({"status": "completed"})
+
+    _, compose, _ = make_report_object_tools(
+        state, renderer, "report.html", {"mode": "placeholders", "fields": ["SUMMARY"]}
+    )
+    for extra in ["SUMMARY_EXTRA", "title"]:
+        response = json.loads(await compose({"SUMMARY": "定性分析。", extra: "内容"}))
+        assert response["status"] == "invalid_selection"
+        assert response["retryable"]
+        assert extra in response["error"] and "allowed fields" in response["error"]
+        assert not rendered
+    assert json.loads(await compose({"SUMMARY": "定性分析。"}))["status"] == "completed"
+    assert len(rendered) == 1
 
 
 @pytest.mark.parametrize("serialized", [False, True])
@@ -217,6 +375,58 @@ def test_author_contract_excludes_engine_owned_and_optional_data_fields():
         "verified_fields": ["REVENUE"],
     }
     assert report_author_contract(contract, {})["fields"] == ["SUMMARY"]
+
+
+@pytest.mark.asyncio
+async def test_interpretation_handoff_does_not_offer_forbidden_value_handles(
+    monkeypatch, tmp_path
+):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+
+    (tmp_path / "report.html").write_text(
+        '<!-- dbgpt-required: SUMMARY --><html><div class="prose">{{SUMMARY}}</div>'
+        "<script>{{CHART_DATA_JSON}}</script></html>",
+        encoding="utf-8",
+    )
+    sink = InMemoryArtifactSink(
+        ArtifactCaptureContext(conv_uid="interpretation-handoff")
+    )
+    capture(
+        sink,
+        {
+            "CHART_DATA_JSON": json.dumps(
+                {"overview": {"rows": 6435}, "scatter": [100] * 4000}
+            )
+        },
+    )
+    generate = AsyncMock(
+        return_value=SimpleNamespace(success=True, content="Draft", context={})
+    )
+    monkeypatch.setattr(
+        report_agent,
+        "build_report_agent",
+        AsyncMock(return_value=SimpleNamespace(generate_reply=generate)),
+    )
+    monkeypatch.setattr(
+        report_agent, "select_report_template", lambda *_: "report.html"
+    )
+    await report_agent.make_generate_report_tool(
+        react_state={"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink},
+        skills_dir=str(tmp_path),
+        llm_client=object(),
+    )("Build the report")
+    message = generate.call_args.kwargs["received_message"].content
+    handoff, _ = json.JSONDecoder().raw_decode(message[message.index('{"total"') :])
+    assert handoff["objects"] == []
+    assert handoff["template_fields"] == ["SUMMARY"]
+    statistics = handoff["statistics_for_interpretation"]
+    assert "6435" in statistics["overview"]["preview"]
+    assert statistics["scatter"]["truncated"]
+    assert len(statistics["scatter"]["preview"]) == 1000
+    assert "value-" not in message
 
 
 @pytest.mark.asyncio
@@ -553,6 +763,50 @@ def test_preflight_reports_all_literal_locations_in_one_response():
     assert "999" in str(error.value) and "888" in str(error.value)
 
 
+@pytest.mark.parametrize("root_note", [False, True])
+def test_knowledge_note_paragraphs_compile_to_flat_bound_parts(root_note):
+    from dbgpt.core.interface.report_capture import (
+        bind_artifact_sink,
+        capture_reference_artifact,
+    )
+
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="note-paragraphs"))
+    with bind_artifact_sink(sink):
+        source = capture_reference_artifact(
+            reference_type="knowledge",
+            source_id="governance",
+            action="kb_cat",
+            duration_ms=1,
+            source_name="业务口径",
+            excerpt="无评价不可当作0分。",
+        )
+    registry = ReportObjects(sink.snapshot())
+    token = next(
+        key for key, item in registry.objects.items() if item["kind"] == "reference"
+    )
+    paragraphs = [
+        ["口径说明：", {"object_id": token}],
+        ["无评价记录为空值，不按 0 分处理。"],
+    ]
+    data = (
+        {"note": paragraphs}
+        if root_note
+        else {"sections": [{"heading": "业务口径", "note": paragraphs}]}
+    )
+    spec = compile_report_objects(data, registry, spec_mode=True, fields=[])[
+        "REPORT_SPEC"
+    ]
+    parts = spec["sections"][0]["note"]["parts"]
+    assert all(isinstance(part, (str, dict)) for part in parts)
+    assert any(
+        isinstance(part, dict) and part.get("artifact_id") == source for part in parts
+    )
+    with pytest.raises(ValueError, match="REPORT_OBJECT_LITERAL"):
+        compile_report_objects(
+            {"note": [["收入999元"]]}, registry, spec_mode=True, fields=[]
+        )
+
+
 @pytest.mark.asyncio
 async def test_staged_fields_survive_restore_and_invalid_update(monkeypatch, tmp_path):
     from dbgpt_app.openapi.api_v1.tools import report_repair
@@ -595,6 +849,40 @@ async def test_staged_fields_survive_restore_and_invalid_update(monkeypatch, tmp
         == sink.snapshot()[0].artifact_id
     )
     assert rendered[0]["data"]["INSIGHTS"]
+
+
+@pytest.mark.asyncio
+async def test_full_named_submission_retains_valid_fields_for_targeted_repair(
+    monkeypatch, tmp_path
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    state = {"conv_id": "partial-named-submission"}
+    rendered = []
+
+    async def renderer(**arguments):
+        rendered.append(arguments)
+        return json.dumps({"status": "completed"})
+
+    contract = {"mode": "placeholders", "fields": ["SUMMARY", "CASHFLOW"]}
+    _, compose, stage = make_report_object_tools(
+        state, renderer, "report.html", contract
+    )
+    rejected = json.loads(
+        await compose({"SUMMARY": "经营规模稳定。", "CASHFLOW": "现金收入 999"})
+    )
+    assert rejected["status"] == "invalid_selection" and not rendered
+    assert state["_report_object_fields"] == {"SUMMARY": "经营规模稳定。"}
+    restored = {"conv_id": state["conv_id"]}
+    assert report_repair.restore_report_checkpoint(state["conv_id"], restored)
+    assert restored["_report_object_fields"] == state["_report_object_fields"]
+    stage("CASHFLOW", "现金流情况需结合回款周期评估。")
+    assert json.loads(await compose())["status"] == "completed"
+    assert rendered[0]["data"] == {
+        "SUMMARY": "经营规模稳定。",
+        "CASHFLOW": "现金流情况需结合回款周期评估。",
+    }
 
 
 @pytest.mark.asyncio
@@ -765,6 +1053,134 @@ async def test_compose_named_template_reads_value_and_rejects_before_renderer(
     # Random artifact IDs may contain 999; inspect the displayed text only.
     assert "999" not in re.sub(r"<[^>]*>", "", state["_report_presentation"]["content"])
     assert "<h1>经营分析</h1>" in state["_report_presentation"]["content"]
+
+
+@pytest.mark.asyncio
+async def test_business_sections_stage_restore_and_render_only_on_commit(
+    monkeypatch, tmp_path
+):
+    from copy import deepcopy
+    from pathlib import Path
+
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="staged-business"))
+    source = capture(sink, {"columns": ["region", "revenue"], "rows": [["East", 100]]})
+    table = object_id(ReportObjects(sink.snapshot()), "table", "table")
+    state = {
+        "conv_id": sink.context.conv_uid,
+        "_report_artifact_sink": sink,
+        "_report_required_recommendation_count": 3,
+    }
+    template = "business-report/templates/business_report.html"
+    contract = {"mode": "spec", "fields": []}
+    _, compose, patch = make_report_object_tools(
+        state, make_html_interpreter(state, str(root / "skills")), template, contract
+    )
+    header_only = json.loads(await patch(render=False, report={"title": "业务报告"}))
+    assert header_only["status"] == "invalid_selection"
+    assert "append_sections" in header_only["error"]
+    assert not state.get("_report_object_spec")
+    staged = json.loads(
+        await patch(
+            render=False,
+            report={"title": "业务报告", "scope": "演示数据"},
+            append_sections=[{"heading": "地区表现", "table": {"object_id": table}}],
+        )
+    )
+    assert staged["status"] == "staged"
+    assert not state.get("_report_presentation")
+    before = deepcopy(state["_report_object_spec"])
+    malformed = json.loads(await patch(section_index=0, section="地区表现"))
+    assert malformed["status"] == "invalid_selection"
+    assert "section must be an object" in malformed["error"]
+    assert state["_report_object_spec"] == before
+    repeat_header = json.loads(await patch(render=False, report={"title": "新标题"}))
+    assert repeat_header["status"] == "staged"
+    before["title"] = "新标题"
+    assert state["_report_object_spec"] == before
+    invalid = json.loads(
+        await patch(
+            render=False,
+            append_sections=[{"heading": "错误章节", "intro": [["收入 999"]]}],
+        )
+    )
+    assert invalid["status"] == "invalid_selection"
+    assert state["_report_object_spec"] == before
+    assert not await report_repair.render_saved_report(state, str(root / "skills"))
+    restored = {"conv_id": sink.context.conv_uid}
+    restored_sink = report_repair.restore_report_checkpoint(
+        sink.context.conv_uid, restored
+    )
+    assert restored_sink
+    restored["_report_artifact_sink"] = restored_sink
+    assert restored["_report_object_spec"] == before
+    _, compose, patch = make_report_object_tools(
+        restored,
+        make_html_interpreter(restored, str(root / "skills")),
+        template,
+        contract,
+    )
+    # Once a draft exists, a patch's default cannot publish a partial document.
+    advice = [
+        {"title": text, "lines": [["建立复核流程并持续跟踪。"]]}
+        for text in (
+            "复核经营口径",
+            "核验地区差异",
+            "检查执行效果",
+        )
+    ]
+    assert (
+        json.loads(
+            await patch(
+                append_sections=[{"heading": "结论与建议", "recommendations": advice}]
+            )
+        )["status"]
+        == "staged"
+    )
+    assert not restored.get("_report_presentation")
+    result = json.loads(await compose())
+    assert not restored.get("_report_html_error"), result
+    html = restored["_report_presentation"]["content"]
+    assert "地区表现" in html and "结论与建议" in html and source in html
+    assert "East" in html and "100" in html
+    assert not restored.get("_report_object_spec")
+
+
+@pytest.mark.asyncio
+async def test_unfinished_draft_cannot_fall_back_to_old_saved_report(
+    monkeypatch, tmp_path
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    saved = {"sections": [{"heading": "已有章节"}]}
+    state = {
+        "conv_id": "preserve-incomplete-draft",
+        "_report_saved_arguments": {
+            "template_path": "report.html",
+            "data": {"REPORT_SPEC": saved},
+        },
+    }
+
+    async def renderer(**kwargs):
+        raise AssertionError("A draft must not call the renderer")
+
+    _, _, patch = make_report_object_tools(
+        state, renderer, "report.html", {"mode": "spec", "fields": []}
+    )
+    response = json.loads(
+        await patch(
+            render=False,
+            append_sections=[{"heading": "待完成章节", "intro": [["定性分析。"]]}],
+        )
+    )
+    assert response["status"] == "staged"
+    assert not await report_repair.render_saved_report(state, str(tmp_path))
+    assert state["_report_saved_arguments"]["data"]["REPORT_SPEC"] == saved
 
 
 @pytest.mark.asyncio

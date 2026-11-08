@@ -35,8 +35,8 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
      - `SOLVENCY_ANALYSIS`：偿债与风险分析
      - `EFFICIENCY_ANALYSIS`：营运效率分析
      - `CASHFLOW_ANALYSIS`：现金流与利润质量分析
-     - `ADVANTAGES_LIST`：核心优势列表（HTML `<li>` 格式）
-     - `RISKS_LIST`：主要风险列表（HTML `<li>` 格式）
+     - `ADVANTAGES_LIST`：核心优势列表（纯文本段落数组，不包含 HTML 标签）
+     - `RISKS_LIST`：主要风险列表（纯文本段落数组，不包含 HTML 标签）
      - `OVERALL_ASSESSMENT`：综合评价
 
 5. **交付报告**：
@@ -54,10 +54,10 @@ description: 专门用于上市公司财报（如年度报告、季度报告）�
 Step 1: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="extract_financials.py", args={"file_path": "/path/to/report.pdf"})
   → 返回 JSON: {"revenue": 10500000000, "net_profit": 1200000000, ...}  （记为 raw_data）
 
-Step 2: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="calculate_ratios.py", args=<raw_data>)
+Step 2: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="calculate_ratios.py", input_artifact_ids=[Step 1 的实际产物 ID])
   → 返回 30 个模板键值，系统捕获 Python 产物并通过通用 auto_data 传递模板字段
 
-Step 3: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="generate_charts.py", args=<raw_data>)
+Step 3: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="generate_charts.py", input_artifact_ids=[Step 1 的实际产物 ID])
   → 生成图表，系统自动复制到 /images/ 并记录 URL 映射
 
 Step 4: （LLM 自行撰写 7 段深度分析文本）
