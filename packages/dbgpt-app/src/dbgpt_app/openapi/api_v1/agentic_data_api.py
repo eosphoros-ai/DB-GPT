@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import shutil
+import sqlite3
 import tempfile
 import uuid
 import zipfile
@@ -89,6 +90,12 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
+from .task_progress import (
+    complete_delivery_task,
+    reconcile_report_delivery,
+    sync_task_plan_steps,
+    task_plan_meta,
+)
 
 _CHINESE_RECOMMENDATION_COUNTS = {
     "一": 1,
@@ -115,7 +122,30 @@ def _requested_recommendation_count(user_input: str) -> Optional[int]:
         re.IGNORECASE,
     )
     if not match:
-        return None
+        words = {
+            "one": 1,
+            "two": 2,
+            "three": 3,
+            "four": 4,
+            "five": 5,
+            "six": 6,
+            "seven": 7,
+            "eight": 8,
+            "nine": 9,
+            "ten": 10,
+        }
+        english = re.search(
+            r"\b(?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+            r"\s+(?:(?:highest|top|priority|actionable|key|specific|practical|"
+            r"highest-priority)\s+){0,3}recommendations?\b",
+            user_input,
+            re.IGNORECASE,
+        )
+        if not english:
+            return None
+        value = english.group("count").lower()
+        count = int(value) if value.isdigit() else words[value]
+        return count if 1 <= count <= 20 else None
     raw_count = match.group("count")
     count = (
         int(raw_count)
@@ -1372,6 +1402,7 @@ def _build_react_history_payload(
     storage URIs, owner ids, hashes or inspection bodies. ``citations`` comes
     from the final-answer assembler and remains display-safe metadata.
     """
+    sync_task_plan_steps(steps, task_plan)
     value = {
         "version": 2,
         "protocol_version": 2,
@@ -1609,8 +1640,13 @@ def _react_terminal_events(
     except Exception:
         logger.exception("Failed to persist ReAct agent history")
 
+    final_payload = final_answer.to_sse_payload()
+    history = json.loads(history_payload)
+    if isinstance(history.get("task_plan"), list):
+        final_payload["task_plan"] = history["task_plan"]
+        final_payload["todo_meta"] = task_plan_meta(history["task_plan"])
     return (
-        _sse_event(final_answer.to_sse_payload()),
+        _sse_event(final_payload),
         _sse_event({"type": "done"}),
     )
 
@@ -3271,7 +3307,8 @@ async def _react_agent_stream_impl(
             record_report_invocation_failure(react_state, raw_call, reason)
         )
 
-        if is_report_resume_request(user_input):
+        report_resume_requested = is_report_resume_request(user_input)
+        if report_resume_requested:
             try:
                 artifact_sink = await asyncio.to_thread(
                     restore_report_checkpoint,
@@ -3285,17 +3322,48 @@ async def _react_agent_stream_impl(
                 raise ValueError(
                     "REPORT_CHECKPOINT_INVALID: saved report recovery failed; keep completed artifacts and report this error"
                 )
+            if react_state.get("_report_required_recommendation_count") is None:
+                react_state["_report_required_recommendation_count"] = (
+                    _requested_recommendation_count(
+                        react_state.get("_report_original_request") or ""
+                    )
+                )
             if not requested_locale.startswith(("en", "zh")):
                 original_request = react_state.get("_report_original_request") or ""
                 react_state["_report_language"] = (
                     "zh" if re.search(r"[\u3400-\u9fff]", original_request) else "en"
                 )
-        artifact_sink = artifact_sink or InMemoryArtifactSink(
-            ArtifactCaptureContext(
+        from .tools.evidence_catalog import (
+            EvidenceCatalog,
+            SessionArtifactSink,
+            catalog_path,
+        )
+
+        context = (
+            artifact_sink.context
+            if artifact_sink is not None
+            else ArtifactCaptureContext(
                 conv_uid=conv_id,
                 run_id=f"turn-{uuid.uuid4().hex}",
             )
         )
+        try:
+            catalog = EvidenceCatalog(
+                catalog_path(), owner_id=str(dialogue.user_name or "anonymous")
+            )
+            session_sink = SessionArtifactSink(
+                context, catalog, include_prior=report_resume_requested
+            )
+            if artifact_sink is not None:
+                for restored in artifact_sink.snapshot():
+                    session_sink.restore_artifact(restored)
+            artifact_sink = session_sink
+        except (OSError, sqlite3.Error):
+            logger.warning(
+                "Session evidence catalog unavailable; using run capture",
+                exc_info=True,
+            )
+            artifact_sink = artifact_sink or InMemoryArtifactSink(context)
         # Kept in per-turn state for PR5a assembly after the agent task completes.
         # It is never included in prompts, SSE events, or conversation history.
         react_state["_report_artifact_sink"] = artifact_sink
@@ -3654,6 +3722,9 @@ Use concise inline HTML when there is no applicable template.
 4. **generate_report**: Hand the analysis report to the dedicated report agent (it
 owns `report_evidence_manifest`, the report template and every spec repair).
 Parameters: {{"instructions": "report title, required sections, recommendation count"}}
+   - If analysis established a metric's business meaning and grain, pass its
+real artifact ID, selector, meaning and grain together in optional
+`metric_definitions`. Omit uncertain definitions; do not infer from matching values.
    - Only use this if the skill's documentation explicitly provides template paths.
 If a template fails, fix the indicated input or select an existing suitable template.
 For a saved HTML candidate, use {{"retry_saved": true, "repair_patches":
@@ -3888,6 +3959,8 @@ reads the evidence manifest, renders the report template once and repairs only t
 spec from the latest error list. Parameters: {{"instructions": "report title, required
 sections, requested recommendation count"}}. Never write report HTML yourself, never
 patch rendered HTML and never re-run completed analysis for the report.
+Optional `metric_definitions` records known meaning and grain with each real
+artifact selector in this same call; omit unknown definitions.
 18. **report_evidence_manifest** (internal): owned by the report agent. Pass what the
 report must contain to `generate_report` instead of binding values yourself.
 19. **todowrite**: Create and manage a structured task list. Use for complex tasks
@@ -4453,9 +4526,8 @@ After partial results, finish only missing requested deliverables, then report.
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
                     yield step_meta(_stale_id, None, "terminate", None, "terminate")
-                # Do not fabricate plan completion.  Only an explicit
-                # todowrite update can mark a task complete; otherwise an
-                # early terminate must remain visibly incomplete.
+                # Termination alone does not prove any analysis/report task
+                # completed. Delivery is reconciled after verifying outcomes.
                 continue
 
             # ── TodoWrite: emit plan.update SSE and show step card ──
@@ -4483,22 +4555,10 @@ After partial results, finish only missing requested deliverables, then report.
                 if not todos_payload and _todo_list:
                     todos_payload = list(_todo_list)
 
-                _td_total = len(todos_payload)
-                _td_done = sum(
-                    1 for t in todos_payload if t.get("status") == "completed"
-                )
-                if _td_done == 0:
-                    todo_state = "init"
-                elif _td_done == _td_total and _td_total > 0:
-                    todo_state = "done"
-                else:
-                    todo_state = "progress"
-
-                todo_meta = {
-                    "state": todo_state,
-                    "done": _td_done,
-                    "total": _td_total,
-                }
+                todo_meta = task_plan_meta(todos_payload)
+                _td_total = todo_meta["total"]
+                _td_done = todo_meta["done"]
+                todo_state = todo_meta["state"]
                 _todo_step_title = (
                     f"TODO::{todo_state}:{_td_done}/{_td_total}"
                     if _td_total > 0
@@ -4744,9 +4804,19 @@ After partial results, finish only missing requested deliverables, then report.
 
             # Mark step as done and track as last completed
             yield step_done(react_step_id, status)
+            report_task_completed = False
+            action_names = {name.strip().lower() for name in (action or "").split(",")}
+            if "generate_report" in action_names:
+                if react_state.get("_report_delivery_completed"):
+                    report_task_completed = reconcile_report_delivery(
+                        _todo_list, react_state
+                    )
+            if report_task_completed:
+                yield _sse_event({"type": "plan.update", "tasks": list(_todo_list)})
             if (
                 status == "done"
                 and action
+                and "generate_report" not in action_names
                 and action.lower() != "todowrite"
                 and should_advance_todo(
                     action, thought_text or thoughts, observation_text
@@ -4968,6 +5038,19 @@ After partial results, finish only missing requested deliverables, then report.
     if incomplete:
         yield _sse_event(incomplete)
         final_content = incomplete["message"]
+    # A valid final response completes an explicit delivery task, never pending
+    # analysis or report work. Partial reports do not complete their report task.
+    if (
+        not stopped
+        and not incomplete
+        and reply.action_report
+        and reply.action_report.terminate
+        and final_content.strip()
+        and not final_content.startswith(("任务未完成", "HTML 分析报告未生成"))
+    ):
+        if react_state.get("_report_delivery_completed"):
+            reconcile_report_delivery(_todo_list, react_state)
+        complete_delivery_task(_todo_list, summary_delivered=True)
     final_answer = final_answer_assembler.finalize(final_content)
     final_answer = await _finalize_turn_report_persistence(
         dialogue=dialogue,

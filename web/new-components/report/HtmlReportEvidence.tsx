@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { format as formatSql } from 'sql-formatter';
 import ReportIframe, { resolveReportAssetUrls, sanitizeEmbeddedReportHtml } from './ReportIframe';
 import { artifactTitle } from './artifact-title';
+import { useInternalManifests } from './use-internal-manifests';
 import { referenceLocation as formatReferenceLocation } from './reference-location';
 import { artifactSourceName, type KnowledgeSpaceNames } from './report-source';
 import { useKnowledgeSpaceNames } from './use-knowledge-space-names';
@@ -112,8 +113,8 @@ const NativeReportTable: React.FC<{ data: Datum[]; sourceIds: string[] }> = ({ d
               {columns.map(column => (
                 <td className='border-b px-3 py-2 text-slate-700' key={column}>
                   <span
-                    data-dbgpt-artifacts={sourceIds.join(',')}
-                    data-dbgpt-evidence-label={`${column} · ${index + 1}`}
+                    data-dbgpt-artifacts={isEvidenceMetric(row[column]) ? sourceIds.join(',') : undefined}
+                    data-dbgpt-evidence-label={isEvidenceMetric(row[column]) ? `${column} · ${index + 1}` : undefined}
                   >
                     {String(row[column] ?? '')}
                   </span>
@@ -126,6 +127,16 @@ const NativeReportTable: React.FC<{ data: Datum[]; sourceIds: string[] }> = ({ d
     </div>
   );
 };
+
+/** Match standalone numeric values, excluding names, identifiers and dates. */
+function isEvidenceMetric(value: unknown): boolean {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'string') return false;
+  const text = value.trim();
+  if (/^\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?$/.test(text)) return false;
+  if (/^(?:[+−-]?\d+(?:\.\d+)?\s*[-—–~～至]\s*[+−-]?\d+(?:\.\d+)?|(?:>=|<=|[<>≤≥]|高于|低于|大于|小于|不低于|不高于)\s*[+−-]?\d+(?:\.\d+)?)$/.test(text)) return true;
+  return /^[+−-]?(?:[$¥€£]|R\$)?\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][+-]?\d+)?\s*(?:pp|百分点|个百分点|%|‰|(?:万|亿)?(?:元|次|人|天|条|单|件|个|家|行)?)?$/.test(text);
+}
 
 /** Render an actual DB-GPT AutoChart; the report layer supplies only its host. */
 const NativeReportChart: React.FC<{
@@ -183,6 +194,8 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
     .dbgpt-evidence-trigger--table{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:30px!important;height:30px!important;padding:0 8px!important;border-radius:999px!important}
     .dbgpt-evidence-trigger:hover{background:#dbeafe!important;color:#1d4ed8!important}
     .dbgpt-evidence-value{font-weight:800!important;color:#0f3a8a!important;text-decoration:underline dotted #2563eb 2px;text-underline-offset:3px}
+    .dbgpt-evidence-nonmetric{cursor:inherit!important;outline:0!important;box-shadow:none!important;color:inherit!important;font-weight:inherit!important;text-decoration:inherit!important}
+    .dbgpt-evidence-passive,.dbgpt-evidence-passive:hover{cursor:default!important;outline:0!important;box-shadow:none!important}
     .dbgpt-native-chart-host{display:block!important;width:100%!important;min-width:0!important;min-height:360px!important;overflow:hidden!important;position:relative!important}
     /* Evidence is an interactive review aid, not report content.  Browser
        print/PDF export uses this same srcdoc, so remove all controls and
@@ -224,7 +237,29 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
           var setOption = chart.setOption;
           chart.setOption = function () {
             called = true;
-            try { return setOption.apply(this, arguments); } catch (error) {
+            var args = Array.prototype.slice.call(arguments);
+            function normalizeDataset(config) {
+              if (!config || typeof config !== 'object') return config;
+              var next = Object.assign({}, config);
+              function normalizeOne(dataset) {
+                if (!dataset || typeof dataset !== 'object') return dataset;
+                var source = dataset.source;
+                if (!source || Array.isArray(source) || !Array.isArray(source.rows) || !Array.isArray(source.columns)) return dataset;
+                var result = Object.assign({}, dataset, { source: source.rows });
+                if (!result.dimensions) result.dimensions = source.columns;
+                return result;
+              }
+              if (Array.isArray(next.dataset)) next.dataset = next.dataset.map(normalizeOne);
+              else if (next.dataset) next.dataset = normalizeOne(next.dataset);
+              if (next.baseOption) next.baseOption = normalizeDataset(next.baseOption);
+              if (Array.isArray(next.options)) next.options = next.options.map(normalizeDataset);
+              if (Array.isArray(next.media)) next.media = next.media.map(function (item) {
+                return item && item.option ? Object.assign({}, item, { option: normalizeDataset(item.option) }) : item;
+              });
+              return next;
+            }
+            args[0] = normalizeDataset(args[0]);
+            try { return setOption.apply(this, args); } catch (error) {
               observeChart(artifactId, 'echarts', 'failed', started, undefined, error); throw error;
             }
           };
@@ -268,6 +303,13 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
         if (artifactIds.length) parent.postMessage({ type: 'dbgpt-report-evidence', artifactIds: artifactIds, elementTag: node.tagName || '', blockId: node.getAttribute('data-dbgpt-block-id') || '', claimId: node.getAttribute('data-dbgpt-claim-id') || '', label: (node.getAttribute('data-dbgpt-evidence-label') || node.getAttribute('aria-label') || node.textContent || '').trim().slice(0, 160) }, '*');
       }
       function isInline(node) { return /^(STRONG|B|SPAN|EM|MARK|A)$/i.test(node.tagName); }
+      var isEvidenceMetric = ${isEvidenceMetric.toString()};
+      function isNonmetricResult(node) {
+        var ids = (node.getAttribute('data-dbgpt-artifacts') || '').split(',').map(function (id) { return id.trim(); }).filter(Boolean);
+        if (!ids.length || !ids.every(function (id) { return /^(sql|python)-/i.test(id); })) return false;
+        if (node.tagName === 'TABLE' || isTableStructure(node)) return true;
+        return (isInline(node) || isTextBlock(node)) && !isEvidenceMetric(node.textContent || '');
+      }
       function isTextBlock(node) { return /^(P|LI|H[1-6]|TD|TH|BLOCKQUOTE|LABEL|SUMMARY)$/i.test(node.tagName); }
       function isTableStructure(node) { return /^(TR|THEAD|TBODY|TFOOT|COLGROUP|COL)$/i.test(node.tagName); }
       function hasReferenceBinding(node) {
@@ -320,7 +362,36 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
           container.classList.remove('dbgpt-evidence-host--reserve-corner');
         });
       }
+      function reconcileNestedChartControls() {
+        // A figure and its inner chart host can both carry the same binding.
+        // Keep the outer control and its complete source list, but show only
+        // one entry point in the chart corner.
+        Array.prototype.forEach.call(document.querySelectorAll('[data-dbgpt-evidence-chart="true"]'), function (control) {
+          var ancestor = control.parentElement && control.parentElement.parentElement;
+          while (ancestor) {
+            var outer = ancestor.querySelector(':scope > [data-dbgpt-evidence-chart="true"]');
+            if (outer && outer !== control) {
+              var ids = (outer.getAttribute('data-dbgpt-artifacts') || '').split(',').concat((control.getAttribute('data-dbgpt-artifacts') || '').split(','));
+              outer.setAttribute('data-dbgpt-artifacts', Array.from(new Set(ids.map(function (id) { return id.trim(); }).filter(Boolean))).join(','));
+              control.remove();
+              break;
+            }
+            ancestor = ancestor.parentElement;
+          }
+        });
+      }
       function decorateEvidenceTargets() {
+        // Older generated reports may inline an entire unquoted KB Markdown
+        // excerpt as a span. Keep its artifact binding and expose the source
+        // through the existing evidence control instead of duplicating it.
+        Array.prototype.forEach.call(document.querySelectorAll('span[data-dbgpt-artifacts]'), function (node) {
+          var ids = (node.getAttribute('data-dbgpt-artifacts') || '').split(',').map(function (id) { return id.trim(); }).filter(Boolean);
+          var text = (node.textContent || '').trim();
+          if (ids.length !== 1 || ids[0].indexOf('reference-') !== 0 || node.children.length || node.hasAttribute('data-dbgpt-artifact-selectors')) return;
+          if (text.length < 160 || text !== (node.getAttribute('data-dbgpt-evidence-label') || '').trim() || text.indexOf('|') < 0) return;
+          node.textContent = '知识库来源';
+          node.setAttribute('data-dbgpt-evidence-label', '知识库来源');
+        });
         Array.prototype.forEach.call(document.querySelectorAll('[data-dbgpt-artifacts], [_echarts_instance_]'), function (node) {
           if (node.hasAttribute('data-dbgpt-evidence-summary') || node.getAttribute('data-dbgpt-evidence-control') === 'true') return;
           if (node.getAttribute('data-dbgpt-evidence-decorated') === 'true') return;
@@ -344,6 +415,12 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
             node.before(figure); figure.appendChild(node); node = figure;
           }
           var inline = isInline(node);
+          if (isNonmetricResult(node)) {
+            if (inline || /^(TD|TH)$/i.test(node.tagName)) node.classList.add('dbgpt-evidence-nonmetric');
+            else node.classList.add('dbgpt-evidence-passive');
+            node.setAttribute('data-dbgpt-evidence-decorated', 'true');
+            return;
+          }
           var textBlock = !inline && isTextBlock(node);
           var tableBound = node.tagName === 'TABLE' || isTableStructure(node);
           var chartBound = isChartContainer(node);
@@ -380,18 +457,20 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
           if (inline) node.insertAdjacentElement('afterend', control); else host.appendChild(control);
         });
         removeNearestContainerControlForInlineClaims();
+        reconcileNestedChartControls();
         updateEvidenceLabels();
       }
       document.addEventListener('click', function (event) {
         var node = event.target && event.target.closest && event.target.closest('[data-dbgpt-artifacts]');
       if (!node) return;
+      if (isNonmetricResult(node)) return;
       event.preventDefault();
         emitEvidence(node);
       });
       document.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         var node = event.target && event.target.closest && event.target.closest('[data-dbgpt-artifacts]');
-        if (!node) return; event.preventDefault(); emitEvidence(node);
+        if (!node || isNonmetricResult(node)) return; event.preventDefault(); emitEvidence(node);
       });
       function updateEvidenceLabels() {
         Array.prototype.forEach.call(document.querySelectorAll('[data-dbgpt-evidence-control="true"]'), function (control) {
@@ -410,12 +489,11 @@ const bridgeHtml = (html: string, labels: Record<string, string>) => {
           var elementTag = control.getAttribute('data-dbgpt-evidence-element-tag') || '';
           var isChart = /^(FIGURE|IMG|CANVAS|SVG)$/i.test(elementTag);
           var isInlineClaim = /^(STRONG|B|SPAN|EM|MARK|A)$/i.test(elementTag);
-          if (isChart && hasChartArtifact) labels = [L.chartBadge];
+          if (control.getAttribute('data-dbgpt-evidence-chart') === 'true' || (isChart && hasChartArtifact)) labels = [L.chartBadge];
           else if (hasKnowledgeArtifact && !isInlineClaim) labels = ['KB'];
           else if (hasSqlArtifact || labels.indexOf('SQL') !== -1) labels = ['SQL'];
-          if (control.getAttribute('data-dbgpt-evidence-chart') === 'true' && labels.indexOf(L.chartBadge) === -1) labels.unshift(L.chartBadge);
           var targetId = control.getAttribute('data-dbgpt-claim-id') || control.getAttribute('data-dbgpt-block-id') || '';
-          if (inferenceTargets[targetId] && labels.indexOf('Agent') === -1) labels.push('Agent');
+          if (control.getAttribute('data-dbgpt-evidence-chart') !== 'true' && inferenceTargets[targetId] && labels.indexOf('Agent') === -1) labels.push('Agent');
           if (labels.length) control.textContent = labels.slice(0, 3).join('·');
         });
       }
@@ -588,16 +666,6 @@ const ArtifactDetail: React.FC<{
           </div>
         </>
       )}
-      {artifact.result?.inline !== undefined && (
-        <>
-          <h4 className='mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200'>
-            {t('evidence_result_snapshot')}
-          </h4>
-          <pre className='mt-2 max-h-36 overflow-auto rounded-lg bg-emerald-50 p-3 text-xs text-emerald-950 dark:bg-emerald-500/10 dark:text-emerald-100'>
-            {text(artifact.result.inline)}
-          </pre>
-        </>
-      )}
       {artifact.type === 'chart' && artifact.spec && (
         <CollapsibleCode title={t('evidence_chart_spec')} content={text(artifact.spec)} />
       )}
@@ -624,6 +692,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   const ownedIframeRef = useRef<HTMLIFrameElement>(null);
   const reportIframeRef = iframeRef || ownedIframeRef;
   const [run, setRun] = useState<ReportRun>();
+  const internalManifests = useInternalManifests(run);
   const knowledgeNames = useKnowledgeSpaceNames(run?.document.artifacts || []);
   const runReady = run?.report_id === reportId && run?.run_id === reportRunId;
   const [error, setError] = useState('');
@@ -807,14 +876,18 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   );
   const artifacts = useMemo(() => {
     const byId = new Map(run?.document.artifacts.map(item => [item.artifact_id, item]));
-    const artifactIds = selectedBlock?.evidence.map(item => item.artifact_id) || selection?.artifactIds || [];
-    return artifactIds
+    // The clicked HTML target is more specific than its containing report
+    // block. A KPI may have one producer while the section has many sources.
+    const artifactIds = selection?.artifactIds.length
+      ? selection.artifactIds
+      : selectedBlock?.evidence.map(item => item.artifact_id) || [];
+    return [...new Set(artifactIds)]
       .map(id => byId.get(id))
       .filter(
         (item): item is ReportArtifact =>
-          item !== undefined && (selection?.elementTag !== 'TABLE' || item.type !== 'chart'),
+          item !== undefined && !internalManifests.has(item.artifact_id) && (selection?.elementTag !== 'TABLE' || item.type !== 'chart'),
       );
-  }, [run, selection, selectedBlock]);
+  }, [run, selection, selectedBlock, internalManifests]);
   const citationQuotes = useMemo(
     () =>
       new Map(
@@ -976,6 +1049,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
         control.type = 'button';
         control.className = 'dbgpt-evidence-trigger dbgpt-evidence-trigger--corner';
         control.setAttribute('data-dbgpt-evidence-control', 'true');
+        control.setAttribute('data-dbgpt-evidence-chart', 'true');
         control.setAttribute(
           'data-dbgpt-artifacts',
           target.getAttribute('data-dbgpt-artifacts') || artifact.artifact_id,

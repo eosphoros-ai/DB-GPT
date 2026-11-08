@@ -19,6 +19,13 @@ export const getStandaloneBlockEvidence = (reportId: string, runId: string, bloc
   );
 
 const runPath = (reportId: string, runId: string) => `${reportPath(reportId)}/runs/${encodeURIComponent(runId)}`;
+export const getReportSourceJson = async (reportId: string, runId: string, artifactId: string): Promise<unknown> => {
+  const response = await fetch(
+    `${runPath(reportId, runId)}/artifacts/${encodeURIComponent(artifactId)}/content?part=source`,
+  );
+  if (!response.ok) throw new Error(`Source read failed (${response.status})`);
+  return response.json();
+};
 export const getRenderObservations = (reportId: string, runId: string) =>
   getJson<BrowserRenderObservation[]>(`${runPath(reportId, runId)}/render-observations`);
 export const saveRenderObservation = async (

@@ -37,11 +37,24 @@ async def render_saved_report(state, skills_dir, *, allow_unavailable_references
     the same document, result and citation validation even after that budget is
     exhausted, so a policy fix can unblock an existing complete report.
     """
+    if state.get("_report_object_spec") is not None:
+        # Only compose_report commits the author's complete draft for rendering.
+        return False
     calculation = state.get("_report_missing_calculation")
     if calculation and not calculation.get("result_artifact_id"):
         return False
     presentation = state.get("_report_presentation") or {}
-    if presentation.get("content") and not state.get("_report_html_error"):
+    partial = any(
+        str(warning).startswith(
+            ("REPORT_REFERENCE_UNAVAILABLE", "REPORT_NUMERIC_VALUE_UNAVAILABLE")
+        )
+        for warning in state.get("_report_warnings", [])
+    )
+    if (
+        presentation.get("content")
+        and not state.get("_report_html_error")
+        and (allow_unavailable_references or not partial)
+    ):
         return True
     saved = state.get("_report_saved_arguments") or {}
     if not any(saved.get(key) for key in ("template_path", "html", "file_path")):
@@ -82,6 +95,29 @@ async def render_saved_report(state, skills_dir, *, allow_unavailable_references
     except Exception:
         logger.exception("Unable to checkpoint the finalized report")
     return True
+
+
+def invalidate_report_output(state):
+    """Drop this request's derived deliverables once new pending content exists.
+
+    Report content precedes its rendering: after a staging or submission entry
+    accepts new content, the previous response, presentation and delivery event
+    no longer represent this request's report. Only the renderer recreates them
+    from the accepted content. Pending content, saved arguments, render
+    candidates, checkpoints, budgets and error diagnostics stay untouched; this
+    never performs I/O and must be called from the synchronous section that
+    accepts the content.
+    """
+    for key in (
+        "_report_success_response",
+        "_report_presentation",
+        "_report_presentation_bindings",
+        "_report_warnings",
+        "_report_unavailable_references",
+        "_report_delivery_id",
+    ):
+        state.pop(key, None)
+    state["_report_delivery_completed"] = False
 
 
 def _checkpoint_path(conv_uid):
@@ -130,6 +166,7 @@ def _save_checkpoint(state, arguments, error):
         if state.get("_report_render_phase")
         or state.get("_report_html_attempted")
         or state.get("_report_pending_html")
+        or state.get("_report_object_spec") is not None
         else "analysis",
         "original_request": state.get("_report_original_request"),
         "execution_progress": state.get("_report_execution_progress", {}),
@@ -144,6 +181,9 @@ def _save_checkpoint(state, arguments, error):
         "missing_calculation": state.get("_report_missing_calculation"),
         "calculation_requests": state.get("_report_calculation_requests", 0),
         "draft": state.get("_report_draft"),
+        "object_fields": state.get("_report_object_fields"),
+        "object_spec": state.get("_report_object_spec"),
+        "object_template": state.get("_report_object_template"),
         "model_output": state.get("_report_model_output"),
         "invocation_failure_count": state.get("_report_invocation_failures", 0),
         "invocation_error": state.get("_report_last_invocation_error"),
@@ -198,7 +238,56 @@ def is_report_resume_request(text):
     )
 
 
+def _archive_corrupt_checkpoint(conv_uid, state):
+    """Keep damaged bytes when possible without blocking recovery on backup I/O."""
+    try:
+        path = _checkpoint_path(conv_uid)
+        if not path.is_file():
+            return
+        raw = path.read_bytes()
+        backup = path.with_name(
+            "checkpoint.corrupt-" + hashlib.sha256(raw).hexdigest()[:16] + ".json"
+        )
+        backup.write_bytes(raw)
+    except OSError as error:
+        state["_report_checkpoint_backup_error"] = (
+            "REPORT_CHECKPOINT_BACKUP_FAILED: " + type(error).__name__
+        )
+        logger.warning("Could not archive damaged report checkpoint", exc_info=True)
+    else:
+        state["_report_corrupt_checkpoint_path"] = str(backup)
+
+
 def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
+    """Restore atomically, retaining damaged bytes for inspection/rebuilding."""
+
+    candidate = dict(state)
+    try:
+        sink = _restore_report_checkpoint(
+            conv_uid, candidate, include_completed=include_completed
+        )
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        OSError,
+        RecursionError,
+    ) as error:
+        _archive_corrupt_checkpoint(conv_uid, state)
+        state["_report_checkpoint_error"] = (
+            "REPORT_CHECKPOINT_INVALID: "
+            + type(error).__name__
+            + "; rebuild the report from available captured evidence"
+        )
+        return None
+    if candidate.get("_report_checkpoint_recovery_warnings"):
+        _archive_corrupt_checkpoint(conv_uid, candidate)
+    state.update(candidate)
+    return sink
+
+
+def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     """Resume an explicitly requested report repair without changing artifact IDs."""
     from pydantic import TypeAdapter
 
@@ -208,6 +297,25 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not isinstance(
+        payload.get("arguments", {}), dict
+    ):
+        raise ValueError("Invalid checkpoint structure")
+    for key in ("pending_html", "last_attempt_html", "title", "error", "render_error"):
+        if payload.get(key) is not None and not isinstance(payload[key], str):
+            raise ValueError("Invalid checkpoint text field")
+    for key in (
+        "execution_step_map",
+        "execution_progress",
+        "object_fields",
+        "object_spec",
+    ):
+        if payload.get(key) is not None and not isinstance(payload[key], dict):
+            raise ValueError("Invalid checkpoint mapping field")
+    if payload.get("missing_calculation") is not None and not isinstance(
+        payload["missing_calculation"], dict
+    ):
+        raise ValueError("Invalid checkpoint calculation field")
     if payload.get("conv_uid") != conv_uid or (
         payload.get("complete") and not include_completed
     ):
@@ -216,13 +324,28 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
         ArtifactCaptureContext(conv_uid=conv_uid, run_id=payload["run_id"])
     )
     adapter = TypeAdapter(Artifact)
+    invalid_artifacts = []
     for raw in payload["artifacts"]:
-        sink.record(adapter.validate_python(raw))
-    state["_report_pending_html"] = payload.get("pending_html", "")
-    state["_report_last_attempt_html"] = payload.get(
-        "last_attempt_html", state["_report_pending_html"]
+        try:
+            artifact = adapter.validate_python(raw)
+        except ValueError:
+            invalid_artifacts.append(len(invalid_artifacts) + 1)
+            continue
+        sink.restore_artifact(artifact)
+    if invalid_artifacts:
+        if not sink.snapshot():
+            raise ValueError("No valid checkpoint artifacts remain")
+        state["_report_checkpoint_recovery_warnings"] = (
+            f"Skipped {len(invalid_artifacts)} invalid artifact records; "
+            "references to missing artifacts require repair"
+        )
+    state["_report_pending_html"] = payload.get("pending_html") or ""
+    state["_report_last_attempt_html"] = (
+        payload.get("last_attempt_html")
+        if payload.get("last_attempt_html") is not None
+        else state["_report_pending_html"]
     )
-    state["_report_pending_title"] = payload.get("title", "Report")
+    state["_report_pending_title"] = payload.get("title") or "Report"
     state["_report_saved_template_scripts"] = payload.get(
         "trusted_template_scripts", False
     )
@@ -249,6 +372,12 @@ def restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     state["_report_missing_calculation"] = payload.get("missing_calculation")
     state["_report_calculation_requests"] = payload.get("calculation_requests", 0)
     state["_report_draft"] = payload.get("draft")
+    state["_report_object_fields"] = payload.get("object_fields") or {}
+    if payload.get("object_spec") is not None:
+        state["_report_object_spec"] = payload["object_spec"]
+    else:
+        state.pop("_report_object_spec", None)
+    state["_report_object_template"] = payload.get("object_template")
     state["_report_checkpoint_path"] = str(path)
     state["_report_pending_path"] = str(path.with_name("pending.html"))
     if state["_report_render_phase"]:
@@ -420,7 +549,11 @@ def _record_failure(
             "mode"
         ) == "placeholders"
         instruction = (
-            "Keep the saved template and artifacts. Call retry_saved=true with "
+            "Keep the saved template and artifacts. For an exact $.data json_path, "
+            'use retry_saved=true and data={"REPORT_DATA_PATCHES":'
+            '[{"path":"$.data.REPORT_SPEC.sections[0].table","value":{...}}]}. '
+            "Replace the smallest existing node with a verified reference or table. "
+            "For other updates, call retry_saved=true with "
             "data containing the corrected or missing named placeholders; existing "
             "fields are preserved. Use the fields declared by this template, "
             "not the business REPORT_SPEC/sections schema. Do not resend rendered "
@@ -536,6 +669,25 @@ def _record_failure(
     )
     state["_report_failure_response"] = result
     return result
+
+
+def record_report_object_failure(state, reason):
+    """Count compiler rejection before it reaches the renderer or agent adapter."""
+    if not state.get("_report_retry_exhausted"):
+        state["_report_tool_call_count"] = state.get("_report_tool_call_count", 0) + 1
+    # Rejected input can itself be too deep to serialize. The bounded diagnostic
+    # supplies the fingerprint without checkpointing unsupported raw content.
+    result = json.loads(
+        _record_failure(
+            state,
+            {"object_error": str(reason)},
+            str(reason),
+            reached_renderer=False,
+            preflight=True,
+        )
+    )
+    result.update(status="invalid_selection", success=False, error=str(reason))
+    return json.dumps(result, ensure_ascii=False)
 
 
 def _truncation_hint(state) -> str | None:
@@ -768,6 +920,8 @@ def report_repair_guard(state):
                         if current_sink is not None:
                             for artifact in current_sink.snapshot():
                                 restored.record(artifact)
+                            if hasattr(current_sink, "catalog"):
+                                restored.catalog = current_sink.catalog
                         state["_report_artifact_sink"] = restored
                         source_arguments = dict(
                             state.get("_report_saved_arguments", {})
