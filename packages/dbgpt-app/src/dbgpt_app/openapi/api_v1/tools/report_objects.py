@@ -495,9 +495,10 @@ def compile_report_objects(
         if object_errors:
             raise ValueError(
                 "REPORT_OBJECT_INVALID: repair every invalid prose reference "
-                "listed below in the same call. Remove table/chart citations "
-                "from prose and retain the text; tables/charts belong in "
-                "section.table/section.chart. "
+                "listed below in the same call. KPI entries require individual "
+                "value objects; replace their object_id or omit optional KPIs. "
+                "Remove table/chart citations from prose and retain the text; "
+                "tables/charts belong in section.table/section.chart. "
                 + json.dumps(object_errors, ensure_ascii=False)
             )
         if literal_errors:
@@ -635,9 +636,11 @@ def compile_report_objects(
         )
     spec = {k: prose(data[k], k) for k in ("title", "subtitle", "scope") if k in data}
 
-    def kpis(items):
+    kpi_choices = {}
+
+    def kpis(items, location):
         result = []
-        for item in items:
+        for index, item in enumerate(items):
             if not isinstance(item, dict) or set(item) - {
                 "label",
                 "object_id",
@@ -646,15 +649,43 @@ def compile_report_objects(
                 raise ValueError(
                     "REPORT_OBJECT_INVALID: KPI requires label and object_id"
                 )
+            try:
+                reference = objects.reference(item["object_id"], item.get("format"))
+            except ValueError as error:
+                choices = []
+                reason = str(error)
+                try:
+                    selected = objects.get(item["object_id"])
+                    artifact_id = selected["artifact_id"]
+                    if selected["kind"] in {"table", "chart"}:
+                        reason = (
+                            f"{item['object_id']} is a {selected['kind']} object, "
+                            "not a KPI value. Keep it in section.table/chart."
+                        )
+                    if artifact_id not in kpi_choices:
+                        kpi_choices[artifact_id] = objects.manifest(
+                            kind="value", artifact_ids=[artifact_id], limit=20
+                        )["objects"]
+                        choices = kpi_choices[artifact_id]
+                except ValueError:
+                    pass
+                object_errors.append(
+                    {
+                        "location": f"{location}[{index}].object_id",
+                        "error": "KPI requires one scalar value object. " + reason,
+                        **({"available_values": choices} if choices else {}),
+                    }
+                )
+                reference = None
             result.append(
                 {
                     "label": prose(item["label"], "kpi.label"),
-                    "ref": objects.reference(item["object_id"], item.get("format")),
+                    "ref": reference,
                 }
             )
         return result
 
-    spec["kpis"] = kpis(data.get("kpis", []))
+    spec["kpis"] = kpis(data.get("kpis", []), "report.kpis")
     spec["sections"] = []
     if isinstance(data.get("scope"), list):
         spec.pop("scope", None)
@@ -692,7 +723,7 @@ def compile_report_objects(
             for k in ("heading", "intro", "bullets")
             if k in source
         }
-        section["kpis"] = kpis(source.get("kpis", []))
+        section["kpis"] = kpis(source.get("kpis", []), f"sections[{index}].kpis")
         if "note" in source:
             section["note"] = {
                 "label": "知识库口径",
@@ -833,7 +864,12 @@ def make_report_object_tools(state, renderer, template_path, contract):
         state["_report_catalogue_reads"] = 0
         draft = state.get("_report_object_spec")
         if contract["mode"] == "spec" and data is None and draft is not None:
+            from .report_repair import invalidate_report_output
+
             state.pop("_report_object_spec", None)
+            # The committed draft must reach the renderer; a cached deliverable
+            # of earlier content may not short-circuit this submission.
+            invalidate_report_output(state)
             try:
                 return await renderer(
                     template_path=template_path,
@@ -889,12 +925,15 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         valid[field] = value
                     except (ValueError, TypeError, KeyError, RecursionError) as error:
                         errors.append(str(error))
-                from .report_repair import _save_checkpoint
+                from .report_repair import _save_checkpoint, invalidate_report_output
 
                 with fields_lock:
                     staged = state.setdefault("_report_object_fields", {})
                     staged.update(deepcopy(valid))
                     if valid:
+                        # Retained fields are newly accepted pending content;
+                        # the previous deliverable no longer represents them.
+                        invalidate_report_output(state)
                         _save_checkpoint(
                             state,
                             state.get("_report_saved_arguments") or {},
@@ -937,6 +976,11 @@ def make_report_object_tools(state, renderer, template_path, contract):
                     compiled["LANG"] = state.get("_report_language", "zh")
         except (ValueError, TypeError, KeyError, RecursionError) as error:
             return selection_failure(error)
+        from .report_repair import invalidate_report_output
+
+        # Compilation accepted new content; the render that follows is the only
+        # producer of this request's deliverable.
+        invalidate_report_output(state)
         return await renderer(template_path=template_path, title=title, data=compiled)
 
     for name, schema in {
@@ -1230,7 +1274,10 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         data = _load_report_json(data)
                     updated = {**deepcopy(data), "REPORT_SPEC": repaired}
                     if not render or draft is not None:
-                        from .report_repair import _save_checkpoint
+                        from .report_repair import (
+                            _save_checkpoint,
+                            invalidate_report_output,
+                        )
                         from .report_spec import validate_report_spec
 
                         # Validate the complete candidate before committing it.
@@ -1238,6 +1285,10 @@ def make_report_object_tools(state, renderer, template_path, contract):
                         # finalization must never publish a half-written report.
                         candidate = validate_report_spec(repaired)
                         state["_report_object_spec"] = candidate
+                        # Accepted pending content supersedes every derived
+                        # deliverable of this request; only the next render of
+                        # this candidate may recreate them.
+                        invalidate_report_output(state)
                         state.pop("_report_html_error", None)
                         if candidate != previous:
                             # Successful document progress renews the local
@@ -1288,6 +1339,11 @@ def make_report_object_tools(state, renderer, template_path, contract):
                             "Preserve the already staged report and its metadata."
                         )
                     return selection_failure(error)
+                from .report_repair import invalidate_report_output
+
+                # The repaired document is accepted for immediate rendering;
+                # only this render may produce the request's deliverable.
+                invalidate_report_output(state)
                 return await renderer(
                     template_path=template_path,
                     title=saved.get("title", "Report"),
@@ -1335,12 +1391,15 @@ def make_report_object_tools(state, renderer, template_path, contract):
                 )
             except (ValueError, TypeError, KeyError, RecursionError) as error:
                 return selection_failure(error)
-            from .report_repair import _save_checkpoint
+            from .report_repair import _save_checkpoint, invalidate_report_output
 
             with fields_lock:
                 draft = state.setdefault("_report_object_fields", {})
                 changed = field not in draft or draft[field] != content
                 draft[field] = content
+                # A newly accepted field supersedes the previous deliverable of
+                # this request; the next compose re-renders the staged content.
+                invalidate_report_output(state)
                 corrected_fields.add(field)
                 if changed:
                     # Accepted progress renews only the local preflight budget;

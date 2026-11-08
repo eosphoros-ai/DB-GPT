@@ -97,6 +97,29 @@ async def render_saved_report(state, skills_dir, *, allow_unavailable_references
     return True
 
 
+def invalidate_report_output(state):
+    """Drop this request's derived deliverables once new pending content exists.
+
+    Report content precedes its rendering: after a staging or submission entry
+    accepts new content, the previous response, presentation and delivery event
+    no longer represent this request's report. Only the renderer recreates them
+    from the accepted content. Pending content, saved arguments, render
+    candidates, checkpoints, budgets and error diagnostics stay untouched; this
+    never performs I/O and must be called from the synchronous section that
+    accepts the content.
+    """
+    for key in (
+        "_report_success_response",
+        "_report_presentation",
+        "_report_presentation_bindings",
+        "_report_warnings",
+        "_report_unavailable_references",
+        "_report_delivery_id",
+    ):
+        state.pop(key, None)
+    state["_report_delivery_completed"] = False
+
+
 def _checkpoint_path(conv_uid):
     token = str(conv_uid or "unknown")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", token):

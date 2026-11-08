@@ -1063,3 +1063,186 @@ def test_currency_label_does_not_add_input_restrictions(tmp_path, currency, inli
     assert "warnings" not in result["_meta"]
     calculated = load_script("calculate_ratios").calculate_template_data(result)
     assert calculated["GROSS_MARGIN"] == "80.00%"
+
+
+# ── Balance sheet period selection: opening restatements vs period-end ──────
+
+REPORT_YEAR_LINE = "2019年年度报告\n"
+PERIOD_END_TABLE = (
+    "合并资产负债表\n单位：元\n"
+    "项目 2019年12月31日 2018年12月31日\n"
+    "资产总计 200 180\n负债合计 80 70\n所有者权益合计 120 110\n"
+)
+# A policy-change restatement of the current year's opening balances uses the
+# same statement title and row labels, but its columns are dated (Y-1)-12-31
+# and Y-01-01 in either order.
+OPENING_TABLE = (
+    "合并资产负债表\n单位：元\n"
+    "项目 2018年12月31日 2019年01月01日\n"
+    "资产总计 180 181\n负债合计 70 71\n所有者权益合计 110 110\n"
+)
+OPENING_TABLE_REVERSED = (
+    "合并资产负债表\n单位：元\n"
+    "项目 2019年01月01日 2018年12月31日\n"
+    "资产总计 181 180\n负债合计 71 70\n所有者权益合计 110 110\n"
+)
+
+
+def _extract_text(tmp_path, text):
+    path = tmp_path / "report.txt"
+    path.write_text(text, encoding="utf-8")
+    return load_script("extract_financials").extract_financials(str(path))
+
+
+@pytest.mark.parametrize("separator", ["-", "/"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_numeric_date_headers_filter_opening_restatement(tmp_path, separator, reverse):
+    import re
+
+    opening = OPENING_TABLE_REVERSED if reverse else OPENING_TABLE
+    text = re.sub(
+        r"(\d{4})年(\d{2})月(\d{2})日",
+        lambda m: separator.join(m.groups()),
+        REPORT_YEAR_LINE + opening + PERIOD_END_TABLE,
+    )
+    result = _extract_text(tmp_path, text)
+    assert (
+        result["total_assets"],
+        result["total_liabilities"],
+        result["total_equity"],
+    ) == (200, 80, 120)
+    source = result["_meta"]["sources"]["total_assets"]
+    assert source["column_dates"] == ["2019-12-31", "2018-12-31"]
+    assert source["values"] == [200, 180]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        PERIOD_END_TABLE,
+        PERIOD_END_TABLE + OPENING_TABLE,
+        OPENING_TABLE + PERIOD_END_TABLE,
+        PERIOD_END_TABLE + OPENING_TABLE_REVERSED,
+        OPENING_TABLE_REVERSED + PERIOD_END_TABLE,
+    ],
+)
+def test_opening_restatement_never_competes_with_period_end(tmp_path, body):
+    result = _extract_text(tmp_path, REPORT_YEAR_LINE + body)
+    assert result["total_assets"] == 200
+    assert result["total_liabilities"] == 80
+    assert result["total_equity"] == 120
+    assert result["prev_total_assets"] == 180
+    assert result["prev_total_liabilities"] == 70
+    assert result["prev_total_equity"] == 110
+    source = result["_meta"]["sources"]["total_assets"]
+    # Dates, years and amounts keep the same column indices.
+    assert source["years"] == ["2019", "2018"]
+    assert source["column_dates"] == ["2019-12-31", "2018-12-31"]
+    assert len(source["column_dates"]) == len(source["values"]) == 2
+    assert len(source["column_dates"]) == len(source["raw_values"]) == 2
+    assert source["values"][source["years"].index("2019")] == result["total_assets"]
+    assert (
+        source["values"][source["years"].index("2018")] == result["prev_total_assets"]
+    )
+    ratios = load_script("calculate_ratios").calculate_template_data(result)
+    assert ratios["FINANCIAL_METRICS"]["debt_ratio"]["value"] == pytest.approx(0.4)
+
+
+def test_opening_restatement_alone_never_poses_as_period_end(tmp_path):
+    result = _extract_text(tmp_path, REPORT_YEAR_LINE + OPENING_TABLE)
+    assert result["total_assets"] is None
+    assert result["total_liabilities"] is None
+    assert result["total_equity"] is None
+
+
+def test_duplicate_period_end_candidates_stay_missing_per_field(tmp_path):
+    result = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE + "合并资产负债表\n单位：元\n"
+        "项目 2019年12月31日 2018年12月31日\n资产总计 200 180\n负债合计 80 70\n"
+        + "合并资产负债表\n单位：元\n"
+        "项目 2019年12月31日 2018年12月31日\n资产总计 300 180\n",
+    )
+    # Only the genuinely ambiguous field stays missing; the unique one keeps
+    # its value even though both rows come from full-date period-end tables.
+    assert result["total_assets"] is None
+    assert result["total_liabilities"] == 80
+    assert result["prev_total_liabilities"] == 70
+
+
+def test_full_date_and_year_only_tables_stay_ambiguous(tmp_path):
+    result = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE + "合并资产负债表\n单位：元\n"
+        "项目 2019年12月31日 2018年12月31日\n资产总计 200 180\n"
+        + "合并资产负债表\n单位：元\n项目 2019年 2018年\n资产总计 200 180\n",
+    )
+    # Identical amounts are neither deduplicated nor resolved by taking the
+    # first candidate: two statements are two candidates unless rule 3 applies.
+    assert result["total_assets"] is None
+
+
+def test_year_only_columns_keep_the_original_year_rule(tmp_path):
+    result = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE
+        + "合并资产负债表\n单位：元\n项目 2019年 2018年\n资产总计 200 180\n",
+    )
+    assert result["total_assets"] == 200
+    assert result["prev_total_assets"] == 180
+    assert result["_meta"]["sources"]["total_assets"]["column_dates"] == [None, None]
+
+
+@pytest.mark.parametrize(
+    "title,header,current_date",
+    [
+        ("2019年年度报告", "项目 2019年12月31日 2018年12月31日", "2019-12-31"),
+        ("2019年半年度报告", "项目 2019年06月30日 2018年12月31日", "2019-06-30"),
+        ("2019年第三季度报告", "项目 2019年09月30日 2018年12月31日", "2019-09-30"),
+    ],
+)
+def test_single_candidate_uses_its_real_column_dates(
+    tmp_path, title, header, current_date
+):
+    result = _extract_text(
+        tmp_path,
+        title + "\n合并资产负债表\n单位：元\n" + header + "\n资产总计 200 180\n",
+    )
+    assert result["total_assets"] == 200
+    assert result["prev_total_assets"] == 180
+    source = result["_meta"]["sources"]["total_assets"]
+    assert source["column_dates"][0] == current_date
+
+
+def test_conflicting_period_end_dates_are_not_resolved_by_max_date(tmp_path):
+    result = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE + "合并资产负债表\n单位：元\n"
+        "项目 2019年12月31日 2018年12月31日\n资产总计 200 180\n"
+        + "合并资产负债表\n单位：元\n"
+        "项目 2019年09月30日 2018年09月30日\n资产总计 300 280\n",
+    )
+    # Two different period-end dates for one field stay ambiguous; the fix
+    # never picks the latest date nor splices current/previous across tables.
+    assert result["total_assets"] is None
+    assert result.get("prev_total_assets") is None
+
+
+def test_income_statement_keeps_the_original_year_selection(tmp_path):
+    result = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE
+        + "合并利润表\n单位：元\n项目 2019年度 2018年度\n营业收入 900 800\n"
+        + "合并利润表\n单位：元\n项目 2018年度 2017年度\n营业收入 800 700\n",
+    )
+    # Period metrics are untouched by the point-in-time rules: the income
+    # statement keeps requiring exactly one candidate across the document.
+    assert result["revenue"] is None
+    single = _extract_text(
+        tmp_path,
+        REPORT_YEAR_LINE
+        + "合并利润表\n单位：元\n项目 2019年度 2018年度\n营业收入 900 800\n",
+    )
+    assert single["revenue"] == 900
+    assert single["prev_revenue"] == 800
+    assert single["_meta"]["sources"]["revenue"]["column_dates"] == [None, None]

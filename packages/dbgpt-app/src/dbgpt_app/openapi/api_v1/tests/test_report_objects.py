@@ -42,6 +42,77 @@ def object_id(registry, kind, label):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("section_kpis", [False, True])
+async def test_table_kpis_report_every_location_and_scalar_choices(
+    monkeypatch, tmp_path, section_kpis
+):
+    from pathlib import Path
+
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="repair-kpi-kinds"))
+    capture(
+        sink, {"columns": ["orders", "gmv"], "rows": [{"orders": 632, "gmv": 80380}]}
+    )
+    registry = ReportObjects(sink.snapshot())
+    table = object_id(registry, "table", "table")
+    state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
+    tools = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([t._tool for t in tools])
+    invalid = [
+        {"label": "订单", "object_id": table},
+        {"label": "GMV", "object_id": table},
+    ]
+    section = {
+        "heading": "经营概览",
+        "intro": [["定性解读。"]],
+        "table": {"object_id": table},
+    }
+    args = {"render": False, "append_sections": [section]}
+    if section_kpis:
+        section["kpis"] = invalid
+    else:
+        args["report"] = {"kpis": invalid}
+    rejected = json.loads(
+        await pack.async_execute(resource_name="patch_report", **args)
+    )
+    assert rejected["status"] == "invalid_selection"
+    assert not state.get("_report_object_spec")
+    error = rejected["error"]
+    prefix = "sections[0].kpis" if section_kpis else "report.kpis"
+    assert prefix + "[0].object_id" in error and prefix + "[1].object_id" in error
+    assert "available_values" in error
+    assert "rows.0.orders" in error and "rows.0.gmv" in error
+    corrected = [
+        {"label": label, "object_id": object_id(registry, "value", path)}
+        for label, path in [("订单", "rows.0.orders"), ("GMV", "rows.0.gmv")]
+    ]
+    if section_kpis:
+        section["kpis"] = corrected
+    else:
+        args["report"] = {"kpis": corrected}
+    assert (
+        json.loads(await pack.async_execute(resource_name="patch_report", **args))[
+            "status"
+        ]
+        == "staged"
+    )
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    assert completed["status"] == "completed", completed
+    assert "632" in state["_report_presentation"]["content"]
+    assert "80,380" in state["_report_presentation"]["content"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("unknown", ["intro", "note", "table", "chart", "title"])
 async def test_public_repair_rejects_unknown_arguments_and_renders_corrections(
     monkeypatch, tmp_path, unknown
@@ -1699,3 +1770,332 @@ async def test_empty_report_reply_uses_existing_invocation_budget(
     assert bool(state.get("_report_retry_exhausted")) is pending_report
     if pending_report:
         assert out.have_retry is False
+
+
+# ── Staged repairs must supersede the cached deliverable of the same request ──
+
+BUSINESS_TEMPLATE = "business-report/templates/business_report.html"
+SPEC_CONTRACT = {"mode": "spec", "fields": []}
+
+
+def _business_skills_dir():
+    from pathlib import Path
+
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    return str(root / "skills")
+
+
+async def _cached_partial_repair_context(tmp_path, monkeypatch, conv_uid):
+    """Reproduce the reported same-turn state: a partial cached as deliverable.
+
+    The first render fails on a wrong table column (``salse``), the
+    deterministic fallback keeps a table-less partial, and the completion lock
+    engages exactly like ``build_report_agent`` does before the repair turn.
+    """
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    skills = _business_skills_dir()
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid=conv_uid))
+    source = capture(sink, {"total": 100, "rows": [{"region": "华东", "sales": 100}]})
+    state = {"conv_id": conv_uid, "_report_artifact_sink": sink}
+    renderer = make_html_interpreter(state, skills)
+    first = json.loads(
+        await renderer(
+            template_path=BUSINESS_TEMPLATE,
+            data={
+                "REPORT_SPEC": {
+                    "title": "销售报告",
+                    "sections": [
+                        {
+                            "heading": "地区",
+                            "intro": [
+                                ["合计", {"artifact_id": source, "field": "total"}]
+                            ],
+                            "table": {
+                                "artifact_id": source,
+                                "field": "rows",
+                                "columns": ["region", "salse"],
+                            },
+                        }
+                    ],
+                }
+            },
+        )
+    )
+    assert first["retryable"] is True
+    assert await report_repair.render_saved_report(
+        state, skills, allow_unavailable_references=True
+    )
+    old_html = state["_report_presentation"]["content"]
+    assert "<table" not in old_html and state["_report_success_response"]
+    state["_report_lock_after_completion"] = True
+    table = object_id(ReportObjects(sink.snapshot()), "table", "rows")
+    repair = {"section_index": 0, "section": {"table": {"object_id": table}}}
+    return state, renderer, repair, old_html
+
+
+def _assert_repaired_delivery(state, response, old_html):
+    """The deliverable is the freshly rendered report, not the cached partial."""
+    assert response["status"] == "completed", response
+    assert any(chunk["output_type"] == "html" for chunk in response["chunks"])
+    html = state["_report_presentation"]["content"]
+    assert "<table" in html and "华东" in html
+    assert html != old_html and "部分表格" not in html
+    assert not state.get("_report_html_error")
+
+
+@pytest.mark.asyncio
+async def test_staged_repair_supersedes_cached_partial_in_same_turn(
+    tmp_path, monkeypatch
+):
+    from dbgpt.agent.resource.tool.pack import ToolPack
+
+    state, renderer, repair, old_html = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-compose"
+    )
+    wrappers = make_report_object_tools(
+        state, renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    pack = ToolPack([entry._tool for entry in wrappers])
+    staged = json.loads(
+        await pack.async_execute(resource_name="patch_report", render=False, **repair)
+    )
+    assert staged["status"] == "staged"
+    # Even with the completion lock engaged, committing the staged draft must
+    # render it instead of returning the cached table-less partial.
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    _assert_repaired_delivery(state, completed, old_html)
+
+
+@pytest.mark.asyncio
+async def test_agent_may_continue_to_compose_after_staging_a_repair(
+    tmp_path, monkeypatch
+):
+    from dbgpt.agent import AgentContext, AgentMessage
+    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
+    from dbgpt.agent.resource.tool.pack import ToolPack
+
+    state, renderer, repair, old_html = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-agent"
+    )
+    wrappers = make_report_object_tools(
+        state, renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    pack = ToolPack([entry._tool for entry in wrappers])
+    agent = ToolCallingReActAgent()
+    agent.agent_context = AgentContext(
+        conv_id="stale-cache-agent", enable_native_function_calling=True
+    )
+    agent.resource = pack
+    for action in agent.actions:
+        action.init_resource(pack)
+    object.__setattr__(agent, "_report_repair_state", state)
+
+    async def drive(name, arguments):
+        calls = [
+            {
+                "function": {
+                    "name": name,
+                    "arguments": json.dumps(arguments, ensure_ascii=False),
+                }
+            }
+        ]
+        object.__setattr__(agent, "_pending_native_tool_calls", calls)
+        return await agent.act(
+            AgentMessage(content=""),
+            sender=agent,
+            parser=agent.parser,
+            enable_parallel=False,
+            tool_calls=calls,
+        )
+
+    staged = await drive("patch_report", {**repair, "render": False})
+    assert staged.is_exe_success
+    # Staging accepted pending content; the cached partial no longer represents
+    # a completed delivery, so the repair turn must not terminate here.
+    assert staged.terminate is not True
+    completed = await drive("compose_report", {})
+    assert completed.is_exe_success
+    assert completed.terminate is True
+    html = state["_report_presentation"]["content"]
+    assert "<table" in html and "华东" in html and html != old_html
+
+
+@pytest.mark.asyncio
+async def test_immediate_render_over_cached_partial_repairs_the_report(
+    tmp_path, monkeypatch
+):
+    state, renderer, repair, old_html = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-immediate"
+    )
+    _, _, patch = make_report_object_tools(
+        state, renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    result = json.loads(await patch(**repair))
+    _assert_repaired_delivery(state, result, old_html)
+
+
+@pytest.mark.asyncio
+async def test_compose_cancellation_restores_the_staged_draft(tmp_path, monkeypatch):
+    import asyncio
+
+    state, renderer, repair, _ = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-cancel"
+    )
+    armed = {"cancel": True}
+
+    async def cancelling_renderer(**kwargs):
+        if armed["cancel"]:
+            armed["cancel"] = False
+            raise asyncio.CancelledError
+        return await renderer(**kwargs)
+
+    _, compose, patch = make_report_object_tools(
+        state, cancelling_renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    staged = json.loads(await patch(render=False, **repair))
+    assert staged["status"] == "staged"
+    draft = state["_report_object_spec"]
+    with pytest.raises(asyncio.CancelledError):
+        await compose()
+    # Cancellation keeps the existing recovery semantics: the draft returns to
+    # the pending state and the next compose renders it.
+    assert state["_report_object_spec"] == draft
+    completed = json.loads(await compose())
+    assert completed["status"] == "completed", completed
+    html = state["_report_presentation"]["content"]
+    assert "<table" in html and "华东" in html
+
+
+@pytest.mark.asyncio
+async def test_render_failure_after_commit_keeps_the_candidate_for_recovery(
+    tmp_path, monkeypatch
+):
+    state, renderer, repair, _ = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-failure"
+    )
+    state["_report_required_recommendation_count"] = 3
+    _, compose, patch = make_report_object_tools(
+        state, renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    staged = json.loads(await patch(render=False, **repair))
+    assert staged["status"] == "staged"
+    failed = json.loads(await compose())
+    assert "REPORT_REQUIREMENT_MISSING" in json.dumps(failed, ensure_ascii=False)
+    assert failed["retryable"] is True
+    # A normal render error must not put the committed candidate back as a
+    # pending draft: render_saved_report stops while _report_object_spec is
+    # set, and the saved arguments already carry the corrected table.
+    assert state.get("_report_object_spec") is None
+    assert state["_report_html_error"]
+    saved_table = state["_report_saved_arguments"]["data"]["REPORT_SPEC"]["sections"][
+        0
+    ]["table"]
+    assert saved_table["columns"] == ["region", "sales"]
+    checkpoint = json.loads(
+        (tmp_path / "tmp/stale-cache-failure/report-repair/checkpoint.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert checkpoint["error"]
+    assert checkpoint["arguments"]["data"]["REPORT_SPEC"]["sections"][0]["table"][
+        "columns"
+    ] == ["region", "sales"]
+
+
+@pytest.mark.asyncio
+async def test_staged_draft_composes_after_checkpoint_restore(tmp_path, monkeypatch):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    state, renderer, repair, old_html = await _cached_partial_repair_context(
+        tmp_path, monkeypatch, "stale-cache-restore"
+    )
+    _, _, patch = make_report_object_tools(
+        state, renderer, BUSINESS_TEMPLATE, SPEC_CONTRACT
+    )
+    staged = json.loads(await patch(render=False, **repair))
+    assert staged["status"] == "staged"
+    # A new request rebuilds its state from the checkpoint; the previous
+    # request's cached deliverable never comes along.
+    fresh = {"conv_id": "stale-cache-restore"}
+    restored = report_repair.restore_report_checkpoint("stale-cache-restore", fresh)
+    assert restored is not None
+    fresh["_report_artifact_sink"] = restored
+    _, fresh_compose, _ = make_report_object_tools(
+        fresh,
+        make_html_interpreter(fresh, _business_skills_dir()),
+        BUSINESS_TEMPLATE,
+        SPEC_CONTRACT,
+    )
+    completed = json.loads(await fresh_compose())
+    _assert_repaired_delivery(fresh, completed, old_html)
+
+
+@pytest.mark.asyncio
+async def test_named_template_accepts_new_content_over_a_cached_render(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+    from dbgpt_app.openapi.api_v1.tools.html_interpreter import report_template_contract
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    template = (
+        "<html><body><!-- dbgpt-required: SUMMARY, ADVICE -->"
+        '<div class="prose">{{SUMMARY}}</div><h2>Recommendations</h2>'
+        '<div class="prose">{{ADVICE}}</div></body></html>'
+    )
+    (tmp_path / "report.html").write_text(template, encoding="utf-8")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="named-supersede"))
+    capture(sink, {"total": 100})
+    token = object_id(ReportObjects(sink.snapshot()), "value", "total")
+    state = {
+        "conv_id": "named-supersede",
+        "_report_artifact_sink": sink,
+        "_report_required_recommendation_count": 3,
+    }
+    renderer = make_html_interpreter(state, str(tmp_path))
+    _, compose, stage_field = make_report_object_tools(
+        state, renderer, "report.html", report_template_contract(template)
+    )
+
+    def summary(prefix):
+        return [f"{prefix}总结，合计 ", {"object_id": token}, "。"]
+
+    def advice(prefix):
+        return [
+            f"建议一：{prefix}复核成本结构。",
+            f"建议二：{prefix}跟踪逾期回款。",
+            f"建议三：{prefix}复核融资期限。",
+        ]
+
+    first = json.loads(
+        await compose(data={"SUMMARY": summary("初始"), "ADVICE": advice("")})
+    )
+    assert first["status"] == "completed", first
+    state["_report_lock_after_completion"] = True
+    cached = state["_report_success_response"]
+
+    # Fully rejected content accepts nothing and keeps the cached deliverable.
+    rejected = json.loads(
+        await compose(data={"SUMMARY": "<b>非法</b>", "ADVICE": "<i>非法</i>"})
+    )
+    assert rejected["status"] == "invalid_selection"
+    assert state["_report_success_response"] == cached
+
+    # One retained field is newly accepted content: after correcting the
+    # rejected field, compose must render it instead of the cached report.
+    mixed = json.loads(
+        await compose(data={"SUMMARY": summary("修订后的"), "ADVICE": "<i>非法</i>"})
+    )
+    assert mixed["status"] == "invalid_selection"
+    assert "SUMMARY" in mixed["error"]
+    staged = json.loads(stage_field("ADVICE", advice("修订后")))
+    assert staged["status"] == "staged" and staged["ready_to_compose"]
+    final = json.loads(await compose())
+    assert final["status"] == "completed", final
+    html = state["_report_presentation"]["content"]
+    assert "修订后的" in html and "修订后复核成本结构" in html
+    assert "初始总结" not in html

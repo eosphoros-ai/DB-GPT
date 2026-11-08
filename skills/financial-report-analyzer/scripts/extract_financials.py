@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -30,6 +31,77 @@ def _unit_declaration(text):
     value = _normalize_financial_label(marker.group(1).split("币种", 1)[0])
     value = value.removeprefix("人民币")
     return True, value if value in UNIT_MULTIPLIERS else None
+
+
+def _column_date(segment):
+    """Normalize one column header to YYYY-MM-DD; year-only columns stay None.
+
+    Never fabricate a month/day for ``2019年``/``2019年度``: an unparseable or
+    invalid date keeps the year while the date itself stays unknown.
+    """
+    match = re.search(
+        r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日"
+        r"|(\d{4})[-/](\d{1,2})[-/](\d{1,2})",
+        segment,
+    )
+    if match is None:
+        return None
+    year, month, day = (int(part) for part in match.groups() if part)
+    try:
+        return datetime.date(year, month, day).isoformat()
+    except ValueError:
+        return None
+
+
+def _column_periods(heading_text):
+    """Read a 项目 header column by column, keeping years aligned with dates."""
+    anchors = list(
+        re.finditer(r"(?:19|20)\d{2}(?=年|[-/]\d{1,2}[-/]\d{1,2})", heading_text)
+    )
+    years, column_dates = [], []
+    for index, anchor in enumerate(anchors):
+        end = (
+            anchors[index + 1].start()
+            if index + 1 < len(anchors)
+            else len(heading_text)
+        )
+        segment = heading_text[anchor.start() : end]
+        years.append(segment[:4])
+        column_dates.append(_column_date(segment))
+    return years, column_dates
+
+
+def _opening_restatement(source, year):
+    """Recognize a balance sheet carrying only the current year's opening pair.
+
+    Columns dated exactly (Y-1)-12-31 and Y-01-01, in either order, restate the
+    opening balances of report year Y (for example after an accounting policy
+    change). They are legitimate statement content but never this year's
+    period-end amounts. Only this explicit cross-year opening relation is
+    recognized; other dates are not guessed.
+    """
+    dates = source.get("column_dates") or []
+    if len(dates) != 2 or not all(dates):
+        return False
+    return set(dates) == {f"{int(year) - 1}-12-31", f"{year}-01-01"}
+
+
+def _select_balance_sheet_candidate(matches, year):
+    """Pick the period-end candidate for one balance sheet field of year Y.
+
+    Keep candidates carrying both the target and previous year columns, drop
+    opening restatement tables, then apply the existing exactly-one rule.
+    Remaining ambiguity leaves only this field missing; equal amounts are
+    neither deduplicated nor resolved by picking the latest date.
+    """
+    previous = str(int(year) - 1)
+    eligible = [
+        source
+        for source in matches
+        if year in source["years"] and previous in source["years"]
+    ]
+    eligible = [source for source in eligible if not _opening_restatement(source, year)]
+    return eligible[0] if len(eligible) == 1 else None
 
 
 def read_file_content(file_path):
@@ -210,6 +282,7 @@ def extract_financials(file_path):
     active = None
     unit = None
     years = []
+    column_dates = []
     note_column = False
     candidates = {}
     heading = re.compile(
@@ -232,7 +305,7 @@ def extract_financials(file_path):
                 has_currency_label = "币种" in suffix
                 remainder = re.sub(r"[（()）、，,。.;；:：]", "", suffix)
                 if not (continuation and active == statement):
-                    unit, years = None, []
+                    unit, years, column_dates = None, [], []
                     note_column = False
                 active = (
                     statement
@@ -242,13 +315,13 @@ def extract_financials(file_path):
                 if declared:
                     unit = heading_unit
                 elif remainder:
-                    unit, years = None, []
+                    unit, years, column_dates = None, [], []
                 continue
             if re.search(
                 r"资产负债表|利润表|现金流量表|所有者权益变动表", heading_text
             ):
                 # Unrecognized heading prefixes must also close the old scope.
-                active, unit, years = None, None, []
+                active, unit, years, column_dates = None, None, [], []
                 continue
             if active not in fields:
                 continue
@@ -258,7 +331,9 @@ def extract_financials(file_path):
                 # continuation pages. Unknown units leave those rows missing.
                 unit = declared_unit
             if heading_text.startswith("项目"):
-                years = re.findall(r"(?:19|20)\d{2}(?=年)", heading_text)
+                # Column dates stay aligned with years/values by index; a
+                # continuation page re-reads the same header or keeps both.
+                years, column_dates = _column_periods(heading_text)
                 note_column = "附注" in heading_text
             if unit not in UNIT_MULTIPLIERS or len(years) != 2 or years[0] == years[1]:
                 continue
@@ -295,6 +370,7 @@ def extract_financials(file_path):
                             "unit_multiplier": UNIT_MULTIPLIERS[unit],
                             "note": row.group("note"),
                             "years": years[:],
+                            "column_dates": column_dates[:],
                             "values": [
                                 float(
                                     Decimal(
@@ -310,16 +386,28 @@ def extract_financials(file_path):
                         }
                     )
     for key, matches in candidates.items():
-        if len(matches) != 1 or not data.get("report_year"):
+        if not data.get("report_year"):
             continue
-        source = matches[0]
         year = str(data["report_year"])
-        if year not in source["years"] or str(int(year) - 1) not in source["years"]:
+        previous = str(int(year) - 1)
+        if key in fields["合并资产负债表"]:
+            # Point-in-time metrics: exclude date-identified opening restatement
+            # tables before the uniqueness rule, per field.
+            source = _select_balance_sheet_candidate(matches, year)
+        else:
+            # Period metrics (income/cash flow) keep the original year-column
+            # selection: exactly one candidate carrying both target years.
+            source = matches[0] if len(matches) == 1 else None
+            if source is not None and not (
+                year in source["years"] and previous in source["years"]
+            ):
+                source = None
+        if source is None:
             continue
+        # Both amounts come from the same selected row, indexed by its own
+        # column order; nothing is spliced across tables.
         data[key] = source["values"][source["years"].index(year)]
-        data["prev_" + key] = source["values"][
-            source["years"].index(str(int(year) - 1))
-        ]
+        data["prev_" + key] = source["values"][source["years"].index(previous)]
         sources[key] = source
 
     # Add a summary of which fields were successfully extracted
