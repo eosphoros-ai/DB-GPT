@@ -214,4 +214,3 @@ async def test_streaming_call_outputs_text():
 
     outputs = [out async for out in await parser.call_stream("input")]
     assert outputs == ["Hello", "Hello world"]
-
