@@ -2,7 +2,8 @@ import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getChatFeedBackItme, postChatFeedBackForm } from '@/client/api';
 import { FeedBack } from '@/types/chat';
 import { ChatFeedBackSchema } from '@/types/db';
-import { CloseRounded, MoreHoriz } from '@mui/icons-material';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import MoreHoriz from '@mui/icons-material/MoreHoriz';
 import {
   Box,
   Button,

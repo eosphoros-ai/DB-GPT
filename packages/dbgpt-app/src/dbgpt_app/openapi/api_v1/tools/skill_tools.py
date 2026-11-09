@@ -1,11 +1,170 @@
 """load_skill tool — loads skill content (SKILL.md) by name."""
 
 import json
+import os
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.agent.skill.manage import normalize_script_file_name
 from dbgpt_serve.session_file.domain import SessionFileStatus
+
+
+def _capture_script_identity(script_path):
+    try:
+        script_stat = os.stat(script_path)
+    except FileNotFoundError:
+        return None, None
+    return script_stat.st_ino, script_stat.st_mtime_ns
+
+
+def _verify_script_identity(script_path, captured_stat):
+    """Verify script file identity (inode + mtime) unchanged since capture.
+
+    Detects TOCTOU race conditions where attacker replaces script between
+    validation and execution. Returns True if file identity matches; raises
+    ValueError if file was replaced or cannot be accessed.
+
+    Args:
+        script_path: Path to the script file
+        captured_stat: Tuple of (st_ino, st_mtime_ns) captured before validation
+
+    Raises:
+        ValueError: If file identity differs or file cannot be accessed
+    """
+    if captured_stat == (None, None):
+        # File did not exist at capture time; check it still doesn't
+        if os.path.isfile(script_path):
+            raise ValueError(
+                "SCRIPT_IDENTITY_MISMATCH: file created between validation "
+                "and execution"
+            )
+        return True
+
+    try:
+        current_identity = _capture_script_identity(script_path)
+
+        if current_identity != captured_stat:
+            raise ValueError(
+                "SCRIPT_IDENTITY_MISMATCH: file replaced or modified between "
+                "validation and execution (TOCTOU attack detected)"
+            )
+        return True
+    except OSError as e:
+        raise ValueError(
+            f"SCRIPT_IDENTITY_VERIFY_FAILED: cannot verify file at execution time: {e}"
+        )
+
+
+def _apply_skill_input_contract(
+    skill_name, script_name, args, input_ids, sink, *, execution_path=None
+):
+    """Use a captured upstream script result for skills declaring this contract."""
+    if any(char in skill_name for char in ("/", "\\", ":")) or skill_name in {
+        ".",
+        "..",
+    }:
+        raise ValueError(
+            "SKILL_NAME_INVALID: use the registered skill name, not a path"
+        )
+    from dbgpt.agent.claude_skill import get_registry
+    from dbgpt.core.interface.report_capture import read_artifact_result
+
+    skill = get_registry().get_skill(skill_name)
+    if execution_path is not None:
+        actual = Path(execution_path)
+        registered = Path(skill.file_path).parent if skill else None
+        if (actual / "script_input_contract.json").is_file() or (
+            registered is not None
+            and (registered / "script_input_contract.json").is_file()
+        ):
+            try:
+                same_directory = registered is not None and actual.samefile(registered)
+            except OSError:
+                same_directory = False
+            if not same_directory:
+                raise ValueError(
+                    "SKILL_IDENTITY_MISMATCH: execution directory must match "
+                    "the registered input contract"
+                )
+    if not skill:
+        from dbgpt.configs.model_config import SKILLS_DIR
+
+        # Match the executor's directory search order. Filesystem lookup also
+        # resolves case variants and symlinks; never lowercase a path ourselves.
+        for subdir in ("", "user", "claude", "project"):
+            candidate = Path(SKILLS_DIR) / subdir / skill_name
+            if not candidate.is_dir():
+                continue
+            if (candidate / "script_input_contract.json").is_file():
+                raise ValueError(
+                    "SKILL_NAME_INVALID: use the registered name for this "
+                    "contract-bearing skill directory"
+                )
+            break
+        return args, input_ids
+    contract_path = Path(skill.file_path).parent / "script_input_contract.json"
+    if not contract_path.is_file():
+        return args, input_ids
+
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    script_name = normalize_script_file_name(script_name)
+    scripts = contract_path.parent / "scripts"
+    if script_name not in contract:
+        # Compare filesystem identity, not lowercased paths: two differently
+        # cased files can legitimately coexist on case-sensitive filesystems.
+        requested = scripts / script_name
+        for declared in contract:
+            try:
+                if requested.samefile(scripts / declared):
+                    raise ValueError(
+                        "SKILL_SCRIPT_ALIAS_UNSUPPORTED: use the contract script "
+                        f"name {declared!r}"
+                    )
+            except OSError:
+                continue
+    upstream = contract.get(script_name)
+    if not upstream:
+        return args, input_ids
+
+    def matches_upstream(artifact):
+        try:
+            return (
+                normalize_script_file_name(
+                    artifact.metadata.get("script_file_name", "")
+                )
+                == upstream
+            )
+        except ValueError:
+            # Historical metadata is not a new execution request. One obsolete
+            # record must not block explicitly selected, valid captured input.
+            return False
+
+    candidates = [
+        artifact
+        for artifact in (sink.snapshot() if sink else [])
+        if artifact.type == "python"
+        and artifact.status == "succeeded"
+        and artifact.metadata.get("skill_name") == skill_name
+        and artifact.metadata.get("script_file_name")
+        and matches_upstream(artifact)
+        and artifact.result is not None
+    ]
+    selected = [item for item in candidates if item.artifact_id in (input_ids or [])]
+    # An explicit selection must never silently switch to another source.
+    if not input_ids and len(candidates) == 1:
+        selected = candidates
+    if len(selected) != 1:
+        raise ValueError(
+            f"SKILL_INPUT_REQUIRED: select one successful {upstream} artifact "
+            "in input_artifact_ids; its captured result is used as script input"
+        )
+    source = selected[0]
+    value = read_artifact_result(source)
+    if not isinstance(value, dict) or value.get("error"):
+        raise ValueError("SKILL_INPUT_INVALID: captured upstream result is unavailable")
+    return value, list(dict.fromkeys([*(input_ids or []), source.artifact_id]))
 
 
 def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
@@ -145,9 +304,34 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         CFG = Config()
 
         try:
+            script_file_name = normalize_script_file_name(script_file_name)
             if args and argv is not None:
                 raise ValueError("Use either args (JSON) or argv (CLI), not both")
             sink = react_state.get("_report_artifact_sink")
+            sm = get_skill_manager(CFG.SYSTEM_APP)
+            resolve_path = getattr(sm, "_get_skill_path", None)
+            execution_path = resolve_path(skill_name) if resolve_path else None
+            captured_script_stat = (
+                _capture_script_identity(
+                    Path(execution_path) / "scripts" / script_file_name
+                )
+                if execution_path
+                else None
+            )
+            resolved_args, input_artifact_ids = _apply_skill_input_contract(
+                skill_name,
+                script_file_name,
+                args,
+                input_artifact_ids,
+                sink,
+                execution_path=execution_path,
+            )
+            contract_applied = resolved_args is not args
+            if argv is not None and contract_applied:
+                raise ValueError(
+                    "SKILL_INPUT_INVALID: this script requires captured JSON input"
+                )
+            args = resolved_args
             available = (
                 {a.artifact_id for a in sink.snapshot() if a.status == "succeeded"}
                 if sink
@@ -155,7 +339,6 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
             )
             if set(input_artifact_ids or []) - available:
                 raise ValueError("Unknown or unsuccessful input_artifact_ids")
-            sm = get_skill_manager(CFG.SYSTEM_APP)
             cid = react_state.get("conv_id") or "default"
             out_dir = os.path.join(
                 PILOT_PATH, "tmp", cid, "executions", uuid.uuid4().hex
@@ -190,6 +373,20 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                 dict.fromkeys([*(input_artifact_ids or []), *file_input_ids])
             )
             started_at = time.perf_counter()
+
+            # Verify script file identity to prevent TOCTOU race condition
+            if captured_script_stat is not None:
+                current_path = resolve_path(skill_name)
+                if not current_path:
+                    raise ValueError(
+                        "SCRIPT_IDENTITY_MISMATCH: skill directory missing"
+                    )
+                script_path = Path(current_path) / "scripts" / script_file_name
+                try:
+                    _verify_script_identity(script_path, captured_script_stat)
+                except ValueError as e:
+                    raise ValueError(f"SECURITY: TOCTOU attack detected: {e}") from e
+
             cli_kwargs = {"argv": execution_args["argv"]} if argv is not None else {}
             result_str = await sm.execute_skill_script_file(
                 skill_name,
@@ -312,6 +509,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                         "capability_type": "skill",
                         "skill_name": skill_name,
                         "script_file_name": script_file_name,
+                        "captured_input_contract": contract_applied,
                         "arguments": result_obj.get("script_arguments", args),
                     },
                     artifact_sink=react_state.get("_report_artifact_sink"),

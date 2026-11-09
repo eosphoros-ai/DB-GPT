@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { useState } from 'react';
 import type { ChartDatum } from './dashboard-extended-chart-data';
 import styles from './DashboardShowcase.module.css';
@@ -15,6 +16,7 @@ export default function DashboardChinaMap({
   format: (value: unknown) => string;
   onSelect?: (datum: Record<string, unknown>) => void;
 }) {
+  useDashboardTranslation();
   const [hover, setHover] = useState('');
   const known = new Set(provinces.map(p => normalize(p.name)));
   const unmatched = rows.filter(row => !known.has(normalize(row.label)));
@@ -33,7 +35,7 @@ export default function DashboardChinaMap({
   );
   return (
     <div className={styles.chinaMap}>
-      <svg viewBox='0 0 800 485' role='img' aria-label='中国省区业务分布，气泡面积表示数值'>
+      <svg viewBox='0 0 800 485' role='img' aria-label={dt('中国省区业务分布，气泡面积表示数值')}>
         <g className={styles.mapGrid} aria-hidden='true'>
           {[100, 200, 300, 400].map(y => (
             <path key={y} d={`M 10 ${y} H 780`} />
@@ -47,7 +49,7 @@ export default function DashboardChinaMap({
           return (
             <path key={province.id} d={province.path} className={styles.province} data-has-value={!!datum}>
               <title>
-                {province.name} · {datum ? format(datum.value) : '无数据'}
+                {province.name} · {datum ? format(datum.value) : dt('无数据')}
               </title>
             </path>
           );
@@ -55,7 +57,7 @@ export default function DashboardChinaMap({
         <g aria-hidden='true' className={styles.mapInset}>
           <rect x='678' y='380' width='96' height='92' rx='2' />
           <text x='687' y='397'>
-            南海诸岛
+            {dt('南海诸岛')}
           </text>
         </g>
         {provinces.map(province => {
@@ -100,13 +102,16 @@ export default function DashboardChinaMap({
         })}
       </svg>
       <div className={styles.mapLegend}>
-        <span>{hover || '气泡面积表示数值 · 省级标记点'}</span>
+        <span>{hover || dt('气泡面积表示数值 · 省级标记点')}</span>
         <small>
           {unmatched.length
-            ? `未匹配 ${unmatched.length} 项：${unmatched.map(r => r.label).join('、')}`
+            ? dt('未匹配 {{value0}} 项：{{value1}}', {
+                value0: unmatched.length,
+                value1: unmatched.map(r => r.label).join('、'),
+              })
             : onSelect
-              ? '点击省区联动筛选'
-              : '悬停或聚焦查看数值'}
+              ? dt('点击省区联动筛选')
+              : dt('悬停或聚焦查看数值')}
         </small>
       </div>
     </div>

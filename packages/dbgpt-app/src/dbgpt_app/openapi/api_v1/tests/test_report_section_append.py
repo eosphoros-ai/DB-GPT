@@ -206,6 +206,39 @@ async def test_append_advice_completes_saved_report_without_replacing_analysis(
 
 
 @pytest.mark.asyncio
+async def test_saved_placeholder_report_is_retried_without_model(monkeypatch):
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+
+    state = {
+        "_report_saved_arguments": {
+            "template_path": "csv-data-analysis/templates/report_template.html",
+            "data": {"REPORT_TITLE": "Saved report"},
+        },
+        "_report_html_error": "old render failure",
+    }
+
+    async def render(saved_state, skills_dir, **kwargs):
+        saved_state["_report_presentation"] = {
+            "content": "<html>ok</html>",
+            "title": "Saved report",
+        }
+        saved_state.pop("_report_html_error", None)
+        return True
+
+    async def build_agent(**kwargs):
+        raise AssertionError("A valid saved report should not call the model")
+
+    monkeypatch.setattr(report_agent, "render_saved_report", render)
+    monkeypatch.setattr(report_agent, "build_report_agent", build_agent)
+    response = json.loads(
+        await report_agent.make_generate_report_tool(
+            react_state=state, skills_dir="unused", llm_client=object()
+        )(instructions="Resume")
+    )
+    assert response["status"] == "completed"
+
+
+@pytest.mark.asyncio
 async def test_append_rejects_invalid_sections_before_changing_saved_content():
     state = {
         "_report_saved_arguments": {
@@ -224,3 +257,278 @@ async def test_append_rejects_invalid_sections_before_changing_saved_content():
     with pytest.raises(ValueError, match="one or two"):
         await append(sections=[])
     assert state == saved
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("repair_succeeds", [True, False])
+@pytest.mark.parametrize("cached_partial", [True, False])
+async def test_saved_table_typo_reaches_repair_model(
+    tmp_path, monkeypatch, repair_succeeds, cached_partial
+):
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    repository = next(
+        parent
+        for parent in Path(__file__).resolve().parents
+        if (parent / "skills/business-report").is_dir()
+    )
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="repair-table"))
+    source = capture_python_execution(
+        code="result",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        result_inline={"total": 100, "rows": [{"region": "华东", "sales": 100}]},
+        artifact_sink=sink,
+    )
+    state = {"conv_id": "repair-table", "_report_artifact_sink": sink}
+    renderer = make_html_interpreter(state, str(repository / "skills"))
+    spec = {
+        "title": "销售报告",
+        "sections": [
+            {
+                "heading": "地区",
+                "intro": [["合计", {"artifact_id": source, "field": "total"}]],
+                "table": {
+                    "artifact_id": source,
+                    "field": "rows",
+                    "columns": ["region", "salse"],
+                },
+            }
+        ],
+    }
+    first = json.loads(
+        await renderer(
+            template_path="business-report/templates/business_report.html",
+            data={"REPORT_SPEC": spec},
+        )
+    )
+    assert first["retryable"] is True
+    assert "available columns" in state["_report_html_error"]
+    if cached_partial:
+        assert await report_repair.render_saved_report(
+            state, str(repository / "skills"), allow_unavailable_references=True
+        )
+        assert state["_report_warnings"]
+    built = []
+
+    async def generate_reply(**kwargs):
+        if not repair_succeeds:
+            raise RuntimeError("Repair model unavailable")
+        spec["sections"][0]["table"]["columns"] = ["region", "sales"]
+        result = json.loads(
+            await renderer(retry_saved=True, data={"REPORT_SPEC": spec})
+        )
+        assert result["status"] == "completed"
+        return SimpleNamespace(success=True, content="完成", context={})
+
+    async def build_agent(**kwargs):
+        built.append(True)
+        return SimpleNamespace(generate_reply=generate_reply)
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build_agent)
+    with bind_artifact_sink(sink):
+        result = json.loads(
+            await report_agent.make_generate_report_tool(
+                react_state=state,
+                skills_dir=str(repository / "skills"),
+                llm_client=object(),
+            )(instructions="继续修复报告")
+        )
+    assert built == [True]
+    assert result["status"] == ("completed" if repair_succeeds else "partial")
+    html = state["_report_presentation"]["content"]
+    if repair_succeeds:
+        assert "华东" in html
+        assert "<table" in html
+        assert not state.get("_report_warnings")
+    else:
+        assert result["warnings"]
+        assert "部分表格" in html
+        assert "<table" not in html
+    assert [a.artifact_id for a in sink.snapshot() if a.type == "python"] == [source]
+
+
+SALES_SPEC_SECTION = {
+    "heading": "地区",
+    "intro": [["合计", {"field": "total"}]],
+    "table": {"field": "rows", "columns": ["region", "sales"]},
+}
+
+
+def _sales_spec(source, column="sales"):
+    section = copy.deepcopy(SALES_SPEC_SECTION)
+    section["intro"][0][1]["artifact_id"] = source
+    section["table"]["artifact_id"] = source
+    section["table"]["columns"] = ["region", column]
+    return {
+        "title": "销售报告",
+        "sections": [section],
+    }
+
+
+def _capture_sales_table(sink):
+    return capture_python_execution(
+        code="result",
+        duration_ms=1,
+        status="succeeded",
+        exit_code=0,
+        stdout="",
+        stderr="",
+        result_inline={"total": 100, "rows": [{"region": "华东", "sales": 100}]},
+        artifact_sink=sink,
+    )
+
+
+@pytest.mark.asyncio
+async def test_staged_only_turn_never_redelivers_the_cached_partial(
+    tmp_path, monkeypatch
+):
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.task_progress import reconcile_report_delivery
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+    from dbgpt_app.openapi.api_v1.tools.report_objects import (
+        ReportObjects,
+        make_report_object_tools,
+    )
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    repository = next(
+        parent
+        for parent in Path(__file__).resolve().parents
+        if (parent / "skills/business-report").is_dir()
+    )
+    skills = str(repository / "skills")
+    template = "business-report/templates/business_report.html"
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="staged-only"))
+    source = _capture_sales_table(sink)
+    state = {"conv_id": "staged-only", "_report_artifact_sink": sink}
+    renderer = make_html_interpreter(state, skills)
+    first = json.loads(
+        await renderer(
+            template_path=template, data={"REPORT_SPEC": _sales_spec(source, "salse")}
+        )
+    )
+    assert first["retryable"] is True
+    # The deterministic fallback caches the table-less partial as this
+    # request's deliverable and the completion lock engages.
+    assert await report_repair.render_saved_report(
+        state, skills, allow_unavailable_references=True
+    )
+    state["_report_lock_after_completion"] = True
+    old_html = state["_report_presentation"]["content"]
+    assert "<table" not in old_html
+
+    objects = ReportObjects(sink.snapshot())
+    table = next(
+        key for key, item in objects.objects.items() if item["kind"] == "table"
+    )
+    wrappers = make_report_object_tools(
+        state, renderer, template, {"mode": "spec", "fields": []}
+    )
+    pack = ToolPack([entry._tool for entry in wrappers])
+
+    async def generate_reply(received_message, sender):
+        staged = json.loads(
+            await pack.async_execute(
+                resource_name="patch_report",
+                section_index=0,
+                section={"table": {"object_id": table}},
+                render=False,
+            )
+        )
+        assert staged["status"] == "staged"
+        return SimpleNamespace(success=True, content="已暂存修复", context={})
+
+    async def build_agent(**kwargs):
+        return SimpleNamespace(generate_reply=generate_reply)
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build_agent)
+    with bind_artifact_sink(sink):
+        response = json.loads(
+            await report_agent.make_generate_report_tool(
+                react_state=state,
+                skills_dir=skills,
+                llm_client=object(),
+            )(instructions="继续修复报告")
+        )
+    # Staged-but-uncommitted content is not a delivery: no completed status,
+    # no stale HTML chunk, and the report task stays in progress.
+    assert response["status"] == "partial", response
+    assert response["retryable"] is True
+    assert not any(
+        chunk["output_type"] == "html" and not chunk.get("draft")
+        for chunk in response["chunks"]
+    )
+    assert state["_report_delivery_completed"] is False
+    tasks = [{"id": "report", "content": "生成分析报告", "status": "in_progress"}]
+    assert reconcile_report_delivery(tasks, state) is False
+    assert tasks[0]["status"] == "in_progress"
+    # The checkpoint keeps the corrected draft for the next request.
+    fresh = {"conv_id": "staged-only"}
+    restored = report_repair.restore_report_checkpoint("staged-only", fresh)
+    assert restored is not None
+    fresh["_report_artifact_sink"] = restored
+    _, fresh_compose, _ = make_report_object_tools(
+        fresh,
+        make_html_interpreter(fresh, skills),
+        template,
+        {"mode": "spec", "fields": []},
+    )
+    completed = json.loads(await fresh_compose())
+    assert completed["status"] == "completed", completed
+    html = fresh["_report_presentation"]["content"]
+    assert "<table" in html and "华东" in html and html != old_html
+
+
+@pytest.mark.asyncio
+async def test_completed_report_is_reused_without_rendering_or_model(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    repository = next(
+        parent
+        for parent in Path(__file__).resolve().parents
+        if (parent / "skills/business-report").is_dir()
+    )
+    skills = str(repository / "skills")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="reuse-completed"))
+    source = _capture_sales_table(sink)
+    state = {"conv_id": "reuse-completed", "_report_artifact_sink": sink}
+    renderer = make_html_interpreter(state, skills)
+    completed = json.loads(
+        await renderer(
+            template_path="business-report/templates/business_report.html",
+            data={"REPORT_SPEC": _sales_spec(source)},
+        )
+    )
+    assert completed["status"] == "completed", completed
+    state["_report_lock_after_completion"] = True
+    html_before = state["_report_presentation"]["content"]
+
+    async def build_agent(**kwargs):
+        raise AssertionError("A completed report must be reused without the model")
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build_agent)
+    with bind_artifact_sink(sink):
+        response = json.loads(
+            await report_agent.make_generate_report_tool(
+                react_state=state,
+                skills_dir=skills,
+                llm_client=object(),
+            )(instructions="生成报告")
+        )
+    # With no accepted content change, the existing completed report stays
+    # this request's deliverable and completes the report task.
+    assert response["status"] == "completed", response
+    assert state["_report_presentation"]["content"] == html_before
+    assert state["_report_delivery_completed"] is True
+    assert state.get("_report_delivery_id")

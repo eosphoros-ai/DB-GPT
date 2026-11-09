@@ -115,6 +115,7 @@ def _canonical_encoding(
     widget_type: WidgetType,
     fields: List[QueryOutputField],
     proposed: ChartEncoding,
+    dimensions: Optional[List[str]] = None,
 ) -> ChartEncoding:
     """Keep only valid encoding slots for the approved widget type.
 
@@ -133,9 +134,27 @@ def _canonical_encoding(
     if widget_type == WidgetType.KPI:
         return ChartEncoding(value=valid(proposed.value, defaults.value))
     if widget_type in (WidgetType.LINE, WidgetType.BAR):
+        x, y = valid(proposed.x, defaults.x), valid(proposed.y, defaults.y)
+        if widget_type == WidgetType.BAR and len(dimensions or []) == 1:
+            # A numeric identifier is still a category. Correct the model's
+            # horizontal-axis convention only when the confirmed dimension
+            # matches exactly; never infer a metric from its magnitude/name.
+            dimension = dimensions[0].rsplit(".", 1)[-1].casefold()
+            numeric = {
+                field.name
+                for field in fields
+                if field.type.value in {"number", "integer"}
+            }
+            if (
+                x in numeric
+                and y
+                and y.casefold() == dimension
+                and x.casefold() != dimension
+            ):
+                x, y = y, x
         return ChartEncoding(
-            x=valid(proposed.x, defaults.x),
-            y=valid(proposed.y, defaults.y),
+            x=x,
+            y=y,
             series=valid(proposed.series),
             color=valid(proposed.color),
         )
@@ -416,7 +435,10 @@ class DashboardPlannerService:
             )
 
         encoding = _canonical_encoding(
-            plan_widget.type, draft.output_fields, draft.encoding
+            plan_widget.type,
+            draft.output_fields,
+            draft.encoding,
+            plan_widget.dimensions,
         )
 
         publication = None
@@ -486,6 +508,7 @@ class DashboardPlannerService:
         model_name: Optional[str],
         user_confirmed: bool = False,
         compatibility: Optional[Dict[str, Any]] = None,
+        saved_schema: Optional[DashboardSchemaV1] = None,
     ) -> DashboardSchemaV1:
         ordered_plan_widgets = [
             item
@@ -574,6 +597,11 @@ class DashboardPlannerService:
             ),
         )
         self._normalize_filter_mappings(schema)
+        selection = effective_compatibility.get("gallery_template")
+        if selection:
+            from .gallery_templates import apply_gallery_appearance
+
+            apply_gallery_appearance(schema, selection, saved_schema=saved_schema)
         return schema
 
     async def _execute_and_mark_widgets(
@@ -750,6 +778,7 @@ class DashboardPlannerService:
         model_name: Optional[str],
         request_token: str,
         event_callback: Optional[DashboardEventCallback] = None,
+        gallery_template: Optional[str] = None,
     ) -> DashboardRecord:
         """Persist a SQL-free plan and pause until a later user turn confirms it."""
 
@@ -767,7 +796,10 @@ class DashboardPlannerService:
             conversation_id=conversation_id,
             prompt=prompt,
             model_name=model_name,
-            compatibility={"agent_dashboard_workflow": workflow},
+            compatibility={
+                "agent_dashboard_workflow": workflow,
+                **({"gallery_template": gallery_template} if gallery_template else {}),
+            },
         )
         record = self.dashboard_service.create_agent_dashboard(
             DashboardCreateRequest(
@@ -855,6 +887,7 @@ class DashboardPlannerService:
             model_name=record.schema_payload.metadata.agent.model_name,
             user_confirmed=True,
             compatibility=compatibility,
+            saved_schema=record.schema_payload,
         )
         schema.dashboard.id = record.id
         schema.dashboard.created_at = record.schema_payload.dashboard.created_at
@@ -946,7 +979,11 @@ class DashboardPlannerService:
             conversation_id=current.conversation_id,
             prompt=prompt,
             model_name=model_name,
-            compatibility={"agent_dashboard_workflow": workflow},
+            compatibility={
+                **current.schema_payload.metadata.compatibility,
+                "agent_dashboard_workflow": workflow,
+            },
+            saved_schema=current.schema_payload,
         )
         schema.dashboard.id = dashboard_id
         schema.dashboard.created_at = current.schema_payload.dashboard.created_at
@@ -1107,6 +1144,10 @@ class DashboardPlannerService:
             widget = self._normalized_widget(
                 plan_widget, draft, schema.dashboard.data_source_id
             )
+            if schema.metadata.compatibility.get("gallery_template"):
+                previous = current_map[widget_id]
+                widget.style = previous.style.copy()
+                widget.presentation.colors = previous.presentation.colors.copy()
             current_map[widget_id] = widget
             schema.widgets = [
                 current_map[item.id] for item in plan.widgets if item.id in current_map

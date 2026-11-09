@@ -1,5 +1,6 @@
 """The input contract of the shipped business report template."""
 
+import copy
 import json
 from typing import Any, List, Literal
 
@@ -29,6 +30,12 @@ class ReportReference(_SpecNode):
 
 
 ReportPart = str | ReportReference
+
+
+class ReportProposal(_SpecNode):
+    """A proposed goal, which is not an observed value."""
+
+    proposal: str = Field(min_length=1)
 
 
 class ReportKPI(_SpecNode):
@@ -62,6 +69,7 @@ class ReportTable(_SpecNode):
 
 class ReportChart(_SpecNode):
     refs: list[str] = Field(default_factory=list)
+    source_table: ReportTable | None = None
     img: str | None = None
     renderer: Literal["echarts"] | None = None
     host_id: str | None = None
@@ -75,7 +83,7 @@ class ReportChart(_SpecNode):
 
 class ReportRecommendationLine(_SpecNode):
     label: str | None = None
-    parts: list[ReportPart] = Field(default_factory=list)
+    parts: list[ReportPart | ReportProposal] = Field(default_factory=list)
 
 
 class ReportRecommendation(_SpecNode):
@@ -92,6 +100,8 @@ class ReportNote(_SpecNode):
 
 
 class ReportSection(_SpecNode):
+    # Compiler provenance, retained in checkpoints; never inferred from headings.
+    source_field: Literal["scope"] | None = None
     heading: str | None = None
     kpis: List[ReportKPI] = Field(default_factory=list)
     intro: List[List[ReportPart]] = Field(default_factory=list)
@@ -155,13 +165,25 @@ def report_data_schema() -> dict:
         "type": ["object", "null"],
         "$defs": definitions,
         "properties": {
-            key: {"$ref": "#/$defs/BusinessReportSpec"}
-            for key in ("REPORT_SPEC", "REPORT_SPEC_APPEND")
+            "REPORT_SPEC": {"$ref": "#/$defs/BusinessReportSpec"},
+            "REPORT_SPEC_APPEND": {"$ref": "#/$defs/BusinessReportSpec"},
+            "REPORT_DATA_PATCHES": {
+                "type": "array",
+                "maxItems": 64,
+                "items": {
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}, "value": {}},
+                    "required": ["path", "value"],
+                    "additionalProperties": False,
+                },
+            },
         },
         "additionalProperties": False,
         "description": (
             "REPORT_SPEC patches root fields; sections/kpis replace lists. "
-            "REPORT_SPEC_APPEND appends sections/kpis. Values select "
+            "REPORT_SPEC_APPEND appends sections/kpis. REPORT_DATA_PATCHES replaces "
+            "existing nodes at exact preflight json_path values during retry_saved. "
+            "Values select "
             "captured artifacts. chart.option accepts full JSON ECharts "
             "options without a series-type whitelist; "
             "data/source/nodes/links use captured artifact_id + field/path "
@@ -175,6 +197,41 @@ def report_data_schema() -> dict:
 
 def merge_report_data(previous: dict, updates: dict) -> dict:
     """A spec update replaces named root fields, retaining the other fields."""
+    if "REPORT_DATA_PATCHES" in updates:
+        patches = updates["REPORT_DATA_PATCHES"]
+        if (
+            len(updates) != 1
+            or not isinstance(patches, list)
+            or not 1 <= len(patches) <= 64
+        ):
+            raise ValueError(
+                "REPORT_REPAIR_DATA_INVALID: submit 1–64 REPORT_DATA_PATCHES alone"
+            )
+        merged = copy.deepcopy(previous)
+        for patch in patches:
+            path = patch.get("path") if isinstance(patch, dict) else None
+            if (
+                not isinstance(path, str)
+                or not path.startswith("$.data.")
+                or set(patch) != {"path", "value"}
+            ):
+                raise ValueError(
+                    "REPORT_REPAIR_DATA_INVALID: each patch needs a "
+                    "$.data path and value"
+                )
+            try:
+                parts = normalize_result_path(path.removeprefix("$.data."))
+                target = merged
+                for key in parts[:-1]:
+                    target = target[key]
+                key = parts[-1]
+                target[key]  # Replacements may only address an existing node.
+                target[key] = patch["value"]
+            except (IndexError, KeyError, TypeError, ValueError) as error:
+                raise ValueError(
+                    f"REPORT_REPAIR_DATA_INVALID: unknown saved path {path}"
+                ) from error
+        return merged
     merged = {**previous, **updates}
     old_spec, new_spec = previous.get("REPORT_SPEC"), updates.get("REPORT_SPEC")
     if isinstance(old_spec, str):

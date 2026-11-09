@@ -1,10 +1,15 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import DashboardEn from '@/locales/en/dashboard';
+import DashboardZh from '@/locales/zh/dashboard';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import i18next from 'i18next';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { initReactI18next } from 'react-i18next';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({
   getPublicDashboard: vi.fn(),
   filterPublicDashboard: vi.fn(),
+  token: 'public-token',
 }));
 
 vi.mock('@/client/api', () => ({
@@ -13,7 +18,7 @@ vi.mock('@/client/api', () => ({
 }));
 
 vi.mock('next/router', () => ({
-  useRouter: () => ({ query: { token: 'public-token' } }),
+  useRouter: () => ({ query: { token: api.token } }),
 }));
 
 vi.mock('next/head', () => ({
@@ -92,8 +97,18 @@ const published = {
 
 const apiResponse = (data: unknown) => Promise.resolve({ data: { data } });
 
+beforeAll(async () => {
+  await i18next.use(initReactI18next).init({
+    lng: 'zh',
+    resources: { en: { dashboard: DashboardEn }, zh: { dashboard: DashboardZh } },
+    interpolation: { escapeValue: false },
+  });
+});
+
 describe('DashboardSharePage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    api.token = 'public-token';
+    await i18next.changeLanguage('zh');
     api.getPublicDashboard.mockReturnValue(apiResponse(published));
     api.filterPublicDashboard.mockReturnValue(
       apiResponse({
@@ -107,6 +122,57 @@ describe('DashboardSharePage', () => {
         unsupported_widget_ids: [],
       }),
     );
+  });
+
+  it('switches public page labels without changing the published title or refetching data', async () => {
+    render(<DashboardSharePage />);
+    await screen.findByText('rendered-value:10');
+    const reads = api.getPublicDashboard.mock.calls.length;
+    await act(async () => {
+      await i18next.changeLanguage('en');
+    });
+    expect(screen.getByText('Published version 2')).toBeTruthy();
+    expect(screen.getByText('Global filters')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Shared dashboard' })).toBeTruthy();
+    expect(api.getPublicDashboard).toHaveBeenCalledTimes(reads);
+  });
+
+  it('ignores a late response from the previous share link', async () => {
+    let resolveOld!: (value: unknown) => void;
+    api.getPublicDashboard.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveOld = resolve;
+      }),
+    );
+    const view = render(<DashboardSharePage />);
+    api.token = 'new-token';
+    view.rerender(<DashboardSharePage />);
+    await screen.findByText('rendered-value:10');
+    await act(async () => {
+      resolveOld({
+        data: {
+          data: {
+            ...published,
+            schema: {
+              ...published.schema,
+              dashboard: { ...published.schema.dashboard, title: 'Old share response' },
+            },
+          },
+        },
+      });
+    });
+    expect(screen.queryByRole('heading', { name: 'Old share response' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Shared dashboard' })).toBeTruthy();
+  });
+
+  it('recovers when navigating from an invalid link to a valid share', async () => {
+    api.getPublicDashboard.mockRejectedValueOnce(new Error('Expired share'));
+    const view = render(<DashboardSharePage />);
+    await screen.findByText('Expired share');
+    api.token = 'valid-token';
+    view.rerender(<DashboardSharePage />);
+    expect(await screen.findByText('rendered-value:10')).toBeTruthy();
+    expect(screen.queryByText('Expired share')).toBeNull();
   });
 
   it('filters the immutable publication dataset and redraws the shared page', async () => {

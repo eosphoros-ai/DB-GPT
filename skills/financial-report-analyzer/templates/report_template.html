@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- dbgpt-required: PROFITABILITY_ANALYSIS, SOLVENCY_ANALYSIS, EFFICIENCY_ANALYSIS, CASHFLOW_ANALYSIS, ADVANTAGES_LIST, RISKS_LIST, OVERALL_ASSESSMENT -->
+<!-- dbgpt-verified-fields: extract_financials.py | calculate_ratios.py | REVENUE, REVENUE_GROWTH, NET_PROFIT, NET_PROFIT_GROWTH, NON_RECURRING_NET_PROFIT, NON_RECURRING_GROWTH, GROSS_MARGIN, GROSS_MARGIN_CHANGE, ROE, ROE_CHANGE -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -124,7 +126,7 @@
 
 <!-- ============================================================
   使用说明（Agent 必读）：
-  1. 将所有 {{占位符}} 替换为真实数据
+  1. 将所有双花括号包裹的大写占位符替换为真实数据
   2. 严禁删除任何章节（1-4），严禁修改表格列数
   3. 核心财务摘要表格必须保留 4 列：指标 / 本期数值 / 同比增长 / 行业平均(参考)
   4. 如果某项数据缺失，填写 "N/A" 而非删除该行或该列
@@ -142,7 +144,7 @@
     <tr>
       <th>指标</th>
       <th>本期数值</th>
-      <th>同比增长</th>
+      <th>同比增长 / 变动</th>
       <th>行业平均 (参考)</th>
     </tr>
   </thead>
@@ -172,7 +174,7 @@
       <td>{{GROSS_MARGIN_INDUSTRY_AVG}}</td>
     </tr>
     <tr>
-      <td>ROE</td>
+      <td>ROE（期末归母净资产口径）</td>
       <td>{{ROE}}</td>
       <td class="{{ROE_CHANGE_CLASS}}">{{ROE_CHANGE}}</td>
       <td>{{ROE_INDUSTRY_AVG}}</td>
@@ -181,10 +183,14 @@
 </table>
 
 
+{% if template_data.get('CHART_FINANCIAL_OVERVIEW') %}
 <div class="chart-container">
   <img src="{{CHART_FINANCIAL_OVERVIEW}}" alt="核心财务指标对比">
   <p class="chart-caption">图1 核心财务指标对比（单位：亿元）</p>
 </div>
+{% else %}
+<p>核心财务指标对比图未生成。</p>
+{% endif %}
 <!-- ==================== 第2章 财务状况深度分析 ==================== -->
 <h2>2. 财务状况深度分析</h2>
 
@@ -198,10 +204,14 @@
 <div class="section-card">
   <!-- 分析资产负债率、流动比率、速动比率等，评估财务安全性 -->
   {{SOLVENCY_ANALYSIS}}
+  {% if template_data.get('CHART_PROFITABILITY') %}
   <div class="chart-container">
     <img src="{{CHART_PROFITABILITY}}" alt="盈利能力指标">
     <p class="chart-caption">图2 盈利能力指标分析（%）</p>
   </div>
+  {% else %}
+  <p>盈利能力指标图未生成。</p>
+  {% endif %}
 </div>
 
 <h3>2.3 营运效率分析</h3>
@@ -213,10 +223,14 @@
 <!-- ==================== 第3章 现金流与利润质量 ==================== -->
 <h2>3. 现金流与利润质量</h2>
 <div class="section-card">
+  {% if template_data.get('CHART_ASSET_STRUCTURE') %}
   <div class="chart-container">
     <img src="{{CHART_ASSET_STRUCTURE}}" alt="资产结构分布">
     <p class="chart-caption">图3 资产结构分布</p>
   </div>
+  {% else %}
+  <p>资产结构图未生成。</p>
+  {% endif %}
   <!-- 对比净利润与经营现金流，评估盈利的真实性；分析投资和筹资现金流结构 -->
   {{CASHFLOW_ANALYSIS}}
 </div>
@@ -226,13 +240,13 @@
 <div class="conclusion-box">
   <p><strong>优势：</strong></p>
   <ul>
-    <!-- 列出 2-4 条核心优势，每条用 <li> -->
+    <!-- 列出核心优势，每项使用独立纯文本段落或证据引用，不提交 HTML 标签 -->
     {{ADVANTAGES_LIST}}
   </ul>
 
   <p><strong>风险：</strong></p>
   <ul>
-    <!-- 列出 2-4 条主要风险，每条用 <li> -->
+    <!-- 列出主要风险，每项使用独立纯文本段落或证据引用，不提交 HTML 标签 -->
     {{RISKS_LIST}}
   </ul>
 

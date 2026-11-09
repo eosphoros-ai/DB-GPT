@@ -26,7 +26,17 @@ SKILLS = (
     "financial-report-analyzer",
     "walmart-sales-analyzer",
     "agent-browser",
+    "dashboard-builder",
 )
+INTERNAL_DASHBOARD_SKILLS = {
+    "dashboard-design",
+    "dashboard-collaboration",
+    "dashboard-chart-configuration",
+    "dashboard-filter-configuration",
+    "antv-g2-chart",
+    "brutal-viz-design",
+    "serenityspa-viz-design",
+}
 OLIST_SOURCE = "examples/olist/olist-analytics-metric-governance.md"
 OLIST_SDIST = "examples/knowledge/olist-analytics-metric-governance.md"
 OLIST_WHEEL = (
@@ -212,3 +222,68 @@ def test_installed_wheel_builds_agent_and_generates_default_report(distributions
         root,
     )
     assert (root / "runtime/generated-report.html").is_file()
+
+
+@pytest.mark.parametrize("artifact", ["sdist", "wheel", "direct_wheel"])
+def test_dashboard_resources_are_bundled_under_one_skill(distributions, artifact):
+    source = distributions["repository"] / "skills/dashboard-builder"
+    reference_names = {
+        "index.md",
+        "design-brutal-viz-design.md",
+        "design-serenityspa-viz-design.md",
+        "catalog-voice-observatory.md",
+        "catalog-store-marketing.md",
+        "catalog-national-command.md",
+        "catalog-brand-revenue.md",
+        "catalog-northwind-revenue.md",
+        "catalog-retail-overview.md",
+    }
+    assert {
+        p.name for p in (source / "internal/dashboard-design/references").iterdir()
+    } == reference_names
+    assert {p.parent.name for p in source.glob("internal/*/SKILL.md")} == (
+        INTERNAL_DASHBOARD_SKILLS
+    )
+    resources = {
+        p.relative_to(source).as_posix(): p.read_bytes()
+        for p in source.rglob("*")
+        if p.is_file()
+    }
+    if artifact == "sdist":
+        with tarfile.open(distributions[artifact]) as archive:
+            prefix = archive.getnames()[0].split("/")[0] + "/skills/"
+            bundled = {
+                p.name.removeprefix(prefix): archive.extractfile(p).read()
+                for p in archive.getmembers()
+                if p.isfile() and p.name.startswith(prefix)
+            }
+    else:
+        with zipfile.ZipFile(distributions[artifact]) as archive:
+            prefix = "dbgpt_app/_builtin_skills/"
+            bundled = {
+                name.removeprefix(prefix): archive.read(name)
+                for name in archive.namelist()
+                if name.startswith(prefix) and not name.endswith("/")
+            }
+    assert {name.split("/")[0] for name in bundled if "/" in name} == set(SKILLS)
+    assert {
+        name.removeprefix("dashboard-builder/"): content
+        for name, content in bundled.items()
+        if name.startswith("dashboard-builder/")
+    } == resources
+
+
+def test_installed_dashboard_skill_resources_and_visibility(distributions):
+    root = distributions["root"]
+    distributions["run"](
+        "06_installed_dashboard_skills",
+        [
+            sys.executable,
+            "-I",
+            str(Path(__file__).with_name("packaged_dashboard_worker.py")),
+            str(distributions["installed"]),
+            str(root / "dashboard-runtime"),
+            str(distributions["repository"]),
+        ],
+        root,
+    )
