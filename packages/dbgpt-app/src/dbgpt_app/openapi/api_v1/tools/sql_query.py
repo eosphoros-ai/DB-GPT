@@ -44,6 +44,12 @@ def make_sql_query(
     limit_description = (
         f" Dashboard planning allows at most {max_calls} discovery calls; "
         "after that, use the collected observations and call plan_dashboard."
+        " This is discovery, not the final analysis: combine compatible counts, "
+        "grain and missing-value checks in one SELECT where possible. Once "
+        "fields, scope, grain and requested filter values are known, plan now. "
+        "Do not preview future widgets with separate ranking or trend queries; "
+        "having more visual slots does not require more discovery. Query again "
+        "only for unresolved semantics, date parsing, joins or data limitations."
         if max_calls is not None
         else ""
     )

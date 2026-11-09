@@ -8,6 +8,7 @@ a JSON manifest with the chart file paths.
 """
 
 import json
+import math
 import os
 import sys
 
@@ -103,18 +104,20 @@ def chart_financial_overview(data, output_dir):
         "net_profit",
         "total_assets",
         "total_liabilities",
-        "equity",
+        "total_equity",
     ]
-    current_values = [format_yi(safe_float(data.get(k))) for k in keys]
+    current_values = [
+        format_yi(safe_float(data.get(k), default=math.nan)) for k in keys
+    ]
 
     has_prev = any(data.get(f"prev_{k}") is not None for k in keys[:3])
     prev_keys = [
         "prev_revenue",
         "prev_cost_of_sales",
         "prev_net_profit",
-        None,
-        None,
-        None,
+        "prev_total_assets",
+        "prev_total_liabilities",
+        "prev_total_equity",
     ]
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -128,12 +131,12 @@ def chart_financial_overview(data, output_dir):
             if pk is not None and data.get(pk) is not None:
                 prev_values.append(format_yi(safe_float(data.get(pk))))
             else:
-                prev_values.append(0)
+                prev_values.append(float("nan"))
 
         x_curr = [x + bar_width / 2 for x in x_positions]
         x_prev = [x - bar_width / 2 for x in x_positions]
 
-        year = data.get("year", "本期")
+        year = data.get("report_year") or data.get("year", "本期")
         try:
             prev_year = str(int(year) - 1)
         except (ValueError, TypeError):
@@ -161,7 +164,7 @@ def chart_financial_overview(data, output_dir):
         # Value labels for current year
         for bar in bars_curr:
             height = bar.get_height()
-            if height != 0:
+            if math.isfinite(height) and height != 0:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     height,
@@ -174,7 +177,7 @@ def chart_financial_overview(data, output_dir):
         # Value labels for previous year (non-zero only)
         for bar in bars_prev:
             height = bar.get_height()
-            if height != 0:
+            if math.isfinite(height) and height != 0:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     height,
@@ -204,7 +207,7 @@ def chart_financial_overview(data, output_dir):
         )
         for bar in bars:
             height = bar.get_height()
-            if height != 0:
+            if math.isfinite(height) and height != 0:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     height,
@@ -220,7 +223,7 @@ def chart_financial_overview(data, output_dir):
     ax.set_ylabel("金额（亿元）", fontsize=11)
 
     company = data.get("company_name", "")
-    year_str = data.get("year", "")
+    year_str = data.get("report_year") or data.get("year", "")
     ax.set_title(
         f"{company} {year_str}年 核心财务指标对比", fontsize=14, fontweight="bold"
     )
@@ -251,29 +254,27 @@ def chart_profitability(data, output_dir):
     operating_cash_flow = safe_float(data.get("operating_cash_flow"), default=None)
 
     # Calculate ratios
-    gross_margin = 0.0
+    gross_margin = float("nan")
     if revenue and cost_of_sales is not None:
         gross_margin = (revenue - cost_of_sales) / revenue * 100
 
-    net_margin = 0.0
+    net_margin = float("nan")
     if revenue and net_profit is not None:
         net_margin = net_profit / revenue * 100
 
-    roe = 0.0
+    roe = float("nan")
     if equity and net_profit is not None:
         roe = net_profit / equity * 100
 
-    debt_ratio = 0.0
+    debt_ratio = float("nan")
     if total_assets and total_liabilities is not None:
         debt_ratio = total_liabilities / total_assets * 100
 
-    cash_ratio = 0.0
+    cash_ratio = float("nan")
     if net_profit and operating_cash_flow is not None:
         cash_ratio = operating_cash_flow / net_profit * 100
-        # Cap at 200% for display readability
-        cash_ratio = min(cash_ratio, 200.0)
 
-    labels = ["毛利率", "净利率", "ROE", "资产负债率", "净现比"]
+    labels = ["毛利率", "净利率", "ROE（期末权益）", "资产负债率", "净现比"]
     values = [gross_margin, net_margin, roe, debt_ratio, cash_ratio]
     colors = [COLOR_NAVY, COLOR_LIGHT_BLUE, COLOR_GREEN, COLOR_ACCENT, COLOR_PURPLE]
 
@@ -284,6 +285,8 @@ def chart_profitability(data, output_dir):
     )
 
     for bar, val in zip(bars, values):
+        if not math.isfinite(val):
+            continue
         ax.text(
             bar.get_width() + 0.5,
             bar.get_y() + bar.get_height() / 2,
@@ -298,7 +301,7 @@ def chart_profitability(data, output_dir):
     ax.set_xlabel("百分比 (%)", fontsize=11)
 
     company = data.get("company_name", "")
-    year_str = data.get("year", "")
+    year_str = data.get("report_year") or data.get("year", "")
     ax.set_title(f"{company} {year_str}年 盈利能力指标", fontsize=14, fontweight="bold")
 
     ax.grid(axis="x", linestyle="--", alpha=0.4, color="#cccccc")
@@ -307,7 +310,7 @@ def chart_profitability(data, output_dir):
     ax.spines["right"].set_visible(False)
 
     # Give some right margin for the labels
-    max_val = max(values) if values else 100
+    max_val = max((value for value in values if math.isfinite(value)), default=100)
     ax.set_xlim(0, max_val * 1.2 if max_val > 0 else 100)
 
     plt.tight_layout()
@@ -322,13 +325,22 @@ def chart_profitability(data, output_dir):
 # ---------------------------------------------------------------------------
 def chart_asset_structure(data, output_dir):
     """Donut chart showing liabilities vs equity composition."""
-    total_liabilities = safe_float(data.get("total_liabilities"))
-    equity = safe_float(data.get("equity"))
+    total_liabilities = safe_float(data.get("total_liabilities"), default=None)
+    equity = safe_float(data.get("total_equity"), default=None)
+
+    if (
+        total_liabilities is None
+        or equity is None
+        or total_liabilities < 0
+        or equity < 0
+    ):
+        raise ValueError(
+            "Asset structure requires verified nonnegative liabilities and equity"
+        )
 
     total = total_liabilities + equity
     if total == 0:
-        # Avoid division by zero — create a placeholder chart
-        total = 1
+        raise ValueError("Asset structure has no positive total")
 
     liab_yi = format_yi(total_liabilities)
     equity_yi = format_yi(equity)
@@ -388,7 +400,7 @@ def chart_asset_structure(data, output_dir):
     )
 
     company = data.get("company_name", "")
-    year_str = data.get("year", "")
+    year_str = data.get("report_year") or data.get("year", "")
     ax.set_title(
         f"{company} {year_str}年 资产结构分布",
         fontsize=14,
@@ -414,8 +426,11 @@ def generate_charts(data, output_dir):
     paths = {
         "financial_overview": chart_financial_overview(data, output_dir),
         "profitability": chart_profitability(data, output_dir),
-        "asset_structure": chart_asset_structure(data, output_dir),
     }
+    try:
+        paths["asset_structure"] = chart_asset_structure(data, output_dir)
+    except ValueError:
+        pass  # Missing inputs cannot be displayed as zero-valued evidence.
     return paths
 
 

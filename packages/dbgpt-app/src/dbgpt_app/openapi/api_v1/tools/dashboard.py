@@ -19,6 +19,7 @@ from ..dashboard.collaboration import (
 )
 from ..dashboard.confirmation import (
     observe_generation_event,
+    query_batch_size,
     record_generation_result,
     require_current_confirmation,
 )
@@ -880,10 +881,25 @@ def make_dashboard_planner_tools(
     model_name: Optional[str],
     stream_callback: Callable,
     planner_service: Optional[DashboardPlannerService] = None,
+    gallery_template: Optional[str] = None,
 ) -> List[Any]:
     """Return plan/query tools bound to the current user and selected database."""
 
     request_token = uuid.uuid4().hex
+    selected_gallery_template = gallery_template
+    gallery_context = None
+    if gallery_template and not (
+        react_state.get("dashboard_record_id")
+        or react_state.get("loaded_dashboard_context")
+        or re.search(
+            r"\[\[(?:confirm-dashboard|revise-dashboard-plan|modify-dashboard|dashboard-annotation):",
+            user_prompt,
+        )
+    ):
+        from ..dashboard.gallery_templates import gallery_plan_context
+
+        gallery_context = gallery_plan_context(gallery_template)
+        react_state["dashboard_gallery_context"] = gallery_context
     original_stream_callback = stream_callback
 
     async def generation_stream_callback(event_type, payload):
@@ -1032,6 +1048,20 @@ def make_dashboard_planner_tools(
                 react_state["dashboard_confirmation_contract"] = {
                     "dashboard_id": pending.id,
                     "expected_revision": pending.current_revision,
+                    "business_scope": {
+                        key: normalized_plan[key]
+                        for key in (
+                            "title",
+                            "description",
+                            "business_theme",
+                            "decision_goal",
+                            "analysis_logic",
+                            "filter_strategy",
+                            "metrics",
+                            "dimensions",
+                        )
+                        if normalized_plan.get(key)
+                    },
                     "widgets": [
                         {
                             "widget_id": widget.id,
@@ -1039,6 +1069,17 @@ def make_dashboard_planner_tools(
                             "title": widget.title,
                             "metric": widget.metric,
                             "dimensions": list(widget.dimensions),
+                            "business_question": widget.business_question,
+                            **(
+                                {"expected_data_points": widget.expected_data_points}
+                                if widget.expected_data_points is not None
+                                else {}
+                            ),
+                            **(
+                                {"rationale": widget.rationale}
+                                if widget.rationale
+                                else {}
+                            ),
                         }
                         for widget in parsed_plan.widgets
                     ],
@@ -1047,6 +1088,20 @@ def make_dashboard_planner_tools(
                             "filter_id": dashboard_filter.id,
                             "type": dashboard_filter.type.value,
                             "field": dashboard_filter.field,
+                            "default": dashboard_filter.default,
+                            "options": [
+                                model_dump_compat(option)
+                                for option in dashboard_filter.options
+                            ],
+                            **(
+                                {
+                                    "relative_date": model_dump_compat(
+                                        dashboard_filter.relative_date
+                                    )
+                                }
+                                if dashboard_filter.relative_date is not None
+                                else {}
+                            ),
                         }
                         for dashboard_filter in parsed_plan.filters
                     ],
@@ -1181,11 +1236,62 @@ def make_dashboard_planner_tools(
 
     @tool(
         description=(
+            "Load an internal dashboard-design style before planning. Pass an exact "
+            "style display name or a selection (catalog:ID or design:ID). Omit "
+            "selection only when you need to discover the available styles. "
+            "Use only when the user requests a style and no gallery reference is "
+            "already loaded. This loads instructions, not data or queries."
+        ),
+        args={"selection": {"type": "string", "required": False}},
+    )
+    def load_dashboard_style(selection: Optional[str] = None) -> str:
+        nonlocal gallery_template, gallery_context
+        from ..dashboard.gallery_templates import (
+            available_gallery_styles,
+            gallery_plan_context,
+            resolve_gallery_selection,
+        )
+
+        if (
+            react_state.get("dashboard_record_id")
+            or react_state.get("loaded_dashboard_context")
+            or re.search(
+                r"\[\[(?:confirm-dashboard|revise-dashboard-plan|modify-dashboard|dashboard-annotation):",
+                user_prompt,
+            )
+        ):
+            return _tool_result("Keep the persisted dashboard style for this turn.")
+        if selection:
+            try:
+                selection = resolve_gallery_selection(selection)
+            except (ValueError, OSError) as exc:
+                return _tool_result(f"Dashboard style could not be loaded: {exc}")
+        if selected_gallery_template and selection not in (
+            None,
+            selected_gallery_template,
+        ):
+            return _tool_result("Keep the user's selected gallery style.")
+        if not selection:
+            if gallery_context:
+                return _tool_result(json.dumps(gallery_context, ensure_ascii=False))
+            return _tool_result(available_gallery_styles())
+        try:
+            context = gallery_plan_context(selection)
+        except (ValueError, OSError) as exc:
+            return _tool_result(f"Dashboard style could not be loaded: {exc}")
+        gallery_template, gallery_context = selection, context
+        react_state["dashboard_gallery_context"] = context
+        return _tool_result(json.dumps(context, ensure_ascii=False))
+
+    @tool(
+        description=(
             "First phase for dashboard generation. Submit a DashboardPlan as JSON "
             "with no SQL. Required keys and allowed types are defined by the "
-            "generated DashboardPlan shape below. Include useful audience, "
-            "decision_goal, analysis_logic, layout_rationale and filter_strategy "
-            "when supported by the request. metrics and dimensions are string "
+            "generated DashboardPlan shape below. Keep business definitions concise "
+            "but explicit about scope and grain. Omit optional/default fields unless "
+            "they clarify a real decision or data limitation. For a selected gallery "
+            "style, do not repeat layout hints or visual rationale; the server keeps "
+            "that appearance. metrics and dimensions are string "
             "arrays, never objects. filters may be empty. "
             + (
                 "Optional layout_template: trend-focus (8:4 primary trend/support), "
@@ -1204,13 +1310,22 @@ def make_dashboard_planner_tools(
             "(kpi|line|bar|pie|table), title, business_question, metric, and a "
             "dimensions string array. Include analysis_level (1 is the highest "
             "decision level), rationale, and layout width/height intent when "
-            "useful; the schema supplies defaults when omitted. Example widget: "
+            "needed for a custom layout; omit them for a selected gallery style. "
+            "The schema supplies defaults when omitted. Example widget: "
             "{id: sales_trend, type: "
             "line, title: Sales trend, business_question: How did sales change?, "
-            "metric: sales, dimensions: [month], analysis_level: 2, rationale: "
-            "explains the primary KPI, layout: {width: full, height: standard}}. "
+            "metric: sales, dimensions: [month]}. "
             "The server validates and stores this plan for the current ReAct run. "
             'Parameter: {"plan": "JSON object or JSON string"}'
+            + (
+                " Selected gallery template: "
+                + json.dumps(
+                    {key: gallery_context[key] for key in ("selection", "widgets")},
+                    ensure_ascii=False,
+                )
+                if gallery_context
+                else ""
+            )
         ),
         args={
             "plan": {
@@ -1247,8 +1362,10 @@ def make_dashboard_planner_tools(
                 "missing. Call plan_dashboard with the complete SQL-free plan."
             )
         try:
-            verified_olist_plan = verified_olist_plan_for_request(
-                user_prompt, str(database_name)
+            verified_olist_plan = (
+                None
+                if gallery_template
+                else verified_olist_plan_for_request(user_prompt, str(database_name))
             )
             used_verified_olist_plan = verified_olist_plan is not None
             parsed = verified_olist_plan or model_validate_compat(
@@ -1311,6 +1428,7 @@ def make_dashboard_planner_tools(
                 model_name=model_name,
                 request_token=request_token,
                 event_callback=stream_callback,
+                gallery_template=gallery_template,
             )
         except DashboardSchemaValidationError as exc:
             return _tool_result(_schema_validation_message(exc))
@@ -1362,6 +1480,8 @@ def make_dashboard_planner_tools(
             "source, validates and test-runs each widget independently, preserves "
             "failed widgets as editable errors, and saves a draft. output_fields "
             "must be objects such as {name: total_sales, type: number}, not strings. "
+            "For bar and line widgets, encoding.x is the category/time field and "
+            "encoding.y is the numeric measure, including horizontal bars. "
             "Encoding examples: KPI {value: total_sales}; line/bar "
             "{x: month, y: sales}; pie {category: holiday, angle: sales}; "
             "table {columns: [store, sales]}. Every planned filter must be mapped "
@@ -1398,7 +1518,8 @@ def make_dashboard_planner_tools(
             "silently LIMIT away source rows. Use row_mode only for bounded "
             "detail tables. Every widget requires publication when the plan has "
             "filters, including widgets unaffected by a particular filter. "
-            "Submit at most two widgets per call. The server safely stages bounded "
+            f"Submit at most {query_batch_size(react_state)} widgets per call. "
+            "Use fewer for long queries. The server safely stages bounded "
             "batches in this Agent run and creates the Dashboard atomically only "
             "after every confirmed-plan widget has been received. When the tool "
             "reports missing widget ids, call it again with only those missing "
@@ -1423,7 +1544,8 @@ def make_dashboard_planner_tools(
                 "required": False,
                 "description": (
                     "Required unless legacy draft is supplied: "
-                    "{widgets: DashboardWidgetQueryDraft[]}. At most two widgets "
+                    "{widgets: DashboardWidgetQueryDraft[]}. At most "
+                    f"{query_batch_size(react_state)} widgets "
                     "per call; see generated validation shapes. JSON string "
                     "also accepted."
                 ),
@@ -1512,7 +1634,8 @@ def make_dashboard_planner_tools(
                 return _tool_result(
                     f"Staged {len(staged_widget_ids)} of "
                     f"{len(confirmed_plan.widgets)} Dashboard widget queries. "
-                    "Call create_dashboard_draft again with at most two of these "
+                    "Call create_dashboard_draft again with at most "
+                    f"{query_batch_size(react_state)} of these "
                     "missing widget ids: "
                     + ", ".join(missing_widget_ids)
                     + ". Do not repeat already staged widgets or rerun discovery.",
@@ -1522,7 +1645,7 @@ def make_dashboard_planner_tools(
                         "expected_revision": resolved_expected_revision,
                         "staged_widget_ids": staged_widget_ids,
                         "missing_widget_ids": missing_widget_ids,
-                        "max_widgets_per_call": 2,
+                        "max_widgets_per_call": query_batch_size(react_state),
                     },
                 )
             generation_stage("contract_validation")
@@ -1546,6 +1669,7 @@ def make_dashboard_planner_tools(
         except ValidationError as exc:
             return _tool_result(_draft_validation_message(exc))
         except json.JSONDecodeError:
+            react_state["dashboard_query_small_batches"] = True
             return _tool_result(
                 "Dashboard draft payload was truncated or malformed JSON. Do not "
                 "retry the complete Dashboard payload. Call create_dashboard_draft "
@@ -2044,6 +2168,7 @@ def make_dashboard_planner_tools(
         )
 
     tools = [
+        load_dashboard_style,
         load_dashboard_draft,
         resolve_dashboard_reference,
         plan_dashboard,

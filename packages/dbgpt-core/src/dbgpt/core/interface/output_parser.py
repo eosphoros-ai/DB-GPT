@@ -112,11 +112,11 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             if has_echo:
                 output = data.text[skip_echo_len:].strip()
             else:
-                output = data["text"].strip()
+                output = data.text.strip()
             output = self._post_process_code(output)
             return output
         else:
-            output = data["text"] + f" (error_code: {data['error_code']})"
+            output = data.text + f" (error_code: {data.error_code})"
             return output
 
     def parse_model_nostream_resp(
@@ -341,7 +341,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             Any: The parsed output of an LLM call.
         """
         if self.current_dag_context.streaming_call:
-            return self.parse_model_stream_resp_ex(input_value, 0)
+            return self.parse_model_stream_resp_ex(input_value, skip_echo_len=0)
         else:
             return self.parse_model_nostream_resp(input_value)
 

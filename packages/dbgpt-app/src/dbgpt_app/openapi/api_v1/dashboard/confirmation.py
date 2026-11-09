@@ -1,7 +1,8 @@
 """Bind a confirmation turn to persisted facts, not the model's final prose."""
 
+import json
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from dbgpt._private.pydantic import PrivateAttr
 from dbgpt.agent import ActionOutput
@@ -18,6 +19,16 @@ GENERATION_STAGES = {
     "repair": "修复组件及其分享绑定",
     "saving": "保存看板草稿",
 }
+
+
+def query_batch_size(state: Dict[str, Any]) -> int:
+    """Reduce model round trips without enlarging publication/repair payloads."""
+    plan = state.get("dashboard_plan") or {}
+    # Filtered widgets also carry frozen publication queries and bindings. Keep
+    # those payloads small, and fall back after any truncated JSON response.
+    if plan.get("filters") or state.get("dashboard_query_small_batches"):
+        return 2
+    return 4
 
 
 def observe_generation_event(state, event_type, payload):
@@ -196,7 +207,8 @@ def continuation_feedback(state: Dict[str, Any]) -> Optional[str]:
         "The user already confirmed this plan. Generation is not complete. "
         "Do not ask for confirmation again or finish with prose. "
         "Call create_dashboard_draft with the confirmed dashboard_id and revision, "
-        "widget_queries: {widgets: [...]}, at most two missing widgets: "
+        "widget_queries: {widgets: [...]}, at most "
+        f"{query_batch_size(state)} missing widgets: "
         + ", ".join(missing)
         + ". Use the previous tool error to correct invalid arguments. "
         "The original step budget is unchanged."
@@ -207,13 +219,72 @@ class DashboardConfirmationAgent(ReActAgent):
     """Guard Dashboard failures and keep confirmed generation in its bounded loop."""
 
     _dashboard_state: Dict[str, Any] = PrivateAttr(default_factory=dict)
+    _saved_completion: Optional[Tuple[str, Optional[str]]] = PrivateAttr(default=None)
 
     def __init__(self, *, dashboard_state: Dict[str, Any], **kwargs):
         super().__init__(**kwargs)
         # A private reference (not a copied Pydantic field) observes real tool writes.
         self._dashboard_state = dashboard_state
 
+    async def thinking(self, messages, sender=None, prompt=None, stream_callback=None):
+        # The tool already persisted the plan/result and emitted its UI card.
+        # Finish through the normal terminate action, preserving SSE/history and
+        # tool steps, without another model call just to restate saved facts.
+        if self._saved_completion is not None:
+            summary, model = self._saved_completion
+            self._saved_completion = None
+            return (
+                "Thought: The saved result is ready for review.\n"
+                "Action: terminate\nAction Input: "
+                + json.dumps({"output": summary}, ensure_ascii=False),
+                model,
+            )
+        return await super().thinking(messages, sender, prompt, stream_callback)
+
+    def _completion_from_saved_result(self, output):
+        if not output or not output.is_exe_success:
+            return None
+        state = self._dashboard_state
+        english = state.get("_report_language", "en") == "en"
+        if output.action == "plan_dashboard":
+            try:
+                payload = json.loads(output.content or "{}")
+            except (TypeError, ValueError):
+                return None
+            if not isinstance(payload, dict):
+                return None
+            reference = payload.get("__dashboard_ref__") or {}
+            if (
+                reference.get("status") != "awaiting_confirmation"
+                or reference.get("dashboard_id") != state.get("dashboard_record_id")
+                or reference not in (state.get("dashboard_refs") or [])
+            ):
+                return None
+            plan = reference["plan"]
+            title = plan["title"]
+            widgets, filters = len(plan["widgets"]), len(plan.get("filters") or [])
+            return (
+                f'Plan "{title}" saved: {widgets} widgets and {filters} filters. '
+                "Review the plan card, then confirm generation or request changes."
+                if english
+                else f"《{title}》规划已保存：{widgets} 个图表、{filters} 个筛选。"
+                "请查看规划卡片，确认生成或提出修改。"
+            )
+        generation = state.get("dashboard_generation") or {}
+        if output.action in {"create_dashboard_draft", "repair_dashboard_draft"} and (
+            generation.get("status") == "completed"
+        ):
+            count = len(generation["saved_widget_ids"])
+            return (
+                f"Dashboard saved. All {count} widgets passed query validation. "
+                "Open the dashboard to review the results."
+                if english
+                else f"看板已保存，{count} 个图表已通过查询验证。请打开看板查看结果。"
+            )
+        return None
+
     async def act(self, message, sender, **kwargs):
+        self._saved_completion = None
         check_generation_deadline()
         if self._dashboard_state.get("dashboard_tool_failure"):
             return failed_action(self._dashboard_state["dashboard_tool_failure"])
@@ -224,15 +295,25 @@ class DashboardConfirmationAgent(ReActAgent):
             except Exception:
                 # Preserve the shared parser's existing malformed-output recovery.
                 steps = []
-            if len(steps) == 1 and str(steps[0].action).lower() in {
-                "terminate",
-                "question",
+            if len(steps) == 1 and str(steps[0].action).lower() not in {
+                "load_dashboard_draft",
+                "create_dashboard_draft",
+                "repair_dashboard_draft",
             }:
+                # A phase mistake is not a failed database operation. Do not
+                # dispatch forbidden discovery/style tools, which would turn a
+                # recoverable model error into a terminal ToolNotFound failure.
                 return ActionOutput(
                     is_exe_success=False,
+                    have_retry=True,
                     terminate=False,
                     action=steps[0].action,
-                    content=feedback,
+                    content=(
+                        f"{steps[0].action} is unavailable during confirmed "
+                        "generation. "
+                        "Use the supplied temporal evidence; do not run discovery "
+                        "or reload styles. " + feedback
+                    ),
                 )
         try:
             output = await super().act(message, sender, **kwargs)
@@ -243,4 +324,9 @@ class DashboardConfirmationAgent(ReActAgent):
                 action="agent_output",
             )
         failure = capture_tool_failure(self._dashboard_state, output)
-        return failed_action(failure, output.action) if failure else output
+        if failure:
+            return failed_action(failure, output.action)
+        summary = self._completion_from_saved_result(output)
+        if summary:
+            self._saved_completion = (summary, message.model_name)
+        return output

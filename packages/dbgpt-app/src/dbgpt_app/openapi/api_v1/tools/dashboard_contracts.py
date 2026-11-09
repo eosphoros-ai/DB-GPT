@@ -131,6 +131,7 @@ def make_dashboard_tool_pack(
         # revision, repair and annotation capabilities require their own phase.
         allowed = {
             "sql_query",
+            "load_dashboard_style",
             "plan_dashboard",
             "load_dashboard_draft",
             "resolve_dashboard_reference",

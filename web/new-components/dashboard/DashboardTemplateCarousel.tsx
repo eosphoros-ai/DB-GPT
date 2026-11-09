@@ -1,14 +1,16 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Children, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import styles from './DashboardGallery.module.css';
 
 export default function DashboardTemplateCarousel({
   children,
-  label = '精选模板',
+  label = dt('精选模板'),
 }: {
   children: ReactNode;
   label?: string;
 }) {
+  useDashboardTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
   const trackId = useId();
   const count = Children.count(children);
@@ -60,11 +62,11 @@ export default function DashboardTemplateCarousel({
   };
 
   return (
-    <div className={styles.carousel} data-testid='featured-template-carousel' aria-roledescription='轮播'>
+    <div className={styles.carousel} data-testid='featured-template-carousel' aria-roledescription={dt('轮播')}>
       <button
         type='button'
         className={`${styles.carouselArrow} ${styles.carouselPrevious}`}
-        aria-label={`向左浏览${label}`}
+        aria-label={dt('向左浏览{{value0}}', { value0: label })}
         aria-controls={trackId}
         disabled={!edges.previous}
         onClick={() => step(-1)}
@@ -76,7 +78,7 @@ export default function DashboardTemplateCarousel({
         id={trackId}
         className={styles.carouselTrack}
         role='group'
-        aria-label={`${label}列表，可左右滑动`}
+        aria-label={dt('{{value0}}列表，可左右滑动', { value0: label })}
         tabIndex={0}
         onKeyDown={event => {
           if (event.target !== event.currentTarget) return;
@@ -128,7 +130,7 @@ export default function DashboardTemplateCarousel({
       <button
         type='button'
         className={`${styles.carouselArrow} ${styles.carouselNext}`}
-        aria-label={`向右浏览${label}`}
+        aria-label={dt('向右浏览{{value0}}', { value0: label })}
         aria-controls={trackId}
         disabled={!edges.next}
         onClick={() => step(1)}

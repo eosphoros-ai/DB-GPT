@@ -1,56 +1,33 @@
 import { getDbList } from '@/client/api';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { dashboardSourceLabel } from '@/new-components/dashboard/dashboard-source-label';
 import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
-import { FolderOutlined, SearchOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, FolderOutlined, SearchOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Alert, Button, Empty, Input, Spin } from 'antd';
+import { Alert, Button, Empty, Input, Modal, Spin } from 'antd';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
-import { AVAILABLE_CATALOG, catalogProof, type CatalogTemplate } from './dashboard-catalog';
+import {
+  AVAILABLE_CATALOG,
+  catalogProof,
+  GALLERY_DESIGN_SKILL_IDS,
+  TEMPLATE_GALLERY_ORDER,
+  type CatalogTemplate,
+} from './dashboard-catalog';
 import DashboardDesignTemplate from './DashboardDesignTemplate';
 import styles from './DashboardGallery.module.css';
 import DashboardTemplateCarousel from './DashboardTemplateCarousel';
 import DashboardTemplateLayoutPreview from './DashboardTemplateLayoutPreview';
-import DashboardTemplateSetup from './DashboardTemplateSetup';
 import { useTemplateFavorites } from './use-template-favorites';
 
-const showcaseOrder = [
-  'clinical-insight',
-  'cardio-journal',
-  'voice-observatory',
-  'store-marketing',
-  'national-command',
-  'healthcare-command',
-  'rural-finance',
-  'brand-revenue',
-];
-const catalogPriority = (id: string) => {
-  const index = showcaseOrder.indexOf(id);
-  return index < 0 ? showcaseOrder.length : index;
-};
-
-// The user's selected styles and data templates share one display order.
-const preferredTemplates = [
-  'design:learnhub-viz-design',
-  'design:brutal-viz-design',
-  'design:pawspa-viz-design',
-  'design:serenityspa-viz-design',
-  'voice-observatory',
-  'store-marketing',
-  'national-command',
-  'brand-revenue',
-  'business-dossier',
-  'store-coverage',
-  'northwind-revenue',
-  'northwind-freight',
-];
 const preferredPriority = (id: string) => {
-  const index = preferredTemplates.indexOf(id);
-  return index < 0 ? preferredTemplates.length : index;
+  const index = TEMPLATE_GALLERY_ORDER.indexOf(id);
+  return index < 0 ? TEMPLATE_GALLERY_ORDER.length : index;
 };
 
 export default function DashboardTemplateGallery({ featured = false }: { featured?: boolean }) {
+  useDashboardTranslation();
   const router = useRouter();
   const [category, setCategory] = useState('全部');
   const [search, setSearch] = useState('');
@@ -65,7 +42,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   } = useRequest(
     async () => {
       const response = await getDbList();
-      if (!response.data.success) throw new Error(response.data.err_msg || '数据源暂时无法读取');
+      if (!response.data.success) throw new Error(response.data.err_msg || dt('数据源暂时无法读取'));
       const records = response.data.data as unknown as { db_name?: string; params?: { name?: string } }[];
       return records.map(item => item.db_name || item.params?.name || '').filter(Boolean);
     },
@@ -73,11 +50,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   ); // Errors are shown in the gallery's retry alert.
   const available = useMemo(
     () =>
-      sources.length
-        ? [...AVAILABLE_CATALOG].sort(
-            (a, b) => catalogPriority(a.id) - catalogPriority(b.id) || Number(!!b.style) - Number(!!a.style),
-          )
-        : [],
+      sources.length ? [...AVAILABLE_CATALOG].sort((a, b) => preferredPriority(a.id) - preferredPriority(b.id)) : [],
     [sources],
   );
   const categories =
@@ -87,50 +60,66 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
       (category === '全部' || item.category === category) &&
       collection !== 'design' &&
       (collection !== 'favorites' || favorites.includes(item.id)) &&
-      `${item.title} ${item.description}`.includes(search.trim()),
+      `${item.title} ${item.description} ${dt(item.title)} ${dt(item.description)}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase()),
   );
-  const featuredIds = [
-    'brand-revenue',
-    'retail-overview',
-    'growth-map',
-    'retail-terminal',
-    'service-desk',
-    'sales-receipt',
-  ];
-  const matches = featured ? featuredIds.flatMap(id => filtered.filter(item => item.id === id)) : filtered;
+  const matches = filtered;
   const designs = featured
     ? []
     : Object.entries(ADAPTED_SKILLS).filter(
         ([name, design]) =>
+          GALLERY_DESIGN_SKILL_IDS.has(name) &&
           (category === '全部' || category === '设计') &&
           (collection !== 'favorites' || favorites.includes(`design:${name}`)) &&
-          `${design.title} ${design.description}`.includes(search.trim()),
+          `${design.title} ${design.description} ${dt(design.title)} ${dt(design.description)}`
+            .toLowerCase()
+            .includes(search.trim().toLowerCase()),
       );
   const open = (item: CatalogTemplate) => {
     setSelected(item);
   };
+  const startFromTemplate = (item: CatalogTemplate) =>
+    void router.push({ pathname: '/', query: { creation_mode: 'dashboard', template: item.id } });
   const cards = matches.map(item => {
     const proof = catalogProof(item.id);
     return (
       <article key={item.id} className={styles.card} data-catalog-template={item.id}>
-        <button type='button' className={styles.cover} aria-label={`预览模板 ${item.title}`} onClick={() => open(item)}>
+        <button
+          type='button'
+          className={styles.cover}
+          aria-label={dt('预览模板 {{value0}}', { value0: dt(item.title) })}
+          onClick={() => open(item)}
+        >
           {proof?.previewKind === 'layout' ? (
             <DashboardTemplateLayoutPreview template={item} />
           ) : proof?.preview ? (
-            <Image src={proof.preview} alt={`${item.title}实际生成预览`} width={640} height={400} />
+            <>
+              <Image
+                src={proof.preview}
+                alt={dt('{{value0}}模板示例预览', { value0: dt(item.title) })}
+                data-template-preview={item.id}
+                width={800}
+                height={500}
+              />
+              <span className={styles.designLabel}>{dt('示例预览')}</span>
+            </>
           ) : (
             <div className={styles.assetCover}>
-              <strong>{item.title}</strong>
+              <strong>{dt(item.title)}</strong>
               <span>{item.sourceNames[0]}</span>
             </div>
           )}
-          <span className={styles.badge}>{item.category}</span>
-          <span className={styles.coverAction}>查看模板</span>
+          <span className={styles.badge}>{dt(item.category)}</span>
+          <span className={styles.coverAction}>{dt('查看模板')}</span>
         </button>
         <button
           type='button'
           className={styles.favorite}
-          aria-label={`${favorites.includes(item.id) ? '取消收藏' : '收藏'}模板 ${item.title}`}
+          aria-label={dt('{{value0}}模板 {{value1}}', {
+            value0: favorites.includes(item.id) ? dt('取消收藏') : dt('收藏'),
+            value1: dt(item.title),
+          })}
           aria-pressed={favorites.includes(item.id)}
           onClick={() => toggle(item.id)}
         >
@@ -138,12 +127,20 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         </button>
         <div className={styles.cardTitle}>
           <button type='button' onClick={() => open(item)}>
-            {item.title}
+            {dt(item.title)}
           </button>
         </div>
-        <p className={styles.description}>{item.description}</p>
+        <p className={styles.description}>{dt(item.description)}</p>
         <div className={styles.meta}>
           <span>{dashboardSourceLabel(proof?.source || item.sourceNames[0])}</span>
+          <button
+            type='button'
+            onClick={() => startFromTemplate(item)}
+            aria-label={dt('使用模板 {{value0}}', { value0: dt(item.title) })}
+          >
+            {dt('使用')}
+            <ArrowRightOutlined />
+          </button>
         </div>
       </article>
     );
@@ -165,7 +162,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   return (
     <>
       {!featured && (
-        <nav className={styles.collections} aria-label='模板文件夹'>
+        <nav className={styles.collections} aria-label={dt('模板文件夹')}>
           <button
             type='button'
             aria-pressed={collection === 'all'}
@@ -174,7 +171,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
               setCategory('全部');
             }}
           >
-            全部模板
+            {dt('全部模板')}
           </button>
           <button
             type='button'
@@ -184,7 +181,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
               setCategory('全部');
             }}
           >
-            风格技能
+            {dt('风格技能')}
           </button>
           <button
             type='button'
@@ -194,13 +191,13 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
               setCategory('全部');
             }}
           >
-            <FolderOutlined /> 收藏夹{' '}
+            <FolderOutlined /> {dt('收藏夹')}{' '}
             <span>
               {
                 favorites.filter(
                   id =>
                     AVAILABLE_CATALOG.some(item => item.id === id) ||
-                    (id.startsWith('design:') && ADAPTED_SKILLS[id.slice(7)]),
+                    (id.startsWith('design:') && GALLERY_DESIGN_SKILL_IDS.has(id.slice(7))),
                 ).length
               }
             </span>
@@ -209,18 +206,18 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
       )}
       {!featured && (
         <div className={styles.tools}>
-          <div className={styles.categories} aria-label='模板业务分类'>
+          <div className={styles.categories} aria-label={dt('模板业务分类')}>
             {categories.map(item => (
               <button key={item} type='button' aria-pressed={category === item} onClick={() => setCategory(item)}>
-                {item}
+                {dt(item)}
               </button>
             ))}
           </div>
           <Input
             className={styles.search}
             prefix={<SearchOutlined />}
-            placeholder='搜索模板'
-            aria-label='搜索模板'
+            placeholder={dt('搜索模板')}
+            aria-label={dt('搜索模板')}
             value={search}
             allowClear
             onChange={event => setSearch(event.target.value)}
@@ -231,14 +228,14 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         <Alert
           type='error'
           showIcon
-          message='暂时无法连接数据服务，请恢复连接后重试。'
+          message={dt('暂时无法连接数据服务，请恢复连接后重试。')}
           action={
             <Button
               onClick={() => {
                 void loadSources();
               }}
             >
-              重试
+              {dt('重试')}
             </Button>
           }
         />
@@ -248,9 +245,9 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         <Alert
           type='info'
           showIcon
-          message='可用模板不足，暂不展示模板广场'
-          description='请先恢复模板数据源，或继续编辑已有看板。'
-          action={<Button onClick={() => router.push('/dashboards/?tab=all')}>全部看板</Button>}
+          message={dt('可用模板不足，暂不展示模板广场')}
+          description={dt('请先恢复模板数据源，或继续编辑已有看板。')}
+          action={<Button onClick={() => router.push('/dashboards/?tab=all')}>{dt('全部看板')}</Button>}
         />
       ) : matches.length || designs.length ? (
         featured ? (
@@ -262,14 +259,39 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         <Empty
           description={
             search
-              ? '没有匹配的模板'
+              ? dt('没有匹配的模板')
               : collection === 'favorites'
-                ? '还没有收藏模板，点击卡片右上角的星标即可收纳到这里。'
-                : '当前分类没有模板'
+                ? dt('还没有收藏模板，点击卡片右上角的星标即可收纳到这里。')
+                : dt('当前分类没有模板')
           }
         />
       )}
-      {selected && <DashboardTemplateSetup template={selected} sources={sources} onClose={() => setSelected(null)} />}
+      {selected && (
+        <Modal
+          open
+          title={dt(selected.title)}
+          onCancel={() => setSelected(null)}
+          width={1000}
+          footer={
+            <Button type='primary' onClick={() => startFromTemplate(selected)}>
+              {dt('选择数据并创建看板')}
+            </Button>
+          }
+        >
+          {catalogProof(selected.id)?.preview ? (
+            <Image
+              src={catalogProof(selected.id)!.preview!}
+              alt={dt('{{value0}}模板示例预览', { value0: dt(selected.title) })}
+              width={1200}
+              height={750}
+              style={{ width: '100%', height: 'auto' }}
+            />
+          ) : (
+            <DashboardTemplateLayoutPreview template={selected} />
+          )}
+          <p>{dt(selected.description)}</p>
+        </Modal>
+      )}
     </>
   );
 }

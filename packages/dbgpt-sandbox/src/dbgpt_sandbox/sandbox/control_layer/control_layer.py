@@ -177,6 +177,10 @@ class ControlLayer:
 
         try:
             content = await session.get_file_content(filename)
+            if content is not None and content.status == "error":
+                return ExecutionResult(
+                    status=ExecutionStatus.ERROR, error=content.error
+                )
             return ExecutionResult(status=ExecutionStatus.SUCCESS, output=content)
         except Exception as e:
             return ExecutionResult(

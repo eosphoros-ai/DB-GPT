@@ -5,6 +5,8 @@ import json
 import pytest
 
 import dbgpt_app.openapi.api_v1.subagent.dispatcher as disp
+from dbgpt.agent import AgentMessage
+from dbgpt.agent.core.action.base import ActionOutput
 from dbgpt_app.openapi.api_v1.subagent.dispatcher import make_dispatch_tool
 
 
@@ -28,15 +30,14 @@ def _make_fake_llm_client():
     return _FakeLLMClient()
 
 
-class _Report:
-    def __init__(self, content):
-        self.content = content
-
-
-class _Reply:
-    def __init__(self, content):
-        self.content = content
-        self.action_report = _Report(content)
+def _Reply(content):
+    return AgentMessage(
+        content=content,
+        success=True,
+        action_report=ActionOutput(
+            content=content, is_exe_success=True, terminate=True
+        ),
+    )
 
 
 class _FakeAgent:
@@ -147,6 +148,7 @@ async def test_dispatch_runs_all_tasks_and_relays_text(monkeypatch):
     dones = [e for e in events if e["type"] == "agent.done"]
     assert len(starts) == 2 and len(dones) == 2
     assert {e["result"] for e in dones} == {"result-0", "result-1"}
+    assert all(e["status"] == "done" for e in dones)
     assert all(isinstance(e["elapsed_ms"], int) for e in dones)
 
 
@@ -232,8 +234,18 @@ async def test_dispatch_artifacts_event_emitted_separately(monkeypatch):
     out = await tool(tasks=[{"goal": "g0"}, {"goal": "g1"}])
     # Artifacts flow via a dedicated event, not into the relayed summary.
     art_events = [e for e in events if e["type"] == "subagent.artifacts"]
-    assert len(art_events) == 1
-    assert len(art_events[0]["items"]) == 2
+    assert len(art_events) == 2
+    assert all(len(event["items"]) == 1 for event in art_events)
+    items = [item for event in art_events for item in event["items"]]
+    assert {item["url"] for item in items} == {"/images/0.png", "/images/1.png"}
+    # Publish each child's artifacts before its done event so completed work
+    # remains available even if another child is interrupted.
+    for event in art_events:
+        agent_id = event["items"][0]["agent_id"]
+        done = next(
+            e for e in events if e["type"] == "agent.done" and e["agent_id"] == agent_id
+        )
+        assert events.index(event) < events.index(done)
     summary = json.loads(out)["chunks"][0]["content"]
     assert "/images/0.png" not in summary  # bytes/paths not in lead context
 
@@ -388,8 +400,9 @@ async def test_dispatch_artifacts_carry_agent_attribution(monkeypatch):
     )
 
     art_events = [e for e in events if e["type"] == "subagent.artifacts"]
-    assert len(art_events) == 1
-    items = art_events[0]["items"]
+    assert len(art_events) == 2
+    items = [item for event in art_events for item in event["items"]]
+    assert len(items) == 2
     # Each item carries the agent that produced it.
     by_id = {it["agent_id"]: it for it in items}
     assert by_id["sub_d1_0"]["agent_name"] == "销售分析"

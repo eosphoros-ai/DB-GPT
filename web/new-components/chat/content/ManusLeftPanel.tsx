@@ -614,6 +614,7 @@ const StepCard: React.FC<{
 
     return (
       <div
+        data-testid='task-plan-step'
         onClick={onClick}
         className={classNames(
           'group relative cursor-pointer rounded-lg border transition-all duration-200',

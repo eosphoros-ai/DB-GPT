@@ -2,7 +2,13 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ chat: vi.fn(), push: vi.fn(), getDbList: vi.fn() }));
+const state = vi.hoisted(() => ({
+  chat: vi.fn(),
+  push: vi.fn(),
+  getDbList: vi.fn(),
+  query: {} as Record<string, string | string[] | undefined>,
+  isReady: true,
+}));
 vi.mock('@/app/chat-context', async () => {
   const { createContext } = await import('react');
   return { ChatContext: createContext({ model: 'selected-model', modelList: ['selected-model'] }) };
@@ -10,7 +16,9 @@ vi.mock('@/app/chat-context', async () => {
 vi.mock('@/client/api', () => ({ getDbList: state.getDbList }));
 vi.mock('@/hooks/use-chat', () => ({ default: () => ({ chat: state.chat, pendingQuestion: null }) }));
 vi.mock('@/utils', () => ({ getUserId: () => 'fixture-user' }));
-vi.mock('next/router', () => ({ useRouter: () => ({ push: state.push }) }));
+vi.mock('next/router', () => ({
+  useRouter: () => ({ push: state.push, query: state.query, isReady: state.isReady }),
+}));
 vi.mock('next/head', () => ({ default: ({ children }: { children: ReactNode }) => children }));
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -64,12 +72,73 @@ const plan = {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.unstubAllGlobals();
+  state.query = {};
+  state.isReady = true;
   state.getDbList.mockResolvedValue({
     data: { success: true, data: [{ id: 1, db_name: 'sales-db', type: 'sqlite', params: { name: 'sales-db' } }] },
   });
 });
 
 describe('scoped Dashboard creation entry', () => {
+  it.each(['brutal-viz-design', 'serenityspa-viz-design'])(
+    'prefills retained %s after hydration without sending or overwriting user edits',
+    async skill => {
+      state.isReady = false;
+      state.query = { creation_mode: 'dashboard', skill, skill_prompt: 'Show business performance' };
+      const view = render(<DashboardCreatePage />);
+      const input = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
+      expect(input.value).toBe('');
+      state.isReady = true;
+      view.rerender(<DashboardCreatePage />);
+      expect(input.value).toBe('Show business performance');
+      expect(state.chat).not.toHaveBeenCalled();
+      fireEvent.change(input, { target: { value: 'My revised business dashboard' } });
+      view.rerender(<DashboardCreatePage />);
+      expect(input.value).toBe('My revised business dashboard');
+      await chooseSource();
+      state.chat.mockImplementation(async request => request.onDashboardEvent(plan));
+      fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+      await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
+      expect(state.chat.mock.calls[0][0].data).toMatchObject({
+        user_input: 'My revised business dashboard',
+        ext_info: {
+          creation_mode: 'dashboard',
+          database_name: 'sales-db',
+          skill_name: skill,
+          dashboard_template: `design:${skill}`,
+        },
+      });
+    },
+  );
+
+  it('ignores a retired style link without leaking its metadata into a new request', async () => {
+    state.query = { creation_mode: 'dashboard', skill: 'learnhub-viz-design', skill_prompt: 'Show course progress' };
+    render(<DashboardCreatePage />);
+    const input = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
+    expect(input.value).toBe('');
+    expect(state.chat).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: 'Show monthly sales' } });
+    await chooseSource();
+    state.chat.mockImplementation(async request => request.onDashboardEvent(plan));
+    fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+    await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
+    const request = state.chat.mock.calls[0][0].data;
+    expect(request.user_input).toBe('Show monthly sales');
+    expect(request.ext_info).toMatchObject({ creation_mode: 'dashboard', database_name: 'sales-db' });
+    expect(request.ext_info).not.toHaveProperty('skill_name');
+    expect(request.ext_info).not.toHaveProperty('dashboard_template');
+  });
+
+  it('ignores unrecognized or repeated template query values', () => {
+    state.query = { creation_mode: 'dashboard', skill: '__proto__', skill_prompt: 'Unexpected request' };
+    const view = render(<DashboardCreatePage />);
+    expect((screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement).value).toBe('');
+    state.query = { creation_mode: 'dashboard', skill: ['brutal-viz-design', 'serenityspa-viz-design'] };
+    view.rerender(<DashboardCreatePage />);
+    expect((screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement).value).toBe('');
+    expect(state.chat).not.toHaveBeenCalled();
+  });
+
   it('plans before confirmation and reuses the conversation and selected source', async () => {
     state.chat.mockImplementationOnce(async request => request.onDashboardEvent(plan));
     state.chat.mockImplementationOnce(async request =>
@@ -85,6 +154,7 @@ describe('scoped Dashboard creation entry', () => {
     const first = state.chat.mock.calls[0][0];
     expect(first.data.ext_info).toEqual({
       creation_mode: 'dashboard',
+      locale: 'zh',
       database_name: 'sales-db',
       database_type: 'sqlite',
     });
@@ -113,7 +183,11 @@ describe('scoped Dashboard creation entry', () => {
     fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
     const confirm = await screen.findByRole('button', { name: '确认并生成 SQL' });
     await waitFor(() => expect((confirm as HTMLButtonElement).disabled).toBe(false));
-    expect(state.chat.mock.calls[0][0].data.ext_info).toEqual({ creation_mode: 'dashboard', dataset_id: 'dataset-1' });
+    expect(state.chat.mock.calls[0][0].data.ext_info).toEqual({
+      creation_mode: 'dashboard',
+      locale: 'zh',
+      dataset_id: 'dataset-1',
+    });
     const body = upload.mock.calls[0][1].body as FormData;
     expect(body.get('conv_uid')).toBe(state.chat.mock.calls[0][0].chatId);
     expect(body.getAll('files')).toHaveLength(1);
@@ -142,6 +216,31 @@ describe('scoped Dashboard creation entry', () => {
     expect((screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement).value).toBe('Keep this request');
     await act(async () => complete());
     expect(screen.getByRole('alert').textContent).toContain('已停止生成');
+  });
+
+  it('allows a failed upload to be replaced before starting a conversation', async () => {
+    const upload = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, err_msg: 'Invalid workbook' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { dataset_id: 'replacement' } }) });
+    vi.stubGlobal('fetch', upload);
+    render(<DashboardCreatePage />);
+    const fileInput = screen.getByLabelText('上传数据文件') as HTMLInputElement;
+    const prompt = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['broken'], 'broken.xlsx')] } });
+    fireEvent.change(prompt, { target: { value: 'Keep my analysis request' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+    await screen.findByText('Invalid workbook');
+    expect(state.chat).not.toHaveBeenCalled();
+    expect(fileInput.disabled).toBe(false);
+    expect(prompt.value).toBe('Keep my analysis request');
+    fireEvent.change(fileInput, { target: { files: [new File(['sales\n10'], 'sales.csv')] } });
+    fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+    await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
+    const body = upload.mock.calls[1][1].body as FormData;
+    expect((body.get('files') as File).name).toBe('sales.csv');
+    expect(state.chat.mock.calls[0][0].data.ext_info.dataset_id).toBe('replacement');
+    expect(fileInput.disabled).toBe(true);
   });
 
   it('releases a terminal failure without waiting for stream closure and preserves the next request', async () => {

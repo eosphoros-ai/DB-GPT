@@ -18,6 +18,7 @@ interface IChatContext {
   chatId: string;
   model: string;
   modelList: string[];
+  modelListLoading: boolean;
   dbParam?: string;
   agent: string;
   dialogueList?: DialogueListResponse;
@@ -54,6 +55,7 @@ const ChatContext = createContext<IChatContext>({
   chatId: '',
   model: '',
   modelList: [],
+  modelListLoading: true,
   dbParam: undefined,
   dialogueList: [],
   agent: '',
@@ -98,7 +100,11 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   });
 
   // 获取model
-  const { data: modelList = [], refresh: refreshModelList } = useRequest(async () => {
+  const {
+    data: modelList = [],
+    loading: modelListLoading,
+    refresh: refreshModelList,
+  } = useRequest(async () => {
     const [, res] = await apiInterceptors(getUsableModels());
     return res ?? [];
   });
@@ -167,6 +173,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     chatId,
     model,
     modelList,
+    modelListLoading,
     dbParam: dbParam || db_param,
     agent,
     setAgent,

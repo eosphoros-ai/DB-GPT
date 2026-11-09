@@ -52,8 +52,9 @@ yarn install --frozen-lockfile
 ```sh
 cp .env.template .env
 ```
-The existing backend address in `next.config.js` is `http://127.0.0.1:5670`.
-Update that configuration if your backend uses a different address.
+Set `API_BASE_URL` in `.env` to your backend address; the default is
+`http://127.0.0.1:5670`. Restart the dev server after changing this value;
+for production, set it before running `yarn build`.
 
 ```sh
 # development model

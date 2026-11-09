@@ -4,6 +4,7 @@
 {%- macro ref(node, cls='') -%}
 {%- if node is mapping and node.get('artifact_id') -%}
 <span{% if cls %} class="{{ cls }}"{% endif %} data-dbgpt-artifacts="{{ node.artifact_id }}"{% if node.selectors %} data-dbgpt-artifact-selectors='{{ node.selectors|tojson }}'{% endif %}{% if node.get('proposal') %} data-dbgpt-value-role="proposal"{% endif %} data-dbgpt-evidence-label="{{ node.value }}">{{ node.value }}</span>
+{%- elif node is mapping and node.get('proposal') -%}<span data-dbgpt-value-role="proposal">{{ 'Proposed target (not observed): ' if spec.get('language') == 'en' else '建议目标（非观测值）：' }}{{ node.proposal }}</span>
 {%- else -%}{{ node }}{%- endif -%}
 {%- endmacro -%}
 {%- macro parts(seq) -%}
@@ -13,7 +14,7 @@
 {%- if items -%}
 <div class="kpis">
 {%- for item in items %}
-<div class="kpi"><div class="lbl">{{ item.get('label', '') }}</div><div class="val">{% if item.get('unit') %}<span class="unit">{{ item.unit }}</span> {% endif %}{{ ref(item.get('ref'), 'metric-value') }}</div>{% if item.get('hint') %}<div class="sub">{{ item.hint }}</div>{% endif %}</div>
+<div class="kpi"><div class="lbl">{{ item.get('label', '') }}</div><div class="val">{{ ref(item.get('ref'), 'metric-value') }}{% if item.get('unit') %} <span class="unit">{{ item.unit }}</span>{% endif %}</div>{% if item.get('hint') %}<div class="sub">{{ item.hint }}</div>{% endif %}</div>
 {%- endfor %}
 </div>
 {%- endif -%}
