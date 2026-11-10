@@ -1,0 +1,40 @@
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/report_binding.py
+  s_2eec25fdab4a67::t_71221fc3b0bb81 157-162
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_report_objects.py
+  s_2eec25fdab4a67::t_f77ae9bc7a07a1 14-17,1087,1110-1111
+  s_2eec25fdab4a67::t_4d1a592a7e0000 1071-1086,1088-1109,1420,1422,1439-1440,1456,1470,1487-1488,1512,1548,1558,1612,1622-1623,1639-1640,1647,1656,1664,1673
+  s_2eec25fdab4a67::t_12e174dbcbaaf5 1112-1113
+  s_2eec25fdab4a67::t_e589c87437fe61 1421
+  s_2eec25fdab4a67::t_ce31e5dc84e136 1423-1425,1436-1438
+  s_2eec25fdab4a67::t_d3884a0faa7b3b 1441-1443,1453-1455
+  s_2eec25fdab4a67::t_92f444fb92d482 1457-1459,1467-1469
+  s_2eec25fdab4a67::t_228c3733fd26ea 1471-1473,1484-1486
+  s_2eec25fdab4a67::t_7f4fc6c1914d37 1489-1491,1509-1511
+  s_2eec25fdab4a67::t_0aa2114b4db2bf 1513-1515
+  s_2eec25fdab4a67::t_31df0b941a69bf 1547
+  s_2eec25fdab4a67::t_9116a8a7d1a637 1549-1551,1555-1557
+  s_2eec25fdab4a67::t_ad509688048907 1559-1561,1609-1611
+  s_2eec25fdab4a67::t_6aa6ec056c19ee 1613-1615,1619-1621
+  s_2eec25fdab4a67::t_f251a6bd9948ab 1624-1626,1636-1638
+  s_2eec25fdab4a67::t_8cb3ccd22c9cec 1641-1646
+  s_2eec25fdab4a67::t_d5586122ad527c 1648-1650,1653-1655
+  s_2eec25fdab4a67::t_1a27abe37f5c66 1657-1659,1661-1663
+  s_2eec25fdab4a67::t_ae8703b8539f47 1665-1667,1670-1672
+  s_2eec25fdab4a67::t_7feb5658100b84 1674-1676
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ded10e09b7a5e1308401a9fc072346c06249c25f",
+  "prompts": {},
+  "sessions": {
+    "s_2eec25fdab4a67": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1beaa-b613-7183-90e3-45548843a68b",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
