@@ -1,3 +1,5 @@
+"""DeepSeek proxy client and deployment parameters."""
+
 import os
 from dataclasses import dataclass, field
 from typing import (
@@ -171,7 +173,18 @@ class DeepseekLLMClient(OpenAILLMClient):
         payload = super()._build_request(request, stream)
         model = payload.get("model") or self.default_model
         extra_body = payload.get("extra_body") or {}
-        if "thinking" not in extra_body and self._should_set_thinking(model):
+        tool_choice = payload.get("tool_choice")
+        forced_tool = tool_choice == "required" or (
+            isinstance(tool_choice, dict) and tool_choice.get("type") == "function"
+        )
+        if forced_tool and self.client.base_url.host == "api.deepseek.com":
+            # The official API requires non-thinking mode for forced tool calls.
+            # Third-party endpoints retain their own thinking policy.
+            payload["extra_body"] = {
+                **extra_body,
+                "thinking": {"type": "disabled"},
+            }
+        elif "thinking" not in extra_body and self._should_set_thinking(model):
             thinking_enabled = self._thinking_enabled is True
             extra_body["thinking"] = {
                 "type": "enabled" if thinking_enabled else "disabled"

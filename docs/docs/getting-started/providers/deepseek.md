@@ -70,6 +70,16 @@ For ReAct agents, keep `thinking_enabled = false` with `deepseek-v4-pro`. DeepSe
 V4-Pro enables thinking mode by default, which can add reasoning blocks before the
 strict `Thought/Action/Action Input` response format.
 
+The official DeepSeek API does not support `tool_choice="required"` or a named
+tool choice in thinking mode. The DeepSeek provider automatically disables thinking
+for these requests before sending them, while preserving the requested tool choice.
+This also applies when `thinking_enabled = true`; other requests retain their
+existing thinking settings. No extra configuration is needed when switching models.
+
+This adaptation applies only to the DeepSeek provider when its actual API endpoint
+is `api.deepseek.com`. Other providers and third-party API endpoints retain their
+existing behavior; their tool-calling capabilities depend on their own API contract.
+
 ## Start the server
 
 ```bash
