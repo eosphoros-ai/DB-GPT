@@ -1,0 +1,20 @@
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/subagent/report_agent.py
+  h_34a7ec1e433c3e 971-984
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_report_objects.py
+  h_34a7ec1e433c3e 115-345
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/report_objects.py
+  h_34a7ec1e433c3e 493,521,582-592,811,816-818,1355-1357
+packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/report_repair.py
+  h_34a7ec1e433c3e 23-25,123,191,320-323,389,672-676,689-715,717-723,725-726,736-749
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3db2cb33c54e20c1923a5dce91e9710ee76cb6fe",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
