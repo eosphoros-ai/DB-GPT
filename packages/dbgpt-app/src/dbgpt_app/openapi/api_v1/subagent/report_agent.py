@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import uuid
+from copy import deepcopy
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
@@ -419,8 +420,9 @@ async def build_report_agent(
     llm_client: Any,
     skills_dir: str,
     model_name: Optional[str] = None,
+    max_new_tokens: int = 16384,
 ):
-    """Build the report agent. Its tools write into the lead's ``react_state``."""
+    """Build the report agent with the lead agent's completion budget."""
     from dbgpt.agent import AgentContext, AgentMemory
     from dbgpt.agent.core.memory.gpts import DefaultGptsPlansMemory, GptsMemory
     from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
@@ -492,7 +494,7 @@ async def build_report_agent(
         enable_context_management=True,
         enable_native_function_calling=True,
         temperature=0.1,
-        max_new_tokens=8192,
+        max_new_tokens=max_new_tokens,
     )
 
     agent = await (
@@ -582,21 +584,53 @@ def _report_agent_failure(state: Dict[str, Any], reason: str) -> str:
     """Keep child execution failures distinct from the last renderer diagnostic."""
     from ..tools.report_repair import save_execution_checkpoint
 
-    required = set(
-        (state.get("_report_template_contract") or {}).get("prose_fields", [])
-    )
+    contract = state.get("_report_template_contract") or {}
+    required = set(contract.get("prose_fields", []))
     staged = set(state.get("_report_object_fields") or {})
     before = set(state.get("_report_object_fields_before") or [])
+    sections = (state.get("_report_object_spec") or {}).get("sections") or []
+    sections = (
+        [section for section in sections if isinstance(section, dict)]
+        if isinstance(sections, list)
+        else []
+    )
+    sections_before = state.get("_report_object_sections_before") or []
+    section_progress = (
+        contract.get("mode") == "spec"
+        and not state.get("_report_retry_exhausted")
+        and any(
+            section.get("source_field") != "scope" and section not in sections_before
+            for section in sections
+        )
+    )
     rounds = state.get("_report_draft_continuations", 0)
-    if "AGENT_STEP_LIMIT" in reason and required & (staged - before) and rounds < 2:
+    if (
+        "AGENT_STEP_LIMIT" in reason
+        and (required & (staged - before) or section_progress)
+        and rounds < 2
+    ):
         state["_report_draft_continuations"] = rounds + 1
-        text = "REPORT_DRAFT_PENDING: validated fields saved; complete remaining fields"
+        text = (
+            "REPORT_DRAFT_PENDING: validated sections saved; finish the report"
+            if section_progress
+            else "REPORT_DRAFT_PENDING: validated fields saved; "
+            "complete remaining fields"
+        )
         save_execution_checkpoint(state, text)
         return json.dumps(
             {
                 "status": "draft_pending",
                 "retryable": True,
-                "remaining_fields": sorted(required - staged),
+                **(
+                    {
+                        "staged_sections": [
+                            {"section_index": index, "heading": section.get("heading")}
+                            for index, section in enumerate(sections)
+                        ]
+                    }
+                    if section_progress
+                    else {"remaining_fields": sorted(required - staged)}
+                ),
                 "chunks": [
                     {
                         "output_type": "text",
@@ -604,7 +638,12 @@ def _report_agent_failure(state: Dict[str, Any], reason: str) -> str:
                     }
                 ],
                 "instruction": (
-                    "Call generate_report again to finish the remaining fields. "
+                    "Call generate_report again to finish the remaining sections "
+                    "and recommendations, then compose_report. Reuse captured "
+                    "results and validated sections; do not rerun analysis or "
+                    "rewrite completed sections. Repair the latest error if present."
+                    if section_progress
+                    else "Call generate_report again to finish the remaining fields. "
                     "Reuse captured results and staged fields; do not rerun "
                     "analysis or repeat completed fields."
                 ),
@@ -688,9 +727,10 @@ def make_generate_report_tool(
     skills_dir: str,
     llm_client: Any,
     model_name: Optional[str] = None,
+    max_new_tokens: int = 16384,
     timeout: int = REPORT_AGENT_TIMEOUT,
 ):
-    """Expose the dedicated report agent as one tool for the lead agent."""
+    """Expose the dedicated report agent with the lead's completion budget."""
 
     @tool(
         description=(
@@ -778,6 +818,13 @@ def make_generate_report_tool(
         saved_spec = (
             (react_state.get("_report_saved_arguments") or {}).get("data") or {}
         ).get("REPORT_SPEC")
+        draft = react_state.get("_report_object_spec")
+        if draft is None:
+            draft = saved_spec
+        sections_before = (draft or {}).get("sections")
+        react_state["_report_object_sections_before"] = (
+            deepcopy(sections_before) if isinstance(sections_before, list) else []
+        )
         presentation_html = (react_state.get("_report_presentation") or {}).get(
             "content", ""
         )
@@ -994,6 +1041,7 @@ def make_generate_report_tool(
                 llm_client=llm_client,
                 skills_dir=skills_dir,
                 model_name=model_name,
+                max_new_tokens=max_new_tokens,
             )
             reply = await asyncio.wait_for(
                 agent.generate_reply(

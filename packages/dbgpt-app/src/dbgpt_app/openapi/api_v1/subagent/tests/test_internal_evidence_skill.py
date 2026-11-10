@@ -98,3 +98,21 @@ async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, 
     assert "report-evidence-internal" not in [
         p.name for p in (repo / "skills").iterdir()
     ]
+
+
+@pytest.mark.asyncio
+async def test_report_agent_uses_lead_completion_budget():
+    repo = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    with patch(
+        "dbgpt_serve.agent.agents.db_gpts_memory.MetaDbGptsMessageMemory",
+        DefaultGptsMessageMemory,
+    ):
+        agent = await report_agent.build_report_agent(
+            react_state={"conv_id": "completion-budget-test"},
+            llm_client=_Client(),
+            skills_dir=str(repo / "skills"),
+            model_name="test",
+            max_new_tokens=16384,
+        )
+
+    assert agent.agent_context.max_new_tokens == 16384

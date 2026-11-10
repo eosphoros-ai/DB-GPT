@@ -11,7 +11,10 @@ from dbgpt.core.interface.report_capture import (
     capture_python_execution,
     select_artifact_result,
 )
-from dbgpt_app.openapi.api_v1.tools.html_interpreter import make_html_interpreter
+from dbgpt_app.openapi.api_v1.tools.html_interpreter import (
+    _validate_evidence_bindings,
+    make_html_interpreter,
+)
 from dbgpt_app.openapi.api_v1.tools.report_objects import (
     ReportObjects,
     compile_report_objects,
@@ -1065,6 +1068,49 @@ def test_preflight_reports_all_literal_locations_in_one_response():
     assert "999" in str(error.value) and "888" in str(error.value)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "；2018 年 1—8 月订单量 ",
+        "2018年1至8月商品 GMV",
+        "分析2017 年 01～12 月的销售趋势。",
+    ],
+)
+def test_report_calendar_month_ranges_with_year_are_not_measured_values(text):
+    report = compile_report_objects(
+        {"sections": [{"heading": "销售趋势", "intro": [[text]]}]},
+        ReportObjects([]),
+        spec_mode=True,
+        fields=[],
+    )
+    assert report["REPORT_SPEC"]["sections"][0]["intro"] == [[text]]
+    assert _validate_evidence_bindings(f"<p>{text}</p>", []) is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "2018 年 1—8 月订单量为 632 单。",
+        "实际配送耗时为 1—8 月。",
+        "2018 年配送耗时为 1 至 8 月。",
+        "平均配送时长为 8 个月。",
+        "2018 年 0—8 月订单量。",
+        "2018 年 13—14 月订单量。",
+        "2018 年 1—13 月订单量。",
+    ],
+)
+def test_report_month_ranges_do_not_exempt_measured_values(text):
+    with pytest.raises(ValueError, match="REPORT_OBJECT_LITERAL"):
+        compile_report_objects(
+            {"sections": [{"heading": "分析", "intro": [[text]]}]},
+            ReportObjects([]),
+            spec_mode=True,
+            fields=[],
+        )
+    error = _validate_evidence_bindings(f"<p>{text}</p>", [])
+    assert error and "REPORT_TARGET_BINDING_REQUIRED" in error
+
+
 @pytest.mark.parametrize("root_note", [False, True])
 def test_knowledge_note_paragraphs_compile_to_flat_bound_parts(root_note):
     from dbgpt.core.interface.report_capture import (
@@ -1371,6 +1417,109 @@ async def test_progressing_draft_continues_without_repeating_analysis(
     assert len([a for a in sink.snapshot() if a.type == "python"]) == 1
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("finish_on_resume", [True, False])
+async def test_progressing_spec_resumes_saved_sections_after_step_limit(
+    monkeypatch, tmp_path, finish_on_resume
+):
+    from copy import deepcopy
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from dbgpt.core.interface.report_capture import bind_artifact_sink
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    template = "business-report/templates/business_report.html"
+    monkeypatch.setattr(report_agent, "select_report_template", lambda *_: template)
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="progressing-spec"))
+    capture(sink, {"columns": ["region", "revenue"], "rows": [["East", 100]]})
+    table = object_id(ReportObjects(sink.snapshot()), "table", "table")
+    state = {
+        "conv_id": sink.context.conv_uid,
+        "_report_artifact_sink": sink,
+        "_report_required_recommendation_count": 3,
+    }
+    contract = {"mode": "spec", "fields": []}
+    calls = []
+    staged_sections = []
+    reason = "AGENT_STEP_LIMIT: reached 20 steps without completing the task"
+
+    async def build(**kwargs):
+        state["_report_template_contract"] = contract
+        _, compose, patch = make_report_object_tools(
+            state,
+            make_html_interpreter(state, str(root / "skills")),
+            template,
+            contract,
+        )
+
+        async def generate_reply(**kwargs):
+            calls.append(True)
+            if len(calls) == 1:
+                result = json.loads(
+                    await patch(
+                        render=False,
+                        report={"title": "经营分析报告"},
+                        append_sections=[
+                            {"heading": heading, "table": {"object_id": table}}
+                            for heading in ("地区表现", "经营概览")
+                        ],
+                    )
+                )
+                assert result["status"] == "staged", result
+                staged_sections.extend(
+                    deepcopy(state["_report_object_spec"]["sections"])
+                )
+            else:
+                assert state["_report_object_spec"]["sections"] == staged_sections
+                if finish_on_resume:
+                    advice = [
+                        {"title": title, "lines": [["建立复核流程并持续跟踪。"]]}
+                        for title in ("复核经营口径", "核验地区差异", "检查执行效果")
+                    ]
+                    result = json.loads(
+                        await patch(
+                            append_sections=[
+                                {"heading": "结论与建议", "recommendations": advice}
+                            ]
+                        )
+                    )
+                    assert result["status"] == "staged", result
+                    rendered = json.loads(await compose())
+                    assert rendered.get("status") == "completed", rendered
+                    return SimpleNamespace(success=True, content="完成", context={})
+            return SimpleNamespace(
+                success=False, content=reason, context={"execution_error": reason}
+            )
+
+        return SimpleNamespace(generate_reply=generate_reply)
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build)
+    generate = report_agent.make_generate_report_tool(
+        react_state=state, skills_dir=str(root / "skills"), llm_client=object()
+    )
+    with bind_artifact_sink(sink):
+        first = json.loads(await generate(instructions="生成报告"))
+        assert first["status"] == "draft_pending" and first["retryable"], first
+        assert not state.get("_report_presentation")
+        assert not state.get("_report_agent_failure")
+        second = json.loads(await generate(instructions="继续完成报告"))
+    assert len(calls) == 2
+    assert len([item for item in sink.snapshot() if item.type == "python"]) == 1
+    if finish_on_resume:
+        assert second["status"] == "completed", second
+        html = state["_report_presentation"]["content"]
+        assert all(text in html for text in ("地区表现", "经营概览", "结论与建议"))
+    else:
+        assert second["status"] == "failed" and not second["retryable"], second
+        assert state["_report_object_spec"]["sections"] == staged_sections
+        assert not state.get("_report_presentation")
+
+
 @pytest.mark.parametrize(
     "rounds,staged", [(2, {"SUMMARY": "摘要"}), (0, {"OPTIONAL": "标题"})]
 )
@@ -1393,6 +1542,154 @@ def test_draft_without_required_progress_or_budget_is_terminal(
         )
     )
     assert result["status"] == "failed" and not result["retryable"]
+
+
+@pytest.mark.parametrize(
+    "change,rounds,exhausted,expected",
+    [
+        ("unchanged", 0, False, "failed"),
+        ("reordered", 0, False, "failed"),
+        ("deleted", 0, False, "failed"),
+        ("scope_only", 0, False, "failed"),
+        ("invalid_entry", 0, False, "failed"),
+        ("repaired", 0, False, "draft_pending"),
+        ("repaired", 2, False, "failed"),
+        ("repaired", 0, True, "failed"),
+    ],
+)
+def test_spec_step_limit_requires_content_progress_and_remaining_budget(
+    monkeypatch, tmp_path, change, rounds, exhausted, expected
+):
+    from copy import deepcopy
+
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    before = [
+        {"heading": "地区表现", "intro": [["原有解读。"]]},
+        {"heading": "经营概览", "intro": [["保留有效分析。"]]},
+    ]
+    sections = deepcopy(before)
+    if change == "reordered":
+        sections.reverse()
+    elif change == "deleted":
+        sections.pop()
+    elif change == "scope_only":
+        sections.append(
+            {"heading": "范围", "source_field": "scope", "intro": [["范围说明。"]]}
+        )
+    elif change == "invalid_entry":
+        sections.append(None)
+    elif change == "repaired":
+        sections[0]["intro"] = [["补充地区差异的解释。"]]
+    state = {
+        "conv_id": "spec-progress-boundary",
+        "_report_template_contract": {"mode": "spec", "fields": []},
+        "_report_object_sections_before": before,
+        "_report_object_spec": {"title": "修改后的标题", "sections": sections},
+        "_report_draft_continuations": rounds,
+        "_report_retry_exhausted": exhausted,
+    }
+    result = json.loads(report_agent._report_agent_failure(state, "AGENT_STEP_LIMIT"))
+    assert result["status"] == expected
+    assert result["retryable"] is (expected == "draft_pending")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_draft", [None, {"heading": "旧章节"}, "旧文本", 42])
+async def test_saved_spec_progress_requires_section_changes(
+    monkeypatch, tmp_path, invalid_draft
+):
+    from copy import deepcopy
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from dbgpt.core.interface.report_capture import bind_artifact_sink
+    from dbgpt_app.openapi.api_v1.subagent import report_agent
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    template = "business-report/templates/business_report.html"
+    monkeypatch.setattr(report_agent, "select_report_template", lambda *_: template)
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="saved-title-change"))
+    capture(sink, {"columns": ["region", "revenue"], "rows": [["East", 100]]})
+    registry = ReportObjects(sink.snapshot())
+    compiled = compile_report_objects(
+        {
+            "title": "已有报告",
+            "sections": [
+                {
+                    "heading": "地区表现",
+                    "table": {"object_id": object_id(registry, "table", "table")},
+                }
+            ],
+        },
+        registry,
+        spec_mode=True,
+        fields=[],
+    )
+    state = {
+        "conv_id": sink.context.conv_uid,
+        "_report_artifact_sink": sink,
+        "_report_required_recommendation_count": 3,
+        "_report_saved_arguments": {"template_path": template, "data": compiled},
+    }
+    if invalid_draft is not None:
+        state["_report_object_spec"] = {"title": "旧草稿", "sections": invalid_draft}
+        state["_report_object_template"] = template
+    before = deepcopy(compiled["REPORT_SPEC"]["sections"])
+    calls = []
+
+    async def build(**kwargs):
+        contract = {"mode": "spec", "fields": []}
+        state["_report_template_contract"] = contract
+        _, _, patch = make_report_object_tools(
+            state,
+            make_html_interpreter(state, str(root / "skills")),
+            template,
+            contract,
+        )
+
+        async def generate_reply(**kwargs):
+            calls.append(True)
+            edits = (
+                {
+                    "replace_invalid_sections": [
+                        {
+                            "heading": "地区表现",
+                            "table": {
+                                "object_id": object_id(registry, "table", "table")
+                            },
+                        }
+                    ]
+                }
+                if invalid_draft is not None
+                else {"report": {"title": "新标题"}}
+            )
+            result = json.loads(await patch(render=False, **edits))
+            assert result["status"] == "staged", result
+            return SimpleNamespace(
+                success=False,
+                content="AGENT_STEP_LIMIT",
+                context={"execution_error": "AGENT_STEP_LIMIT"},
+            )
+
+        return SimpleNamespace(generate_reply=generate_reply)
+
+    monkeypatch.setattr(report_agent, "build_report_agent", build)
+    generate = report_agent.make_generate_report_tool(
+        react_state=state, skills_dir=str(root / "skills"), llm_client=object()
+    )
+    with bind_artifact_sink(sink):
+        result = json.loads(await generate(instructions="完成三条建议并生成报告"))
+    assert len(calls) == 1
+    expected = "draft_pending" if invalid_draft is not None else "failed"
+    assert result["status"] == expected, result
+    assert result["retryable"] is (invalid_draft is not None)
+    assert state["_report_object_spec"]["sections"] == before
 
 
 @pytest.mark.asyncio
