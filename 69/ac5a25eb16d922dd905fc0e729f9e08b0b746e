@@ -1,0 +1,20 @@
+packages/dbgpt-core/src/dbgpt/agent/expand/actions/tests/test_tool_calling_agent.py
+  h_34a7ec1e433c3e 209-236
+packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py
+  h_34a7ec1e433c3e 42-43
+packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py
+  h_34a7ec1e433c3e 106-107,160,162,281-302,304,326
+packages/dbgpt-core/src/dbgpt/agent/util/tests/test_react_parser.py
+  h_34a7ec1e433c3e 49-109,590-612
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "69ac5a25eb16d922dd905fc0e729f9e08b0b746e",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
