@@ -1,0 +1,34 @@
+docs/docs/getting-started/providers/deepseek.md
+  s_2eec25fdab4a67::t_b1656aca9ca229 73-77,79-81
+  s_2eec25fdab4a67::t_f7e970104a52ec 78,82
+docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/getting-started/providers/deepseek.md
+  s_2eec25fdab4a67::t_b1656aca9ca229 73-79
+  s_2eec25fdab4a67::t_f7e970104a52ec 80
+packages/dbgpt-core/src/dbgpt/model/proxy/tests/test_deepseek.py
+  s_2eec25fdab4a67::t_c06819d273c43e 3,7-8,10,102-126,132-140,142-147,151-155,157-167,177,179-190,299
+  s_2eec25fdab4a67::t_60122e88bcb41b 9,12-15,191-218,222-234,239-295,300-312
+  s_2eec25fdab4a67::t_3daa776c9fce04 178
+  s_2eec25fdab4a67::t_bbfbb8e3f4ff75 156
+  s_2eec25fdab4a67::t_29ac4fd1a18ccf 127-131,141,148-150,168-176,219-221,235-238,296-298
+  s_2eec25fdab4a67::t_a8d4c8e200d163 16
+  s_2eec25fdab4a67::t_b4b5c0410a2cbf 313-315
+packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py
+  s_2eec25fdab4a67::t_8d6c4f74616c15 1-2,176-184
+  s_2eec25fdab4a67::t_595a5cf03064b6 185-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5262d8fac7cc4673756f920a0752bdb664a2860f",
+  "prompts": {},
+  "sessions": {
+    "s_2eec25fdab4a67": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1beaa-b613-7183-90e3-45548843a68b",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
