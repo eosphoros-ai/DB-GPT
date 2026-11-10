@@ -113,6 +113,237 @@ async def test_table_kpis_report_every_location_and_scalar_choices(
 
 
 @pytest.mark.asyncio
+async def test_unknown_prose_value_offers_candidates_and_recovers_append(
+    monkeypatch, tmp_path
+):
+    from copy import deepcopy
+    from pathlib import Path
+
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="repair-prose-value"))
+    capture(sink, {"columns": ["orders"], "rows": [{"orders": 632}]})
+    registry = ReportObjects(sink.snapshot())
+    value = object_id(registry, "value", "rows.0.orders")
+    artifact_ids = {item.artifact_id for item in sink.snapshot()}
+    state = {"conv_id": sink.context.conv_uid, "_report_artifact_sink": sink}
+    tools = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([t._tool for t in tools])
+    staged = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report",
+            render=False,
+            report={"title": "经营报告"},
+            append_sections=[{"heading": "摘要", "intro": [["定性概览。"]]}],
+        )
+    )
+    assert staged["status"] == "staged"
+    before = deepcopy(state["_report_object_spec"])
+    section = {
+        "heading": "订单分析",
+        "intro": [
+            ["订单量为", {"object_id": "value-999c2******************"}, "。"],
+            ["复核值为", {"object_id": "value-" + "1" * 23}, "。"],
+        ],
+    }
+    rejected = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report", render=False, append_sections=[section]
+        )
+    )
+    assert rejected["status"] == "invalid_selection"
+    assert rejected["rejected_sections"] == [section]
+    assert state["_report_object_spec"] == before
+    assert "sections[0].intro[0][1]" in rejected["error"]
+    assert "sections[0].intro[1][1]" in rejected["error"]
+    assert rejected["error"].count('"available_values"') == 1
+    assert value in rejected["error"] and "rows.0.orders" in rejected["error"]
+    checkpoint = json.loads(
+        (tmp_path / "tmp/repair-prose-value/report-repair/checkpoint.json").read_text()
+    )
+    assert checkpoint["rejected_sections"] == [section]
+    assert checkpoint["object_spec"] == before
+
+    empty_append = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report", render=False, append_sections=[]
+        )
+    )
+    assert empty_append["status"] == "invalid_selection"
+    assert empty_append["rejected_sections"] == [section]
+    assert state["_report_rejected_sections"] == [section]
+
+    premature = json.loads(
+        await pack.async_execute(
+            resource_name="compose_report", data={"title": "不应覆盖草稿"}
+        )
+    )
+    assert premature["status"] == "invalid_selection"
+    assert premature["rejected_sections"] == [section]
+    assert state["_report_rejected_sections"] == [section]
+    checkpoint = json.loads(
+        (tmp_path / "tmp/repair-prose-value/report-repair/checkpoint.json").read_text()
+    )
+    assert checkpoint["rejected_sections"] == [section]
+
+    corrected = deepcopy(rejected["rejected_sections"])
+    for paragraph in corrected[0]["intro"]:
+        paragraph[1]["object_id"] = value
+    staged = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report", render=False, append_sections=corrected
+        )
+    )
+    assert staged["status"] == "staged"
+    assert not state.get("_report_rejected_sections")
+    assert {item.artifact_id for item in sink.snapshot()} == artifact_ids
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    assert completed["status"] == "completed", completed
+    assert "定性概览" in state["_report_presentation"]["content"]
+    assert "632" in state["_report_presentation"]["content"]
+    assert {item.artifact_id for item in sink.snapshot()} == artifact_ids
+
+
+@pytest.mark.asyncio
+async def test_rejected_append_restores_after_retry_exhaustion(monkeypatch, tmp_path):
+    from copy import deepcopy
+    from pathlib import Path
+
+    from dbgpt.agent.resource.tool.pack import ToolPack
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
+    monkeypatch.setattr(report_repair, "PILOT_PATH", str(tmp_path))
+    root = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
+    conv_id = "restore-rejected-prose"
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid=conv_id))
+    capture(sink, {"columns": ["orders"], "rows": [{"orders": 632}]})
+    registry = ReportObjects(sink.snapshot())
+    value = object_id(registry, "value", "rows.0.orders")
+    artifact_ids = {item.artifact_id for item in sink.snapshot()}
+    state = {"conv_id": conv_id, "_report_artifact_sink": sink}
+    tools = make_report_object_tools(
+        state,
+        make_html_interpreter(state, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([t._tool for t in tools])
+    assert (
+        json.loads(
+            await pack.async_execute(
+                resource_name="patch_report",
+                render=False,
+                report={"title": "经营报告"},
+                append_sections=[{"heading": "摘要", "intro": [["定性概览。"]]}],
+            )
+        )["status"]
+        == "staged"
+    )
+    section = {
+        "heading": "订单分析",
+        "intro": [["订单量为", {"object_id": "value-999c2******************"}, "。"]],
+    }
+    for attempt in range(2):
+        rejected = json.loads(
+            await pack.async_execute(
+                resource_name="patch_report", render=False, append_sections=[section]
+            )
+        )
+        assert rejected["status"] == "invalid_selection"
+        assert rejected["retryable"] is (attempt == 0)
+    assert state["_report_retry_exhausted"]
+
+    section["heading"] = "最新订单分析"
+    rejected = json.loads(
+        await pack.async_execute(
+            resource_name="patch_report", render=False, append_sections=[section]
+        )
+    )
+    assert rejected["status"] == "invalid_selection"
+    assert rejected["rejected_sections"] == [section]
+    assert state["_report_rejected_sections"] == [section]
+    checkpoint = json.loads(
+        (tmp_path / f"tmp/{conv_id}/report-repair/checkpoint.json").read_text()
+    )
+    assert checkpoint["rejected_sections"] == [section]
+
+    restored = {"conv_id": conv_id}
+    restored_sink = report_repair.restore_report_checkpoint(conv_id, restored)
+    assert restored_sink is not None
+    assert {item.artifact_id for item in restored_sink.snapshot()} == artifact_ids
+    assert restored["_report_rejected_sections"] == [section]
+    restored["_report_artifact_sink"] = restored_sink
+    tools = make_report_object_tools(
+        restored,
+        make_html_interpreter(restored, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([t._tool for t in tools])
+    corrected = deepcopy(restored["_report_rejected_sections"])
+    corrected[0]["intro"][0][1]["object_id"] = value
+    assert (
+        json.loads(
+            await pack.async_execute(
+                resource_name="patch_report",
+                render=False,
+                append_sections=corrected,
+            )
+        )["status"]
+        == "staged"
+    )
+    assert not restored.get("_report_rejected_sections")
+
+    # A checkpoint written before rejected_sections existed remains recoverable.
+    checkpoint_path = tmp_path / f"tmp/{conv_id}/report-repair/checkpoint.json"
+    checkpoint = json.loads(checkpoint_path.read_text())
+    checkpoint.pop("rejected_sections")
+    checkpoint_path.write_text(json.dumps(checkpoint))
+    legacy = {"conv_id": conv_id}
+    legacy_sink = report_repair.restore_report_checkpoint(conv_id, legacy)
+    assert legacy_sink is not None
+    assert legacy["_report_rejected_sections"] == []
+    assert len(legacy["_report_object_spec"]["sections"]) == 2
+    legacy["_report_artifact_sink"] = legacy_sink
+    tools = make_report_object_tools(
+        legacy,
+        make_html_interpreter(legacy, str(root / "skills")),
+        "business-report/templates/business_report.html",
+        {"mode": "spec", "fields": []},
+    )
+    pack = ToolPack([t._tool for t in tools])
+    completed = json.loads(await pack.async_execute(resource_name="compose_report"))
+    assert completed["status"] == "completed", completed
+    assert "632" in legacy["_report_presentation"]["content"]
+    assert {item.artifact_id for item in legacy_sink.snapshot()} == artifact_ids
+
+
+def test_rejected_section_retention_is_bounded():
+    from dbgpt_app.openapi.api_v1.tools import report_repair
+
+    section = {"heading": "订单分析", "intro": [["定性说明。"]]}
+    retained = report_repair._bounded_rejected_sections([section])
+    assert retained == [section]
+    assert retained is not section and retained[0] is not section
+    oversized = {"heading": "订" * report_repair.MAX_REJECTED_SECTION_BYTES}
+    assert report_repair._bounded_rejected_sections([oversized]) is None
+    too_deep = {"intro": ["定性说明。"]}
+    for _ in range(report_repair.MAX_REJECTED_SECTION_DEPTH + 1):
+        too_deep = {"intro": [too_deep]}
+    assert report_repair._bounded_rejected_sections([too_deep]) is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("unknown", ["intro", "note", "table", "chart", "title"])
 async def test_public_repair_rejects_unknown_arguments_and_renders_corrections(
     monkeypatch, tmp_path, unknown

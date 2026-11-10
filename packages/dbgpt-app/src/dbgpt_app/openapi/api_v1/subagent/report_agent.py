@@ -968,6 +968,20 @@ def make_generate_report_tool(
                 "实际修复使用 list_report_objects、patch_report 和 compose_report "
                 "的 object_id 契约。"
             )
+        rejected_sections = react_state.get("_report_rejected_sections")
+        if rejected_sections:
+            rejected_json = json.dumps(rejected_sections, ensure_ascii=False)
+            message += "\n上次被对象校验拒绝的章节仅用于定点修复。"
+            if len(rejected_json) <= REPORT_AGENT_RESULT_MAX_CHARS:
+                message += rejected_json
+            else:
+                message += "候选内容较大，按最新错误位置重写相关段落。"
+            message += (
+                "\n优先使用最新错误 available_values 中的真实 object_id，"
+                "或调用 list_report_objects 精确筛选；没有合适对象时，"
+                "将相关段落改写为定性结论，统计值由 KPI、表格和图表展示。"
+                "只重交被拒绝的章节，不改写已暂存内容，不重跑分析。"
+            )
         if react_state.get("_report_language") == "en":
             message += (
                 "\nThe user's report language is English. Write the entire report "
