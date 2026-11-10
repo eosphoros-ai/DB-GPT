@@ -1,5 +1,8 @@
 """Keep explicitly configured CLI backends compatible with agent workspaces."""
 
+import asyncio
+import contextlib
+import sys
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -68,3 +71,57 @@ async def test_failed_cli_session_is_cleaned_before_error(backend, monkeypatch):
         await runtime.create_session("test", SessionConfig())
     session.stop.assert_awaited_once_with()
     assert runtime.sessions == {}
+
+
+async def _start_sleeping_cli_command(module, monkeypatch, timeout=None):
+    """Run a long-lived command through ``_run_cmd`` and return its process."""
+    spawn = asyncio.create_subprocess_exec
+    spawned = []
+    started = asyncio.Event()
+
+    async def record_spawn(*args, **kwargs):
+        proc = await spawn(*args, **kwargs)
+        spawned.append(proc)
+        started.set()
+        return proc
+
+    monkeypatch.setattr(module.asyncio, "create_subprocess_exec", record_spawn)
+    task = asyncio.create_task(
+        module._run_cmd(
+            [sys.executable, "-c", "import time; time.sleep(60)"], timeout=timeout
+        )
+    )
+    await started.wait()
+    return task, spawned[0]
+
+
+@pytest.mark.asyncio
+async def test_cli_command_is_killed_when_request_is_cancelled(backend, monkeypatch):
+    module, _, _ = backend
+    task, proc = await _start_sleeping_cli_command(module, monkeypatch)
+    try:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        # Killed and reaped by _run_cmd, not left running after the request.
+        assert proc.returncode is not None
+    finally:
+        if proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            await proc.wait()
+
+
+@pytest.mark.asyncio
+async def test_cli_command_is_killed_on_timeout(backend, monkeypatch):
+    module, _, _ = backend
+    task, proc = await _start_sleeping_cli_command(module, monkeypatch, timeout=0.1)
+    try:
+        with pytest.raises(asyncio.TimeoutError):
+            await task
+        assert proc.returncode is not None
+    finally:
+        if proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            await proc.wait()

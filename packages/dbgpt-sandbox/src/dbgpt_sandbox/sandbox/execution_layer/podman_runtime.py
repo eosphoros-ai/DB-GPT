@@ -32,9 +32,14 @@ async def _run_cmd(
     )
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        with contextlib.suppress(ProcessLookupError):
-            proc.kill()
+    except (asyncio.TimeoutError, asyncio.CancelledError):
+        # A cancelled request (client disconnect, server shutdown) must not
+        # leave the CLI process running, so clean up on cancellation as well
+        # as on timeout. Wait for the process so it is reaped, not orphaned.
+        if proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            await proc.wait()
         raise
     return (
         proc.returncode,
