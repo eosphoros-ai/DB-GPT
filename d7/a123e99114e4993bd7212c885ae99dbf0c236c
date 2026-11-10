@@ -1,0 +1,38 @@
+.planning/research/v0.8.2-release-verification.md
+  h_34a7ec1e433c3e 1-197
+Released_V0.8.1.md
+  h_34a7ec1e433c3e 1-252
+Released_V0.8.1_CC.md
+  h_34a7ec1e433c3e 1-252
+Released_V0.8.1_zh-CN.md
+  h_34a7ec1e433c3e 1-252
+Released_V0.8.1_zh-CN_CC.md
+  h_34a7ec1e433c3e 1-252
+Released_V0.8.1_zh-CN_optimized.md
+  h_34a7ec1e433c3e 1-252
+docs/ppt-generation-industry-research.md
+  h_34a7ec1e433c3e 1-198
+docs/references-final-content-leak-diagnosis_zh.md
+  h_34a7ec1e433c3e 1-581
+docs/script-source-echo-leak-diagnosis_zh.md
+  h_34a7ec1e433c3e 1-213
+docs/开源之夏课题建议.md
+  h_34a7ec1e433c3e 1-143
+ospp-db-gpt-topics.md
+  h_34a7ec1e433c3e 1-457
+pr-3348-review-report.html
+  h_34a7ec1e433c3e 1-443
+v0.8.2_github_commit_drat.md
+  h_34a7ec1e433c3e 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d7a123e99114e4993bd7212c885ae99dbf0c236c",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
