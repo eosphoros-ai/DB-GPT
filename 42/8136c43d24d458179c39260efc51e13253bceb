@@ -1,0 +1,14 @@
+tests/unit_tests/agent/test_github_import.py
+  h_34a7ec1e433c3e 1-312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "428136c43d24d458179c39260efc51e13253bceb",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
