@@ -103,7 +103,8 @@ class ReActOutputParser:
     Parser for ReAct format model outputs with configurable prefixes.
     This parser extracts structured information from language model outputs
     that follow the ReAct pattern: Thought -> Phase -> Action -> Action Input
-    -> Observation.
+    -> Observation. Qwen-style ``Arguments:`` labels are accepted as aliases
+    for the configured action-input prefix.
     """
 
     def __init__(
@@ -156,9 +157,9 @@ class ReActOutputParser:
         return rf"^[ \t]*{escaped_prefix}\s*"
 
     def _markdown_fence_spans(self, text: str) -> List[tuple[int, int]]:
-        """Return markdown fenced-code spans so ReAct labels inside are ignored."""
+        """Return LF/CRLF fenced-code spans so embedded ReAct labels stay inert."""
         fence_pattern = re.compile(
-            r"^[ \t]*(```+|~~~+)[^\n]*\n.*?^[ \t]*\1[ \t]*$",
+            r"^[ \t]*(```+|~~~+)[^\n]*\n.*?^[ \t]*\1[ \t]*\r?$",
             re.DOTALL | re.MULTILINE,
         )
         return [match.span() for match in fence_pattern.finditer(text)]
@@ -277,8 +278,30 @@ class ReActOutputParser:
             return text
         return "".join(pieces) + candidate[cursor:]
 
+    def _translate_arguments_alias(self, text: str) -> str:
+        """Map plain or bold ``Arguments:`` to the action-input label."""
+        if "Arguments" not in text:
+            return text
+        fence_spans = self._markdown_fence_spans(text)
+        pattern = re.compile(
+            rf"(?P<head>^[ \t]*{self.action_prefix_escaped}[^\r\n]*\r?\n"
+            rf"(?:[ \t]*\r?\n)*)"
+            rf"(?P<indent>[ \t]*)(?:Arguments:|\*\*Arguments\*\*:)",
+            re.MULTILINE,
+        )
+
+        def _render(match: "re.Match[str]") -> str:
+            if self._is_in_spans(match.start(), fence_spans):
+                return match.group(0)
+            return (
+                f"{match.group('head')}{match.group('indent')}"
+                f"{self.action_input_prefix}"
+            )
+
+        return pattern.sub(_render, text)
+
     def _normalize_react_text(self, text: str) -> str:
-        """Normalize common wrappers before ReAct parsing."""
+        """Normalize wrappers and the ``Arguments:`` alias before ReAct parsing."""
         if not text:
             return text
 
@@ -300,6 +323,7 @@ class ReActOutputParser:
         text = _SPECIAL_TOKEN_PATTERN.sub("", text)
         text = self._strip_vis_thinking_blocks(text)
         text = self._strip_markdown_code_fence(text)
+        text = self._translate_arguments_alias(text)
         stripped = text.lstrip()
         fence = "`" * 6
         opening = f"{fence}{VisThinking.vis_tag()}"

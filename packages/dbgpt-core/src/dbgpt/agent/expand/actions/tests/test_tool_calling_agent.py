@@ -207,6 +207,34 @@ async def test_text_batch_preparse_returns_parser_failure():
 
 
 @pytest.mark.asyncio
+async def test_native_fallback_executes_arguments_alias():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    out = await agent.act(
+        AgentMessage(content='Action: add\nArguments: {"a":1,"b":2}'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success, out.content
+    assert out.action == "add"
+    assert out.observations == "3"
+
+
+@pytest.mark.asyncio
+async def test_native_fallback_executes_bold_arguments_with_crlf_blank_line():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    out = await agent.act(
+        AgentMessage(content='**Action**: add\r\n\r\n**Arguments**: {"a":1,"b":2}'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert out.is_exe_success, out.content
+    assert out.action == "add"
+    assert out.observations == "3"
+
+
+@pytest.mark.asyncio
 async def test_native_fallback_preserves_explicit_text_batch_pairs():
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True

@@ -39,6 +39,8 @@ Do not output an empty string!
 # RESPONSE FORMAT #
 Use the supplied native functions for actions, with JSON arguments.
 Call a function to perform the next step; use intention/thought for a short explanation.
+When a textual ReAct response is produced, use exactly "Action: <tool_name>" and
+"Action Input: <JSON object>"; never use "Arguments:" as the parameter label.
 When the task is complete, call terminate with the final answer in output.
 {% else %}
 {{ action_space }}

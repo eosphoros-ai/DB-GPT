@@ -46,6 +46,67 @@ Action Input: {"operation": "add", "a": 2, "b": 2}"""
         assert steps[0].observation is None
         assert steps[0].is_terminal is False
 
+    @pytest.mark.parametrize("newline", ["\n", "\r\n"])
+    @pytest.mark.parametrize("blank_lines", [0, 1, 2])
+    def test_arguments_alias_for_action_input(self, newline, blank_lines):
+        """Arguments aliases work with LF/CRLF and optional blank lines."""
+        parser = ReActOutputParser()
+        text = (
+            "Thought: Read the knowledge-base metric definitions."
+            + newline
+            + "Action: kb_cat"
+            + newline * (blank_lines + 1)
+            + 'Arguments: {"path": "olist-analytics-metric-governance.md"}'
+        )
+
+        steps = parser.parse_current_step(text)
+
+        assert len(steps) == 1
+        assert steps[0].action == "kb_cat"
+        assert steps[0].action_input == {"path": "olist-analytics-metric-governance.md"}
+
+    def test_bold_arguments_alias_for_action_input(self):
+        parser = ReActOutputParser()
+        text = (
+            "**Thought**: Read the knowledge-base metric definitions.\n"
+            "**Action**: kb_cat\n"
+            '**Arguments**: {"path": "olist-analytics-metric-governance.md"}'
+        )
+
+        steps = parser.parse_current_step(text)
+
+        assert len(steps) == 1
+        assert steps[0].action == "kb_cat"
+        assert steps[0].action_input == {"path": "olist-analytics-metric-governance.md"}
+
+    def test_crlf_action_input_remains_supported(self):
+        """The canonical protocol keeps working with Windows line endings."""
+        parser = ReActOutputParser()
+        text = (
+            "Thought: I should calculate 2+2.\r\n"
+            "Action: calculator\r\n"
+            'Action Input: {"operation": "add", "a": 2, "b": 2}\r\n'
+            "Observation: 4"
+        )
+
+        steps = parser.parse(text)
+
+        assert len(steps) == 1
+        assert steps[0].action == "calculator"
+        assert steps[0].action_input == {"operation": "add", "a": 2, "b": 2}
+        assert steps[0].observation == "4"
+
+    def test_arguments_alias_uses_custom_input_prefix(self):
+        parser = ReActOutputParser(action_prefix="Do:", action_input_prefix="With:")
+        text = """Do: calculate
+Arguments: {"x": 5, "y": 10}"""
+
+        steps = parser.parse_current_step(text)
+
+        assert len(steps) == 1
+        assert steps[0].action == "calculate"
+        assert steps[0].action_input == {"x": 5, "y": 10}
+
     def test_parsing_with_observation(self):
         """Test parsing with observation included."""
         parser = ReActOutputParser()
@@ -525,6 +586,29 @@ Action Input: {"demo": true}
         assert steps[0].action == "CreateFile"
         assert "Thought: this is documentation" in steps[0].action_input
         assert "Action: example_tool" in steps[0].action_input
+
+    @pytest.mark.parametrize("newline", ["\n", "\r\n"])
+    def test_arguments_label_inside_action_input_code_fence_is_preserved(self, newline):
+        """Compatibility rewriting must not alter fenced tool payloads."""
+        parser = ReActOutputParser()
+        text = newline.join(
+            [
+                "Thought: I need to create a prompt file.",
+                "Action: CreateFile",
+                'Action Input: CreateFile(filepath="prompt.txt"):',
+                "```",
+                "Action: example_tool",
+                'Arguments: {"demo": true}',
+                "```",
+                "",
+            ]
+        )
+
+        steps = parser.parse(text)
+
+        assert len(steps) == 1
+        assert steps[0].action == "CreateFile"
+        assert 'Arguments: {"demo": true}' in steps[0].action_input
 
     def test_special_tokens_leaked_as_text_are_stripped(self):
         """Model servers may leak inference special tokens (e.g. Kimi
