@@ -1,0 +1,24 @@
+.planning/report-performance-20261109/deepseek-live-validation.json
+  s_2eec25fdab4a67::t_940b9a00ebe7d5 1-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "27b56522ffed9d82f414b9d7bc96ff0abb3d28a7",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  },
+  "sessions": {
+    "s_2eec25fdab4a67": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1beaa-b613-7183-90e3-45548843a68b",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
