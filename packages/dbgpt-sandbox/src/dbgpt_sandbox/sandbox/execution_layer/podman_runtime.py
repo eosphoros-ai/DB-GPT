@@ -19,6 +19,9 @@ from .base import (
     SessionConfig,
 )
 
+# Seconds to wait for a killed CLI process to close its pipes.
+_KILL_DRAIN_TIMEOUT = 5
+
 
 async def _run_cmd(
     cmd: List[str], timeout: Optional[int] = None, cwd: Optional[str] = None
@@ -35,11 +38,16 @@ async def _run_cmd(
     except (asyncio.TimeoutError, asyncio.CancelledError):
         # A cancelled request (client disconnect, server shutdown) must not
         # leave the CLI process running, so clean up on cancellation as well
-        # as on timeout. Wait for the process so it is reaped, not orphaned.
+        # as on timeout.
         if proc.returncode is None:
             with contextlib.suppress(ProcessLookupError):
                 proc.kill()
-            await proc.wait()
+        # Read what is left in the pipes so they reach EOF and the process
+        # is finalized. A pipe paused while communicate() was interrupted is
+        # otherwise never closed, and wait() would not return. Bounded in
+        # case another process still holds the pipes open.
+        with contextlib.suppress(asyncio.TimeoutError):
+            await asyncio.wait_for(proc.communicate(), timeout=_KILL_DRAIN_TIMEOUT)
         raise
     return (
         proc.returncode,

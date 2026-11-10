@@ -73,7 +73,12 @@ async def test_failed_cli_session_is_cleaned_before_error(backend, monkeypatch):
     assert runtime.sessions == {}
 
 
-async def _start_sleeping_cli_command(module, monkeypatch, timeout=None):
+_SLEEP = "import time; time.sleep(60)"
+# Writes until killed, so stdout is still full when ``_run_cmd`` is interrupted.
+_FLOOD = "import os\nwhile True: os.write(1, b'x' * 65536)"
+
+
+async def _start_cli_command(module, monkeypatch, code=_SLEEP, timeout=None):
     """Run a long-lived command through ``_run_cmd`` and return its process."""
     spawn = asyncio.create_subprocess_exec
     spawned = []
@@ -87,9 +92,7 @@ async def _start_sleeping_cli_command(module, monkeypatch, timeout=None):
 
     monkeypatch.setattr(module.asyncio, "create_subprocess_exec", record_spawn)
     task = asyncio.create_task(
-        module._run_cmd(
-            [sys.executable, "-c", "import time; time.sleep(60)"], timeout=timeout
-        )
+        module._run_cmd([sys.executable, "-c", code], timeout=timeout)
     )
     await started.wait()
     return task, spawned[0]
@@ -98,7 +101,7 @@ async def _start_sleeping_cli_command(module, monkeypatch, timeout=None):
 @pytest.mark.asyncio
 async def test_cli_command_is_killed_when_request_is_cancelled(backend, monkeypatch):
     module, _, _ = backend
-    task, proc = await _start_sleeping_cli_command(module, monkeypatch)
+    task, proc = await _start_cli_command(module, monkeypatch)
     try:
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -115,7 +118,7 @@ async def test_cli_command_is_killed_when_request_is_cancelled(backend, monkeypa
 @pytest.mark.asyncio
 async def test_cli_command_is_killed_on_timeout(backend, monkeypatch):
     module, _, _ = backend
-    task, proc = await _start_sleeping_cli_command(module, monkeypatch, timeout=0.1)
+    task, proc = await _start_cli_command(module, monkeypatch, timeout=0.1)
     try:
         with pytest.raises(asyncio.TimeoutError):
             await task
@@ -125,3 +128,31 @@ async def test_cli_command_is_killed_on_timeout(backend, monkeypatch):
             with contextlib.suppress(ProcessLookupError):
                 proc.kill()
             await proc.wait()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interrupt", ["cancel", "timeout"])
+async def test_cli_cleanup_does_not_hang_on_full_pipes(backend, monkeypatch, interrupt):
+    module, _, _ = backend
+    timeout = 0.5 if interrupt == "timeout" else None
+    task, proc = await _start_cli_command(
+        module, monkeypatch, code=_FLOOD, timeout=timeout
+    )
+    try:
+        if interrupt == "cancel":
+            await asyncio.sleep(0.5)
+            task.cancel()
+        expected = (
+            asyncio.CancelledError if interrupt == "cancel" else asyncio.TimeoutError
+        )
+        done, _ = await asyncio.wait({task}, timeout=10)
+        assert task in done, "_run_cmd did not return after killing the process"
+        with pytest.raises(expected):
+            task.result()
+        assert proc.returncode is not None
+    finally:
+        if not task.done():
+            task.cancel()
+        if proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
