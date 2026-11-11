@@ -87,6 +87,13 @@ class ToolPack(ResourcePack):
         tools = cast(List[Resource], _to_tool_list(resources))
         super().__init__(resources=tools, name=name, **kwargs)
 
+    def _index_resources(self, resources: List[Resource]) -> Dict[str, Resource]:
+        """Index the tools by name.
+
+        The tool name is what the LLM calls, so tools keep their own name as the key.
+        """
+        return {resource.name: resource for resource in resources}
+
     @classmethod
     def from_resource(
         cls: Type[T],

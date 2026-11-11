@@ -6,9 +6,12 @@ together.
 
 import copy
 import dataclasses
+import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from .base import Resource, ResourceParameters, ResourceType
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -29,16 +32,37 @@ class ResourcePack(Resource[PackResourceParameters]):
         **kwargs,
     ):
         """Initialize the resource pack."""
-        self._resources: Dict[str, Resource] = {
-            resource.name: resource for resource in resources
-        }
         self._name = name
+        self._resources: Dict[str, Resource] = self._index_resources(resources)
         self._prompt_separator = prompt_separator
 
     @classmethod
     def type(cls) -> ResourceType:
         """Return the resource type."""
         return ResourceType.Pack
+
+    def _index_resources(self, resources: List[Resource]) -> Dict[str, Resource]:
+        """Index the resources by name without dropping any of them.
+
+        Resources configured in an app often share a name (the editor gives every
+        new resource the same default name), so a resource whose name is already
+        taken is stored under the first free ``<name>_<n>`` key instead of
+        replacing the earlier one.
+        """
+        indexed: Dict[str, Resource] = {}
+        for resource in resources:
+            key = resource.name
+            suffix = 1
+            while key in indexed:
+                key = f"{resource.name}_{suffix}"
+                suffix += 1
+            if key != resource.name:
+                logger.warning(
+                    f"Duplicate resource name '{resource.name}' in resource pack "
+                    f"'{self._name}', keeping it as '{key}'."
+                )
+            indexed[key] = resource
+        return indexed
 
     @property
     def name(self) -> str:
