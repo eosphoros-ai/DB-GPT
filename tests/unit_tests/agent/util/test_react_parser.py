@@ -4,7 +4,7 @@ Unit tests for the ReActOutputParser using pytest.
 
 import pytest
 
-from ..react_parser import ReActOutputParser, extract_terminate_output
+from dbgpt.agent.util.react_parser import ReActOutputParser, extract_terminate_output
 
 
 @pytest.mark.parametrize(
