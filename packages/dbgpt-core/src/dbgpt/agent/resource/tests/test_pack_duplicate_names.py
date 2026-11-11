@@ -12,6 +12,8 @@ import dataclasses
 import json
 from typing import Any, Dict, Optional, Tuple, Type
 
+import pytest
+
 from dbgpt.component import SystemApp
 
 from ..base import AgentResource, Resource, ResourceParameters, ResourceType
@@ -121,6 +123,30 @@ def test_suffix_skips_names_of_later_resources():
     assert pack._get_resource_by_name("kb") is second
     assert pack._get_resource_by_name("kb_2") is first
     assert pack.sub_resources == [first, second, named_kb_1]
+
+
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_append_moves_a_generated_key_out_of_the_way(overwrite):
+    """Appending a resource really named like a generated key keeps everything."""
+    first = _SpaceResource("kb", "a")
+    second = _SpaceResource("kb", "b")
+    named_kb_1 = _SpaceResource("kb_1", "c")
+    pack = ResourcePack([first, second])
+
+    pack.append(named_kb_1, overwrite=overwrite)
+
+    assert pack._get_resource_by_name("kb_1") is named_kb_1
+    assert pack._get_resource_by_name("kb") is second
+    assert pack._get_resource_by_name("kb_2") is first
+    assert pack.sub_resources == [first, second, named_kb_1]
+
+
+def test_append_still_rejects_a_real_duplicate():
+    """Appending a resource whose name is really used still raises."""
+    pack = ResourcePack([_SpaceResource("kb", "a")])
+
+    with pytest.raises(ValueError):
+        pack.append(_SpaceResource("kb", "b"))
 
 
 def test_distinct_names_are_unchanged():

@@ -150,7 +150,20 @@ class ResourcePack(Resource[PackResourceParameters]):
     def append(self, resource: Resource, overwrite: bool = False):
         """Append a resource to the pack."""
         name = resource.name
-        if name in self._resources and not overwrite:
+        existing = self._resources.get(name)
+        if existing is not None and existing.name != name:
+            # ``name`` is only the key generated for a same-named duplicate, move
+            # that duplicate to another free key.
+            taken = set(self._resources)
+            taken.update(r.name for r in self._resources.values())
+            taken.add(name)
+            new_key = unique_resource_key(existing.name, taken)
+            self._resources = {
+                (new_key if key == name else key): value
+                for key, value in self._resources.items()
+            }
+            existing = None
+        if existing is not None and not overwrite:
             raise ValueError(f"Resource {name} already exists in the pack.")
         self._resources[name] = resource
 
