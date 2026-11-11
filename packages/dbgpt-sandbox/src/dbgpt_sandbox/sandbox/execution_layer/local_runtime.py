@@ -5,6 +5,7 @@
 import asyncio
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -39,6 +40,29 @@ def _bash_executable() -> str:
                 if executable.is_file():
                     return str(executable)
     return shutil.which("bash") or "bash"
+
+
+def _kill_session_leader(pid: int) -> None:
+    """Immediately kill a session-leader child and everything it started.
+
+    A descendant whose parent already exited is re-parented away from the
+    child, so a parent/children walk cannot find it; it keeps the child's
+    process group, though. Descendants that left the group (``setsid``) are
+    still children, so snapshot them before the group kill orphans them.
+    """
+    try:
+        descendants = psutil.Process(pid).children(recursive=True)
+    except psutil.NoSuchProcess:
+        descendants = []
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    for descendant in descendants:
+        try:
+            descendant.kill()
+        except psutil.NoSuchProcess:
+            pass
 
 
 class LocalSandboxSession(SandboxSession):
@@ -254,6 +278,8 @@ class LocalSandboxSession(SandboxSession):
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.work_dir,
                 env=environment,
+                # Own process group, so cleanup can reach every descendant.
+                start_new_session=os.name != "nt",
             )
 
             # 记录进程 PID
@@ -299,9 +325,12 @@ class LocalSandboxSession(SandboxSession):
             # Also runs on cancellation; never leave a timed-out tool running.
             if process is not None:
                 if process.returncode is None:
-                    await asyncio.to_thread(
-                        self.process_manager.kill_process_tree, process.pid
+                    kill = (
+                        self.process_manager.kill_process_tree
+                        if os.name == "nt"
+                        else _kill_session_leader
                     )
+                    await asyncio.to_thread(kill, process.pid)
                     await process.wait()
                 if process.pid in self.process_pool:
                     self.process_pool.remove(process.pid)
