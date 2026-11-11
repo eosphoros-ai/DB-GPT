@@ -172,13 +172,20 @@ async def test_stop_kills_descendants_of_a_running_execution(tmp_path):
 
 
 class _FakeDescendant:
-    def __init__(self, pid, events, error=None):
+    def __init__(self, pid, events, error=None, suspend_error=None, running=True):
         self.pid = pid
         self._events = events
         self._error = error
+        self._suspend_error = suspend_error
+        self._running = running
 
     def suspend(self):
         self._events.append(("suspend", self.pid))
+        if self._suspend_error:
+            raise self._suspend_error
+
+    def is_running(self):
+        return self._running
 
     def kill(self):
         self._events.append(("kill", self.pid))
@@ -236,6 +243,45 @@ def test_cleanup_freezes_group_and_survives_denied_kill(monkeypatch):
         ("killpg", 12, signal.SIGKILL),
         ("kill", 12),
         ("reap", (11, 12)),
+    ]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
+def test_cleanup_never_signals_a_reused_group_id(monkeypatch):
+    """A leader whose PID may have been reused is not group-killed."""
+    events = []
+    descendants = [
+        # Stopped and led its own group, but its PID now names another process.
+        _FakeDescendant(12, events, running=False),
+        # Could not be stopped, so it may exit and its PID be reused.
+        _FakeDescendant(13, events, suspend_error=psutil.AccessDenied(13)),
+    ]
+
+    class FakeProcess:
+        def __init__(self, pid):
+            pass
+
+        def children(self, recursive):
+            return descendants
+
+    monkeypatch.setattr(local_runtime.psutil, "Process", FakeProcess)
+    monkeypatch.setattr(
+        local_runtime.os,
+        "killpg",
+        lambda pgid, signum: events.append(("killpg", pgid, signum)),
+        raising=False,
+    )
+    monkeypatch.setattr(local_runtime.os, "getpgid", lambda pid: pid)
+    monkeypatch.setattr(
+        local_runtime.psutil, "wait_procs", lambda procs, timeout: (list(procs), [])
+    )
+
+    local_runtime._kill_session_leader(10)
+
+    group_kills = [e for e in events if e[0] == "killpg"]
+    assert group_kills == [
+        ("killpg", 10, signal.SIGSTOP),
+        ("killpg", 10, signal.SIGKILL),
     ]
 
 

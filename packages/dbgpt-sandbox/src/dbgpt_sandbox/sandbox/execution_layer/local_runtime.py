@@ -67,6 +67,12 @@ def _kill_session_leader(pid: int) -> None:
     its own group is killed together with that group. A descendant that
     forks in the window between the snapshot and its own stop can still
     escape; local mode is not a security boundary.
+
+    A group is only signalled by a descendant's PID if that descendant was
+    stopped, led its own group while stopped, and is still the same process
+    (PID and creation time) right before the kill. A stopped process cannot
+    exit by itself, so its PID cannot be reaped and reused by an unrelated
+    process group in between.
     """
     _signal_group(pid, signal.SIGSTOP)
     try:
@@ -77,18 +83,27 @@ def _kill_session_leader(pid: int) -> None:
         # e.g. /proc mounted with hidepid; the group kill must still happen.
         logger.warning("Cannot list sandbox processes of %s", pid, exc_info=True)
         descendants = []
+    stopped = []
     for descendant in descendants:
         try:
             descendant.suspend()
         except psutil.Error:
+            continue
+        stopped.append(descendant)
+    # Read group leadership before the group kill, while everything is stopped.
+    leaders = []
+    for descendant in stopped:
+        try:
+            if os.getpgid(descendant.pid) == descendant.pid:
+                leaders.append(descendant)
+        except OSError:
             pass
     _signal_group(pid, signal.SIGKILL)
     for descendant in descendants:
-        try:
-            if os.getpgid(descendant.pid) == descendant.pid:
-                _signal_group(descendant.pid, signal.SIGKILL)
-        except OSError:
-            pass
+        # is_running() also compares the creation time, so a PID that was
+        # reaped and reused by an unrelated process never gets a group kill.
+        if descendant in leaders and descendant.is_running():
+            _signal_group(descendant.pid, signal.SIGKILL)
         try:
             descendant.kill()
         except psutil.NoSuchProcess:
