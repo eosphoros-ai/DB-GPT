@@ -88,19 +88,26 @@ class ResourcePack(Resource[PackResourceParameters]):
     def _index_resources(self, resources: List[Resource]) -> Dict[str, Resource]:
         """Index the resources by name without dropping any of them.
 
-        A resource whose name is already taken is stored under the first free
-        ``<name>_<n>`` key instead of replacing the earlier one.
+        When several resources share a name, the last one keeps the plain name, so
+        execution by name still reaches the same resource as before. The earlier ones
+        are stored under the first ``<name>_<n>`` key that is not the name of any
+        resource in the pack. The pack keeps the order the resources were given in.
         """
-        indexed: Dict[str, Resource] = {}
-        for resource in resources:
-            key = unique_resource_key(resource.name, indexed)
-            if key != resource.name:
+        last_index = {resource.name: i for i, resource in enumerate(resources)}
+        taken = set(last_index)
+        keys: List[str] = []
+        for i, resource in enumerate(resources):
+            if last_index[resource.name] == i:
+                key = resource.name
+            else:
+                key = unique_resource_key(resource.name, taken)
+                taken.add(key)
                 logger.warning(
                     f"Duplicate resource name '{resource.name}' in resource pack "
                     f"'{self._name}', keeping it as '{key}'."
                 )
-            indexed[key] = resource
-        return indexed
+            keys.append(key)
+        return dict(zip(keys, resources))
 
     @property
     def name(self) -> str:

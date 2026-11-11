@@ -99,16 +99,28 @@ def test_build_resource_keeps_same_named_resources():
     assert [r._space_name for r in pack.sub_resources] == ["time", "location"]
 
 
-def test_first_resource_keeps_plain_name_key():
-    """The first resource keeps its name; later ones get the first free suffix."""
+def test_last_duplicate_keeps_plain_name_key():
+    """The last duplicate keeps the plain name, so execution routing is unchanged."""
     first = _SpaceResource("kb", "a")
     second = _SpaceResource("kb", "b")
-    taken = _SpaceResource("kb_1", "c")
-    pack = ResourcePack([first, taken, second])
+    pack = ResourcePack([first, second])
 
-    assert pack._get_resource_by_name("kb") is first
-    assert pack._get_resource_by_name("kb_1") is taken
-    assert pack._get_resource_by_name("kb_2") is second
+    assert pack._get_resource_by_name("kb") is second
+    assert pack._get_resource_by_name("kb_1") is first
+    assert pack.sub_resources == [first, second]
+
+
+def test_suffix_skips_names_of_later_resources():
+    """A suffixed key never takes the name of another resource in the pack."""
+    first = _SpaceResource("kb", "a")
+    second = _SpaceResource("kb", "b")
+    named_kb_1 = _SpaceResource("kb_1", "c")
+    pack = ResourcePack([first, second, named_kb_1])
+
+    assert pack._get_resource_by_name("kb_1") is named_kb_1
+    assert pack._get_resource_by_name("kb") is second
+    assert pack._get_resource_by_name("kb_2") is first
+    assert pack.sub_resources == [first, second, named_kb_1]
 
 
 def test_distinct_names_are_unchanged():
@@ -134,8 +146,8 @@ def test_tool_pack_still_keys_tools_by_name():
     tool_b = FunctionTool("search", second)
     pack = ToolPack([tool_a, tool_b])
 
-    assert list(pack._resources) == ["search"]
-    assert pack._resources["search"] is tool_b
+    assert pack.sub_resources == [tool_b]
+    assert pack.execute(resource_name="search") == "second"
 
 
 def test_pack_merges_references_of_every_knowledge_resource():
