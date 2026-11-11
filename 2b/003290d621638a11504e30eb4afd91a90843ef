@@ -1,0 +1,18 @@
+docs/docs/design/traceable_analysis_report.md
+  h_34a7ec1e433c3e 138
+web/new-components/report/report-print.test.ts
+  h_34a7ec1e433c3e 1-40
+web/new-components/report/report-print.ts
+  h_34a7ec1e433c3e 12-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2b003290d621638a11504e30eb4afd91a90843ef",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
