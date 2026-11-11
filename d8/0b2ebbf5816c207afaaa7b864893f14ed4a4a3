@@ -1,0 +1,218 @@
+.gitignore
+  h_34a7ec1e433c3e 220
+packages/dbgpt-app/src/dbgpt_app/static/web/404.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/404/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1055.a2fd8eefe2f29193.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1081.c294accab59f3122.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1090-5ea31d7765c9b5fa.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1095-6bc9b7cc501f5b6a.js
+  h_34a7ec1e433c3e 1-19
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1124-f758b8b17224f276.js
+  h_34a7ec1e433c3e 1-3
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1174317d.ead5f4e3d7f0d78e.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1182.10e80f519b7610ed.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1196.2363d229968172e8.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1219-84e27e774a86f2c7.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1260.6edb9ea86951f8dc.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1262-f8cab486cb4e9024.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1388.5c6662dcf23cc7dd.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1399-267e9809340007fc.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1556.5216cf4b938c043e.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/158-66505fa4181a886a.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1580.51ccd186e4358c95.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1660.52f2d52f369e5b9a.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1769-f1d07d27489294e5.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1772.1d14c9f611e9e582.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/189-a0e6d04777781861.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1903.9264ba8f8f2c40ed.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1938.3320a31dcda3fdd1.js
+  h_34a7ec1e433c3e 1-6,45,52-53,170-171,295,405,407,409,411,413-417,419-420,422-423,425-435,437-443,449-455,469-479,483,488-500
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1957-1cf9b8cb2207ccb3.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/1d2671aa-dd34df253b6653ec.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2047.6ad88ff465fa21a6.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2075-93909b18c1006104.js
+  h_34a7ec1e433c3e 1-13
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2090.4f003be5761a72aa.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2176-418d779109e897ed.js
+  h_34a7ec1e433c3e 1,10-13
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2255-be8371c9e3b36d7a.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2276-ae86e0f2b8447dae.js
+  h_34a7ec1e433c3e 1-52
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2292-d8649eba41eb88df.js
+  h_34a7ec1e433c3e 1-38
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2297.23a994ff6a60041c.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2418-b4f7cfdb0c02d257.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2448.c64b0ff6f6a2b92d.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/chunks/2476-699dbf4ab28b8fe1.js
+  h_34a7ec1e433c3e 1,3-8,10
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/editor.worker.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/mysql.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/mysql.js.LICENSE.txt
+  h_34a7ec1e433c3e 827-831,3047,3051-3052,3055,3057,3061,3063,3259,3263-3264,3281,3283-3287,5305-5307,5309,5883,5885,5887,5889,5891,5893,5895,5897,6457,6459,6465,6467,8809,10273-10274,11045,11517-11518,12443,12479,12481,12483,12485,12487,12489,12491-12495,16221-16223,16229,16233,16235
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/obmysql.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/obmysql.js.LICENSE.txt
+  h_34a7ec1e433c3e 827-831,3047,3051-3052,3055,3057,3061,3063,3259,3263-3264,3281,3283-3287,5305-5307,5309,5883,5885,5887,5889,5891,5893,5895,5897,6457,6459,6465,6467,8809,10273-10274,11045,11517-11518,12443,12479,12481,12483,12485,12487,12489,12491-12495,16221-16223,16229,16233,16235
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/oboracle.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/oboracle.js.LICENSE.txt
+  h_34a7ec1e433c3e 827-831,3047,3051-3052,3055,3057,3061,3063,3259,3263-3264,3281,3283-3287,5305-5307,5309,5883,5885,5887,5889,5891,5893,5895,5897,6457,6459,6465,6467,8809,10273-10274,11045,11517-11518,12443,12479,12481,12483,12485,12487,12489,12491-12495,16221-16223,16229,16233,16235
+packages/dbgpt-app/src/dbgpt_app/static/web/_next/static/ob-workers/oracle.js
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/chat/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/agent/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/components/create-app-modal/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/AwelLayout/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/NativeApp/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/RecommendQuestions/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/DetailsCard/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/PromptSelect/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/ResourceContent/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/ResourceContentV2/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/ResourcesCard/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/ResourcesCardV2/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/components/auto-plan/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/config/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/extra/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/app/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/connectors/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/database/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/dbgpts/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/flow/canvas/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/flow/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/flow/libro/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/knowledge/chunk/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/knowledge/detail/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/knowledge/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/models/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/prompt/add/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/prompt/edit/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/prompt/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/scheduled-tasks/[taskId]/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/scheduled-tasks/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/construct/skills/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/conversations/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/data_index/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/evaluation/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/knowledge/graph/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/ChatDialog/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/Content/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/DislikeDrawer/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/Feedback/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/Header/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/InputContainer/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/ModelSelector/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/OptionIcon/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/Resource/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/components/Thermometer/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/mobile/chat/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/models_evaluation/[code]/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/models_evaluation/datasets/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/models_evaluation/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/observability/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/observability/traces/[traceId]/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/observability/traces/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/playground/index.html
+  h_34a7ec1e433c3e 1
+packages/dbgpt-app/src/dbgpt_app/static/web/share/[token]/index.html
+  h_34a7ec1e433c3e 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d80b2ebbf5816c207afaaa7b864893f14ed4a4a3",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
