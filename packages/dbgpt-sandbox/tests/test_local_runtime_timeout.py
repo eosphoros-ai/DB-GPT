@@ -40,6 +40,27 @@ os.rename(os.environ["PID_FILE"] + ".tmp", os.environ["PID_FILE"])
 time.sleep(60)
 """
 
+# A child in its own session leaves a re-parented grandchild in that new
+# group: neither the script's group kill nor a children() walk reaches it.
+NEW_SESSION_GRANDCHILD = """
+import os, subprocess, sys
+subprocess.Popen([sys.executable, "-c", '''
+import os, time
+if os.fork() == 0:
+    if os.fork() == 0:
+        with open(os.environ["PID_FILE"] + ".tmp", "w") as handle:
+            handle.write(str(os.getpid()))
+        os.rename(os.environ["PID_FILE"] + ".tmp", os.environ["PID_FILE"])
+        time.sleep(3)
+        open(os.environ["LATE_FILE"], "w").close()
+        time.sleep(60)
+    os._exit(0)
+time.sleep(60)
+'''], start_new_session=True)
+import time
+time.sleep(60)
+"""
+
 # The script exits at once, but its child keeps the captured stdout open, so
 # the execution still times out after the script itself is gone.
 EXITED_SCRIPT = """
@@ -100,8 +121,13 @@ async def _run_until_timeout(tmp_path, code):
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
 @pytest.mark.parametrize(
     "code",
-    [DETACHED_GRANDCHILD, NEW_SESSION_CHILD, EXITED_SCRIPT],
-    ids=["reparented-grandchild", "new-session-child", "exited-script"],
+    [DETACHED_GRANDCHILD, NEW_SESSION_CHILD, NEW_SESSION_GRANDCHILD, EXITED_SCRIPT],
+    ids=[
+        "reparented-grandchild",
+        "new-session-child",
+        "new-session-grandchild",
+        "exited-script",
+    ],
 )
 async def test_timeout_kills_every_descendant(tmp_path, code):
     """A timeout leaves no descendant running, wherever it ended up."""
@@ -151,6 +177,9 @@ class _FakeDescendant:
         self._events = events
         self._error = error
 
+    def suspend(self):
+        self._events.append(("suspend", self.pid))
+
     def kill(self):
         self._events.append(("kill", self.pid))
         if self._error:
@@ -181,6 +210,16 @@ def test_cleanup_freezes_group_and_survives_denied_kill(monkeypatch):
         lambda pgid, signum: events.append(("killpg", pgid, signum)),
         raising=False,
     )
+    # 12 left the group with setsid and leads its own group.
+    monkeypatch.setattr(
+        local_runtime.os, "getpgid", lambda pid: 10 if pid == 11 else pid
+    )
+
+    def wait_procs(procs, timeout):
+        events.append(("reap", tuple(p.pid for p in procs)))
+        return list(procs), []
+
+    monkeypatch.setattr(local_runtime.psutil, "wait_procs", wait_procs)
 
     local_runtime._kill_session_leader(10)
 
@@ -188,9 +227,15 @@ def test_cleanup_freezes_group_and_survives_denied_kill(monkeypatch):
         # No group member can fork a new session after the snapshot.
         ("killpg", 10, signal.SIGSTOP),
         ("snapshot",),
+        # The group stop misses descendants that called setsid.
+        ("suspend", 11),
+        ("suspend", 12),
         ("killpg", 10, signal.SIGKILL),
         ("kill", 11),
+        # 12 is killed with its own group, which the snapshot may not cover.
+        ("killpg", 12, signal.SIGKILL),
         ("kill", 12),
+        ("reap", (11, 12)),
     ]
 
 

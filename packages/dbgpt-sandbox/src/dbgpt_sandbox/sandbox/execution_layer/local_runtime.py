@@ -60,8 +60,13 @@ def _kill_session_leader(pid: int) -> None:
     child, so a parent/children walk cannot find it; it keeps the child's
     process group, though. Descendants that left the group (``setsid``) are
     still children, so snapshot them before the group kill orphans them.
-    The group is stopped first so none of its members can fork a new
-    session between the snapshot and the kill.
+
+    The group is stopped first so its members cannot fork between the
+    snapshot and the kill. That stop does not reach a descendant in its own
+    group, so each snapshotted one is stopped too, and a descendant leading
+    its own group is killed together with that group. A descendant that
+    forks in the window between the snapshot and its own stop can still
+    escape; local mode is not a security boundary.
     """
     _signal_group(pid, signal.SIGSTOP)
     try:
@@ -72,8 +77,18 @@ def _kill_session_leader(pid: int) -> None:
         # e.g. /proc mounted with hidepid; the group kill must still happen.
         logger.warning("Cannot list sandbox processes of %s", pid, exc_info=True)
         descendants = []
+    for descendant in descendants:
+        try:
+            descendant.suspend()
+        except psutil.Error:
+            pass
     _signal_group(pid, signal.SIGKILL)
     for descendant in descendants:
+        try:
+            if os.getpgid(descendant.pid) == descendant.pid:
+                _signal_group(descendant.pid, signal.SIGKILL)
+        except OSError:
+            pass
         try:
             descendant.kill()
         except psutil.NoSuchProcess:
@@ -82,6 +97,10 @@ def _kill_session_leader(pid: int) -> None:
             logger.warning(
                 "Cannot kill sandbox process %s: permission denied", descendant.pid
             )
+    # Reap like ProcessManager.kill_process_tree, so none outlives the call.
+    _, alive = psutil.wait_procs(descendants, timeout=3)
+    for process in alive:
+        logger.warning("Sandbox process %s did not exit after kill", process.pid)
 
 
 class LocalSandboxSession(SandboxSession):
