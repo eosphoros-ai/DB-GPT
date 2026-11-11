@@ -1,15 +1,5 @@
 import { exportIsolatedReportHtml, sanitizeEmbeddedReportHtml } from './ReportIframe';
 
-const nextFrame = (source: Document) =>
-  new Promise<void>(resolve => {
-    const view = source.defaultView;
-    if (view?.requestAnimationFrame) {
-      view.requestAnimationFrame(() => resolve());
-      return;
-    }
-    window.setTimeout(resolve, 0);
-  });
-
 export const waitForReportPaint = async (source: Document) => {
   const fonts = (source as Document & { fonts?: FontFaceSet }).fonts;
   try {
@@ -19,8 +9,24 @@ export const waitForReportPaint = async (source: Document) => {
   }
   // Native DB-GPT charts are mounted by React after the srcdoc iframe loads.
   // Two frames let the portal commit and its canvas paint before snapshotting.
-  await nextFrame(source);
-  await nextFrame(source);
+  for (let frame = 0; frame < 2; frame++) {
+    await new Promise<void>(resolve => {
+      const view = source.defaultView;
+      if (source.visibilityState === 'hidden' || !view?.requestAnimationFrame) {
+        resolve();
+        return;
+      }
+      // Opening the print popup can hide the source between this check and paint.
+      const timeout = window.setTimeout(() => {
+        view.cancelAnimationFrame(animationFrame);
+        resolve();
+      }, 100);
+      const animationFrame = view.requestAnimationFrame(() => {
+        window.clearTimeout(timeout);
+        resolve();
+      });
+    });
+  }
 };
 
 const replaceCanvasesWithImages = (snapshot: HTMLHtmlElement, source: Document) => {
