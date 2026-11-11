@@ -9,6 +9,7 @@ from .. import AgentMessage
 from ..core.action.blank_action import BlankAction
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
+from ..resource.pack import merge_resource_references, unique_resource_key
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,10 @@ class SimpleAssistantAgent(ConversableAgent):
                 sub_resources = self.resource.sub_resources
                 candidates_results: List = []
                 resource_candidates_map = {}
-                info_map = {}
+                # Several resources can share a name, so key them uniquely and
+                # keep the real name for the prompt.
+                resource_names: Dict[str, str] = {}
+                info_map: Dict = {}
                 prompt_list = []
                 for resource in sub_resources:
                     (
@@ -68,14 +72,16 @@ class SimpleAssistantAgent(ConversableAgent):
                         prompt_template,
                         resource_reference,
                     ) = await resource.get_resources(question=question)
-                    resource_candidates_map[resource.name] = (
+                    key = unique_resource_key(resource.name, resource_candidates_map)
+                    resource_names[key] = resource.name
+                    resource_candidates_map[key] = (
                         candidates,
                         resource_reference,
                         prompt_template,
                     )
                     candidates_results.extend(candidates)  # type: ignore # noqa
                 new_candidates_map = self.post_filters(resource_candidates_map)
-                for resource, (
+                for key, (
                     candidates,
                     references,
                     prompt_template,
@@ -87,9 +93,11 @@ class SimpleAssistantAgent(ConversableAgent):
                         ]
                     )
                     prompt_list.append(
-                        prompt_template.format(name=resource, content=content)
+                        prompt_template.format(
+                            name=resource_names[key], content=content
+                        )
                     )
-                    info_map.update(references)
+                    merge_resource_references(info_map, references)
                 return "\n".join(prompt_list), info_map
             else:
                 resource_prompt, resource_reference = await self.resource.get_prompt(

@@ -32,19 +32,23 @@ class _SpaceResource(Resource[_SpaceParameters]):
     """A knowledge-like resource that prompts with its space name."""
 
     def __init__(self, name: str, space_name: Optional[str] = None, **kwargs: Any):
+        """Create a resource for one knowledge space."""
         self._name = name
         self._space_name = space_name
 
     @classmethod
     def type(cls) -> ResourceType:
+        """Return the knowledge resource type."""
         return ResourceType.Knowledge
 
     @classmethod
     def resource_parameters_class(cls, **kwargs) -> Type[_SpaceParameters]:
+        """Return the parameters class used by ResourceManager."""
         return _SpaceParameters
 
     @property
     def name(self) -> str:
+        """Return the resource name."""
         return self._name
 
     async def get_prompt(
@@ -56,10 +60,12 @@ class _SpaceResource(Resource[_SpaceParameters]):
         resource_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        """Return a prompt and references naming the space."""
         return f"space:{self._space_name}", {self._space_name: {}}
 
 
 def test_same_named_resources_are_all_prompted():
+    """Both same-named resources contribute their prompt and references."""
     pack = ResourcePack(
         [
             _SpaceResource(_DEFAULT_NAME, "time"),
@@ -75,6 +81,7 @@ def test_same_named_resources_are_all_prompted():
 
 
 def test_build_resource_keeps_same_named_resources():
+    """ResourceManager.build_resource keeps two resources with the default name."""
     manager = ResourceManager(SystemApp())
     manager.register_resource(_SpaceResource)
 
@@ -93,6 +100,7 @@ def test_build_resource_keeps_same_named_resources():
 
 
 def test_first_resource_keeps_plain_name_key():
+    """The first resource keeps its name; later ones get the first free suffix."""
     first = _SpaceResource("kb", "a")
     second = _SpaceResource("kb", "b")
     taken = _SpaceResource("kb_1", "c")
@@ -104,6 +112,7 @@ def test_first_resource_keeps_plain_name_key():
 
 
 def test_distinct_names_are_unchanged():
+    """Unique names are still used as keys unchanged."""
     resources = [_SpaceResource("a", "a"), _SpaceResource("b", "b")]
     pack = ResourcePack(resources)
 
@@ -111,6 +120,8 @@ def test_distinct_names_are_unchanged():
 
 
 def test_tool_pack_still_keys_tools_by_name():
+    """ToolPack keeps keying tools by the name the LLM calls."""
+
     def first() -> str:
         """First tool."""
         return "first"
@@ -125,3 +136,20 @@ def test_tool_pack_still_keys_tools_by_name():
 
     assert list(pack._resources) == ["search"]
     assert pack._resources["search"] is tool_b
+
+
+def test_pack_merges_references_of_every_knowledge_resource():
+    """References under the shared ``knowledge`` key are merged, not replaced."""
+
+    class _Referenced(_SpaceResource):
+        async def get_prompt(self, **kwargs: Any):
+            """Return only references for the space."""
+            return "", {"knowledge": [{"name": f"{self._space_name}.md"}]}
+
+    pack = ResourcePack(
+        [_Referenced(_DEFAULT_NAME, "time"), _Referenced(_DEFAULT_NAME, "location")]
+    )
+
+    _, references = asyncio.run(pack.get_prompt(question="where and when?"))
+
+    assert references == {"knowledge": [{"name": "time.md"}, {"name": "location.md"}]}

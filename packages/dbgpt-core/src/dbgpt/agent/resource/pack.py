@@ -7,11 +7,55 @@ together.
 import copy
 import dataclasses
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Container,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from .base import Resource, ResourceParameters, ResourceType
 
 logger = logging.getLogger(__name__)
+
+
+def unique_resource_key(name: str, taken: Container[str]) -> str:
+    """Return ``name``, or the first ``<name>_<n>`` that is not in ``taken``.
+
+    Resources configured in an app often share a name (the editor gives every new
+    resource the same default name), so code that indexes resources by name uses
+    this to keep each of them.
+    """
+    key = name
+    suffix = 1
+    while key in taken:
+        key = f"{name}_{suffix}"
+        suffix += 1
+    return key
+
+
+def merge_resource_references(
+    target: Dict[str, Any], references: Optional[Dict[str, Any]]
+) -> None:
+    """Merge one resource's references into ``target``.
+
+    Every knowledge resource reports its references under the same ``knowledge``
+    key, so list values for a key that is already present are extended instead of
+    replaced.
+    """
+    if not references or not isinstance(references, dict):
+        return
+    for key, value in references.items():
+        existing = target.get(key)
+        if isinstance(existing, list) and isinstance(value, list):
+            target[key] = existing + value
+        else:
+            target[key] = value
 
 
 @dataclasses.dataclass
@@ -44,18 +88,12 @@ class ResourcePack(Resource[PackResourceParameters]):
     def _index_resources(self, resources: List[Resource]) -> Dict[str, Resource]:
         """Index the resources by name without dropping any of them.
 
-        Resources configured in an app often share a name (the editor gives every
-        new resource the same default name), so a resource whose name is already
-        taken is stored under the first free ``<name>_<n>`` key instead of
-        replacing the earlier one.
+        A resource whose name is already taken is stored under the first free
+        ``<name>_<n>`` key instead of replacing the earlier one.
         """
         indexed: Dict[str, Resource] = {}
         for resource in resources:
-            key = resource.name
-            suffix = 1
-            while key in indexed:
-                key = f"{resource.name}_{suffix}"
-                suffix += 1
+            key = unique_resource_key(resource.name, indexed)
             if key != resource.name:
                 logger.warning(
                     f"Duplicate resource name '{resource.name}' in resource pack "
@@ -99,8 +137,7 @@ class ResourcePack(Resource[PackResourceParameters]):
                 **kwargs,
             )
             prompt_list.append(prompt)
-            if resource_reference is not None:
-                info_map.update(resource_reference)
+            merge_resource_references(info_map, resource_reference)
         return self._prompt_separator.join(prompt_list), info_map
 
     def append(self, resource: Resource, overwrite: bool = False):
