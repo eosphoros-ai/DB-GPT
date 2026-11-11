@@ -3,6 +3,7 @@
 """
 
 import asyncio
+import logging
 import os
 import shutil
 import signal
@@ -24,6 +25,8 @@ from .base import (
 )
 from .utils import PathUtils, ProcessManager, SecurityUtils
 
+logger = logging.getLogger(__name__)
+
 
 def _bash_executable() -> str:
     """Use native Git Bash for Windows paths instead of the WSL launcher."""
@@ -42,6 +45,13 @@ def _bash_executable() -> str:
     return shutil.which("bash") or "bash"
 
 
+def _signal_group(pgid: int, signum: int) -> None:
+    try:
+        os.killpg(pgid, signum)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
 def _kill_session_leader(pid: int) -> None:
     """Immediately kill a session-leader child and everything it started.
 
@@ -49,20 +59,24 @@ def _kill_session_leader(pid: int) -> None:
     child, so a parent/children walk cannot find it; it keeps the child's
     process group, though. Descendants that left the group (``setsid``) are
     still children, so snapshot them before the group kill orphans them.
+    The group is stopped first so none of its members can fork a new
+    session between the snapshot and the kill.
     """
+    _signal_group(pid, signal.SIGSTOP)
     try:
         descendants = psutil.Process(pid).children(recursive=True)
     except psutil.NoSuchProcess:
         descendants = []
-    try:
-        os.killpg(pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):
-        pass
+    _signal_group(pid, signal.SIGKILL)
     for descendant in descendants:
         try:
             descendant.kill()
         except psutil.NoSuchProcess:
             pass
+        except psutil.AccessDenied:
+            logger.warning(
+                "Cannot kill sandbox process %s: permission denied", descendant.pid
+            )
 
 
 class LocalSandboxSession(SandboxSession):
@@ -118,7 +132,10 @@ class LocalSandboxSession(SandboxSession):
         try:
             # 清理所有子进程
             for pid in self.process_pool:
-                self.process_manager.kill_process_tree(pid)
+                if os.name == "nt":
+                    self.process_manager.kill_process_tree(pid)
+                else:
+                    _kill_session_leader(pid)
 
             # 清理工作目录 (only clean up auto-created temp dirs, not custom dirs)
             if (
