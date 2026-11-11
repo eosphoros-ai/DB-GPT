@@ -46,6 +46,7 @@ def _bash_executable() -> str:
 
 
 def _signal_group(pgid: int, signum: int) -> None:
+    """Signal a process group, ignoring a group that is already gone."""
     try:
         os.killpg(pgid, signum)
     except (ProcessLookupError, PermissionError):
@@ -66,6 +67,10 @@ def _kill_session_leader(pid: int) -> None:
     try:
         descendants = psutil.Process(pid).children(recursive=True)
     except psutil.NoSuchProcess:
+        descendants = []
+    except (psutil.Error, OSError):
+        # e.g. /proc mounted with hidepid; the group kill must still happen.
+        logger.warning("Cannot list sandbox processes of %s", pid, exc_info=True)
         descendants = []
     _signal_group(pid, signal.SIGKILL)
     for descendant in descendants:
@@ -272,6 +277,7 @@ class LocalSandboxSession(SandboxSession):
     async def _run_with_limits(self, command: List[str]) -> Dict[str, Any]:
         """在资源限制下运行命令"""
         process = None
+        finished = False
         try:
             environment = dict(os.environ, **self.config.environment_vars)
             if (
@@ -326,6 +332,7 @@ class LocalSandboxSession(SandboxSession):
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(), timeout=self.config.timeout
             )
+            finished = True
 
             # 清理进程记录
             if process.pid in self.process_pool:
@@ -349,6 +356,10 @@ class LocalSandboxSession(SandboxSession):
                     )
                     await asyncio.to_thread(kill, process.pid)
                     await process.wait()
+                elif not finished and os.name != "nt":
+                    # The script exited, but a descendant kept its output open
+                    # until the timeout. The group outlives its exited leader.
+                    _signal_group(process.pid, signal.SIGKILL)
                 if process.pid in self.process_pool:
                     self.process_pool.remove(process.pid)
 

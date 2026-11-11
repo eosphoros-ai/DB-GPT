@@ -40,8 +40,24 @@ os.rename(os.environ["PID_FILE"] + ".tmp", os.environ["PID_FILE"])
 time.sleep(60)
 """
 
+# The script exits at once, but its child keeps the captured stdout open, so
+# the execution still times out after the script itself is gone.
+EXITED_SCRIPT = """
+import os, subprocess, sys
+child = subprocess.Popen([sys.executable, "-c", '''
+import os, time
+time.sleep(3)
+open(os.environ["LATE_FILE"], "w").close()
+time.sleep(60)
+'''])
+with open(os.environ["PID_FILE"] + ".tmp", "w") as handle:
+    handle.write(str(child.pid))
+os.rename(os.environ["PID_FILE"] + ".tmp", os.environ["PID_FILE"])
+"""
+
 
 def _alive(pid: int) -> bool:
+    """Return whether ``pid`` is running (a zombie counts as stopped)."""
     try:
         return psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
     except psutil.NoSuchProcess:
@@ -49,6 +65,7 @@ def _alive(pid: int) -> bool:
 
 
 async def _wait_until_dead(pid: int, limit: float = 5) -> None:
+    """Poll until ``pid`` stops or ``limit`` seconds pass."""
     deadline = asyncio.get_running_loop().time() + limit
     while _alive(pid) and asyncio.get_running_loop().time() < deadline:
         await asyncio.sleep(0.05)
@@ -83,10 +100,11 @@ async def _run_until_timeout(tmp_path, code):
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
 @pytest.mark.parametrize(
     "code",
-    [DETACHED_GRANDCHILD, NEW_SESSION_CHILD],
-    ids=["reparented-grandchild", "new-session-child"],
+    [DETACHED_GRANDCHILD, NEW_SESSION_CHILD, EXITED_SCRIPT],
+    ids=["reparented-grandchild", "new-session-child", "exited-script"],
 )
 async def test_timeout_kills_every_descendant(tmp_path, code):
+    """A timeout leaves no descendant running, wherever it ended up."""
     pid = None
     try:
         result = await _run_until_timeout(tmp_path, code)
@@ -103,6 +121,7 @@ async def test_timeout_kills_every_descendant(tmp_path, code):
 @pytest.mark.asyncio
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
 async def test_stop_kills_descendants_of_a_running_execution(tmp_path):
+    """Stopping a session mid-execution also stops re-parented descendants."""
     session = _session(tmp_path, timeout=10)
     assert await session.start()
     pid_file = tmp_path / "descendant.pid"
@@ -112,6 +131,7 @@ async def test_stop_kills_descendants_of_a_running_execution(tmp_path):
         deadline = asyncio.get_running_loop().time() + 5
         while not pid_file.exists() and asyncio.get_running_loop().time() < deadline:
             await asyncio.sleep(0.05)
+        assert pid_file.exists(), "descendant did not record its pid in time"
         pid = int(pid_file.read_text())
 
         assert await session.stop()
@@ -120,6 +140,7 @@ async def test_stop_kills_descendants_of_a_running_execution(tmp_path):
         await asyncio.wait_for(task, 5)
     finally:
         task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
         if pid is not None and _alive(pid):
             os.kill(pid, signal.SIGKILL)
 
@@ -138,6 +159,7 @@ class _FakeDescendant:
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
 def test_cleanup_freezes_group_and_survives_denied_kill(monkeypatch):
+    """Freeze, snapshot, kill; a denied descendant kill does not stop cleanup."""
     events = []
     descendants = [
         _FakeDescendant(11, events, psutil.AccessDenied(11)),
@@ -170,3 +192,28 @@ def test_cleanup_freezes_group_and_survives_denied_kill(monkeypatch):
         ("kill", 11),
         ("kill", 12),
     ]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX process groups")
+def test_cleanup_kills_group_when_snapshot_fails(monkeypatch):
+    """A failed descendant scan (e.g. hidepid) must not leave the group stopped."""
+    signals = []
+
+    class FakeProcess:
+        def __init__(self, pid):
+            pass
+
+        def children(self, recursive):
+            raise PermissionError("hidepid")
+
+    monkeypatch.setattr(local_runtime.psutil, "Process", FakeProcess)
+    monkeypatch.setattr(
+        local_runtime.os,
+        "killpg",
+        lambda pgid, signum: signals.append(signum),
+        raising=False,
+    )
+
+    local_runtime._kill_session_leader(10)
+
+    assert signals == [signal.SIGSTOP, signal.SIGKILL]
