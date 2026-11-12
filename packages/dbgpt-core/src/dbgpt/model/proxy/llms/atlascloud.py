@@ -118,6 +118,26 @@ class AtlasCloudLLMClient(OpenAILLMClient):
             **kwargs,
         )
 
+    @classmethod
+    def new_client(
+        cls,
+        model_params: AtlasCloudDeployModelParameters,
+        default_executor=None,
+    ) -> "AtlasCloudLLMClient":
+        """Create a new client with the model parameters."""
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            # Pass the unset value through so __init__ applies its own default
+            # instead of the 8K floor used by OpenAILLMClient.new_client.
+            context_length=model_params.context_length,
+        )
+
     @property
     def default_model(self) -> str:
         model = self._model
