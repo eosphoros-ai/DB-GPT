@@ -10,15 +10,22 @@
 
 ### You can look up models and per-model prices at [https://uberllm.dev/models](https://uberllm.dev/models)
 
+### Knowledge base (RAG)
+
+UberLLM serves chat models only, so `configs/dbgpt-proxy-uberllm.toml` registers no embedding model. Chat works as is. To index and search a knowledge base, uncomment the `[[models.embeddings]]` block at the end of that file (a local Hugging Face model) or add any other embedding provider DB-GPT supports.
+
 ### Or you can use docker/base/Dockerfile to run DB-GPT with UberLLM:
 
 ```dockerfile
 # Expose the port for the web server, if you want to run it directly from the Dockerfile
 EXPOSE 5670
 
-# Set the environment variable for the UberLLM API key
-ENV UBERLLM_API_KEY="***"
-
-# Just uncomment the following line in the `Dockerfile` to use UberLLM:
+# Replace the existing `CMD` in the `Dockerfile` with this line:
 CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-uberllm.toml"]
+```
+
+Pass the key when the container starts, so it never ends up in the image:
+
+```bash
+docker run -p 5670:5670 -e UBERLLM_API_KEY="your_uberllm_api_key" <your-image>
 ```
