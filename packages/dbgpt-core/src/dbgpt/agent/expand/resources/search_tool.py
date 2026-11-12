@@ -113,6 +113,72 @@ def serply_search(
     return _search_to_view(search_results)
 
 
+@tool(
+    description="Google search through the SearchApi API and return the results as a "
+    "markdown string. Please set number of results not less than 8 for rich "
+    "search results.",
+)
+def searchapi_search(
+    query: Annotated[str, Doc("The search query.")],
+    num_results: Annotated[int, Doc("The number of search results to return.")] = 8,
+) -> str:
+    """Google search through SearchApi and return the results as a markdown string.
+
+    Reads the API key from the `SEARCHAPI_API_KEY` environment variable. Get a key
+    at https://www.searchapi.io, the API reference is at
+    https://www.searchapi.io/docs/google.
+    """
+    try:
+        import requests
+    except ImportError:
+        raise ImportError(
+            "`requests` is required for searchapi_search tool, please run "
+            "`pip install requests` to install it."
+        )
+
+    api_key = os.getenv("SEARCHAPI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "`SEARCHAPI_API_KEY` environment variable is required for "
+            "searchapi_search tool, get an API key at https://www.searchapi.io"
+        )
+    if num_results < 8:
+        num_results = 8
+    response = requests.get(
+        "https://www.searchapi.io/api/v1/search",
+        # Google no longer honours a `num` parameter, so one call returns one page
+        # (about 10 results) and the list is trimmed to `num_results` below.
+        params={"engine": "google", "q": query},
+        # The key goes in the header only, never in the URL.
+        headers={"Authorization": f"Bearer {api_key}"},
+        timeout=10,
+    )
+    if not response.ok:
+        # Error bodies look like {"error": "Invalid API key."}; surface that
+        # message instead of the bare status line.
+        try:
+            message = response.json().get("error", "")
+        except ValueError:
+            message = ""
+        raise requests.HTTPError(
+            f"SearchApi returned HTTP {response.status_code} for searchapi_search: "
+            f"{message or response.reason}",
+            response=response,
+        )
+
+    search_results = []
+    for result in response.json().get("organic_results", [])[:num_results]:
+        search_results.append(
+            {
+                "title": result.get("title", ""),
+                "href": result.get("link", ""),
+                "snippet": result.get("snippet", ""),
+            }
+        )
+
+    return _search_to_view(search_results)
+
+
 def _search_to_view(results) -> str:
     view_results = []
     for item in results:
