@@ -36,4 +36,33 @@ describe('source-backed cohort display', () => {
     expect(screen.getByText('无数据')).toBeTruthy();
     expect(screen.queryByText('100.0%')).toBeNull();
   });
+
+  it.each([null, '', '  ', false])('shows missing or invalid retained counts as unavailable (%j)', retained => {
+    render(
+      <DashboardCohortMatrix
+        widget={widget}
+        data={[{ cohort: 'Jan', age: 0, retained, cohort_size: 10, observed: 1 }]}
+      />,
+    );
+    expect(screen.getByText('无数据')).toBeTruthy();
+    expect(screen.queryByText('0.0%')).toBeNull();
+  });
+
+  it('uses a known cohort size and leaves an entirely missing size unreported', () => {
+    render(
+      <DashboardCohortMatrix
+        widget={widget}
+        data={[
+          { cohort: 'Jan', age: 0, retained: 0, cohort_size: null, observed: 1 },
+          { cohort: 'Jan', age: 1, retained: '0', cohort_size: '12', observed: 1 },
+          { cohort: 'Feb', age: 0, retained: null, cohort_size: null, observed: 1 },
+        ]}
+      />,
+    );
+    const jan = screen.getByRole('row', { name: /^Jan/ });
+    const feb = screen.getByRole('row', { name: /^Feb/ });
+    expect(within(jan).getAllByRole('cell')[0].textContent).toBe('12');
+    expect(within(jan).getByText('0.0%')).toBeTruthy();
+    expect(within(feb).getAllByRole('cell')[0].textContent).toBe('—');
+  });
 });
