@@ -28,6 +28,8 @@ min_keep_tokens = 10000
 max_compact_failures = 3
 # Per dispatch_parallel_tasks call. DBGPT_MAX_PARALLEL_SUBAGENTS overrides it.
 max_parallel_subagents = 3
+# Agentic flow completion budget; DBGPT_AGENTIC_MAX_NEW_TOKENS overrides it.
+max_new_tokens = 16384
 
 # Session file upload limits
 [dbgpt.serve.session_file]

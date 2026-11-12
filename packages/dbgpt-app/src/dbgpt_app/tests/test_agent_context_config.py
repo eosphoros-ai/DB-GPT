@@ -46,6 +46,15 @@ def test_configuration_manager_parses_max_parallel_subagents(monkeypatch):
     assert config.max_parallel_subagents == 5
 
 
+def test_configuration_manager_parses_max_new_tokens():
+    """Parse the agentic completion budget through the startup config path."""
+    manager = ConfigurationManager({"agent_context": {"max_new_tokens": 8192}})
+
+    config = manager.parse_config(AgentContextParameters, "agent_context")
+
+    assert config.max_new_tokens == 8192
+
+
 def test_max_parallel_subagents_environment_overrides_config(monkeypatch):
     """Let deployments override the TOML value with a direct environment variable."""
     monkeypatch.setenv("DBGPT_MAX_PARALLEL_SUBAGENTS", "4")
