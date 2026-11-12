@@ -48,13 +48,13 @@ export const recallTestRecommendQuestion = (id: string) => {
  * 召回方法选项
  */
 export const recallMethodOptions = (id: string) => {
-  return GET<{ id: string }, string[]>(`/knowledge/${id}/recall_retrievers`);
+  return GET<{ id: string }, string[]>(`/api/v1/knowledge/${encodeURIComponent(id)}/recall_retrievers`);
 };
 /**
  * 召回测试
  */
 export const recallTest = (data: RecallTestProps, id: string) => {
-  return POST<RecallTestProps, RecallTestChunk[]>(`/knowledge/${id}/recall_test`, data);
+  return POST<RecallTestProps, RecallTestChunk[]>(`/api/v1/knowledge/${encodeURIComponent(id)}/recall_test`, data);
 };
 
 // chunk模糊搜索
