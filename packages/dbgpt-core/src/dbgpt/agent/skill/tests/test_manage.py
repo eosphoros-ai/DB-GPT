@@ -332,6 +332,32 @@ def test_get_skill_script_file_rejects_paths_outside_scripts_dir(tmp_path, monke
     )
 
 
+def test_get_skill_script_file_rejects_symlink_escaping_scripts_dir(
+    tmp_path, monkeypatch
+):
+    """A name that passes normalization can still resolve outside scripts/
+    through a symlink; the realpath containment check must reject it."""
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "demo-skill"
+    _write_marker_script(skill_dir)
+    outside = tmp_path / "secret.py"
+    outside.write_text("print('outside-via-symlink')\n", encoding="utf-8")
+    link = skill_dir / "scripts" / "linked.py"
+    try:
+        link.symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks are not supported here")
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    manager = SkillManager(None)
+
+    assert manager.get_skill_script_file("demo-skill", "linked.py") is None
+    assert manager.get_skill_script_file("demo-skill", "scripts/linked.py") is None
+    assert "executed" in (
+        manager.get_skill_script_file("demo-skill", "touch_marker.py") or ""
+    )
+
+
 @pytest.mark.asyncio
 async def test_execute_script_does_not_run_a_file_outside_scripts_dir(
     tmp_path, monkeypatch
