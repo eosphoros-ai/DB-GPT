@@ -101,7 +101,6 @@ class MyPluginDao(BaseDao):
     def list(self, query: MyPluginEntity, page=1, page_size=20) -> list[MyPluginEntity]:
         session = self.get_raw_session()
         my_plugins = session.query(MyPluginEntity)
-        all_count = my_plugins.count()
         if query.id is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.id == query.id)
         if query.name is not None:
@@ -117,6 +116,7 @@ class MyPluginDao(BaseDao):
         if query.sys_code is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.sys_code == query.sys_code)
 
+        all_count = my_plugins.count()
         my_plugins = my_plugins.order_by(MyPluginEntity.id.desc())
         my_plugins = my_plugins.offset((page - 1) * page_size).limit(page_size)
         result = my_plugins.all()
