@@ -28,7 +28,10 @@ class KnowledgeSpaceRequest(BaseModel):
     """vector_type: vector type"""
     domain_type: str = "Normal"
     """desc: description"""
-    desc: str = None
+    # `desc` is optional: callers such as the knowledge CLI post the whole
+    # model without setting it, and the API must accept a null description
+    # instead of rejecting the request body.
+    desc: Optional[str] = None
     """owner: owner"""
     owner: Optional[str] = None
     """context: space-level JSON config (embedding params, wiki_config, ...)"""
