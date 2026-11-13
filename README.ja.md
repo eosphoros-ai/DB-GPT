@@ -44,7 +44,8 @@
 
 [![英語](https://img.shields.io/badge/英語-d9d9d9?style=flat-square)](README.md)
 [![中国語](https://img.shields.io/badge/中国語-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md)
+[![Tiếng Việt](https://img.shields.io/badge/Ti%E1%BA%BFng%20Vi%E1%BB%87t-d9d9d9?style=flat-square)](README.vi.md)
 
 [**ドキュメント**](http://docs.dbgpt.cn/docs/overview/) | [**チームに連絡します**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**コミュニティ**](https://github.com/eosphoros-ai/community) | [**論文**](https://arxiv.org/pdf/2312.17449.pdf)
 
