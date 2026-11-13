@@ -83,6 +83,7 @@ from .attachment_react_adapter import (
     resolve_legacy_chat_file_path,
     scrub_react_history_for_share,
 )
+from .datasource_visibility import is_hidden_datasource
 from .react_final import AgentFinalAnswer, FinalAnswerAssembler
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
@@ -508,9 +509,15 @@ def _require_database_access(
 ) -> Any:
     """Authorize a datasource before its cached connector can be retrieved."""
 
+    # Reserved names (e.g. the internal ``dbgpt`` metadata database) are hidden
+    # from the datasource listing and must not be reachable by name either.
+    if is_hidden_datasource(database_name):
+        raise PermissionError("Selected database is not available")
     database_record = connector_manager.storage.get_by_names(database_name)
     if database_record is None:
         raise ValueError("Selected database does not exist")
+    if is_hidden_datasource(getattr(database_record, "db_name", None)):
+        raise PermissionError("Selected database is not available")
     # Match the upstream data-source listing: an empty user_id is shared.
     # A display name is not a stable ownership identifier.
     database_owner = getattr(database_record, "user_id", None)

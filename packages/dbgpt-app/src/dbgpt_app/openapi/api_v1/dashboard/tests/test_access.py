@@ -153,6 +153,22 @@ def test_data_source_policy_can_be_checked_before_a_dashboard_exists(authorizati
         secured.require_data_sources("alice", ["sales", "payroll"])
 
 
+@pytest.mark.parametrize("source_id", ["dbgpt", "DBGPT", " dbgpt "])
+def test_hidden_internal_data_source_is_never_queryable(authorization, source_id):
+    # No platform policy is configured, so any other source would be allowed.
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        authorization.require_data_sources("alice", [source_id])
+
+    authorization.upsert_member("dashboard-rbac", "alice", "bob", DashboardRole.EDITOR)
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        authorization.require(
+            "dashboard-rbac",
+            "bob",
+            DashboardAction.QUERY,
+            data_source_ids=["sales", source_id],
+        )
+
+
 def test_strict_query_mode_fails_closed_without_platform_policy(authorization):
     authorization.upsert_member("dashboard-rbac", "alice", "bob", DashboardRole.EDITOR)
     authorization._require_data_source_authorizer = True
@@ -224,3 +240,27 @@ def test_audit_redacts_sql_parameters_and_tokens(authorization):
         "share_token": "[redacted]",
         "row_count": 3,
     }
+
+
+def test_query_executor_refuses_source_stored_as_hidden_datasource(monkeypatch):
+    from types import SimpleNamespace
+
+    from dbgpt_app.openapi.api_v1.dashboard.query_executor import (
+        DashboardQueryExecutor,
+    )
+    from dbgpt_serve.datasource.manages import ConnectorManager
+
+    def _get_connector(name):
+        raise AssertionError("connector for a hidden datasource was opened")
+
+    # An accent-insensitive collation can match "dbĝpt" to the dbgpt row.
+    manager = SimpleNamespace(
+        storage=SimpleNamespace(
+            get_by_names=lambda name: SimpleNamespace(db_name="dbgpt")
+        ),
+        get_connector=_get_connector,
+    )
+    monkeypatch.setattr(ConnectorManager, "get_instance", lambda system_app: manager)
+
+    with pytest.raises(DashboardAccessDeniedError, match="is not available"):
+        DashboardQueryExecutor()._get_connector("dbĝpt")
