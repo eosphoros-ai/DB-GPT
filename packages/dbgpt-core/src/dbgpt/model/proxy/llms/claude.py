@@ -107,8 +107,10 @@ class ClaudeLLMClient(ProxyLLMClient):
         self._client = client
         self._model = model
         self._api_key = self._resolve_env_vars(api_key)
-        api_base or os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
-        self._api_base = self._resolve_env_vars(self._api_base)
+        self._api_base = self._resolve_env_vars(
+            api_base
+            or os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+        )
         self._proxies = proxies
         self._timeout = timeout
         self._claude_kwargs = claude_kwargs or {}
@@ -158,11 +160,23 @@ class ClaudeLLMClient(ProxyLLMClient):
         from anthropic import AsyncAnthropic
 
         if self._client is None:
+            kwargs: Dict[str, Any] = {}
+            if self._proxies:
+                # Recent anthropic SDKs no longer accept ``proxies=``; the proxy
+                # is configured on the underlying httpx client instead.
+                from anthropic import DefaultAsyncHttpxClient
+
+                proxy = self._proxies
+                if isinstance(proxy, dict):
+                    # A mapping of patterns to proxies: use the catch-all entry,
+                    # or the first one.
+                    proxy = proxy.get("all://") or next(iter(proxy.values()))
+                kwargs["http_client"] = DefaultAsyncHttpxClient(proxy=proxy)
             self._client = AsyncAnthropic(
                 api_key=self._api_key,
                 base_url=self._api_base,
-                proxies=self._proxies,
                 timeout=self._timeout,
+                **kwargs,
             )
         return self._client
 
@@ -194,7 +208,10 @@ class ClaudeLLMClient(ProxyLLMClient):
         if request.max_new_tokens:
             payload["max_tokens"] = request.max_new_tokens
         if request.stop:
-            payload["stop"] = request.stop
+            # Anthropic's Messages API takes a list under "stop_sequences"
+            payload["stop_sequences"] = (
+                [request.stop] if isinstance(request.stop, str) else request.stop
+            )
         if request.top_p:
             payload["top_p"] = request.top_p
         return payload
