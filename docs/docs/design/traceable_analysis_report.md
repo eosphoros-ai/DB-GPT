@@ -135,7 +135,7 @@ When verification is complete, the user returns to Analysis Report and opens the
 
 ## Step 9: Check the Print Layout and Save as PDF
 
-After choosing Export as PDF, the user enters the browser print preview and checks pagination, table width, charts, and font rendering, adjusting orientation, scale, and background graphics as needed. Once key content is confirmed not to be clipped, the user saves the PDF and completes delivery. The preview step lets the user verify the final reading experience before sending the file. See Figure 12.
+After choosing Export as PDF, the user enters the browser print preview and checks pagination, table width, charts, and font rendering, adjusting orientation, scale, and background graphics as needed. Once key content is confirmed not to be clipped, the user saves the PDF and completes delivery. The preview step lets the user verify the final reading experience before sending the file. The print snapshot uses a bounded paint wait so focusing the print popup cannot leave the export stuck on an empty tab. See Figure 12.
 
 ![figure-12](/img/traceable-report/en/figure-12.png)
 

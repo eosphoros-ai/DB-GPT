@@ -20,6 +20,9 @@ MAX_RENDER_ATTEMPTS = 3
 MAX_INVOCATION_FAILURES = 3
 MAX_DOCUMENT_ATTEMPTS = 6
 MAX_PREFLIGHT_ATTEMPTS = 6
+MAX_REJECTED_SECTIONS = 8
+MAX_REJECTED_SECTION_BYTES = 64 * 1024
+MAX_REJECTED_SECTION_DEPTH = 32
 MAX_REPORT_CALLS = (
     MAX_RENDER_ATTEMPTS
     + MAX_DOCUMENT_ATTEMPTS
@@ -117,6 +120,7 @@ def invalidate_report_output(state):
         "_report_delivery_id",
     ):
         state.pop(key, None)
+    state.pop("_report_rejected_sections", None)
     state["_report_delivery_completed"] = False
 
 
@@ -184,6 +188,7 @@ def _save_checkpoint(state, arguments, error):
         "object_fields": state.get("_report_object_fields"),
         "object_spec": state.get("_report_object_spec"),
         "object_template": state.get("_report_object_template"),
+        "rejected_sections": state.get("_report_rejected_sections") or [],
         "model_output": state.get("_report_model_output"),
         "invocation_failure_count": state.get("_report_invocation_failures", 0),
         "invocation_error": state.get("_report_last_invocation_error"),
@@ -312,6 +317,10 @@ def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
     ):
         if payload.get(key) is not None and not isinstance(payload[key], dict):
             raise ValueError("Invalid checkpoint mapping field")
+    if payload.get("rejected_sections") is not None and not isinstance(
+        payload["rejected_sections"], list
+    ):
+        raise ValueError("Invalid checkpoint rejected sections")
     if payload.get("missing_calculation") is not None and not isinstance(
         payload["missing_calculation"], dict
     ):
@@ -377,6 +386,7 @@ def _restore_report_checkpoint(conv_uid, state, *, include_completed=False):
         state["_report_object_spec"] = payload["object_spec"]
     else:
         state.pop("_report_object_spec", None)
+    state["_report_rejected_sections"] = payload.get("rejected_sections") or []
     state["_report_object_template"] = payload.get("object_template")
     state["_report_checkpoint_path"] = str(path)
     state["_report_pending_path"] = str(path.with_name("pending.html"))
@@ -660,6 +670,11 @@ def _record_failure(
             "retryable": not exhausted,
             **({"repair_context": repair_context} if repair_context else {}),
             **(
+                {"rejected_sections": state["_report_rejected_sections"]}
+                if state.get("_report_rejected_sections")
+                else {}
+            ),
+            **(
                 {"model_output": state["_report_model_output"]}
                 if state.get("_report_model_output")
                 else {}
@@ -671,12 +686,44 @@ def _record_failure(
     return result
 
 
-def record_report_object_failure(state, reason):
+def _bounded_rejected_sections(value):
+    """Return a detached JSON copy when rejected sections are safe to retain."""
+    if (
+        not isinstance(value, list)
+        or len(value) > MAX_REJECTED_SECTIONS
+        or not all(isinstance(item, dict) for item in value)
+    ):
+        return None
+    try:
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError, RecursionError):
+        return None
+    if len(encoded.encode("utf-8")) > MAX_REJECTED_SECTION_BYTES:
+        return None
+    pending = [(value, 0)]
+    while pending:
+        node, depth = pending.pop()
+        if depth > MAX_REJECTED_SECTION_DEPTH:
+            return None
+        if isinstance(node, dict):
+            pending.extend((child, depth + 1) for child in node.values())
+        elif isinstance(node, list):
+            pending.extend((child, depth + 1) for child in node)
+    return json.loads(encoded)
+
+
+def record_report_object_failure(state, reason, *, rejected_sections=None):
     """Count compiler rejection before it reaches the renderer or agent adapter."""
-    if not state.get("_report_retry_exhausted"):
+    was_exhausted = bool(state.get("_report_retry_exhausted"))
+    if rejected_sections is not None:
+        state.pop("_report_rejected_sections", None)
+        retained = _bounded_rejected_sections(rejected_sections)
+        if retained is not None:
+            state["_report_rejected_sections"] = retained
+    if not was_exhausted:
         state["_report_tool_call_count"] = state.get("_report_tool_call_count", 0) + 1
-    # Rejected input can itself be too deep to serialize. The bounded diagnostic
-    # supplies the fingerprint without checkpointing unsupported raw content.
+    # The bounded diagnostic supplies the fingerprint even when raw input cannot
+    # be checkpointed safely.
     result = json.loads(
         _record_failure(
             state,
@@ -686,6 +733,20 @@ def record_report_object_failure(state, reason):
             preflight=True,
         )
     )
+    if was_exhausted and rejected_sections is not None:
+        # _record_failure returns its cached terminal response after exhaustion.
+        # Keep that response and the checkpoint consistent with the latest
+        # rejected candidate instead of advertising stale recovery content.
+        if state.get("_report_rejected_sections"):
+            result["rejected_sections"] = state["_report_rejected_sections"]
+        else:
+            result.pop("rejected_sections", None)
+        state["_report_failure_response"] = json.dumps(result, ensure_ascii=False)
+        _save_checkpoint(
+            state,
+            {"object_error": str(reason)},
+            state.get("_report_html_error") or str(reason),
+        )
     result.update(status="invalid_selection", success=False, error=str(reason))
     return json.dumps(result, ensure_ascii=False)
 

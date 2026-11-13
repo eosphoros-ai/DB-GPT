@@ -1,6 +1,6 @@
 ---
 name: csv-data-analysis
-description: This skill should be used when users need to analyze CSV or Excel files, understand data patterns, generate statistical summaries, or create data visualizations. Trigger keywords include "analyze CSV", "analyze Excel", "data analysis", "CSV analysis", "Excel analysis", "data statistics", "generate charts", "data visualization", "分析CSV", "分析Excel", "数据分析", "CSV分析", "Excel分析", "数据统计", "生成图表", "数据可视化".
+description: Use this skill when the user provides a CSV, Excel (.xlsx/.xls) or TSV file and wants data analysis, statistical summaries, visualizations, or an analysis report. One analyzer script extracts all statistics and chart data; generate_report then renders the report with this skill's template automatically. Trigger keywords include "analyze CSV", "analyze Excel", "data analysis", "CSV analysis", "Excel analysis", "data statistics", "generate charts", "data visualization", "分析CSV", "分析Excel", "数据分析", "CSV分析", "Excel分析", "数据统计", "生成图表", "数据可视化", "分析报告".
 ---
 
 # Intelligent Deep Data Analysis Tool

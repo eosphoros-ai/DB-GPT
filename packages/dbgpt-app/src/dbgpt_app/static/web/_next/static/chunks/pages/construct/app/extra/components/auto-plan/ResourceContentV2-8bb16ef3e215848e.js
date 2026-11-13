@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[687],{36778:(n,_,e)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/construct/app/extra/components/auto-plan/ResourceContentV2",function(){return e(97991)}])}},n=>{n.O(0,[7995,664,6241,8624,5922,4295,72,2476,8440,2733,974,7991,636,6593,8792],()=>n(n.s=36778)),_N_E=n.O()}]);

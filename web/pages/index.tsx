@@ -511,19 +511,6 @@ const convertToManusFormat = (
 
 const EXAMPLE_CARDS = [
   {
-    id: 'olist_ecommerce_report',
-    icon: '🛍️',
-    title: 'Olist 巴西电商经营诊断',
-    description: '使用简化的离线演示数据分析电商经营',
-    query:
-      '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
-    dbName: 'Olist_Ecommerce',
-    knowledgeName: 'Olist_Analytics_Governance_Demo_v2',
-    color: 'from-rose-500/10 to-orange-500/10',
-    borderColor: 'border-rose-200/60 dark:border-rose-800/40',
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-  },
-  {
     id: 'walmart_sales',
     icon: '📊',
     title: '沃尔玛销售数据分析',
@@ -537,6 +524,19 @@ const EXAMPLE_CARDS = [
     borderColor: 'border-blue-200/60 dark:border-blue-800/40',
     iconBg: 'bg-blue-100 dark:bg-blue-900/40',
     skillName: 'csv-data-analysis',
+  },
+  {
+    id: 'ecommerce_dashboard',
+    icon: '🧩',
+    title: '电商经营分析看板',
+    description: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
+    query:
+      '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
+    dbName: 'Olist_Ecommerce',
+    skillName: 'dashboard-builder',
+    color: 'from-indigo-500/10 to-sky-500/10',
+    borderColor: 'border-indigo-200/60 dark:border-indigo-800/40',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
   },
   {
     id: 'db_profile_report',
@@ -578,17 +578,17 @@ const EXAMPLE_CARDS = [
     skillName: 'skill-creator',
   },
   {
-    id: 'ecommerce_dashboard',
-    icon: '🧩',
-    title: '电商经营分析看板',
-    description: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
+    id: 'olist_ecommerce_report',
+    icon: '🛍️',
+    title: 'Olist 巴西电商经营诊断',
+    description: '使用简化的离线演示数据分析电商经营',
     query:
-      '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
+      '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
     dbName: 'Olist_Ecommerce',
-    skillName: 'dashboard-builder',
-    color: 'from-indigo-500/10 to-sky-500/10',
-    borderColor: 'border-indigo-200/60 dark:border-indigo-800/40',
-    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
+    knowledgeName: 'Olist_Analytics_Governance_Demo_v2',
+    color: 'from-rose-500/10 to-orange-500/10',
+    borderColor: 'border-rose-200/60 dark:border-rose-800/40',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
   },
 ];
 
