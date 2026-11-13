@@ -21,6 +21,33 @@ ToolResourceType = Union[Resource, BaseTool, List[BaseTool], ToolFunc, List[Tool
 logger = logging.getLogger(__name__)
 
 
+def _text_from_mcp_content(content: Any) -> str:
+    """Join text parts from an MCP CallToolResult content list."""
+    parts: List[str] = []
+    for item in content or []:
+        if isinstance(item, str):
+            parts.append(item)
+            continue
+        text = getattr(item, "text", None)
+        if text is None and isinstance(item, dict):
+            text = item.get("text")
+        if text:
+            parts.append(str(text))
+    return "\n".join(parts)
+
+
+def mcp_tool_result_or_raise(result: Any, tool_name: str) -> Any:
+    """Return *result*, or raise if it is a failed MCP ``CallToolResult``.
+
+    MCP servers (including FastMCP) report a tool-level failure as a normal
+    ``CallToolResult`` with ``isError=true``, not as a transport exception.
+    """
+    if getattr(result, "isError", False):
+        detail = _text_from_mcp_content(getattr(result, "content", None)) or str(result)
+        raise ValueError(f"MCP tool {tool_name} failed: {detail}")
+    return result
+
+
 def _is_function_tool(resources: Any) -> bool:
     return (
         callable(resources)
@@ -462,11 +489,12 @@ class MCPToolPack(ToolPack):
                                     async with ClientSession(read, write) as session:
                                         # Initialize the connection
                                         await session.initialize()
-                                        return await session.call_tool(
+                                        result = await session.call_tool(
                                             tool_name, arguments=kwargs
                                         )
                             except Exception as e:
                                 raise ValueError(f"MCP Call Exception! {str(e)}")
+                            return mcp_tool_result_or_raise(result, tool_name)
 
                         self.add_command(
                             tool.description,
