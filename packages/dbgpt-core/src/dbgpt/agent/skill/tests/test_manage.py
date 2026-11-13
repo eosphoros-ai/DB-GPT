@@ -303,3 +303,71 @@ async def test_execute_skill_script_file_allows_builtin_skill(tmp_path, monkeypa
     result_text = json.dumps(json.loads(result), ensure_ascii=False)
     assert "executed" in result_text
     assert marker.read_text(encoding="utf-8") == "executed"
+
+
+def test_get_skill_script_file_rejects_paths_outside_scripts_dir(tmp_path, monkeypatch):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "demo-skill"
+    _write_marker_script(skill_dir)
+    (skill_dir / "outside.py").write_text(
+        "print('outside-skill-dir')\n", encoding="utf-8"
+    )
+    (skills_dir / "parent_outside.py").write_text(
+        "print('outside-skills-root')\n", encoding="utf-8"
+    )
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    manager = SkillManager(None)
+
+    assert "executed" in (
+        manager.get_skill_script_file("demo-skill", "touch_marker.py") or ""
+    )
+    # Same shorthand execute_skill_script_file already accepts.
+    assert "executed" in (
+        manager.get_skill_script_file("demo-skill", "scripts/touch_marker.py") or ""
+    )
+    assert manager.get_skill_script_file("demo-skill", "../outside.py") is None
+    assert (
+        manager.get_skill_script_file("demo-skill", "../../parent_outside.py") is None
+    )
+
+
+@pytest.mark.asyncio
+async def test_execute_script_does_not_run_a_file_outside_scripts_dir(
+    tmp_path, monkeypatch
+):
+    """execute_skill_script falls back to get_skill_script_file when the skill
+    has no registered script list, so a model-supplied script_name of
+    ``../outside.py`` would otherwise be read and executed."""
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "demo-skill"
+    _write_marker_script(skill_dir)
+    (skill_dir / "outside.py").write_text(
+        "print('outside-skill-dir')\n", encoding="utf-8"
+    )
+
+    executed = {}
+
+    class FakeCodeResult:
+        output = b"ran"
+        error_message = b""
+        exit_code = 0
+
+    class FakeCodeServer:
+        async def exec(self, code, language):
+            executed["code"] = code
+            return FakeCodeResult()
+
+    async def fake_get_code_server(system_app):
+        return FakeCodeServer()
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setattr("dbgpt.util.code.server.get_code_server", fake_get_code_server)
+
+    result = json.loads(
+        await SkillManager(None).execute_script("demo-skill", "../outside.py", {})
+    )
+
+    assert executed == {}
+    assert result.get("source_code") != "print('outside-skill-dir')\n"
+    assert "not found" in json.dumps(result, ensure_ascii=False).lower()
