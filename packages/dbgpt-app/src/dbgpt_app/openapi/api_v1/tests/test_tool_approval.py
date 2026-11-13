@@ -91,6 +91,73 @@ def test_classify(tool, args, tier, rule):
     assert ToolRiskPolicy().classify(tool, args) == (tier, rule)
 
 
+@pytest.mark.parametrize("arg_key", ["sql", "query", "statement"])
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "-- 复算已发布的净实收口径\nSELECT SUM(amount_cents) FROM payments",
+        "/* published metric v1 */\nSELECT 1;",
+        "-- 严格按已发布口径复算\n"
+        "WITH eligible AS (\n"
+        "  SELECT * FROM orders WHERE tenant_id=1 AND is_test=0\n"
+        "    AND is_deleted=0 AND status IN ('PAID', 'COMPLETED')\n"
+        "), paid AS ( -- 支付事件月，含运费\n"
+        "  SELECT p.order_id, SUM(p.amount_cents) AS cents FROM payments p\n"
+        "  WHERE p.status='SUCCESS' GROUP BY p.order_id\n"
+        ")\n"
+        "SELECT SUM(p.cents) FROM paid p JOIN eligible e ON e.id=p.order_id",
+        "/* scope */ WITH RECURSIVE n AS (SELECT 1) SELECT * FROM n",
+        "SELECT 'DELETE FROM orders; DROP TABLE payments' AS note",
+        'SELECT "delete", "into" FROM orders -- UPDATE orders',
+        "EXPLAIN QUERY PLAN SELECT * FROM orders",
+        "-- metadata\nSHOW TABLES",
+        "/* metadata */ DESCRIBE orders;",
+        "-- metadata\nDESC orders",
+    ],
+)
+def test_read_sql_with_comments_passes_approval(sql, arg_key):
+    assert ToolRiskPolicy().classify("sql_query", {arg_key: sql}) == (
+        TIER_AUTO,
+        "sql.read",
+    )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "-- maintenance\nDELETE FROM orders",
+        "/* maintenance */ UPDATE orders SET is_deleted=1",
+        "SELECT 1; DELETE FROM orders",
+        "WITH chosen AS (SELECT 1) DELETE FROM orders RETURNING id",
+        "WITH changed AS (UPDATE orders SET is_deleted=1 RETURNING id) "
+        "SELECT * FROM changed",
+        "SELECT * INTO backup FROM orders",
+        "SELECT * FROM orders INTO OUTFILE '/tmp/orders.csv'",
+        "EXPLAIN ANALYZE DELETE FROM orders",
+        "-- metadata\nSHOW TABLES; DROP TABLE orders",
+        "SHOW TABLES DROP TABLE orders",
+        "",
+    ],
+)
+def test_read_prefix_does_not_auto_approve_writes(sql):
+    assert ToolRiskPolicy().classify("sql_query", {"sql": sql})[0] != TIER_AUTO
+
+
+def test_commented_select_gate_does_not_request_approval(monkeypatch):
+    monkeypatch.setenv("DBGPT_APPROVAL_TTL_SECONDS", "0.05")
+    center = ApprovalCenter()
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    gate = make_approval_gate("commented-select", cb, center=center)
+    sql = "-- 复算指标\nWITH paid AS (SELECT 1 AS cents) SELECT SUM(cents) FROM paid"
+    assert asyncio.run(gate("sql_query", {"sql": sql})) is None
+    assert events == []
+    assert center.pending_for("commented-select") == []
+
+
 def test_mode_off_disables(monkeypatch):
     monkeypatch.setenv("DBGPT_APPROVAL_MODE", "off")
     tier, _ = ToolRiskPolicy().classify("shell_interpreter", {"command": "rm -rf /"})

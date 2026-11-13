@@ -40,6 +40,9 @@ async function setup(page, history = [], suites = []) {
     if (pathname.endsWith('/model/types')) data = ['synthetic-model'];
     else if (pathname.endsWith('/suites')) data = suites;
     else if (pathname.endsWith('/messages/history')) data = history;
+    else if (pathname.endsWith('/dashboards/sales-board'))
+      data = { id: 'sales-board', schema: { dashboard: { title: '销售看板' }, widgets: [] } };
+    else if (pathname.endsWith('/dashboards/sales-board/refresh')) data = { widgets: {} };
     else if (pathname.endsWith('/financial-analysis/runs/latest')) {
       return route.fulfill({ json: { success: false, err_code: 'REPORT_NOT_FOUND', err_msg: 'No saved report' } });
     } else if (pathname.endsWith('/report')) {
@@ -112,29 +115,41 @@ async function finish(page) {
   await page.evaluate(() => window.financialTestStream.close());
 }
 
-test('opens the published report before final, keeps manual navigation after final, and deduplicates repeats', async ({
+async function previewReport(page) {
+  await expect(page.getByTestId('conversation-artifact-panel')).toHaveClass(/opacity-0/);
+  await openReport(page);
+}
+
+async function openReport(page) {
+  await page.getByTestId('conversation-content').getByRole('button', { name: new RegExp(`${title}.*打开`) }).click();
+}
+
+test('opens the published report on click, keeps manual navigation after final, and deduplicates repeats', async ({
   page,
 }) => {
   const reference = await start(page);
   await publish(page, reference);
+  await previewReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toBeVisible();
   await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toHaveCount(0);
   await expect(page.getByText('任务已完成', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('报告已生成');
   await page.screenshot({ path: test.info().outputPath('published-before-summary.png'), fullPage: true });
-  await page.getByRole('button', { name: /任务文件/ }).click();
-  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
+  await page.getByRole('button', { name: /会话产物/ }).click();
+  const gallery = page.getByTestId('conversation-artifact-panel');
+  await expect(gallery.getByRole('button', { name: `${title}.html HTML`, exact: true })).toBeVisible();
   await emit(page, [{ type: 'step.chunk', id: 'review', output_type: 'html', content: reference }]);
   await finish(page);
   await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
-  await expect(page.getByRole('tabpanel').getByText(`${title}.html`, { exact: true })).toHaveCount(1);
+  await expect(gallery.getByRole('button', { name: `${title}.html HTML`, exact: true })).toBeVisible();
+  await expect(gallery.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
 });
 
 test('keeps a published report visible when the connection closes without a final answer', async ({ page }) => {
   const reference = await start(page);
   await publish(page, reference);
+  await previewReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await page.evaluate(() => window.financialTestStream.close());
   await expect(page.getByText('报告已生成，可查看报告与原文依据；本次回复未完成。', { exact: true })).toBeVisible();
@@ -147,6 +162,7 @@ test('removes rejected thinking placeholders without losing the report or showin
 }) => {
   const reference = await start(page);
   await publish(page, reference);
+  await previewReport(page);
   await emit(page, [
     { type: 'step.start', id: 'invalid-thinking', step: 2, title: '思考中', detail: 'Thought/Action/Observation' },
     { type: 'step.remove', id: 'invalid-thinking' },
@@ -192,13 +208,15 @@ test('does not auto-open a draft or steal a view selected before publication', a
   await expect(page.getByRole('button', { name: /prepare_financial_report/ })).toBeVisible();
   await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('营业收入');
   await expect(page.getByLabel('报告状态')).toHaveCount(0);
-  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await openReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('分析中');
-  await page.getByRole('button', { name: /任务文件/ }).click();
+  await page.getByRole('button', { name: /会话产物/ }).click();
   await publish(page, reference);
-  await expect(page.getByRole('tablist', { name: /任务文件/ })).toBeVisible();
+  await expect(
+    page.getByTestId('conversation-artifact-panel').getByRole('button', { name: `${title}.html HTML`, exact: true }),
+  ).toBeVisible();
   await expect(page.getByLabel('报告状态')).toHaveCount(0);
-  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await openReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await finish(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
@@ -245,7 +263,7 @@ test('restores public observations and the latest report identity from saved his
   await expect(page.getByRole('button', { name: /prepare_financial_report/ })).toBeVisible();
   await expect(page.getByRole('log', { name: '财报分析进展' })).toContainText('已提取财务数据');
   await expect(page.getByText('旧标题.html', { exact: true })).toHaveCount(0);
-  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await previewReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
 });
 
@@ -253,17 +271,86 @@ test('keeps the report and progress accessible on a narrow viewport', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   const reference = await start(page);
   await publish(page, reference);
+  await previewReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
-  const workspace = page.getByTestId('right-panel-content');
+  const workspace = page.getByTestId('conversation-artifact-panel');
   expect((await workspace.boundingBox()).width).toBeGreaterThan(350);
   await page.getByRole('button', { name: '返回对话' }).click();
   await expect(
-    page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }),
+    page.getByTestId('conversation-content').getByRole('button', { name: new RegExp(`${title}.*打开`) }),
   ).toBeVisible();
-  await page.getByTestId('conversation-content').getByRole('button', { name: '预览', exact: true }).click();
+  await openReport(page);
   await finish(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await page.screenshot({ path: test.info().outputPath('narrow-report.png'), fullPage: true, animations: 'disabled' });
+});
+
+for (const outputType of ['query', 'html']) {
+  test(`${outputType} output and final answer keep the rail closed until clicked`, async ({ page }) => {
+    await start(page);
+    const panel = page.getByTestId('conversation-artifact-panel');
+    await emit(page, [
+      { type: 'step.start', id: 'result', step: 1, title: 'sql_query' },
+      { type: 'step.meta', id: 'result', action: 'sql_query', title: '查询销售数据' },
+    ]);
+    await expect(page.getByTestId('conversation-content').getByText('查询销售数据')).toBeVisible();
+    await expect(panel).toHaveClass(/opacity-0/);
+    await emit(page, [
+      {
+        type: 'step.chunk',
+        id: 'result',
+        output_type: outputType,
+        content:
+          outputType === 'query'
+            ? { sql: 'SELECT 77 AS sales', columns: ['sales'], rows: [[77]], row_count: 1 }
+            : '<html><body><h1>销售报告</h1></body></html>',
+      },
+      { type: 'step.done', id: 'result', status: 'done' },
+    ]);
+    await expect(page.getByRole('button', { name: /会话产物/ })).toBeVisible();
+    await expect(panel).toHaveClass(/opacity-0/);
+    await finish(page);
+    await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toBeVisible();
+    await expect(panel).toHaveClass(/opacity-0/);
+    await page.getByRole('button', { name: /会话产物/ }).click();
+    await expect(panel).not.toHaveClass(/opacity-0/);
+    // Closing a manually opened panel must survive another tool call and final.
+    await page.locator('button').filter({ has: page.locator('[aria-label="right"]') }).click();
+    await expect(panel).toHaveClass(/opacity-0/);
+    const composer = page.locator('textarea:visible').first();
+    await composer.fill('继续查询');
+    await composer.press('Enter');
+    await expect.poll(() => page.evaluate(() => window.financialTestRequest.user_input)).toBe('继续查询');
+    await emit(page, [{ type: 'step.start', id: 'follow-up', step: 1, title: 'sql_query' }]);
+    await finish(page);
+    await expect(panel).toHaveClass(/opacity-0/);
+  });
+}
+
+test('dashboard generation stays in the conversation until its open button is clicked', async ({ page }) => {
+  await start(page);
+  const panel = page.getByTestId('conversation-artifact-panel');
+  const identity = { dashboard_id: 'sales-board', source_turn_id: 'sales-turn', title: '销售看板' };
+  await emit(page, [{ ...identity, type: 'dashboard.generation.started', total_widgets: 1 }]);
+  const card = page.getByTestId('chat-dashboard-card');
+  await expect(card).toContainText('销售看板');
+  await expect(panel).toHaveClass(/opacity-0/);
+  await emit(page, [
+    {
+      ...identity,
+      type: 'dashboard.created',
+      validated_widgets: 1,
+      failed_widgets: 0,
+      editor_path: '/dashboards/sales-board',
+    },
+  ]);
+  await expect(card.getByRole('button', { name: '查看看板', exact: true })).toBeVisible();
+  await expect(panel).toHaveClass(/opacity-0/);
+  await finish(page);
+  await expect(page.getByText('合成最终要点，报告已可查看。', { exact: true })).toBeVisible();
+  await expect(panel).toHaveClass(/opacity-0/);
+  await card.getByRole('button', { name: '查看看板', exact: true }).click();
+  await expect(panel).not.toHaveClass(/opacity-0/);
 });
 
 test('conversation shows one draft card and a failed-step status after review fails', async ({ page }) => {
@@ -301,7 +388,7 @@ test('conversation shows one draft card and a failed-step status after review fa
   await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: '下载', exact: true })).toHaveCount(1);
   await page.screenshot({ path: test.info().outputPath('conversation-failed-review.png'), fullPage: true });
-  await page.getByRole('button', { name: '预览', exact: true }).click();
+  await openReport(page);
   await expect(page.getByLabel('报告状态')).toBeVisible();
 });
 
@@ -352,7 +439,7 @@ for (const withSteps of [true, false]) {
       await expect(status).toContainText('执行失败');
       await expect(status.locator('.text-emerald-500')).toHaveCount(0);
     }
-    await page.getByRole('button', { name: '预览', exact: true }).click();
+    await openReport(page);
     await expect(page.getByLabel('报告状态')).toBeVisible();
   });
 }
@@ -360,6 +447,7 @@ for (const withSteps of [true, false]) {
 test('keeps a delivered report and its failed status after a transport error', async ({ page }) => {
   const reference = await start(page);
   await publish(page, reference);
+  await previewReport(page);
   await expect(page.getByLabel('报告状态')).toHaveText('报告已生成');
   await page.evaluate(() => window.financialTestStream.error(new Error('合成连接失败')));
   await expect(page.getByRole('status', { name: '执行状态', exact: true })).toContainText('执行失败');
