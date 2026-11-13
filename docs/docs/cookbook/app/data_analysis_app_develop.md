@@ -96,7 +96,7 @@ Click [Save] to complete the creation of the smart application.
 </p>
 
 :::tip
-Note:  The agent application shown in this tutorial is built based on the Summarizer agent. The Summarizer agent is a built-in agent of DB-GPT. See the [source code](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/expand/summary_assistant_agent.py) for the relevant code implementation. In actual use, the relevant code can be further modified according to specific scenarios. Customization and optimization. Or customize the agent based on this case
+Note:  The agent application shown in this tutorial is built based on the Summarizer agent. The Summarizer agent is a built-in agent of DB-GPT. See the [source code](https://github.com/eosphoros-ai/DB-GPT/blob/main/packages/dbgpt-core/src/dbgpt/agent/expand/summary_assistant_agent.py) for the relevant code implementation. In actual use, the relevant code can be further modified according to specific scenarios. Customization and optimization. Or customize the agent based on this case
 :::
 
 ## Data ChatBot Assistant

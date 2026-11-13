@@ -76,7 +76,7 @@ In DB-GPT, seamless support for FastChat, vLLM and llama.cpp is directly provide
 
 
 :::info
-More LLMs, please refer to the [source code](https://github.com/eosphoros-ai/DB-GPT/blob/main/pilot/configs/model_config.py)
+More LLMs, please refer to the [source code](https://github.com/eosphoros-ai/DB-GPT/blob/main/packages/dbgpt-core/src/dbgpt/configs/model_config.py)
 :::
 
 ###  Scalability and stability
@@ -141,7 +141,7 @@ In DB-GPT, users can install their own dependencies on demand. Some of the main 
 - Install data source dependencies `pip install -e ".[datasource]"`
 
 ## Implementation
-For multi-model related implementation, please refer to the [source code](https://github.com/eosphoros-ai/DB-GPT/tree/main/pilot/model)
+For multi-model related implementation, please refer to the [source code](https://github.com/eosphoros-ai/DB-GPT/tree/main/packages/dbgpt-core/src/dbgpt/model)
 
 # Appendix
 `[1]` `[2]` Capabilities such as automatic scaling and observability are still in incubation and have not yet been implemented.

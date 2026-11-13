@@ -329,7 +329,7 @@ execution succeeded,
 --------------------------------------------------------------------------------
 ``````
 
-The output is [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) protocol, we can parse some
+The output is [GPT-Vis](https://github.com/antvis/GPT-Vis) protocol, we can parse some
 useful results.
 
 **1. Plans**

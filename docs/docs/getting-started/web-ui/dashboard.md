@@ -46,7 +46,7 @@ Create a pie chart of customer distribution by region
 
 ## Chart types
 
-DB-GPT's visualization engine ([GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis)) supports:
+DB-GPT's visualization engine ([GPT-Vis](https://github.com/antvis/GPT-Vis)) supports:
 
 | Chart Type | Best For |
 |---|---|
