@@ -16,7 +16,7 @@ description: 把用户需求和材料组织为可校验、可预览、一键安�
 
 所有包文件必须通过草稿工具生成。禁止用 bash/write/code 写入正式套件目录。不会自动创建可执行扩展，脚本、凭证不能进入包。只使用工具描述中列出的两引擎已支持依赖；不需要工具的文本办公技能可声明空 allow。
 
-包必须包含 .qwenwork-plugin/plugin.json、README.md、prompts/workflow.md 和至少一个 skills/<slug>/SKILL.md。按任务拆分多个技能，每个技能提供实际可执行的步骤、输入要求、产物格式、质量检查、失败处理；工作流说明技能之间的顺序和完成条件。可增加 Markdown 参考材料。
+包必须包含 .dbgpt-plugin/plugin.json、README.md、prompts/workflow.md 和至少一个 skills/<slug>/SKILL.md。按任务拆分多个技能，每个技能提供实际可执行的步骤、输入要求、产物格式、质量检查、失败处理；工作流说明技能之间的顺序和完成条件。可增加 Markdown 参考材料。
 
 plugin.json 示例（按实际需求改写全部业务内容）：
 

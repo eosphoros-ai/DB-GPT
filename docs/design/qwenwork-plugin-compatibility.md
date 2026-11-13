@@ -1,8 +1,10 @@
-# QwenWork 原生专家套件兼容
+# DB-GPT 专家套件格式与 QwenWork 兼容
 
-DB-GPT 支持直接导入千问办公生成的专家套件 ZIP，不需要生成或修改 `suite.yaml`。
+DB-GPT 内置套件和新生成的套件使用 `.dbgpt-plugin/plugin.json`。
+DB-GPT 也支持直接导入千问办公生成的专家套件 ZIP，不需要生成或修改 `suite.yaml`。
 原始 `.qwenwork-plugin/plugin.json`、`SKILL.md` 和参考文件保持不变。
-旧版 `suite.yaml` 包继续兼容；同一目录同时存在两种清单时以 plugin.json 为准。
+旧版 `suite.yaml` 包继续兼容。清单优先级为 `.dbgpt-plugin/plugin.json`、
+`.qwenwork-plugin/plugin.json`、`suite.yaml`；优先清单损坏时校验失败，不回退到旧清单。
 
 ## 包结构与命令
 
@@ -10,7 +12,7 @@ ZIP 可以直接包含清单，也可以包含一层套件目录：
 
 ```text
 mysql-ops-expert/
-  .qwenwork-plugin/plugin.json
+  .dbgpt-plugin/plugin.json
   skills/
     mysql-sql-doctor/
       SKILL.md
@@ -57,7 +59,7 @@ plugin.json 的 `skills` 数组声明技能目录或 SKILL.md 路径。
 导入包没有译文时回退原文，不自动机器翻译技能正文或修改原始文件。
 添加译文后通过启动同步或 `/api/v1/suites/sync` 更新注册快照。
 
-智能取数、智能分析、智能运维均采用 `.qwenwork-plugin/plugin.json`，
+DB-GPT 内置套件均采用 `.dbgpt-plugin/plugin.json`，
 不再保留 suite.yaml 或第二份平台清单，版本为 1.1.0。
 命令只从 SKILL.md 元数据生成，不在 JSON 中维护第二份命令映射。
 `/metric` 与 `/explain` 是独立入口技能，通过 Markdown 链接复用已有知识。
@@ -76,6 +78,10 @@ plugin.json 的 `skills` 数组声明技能目录或 SKILL.md 路径。
 - 对话历史：保存本轮命令引用与各加载文档的路径和哈希。
 
 plugin.json、SKILL.md、SOP、模板和参考正文保存在文件系统。
+`assets/suites/` 保存随源码发布的套件包，`assets/retired-suites/` 保存退出默认扫描的套件。
+当前上传与生成套件的安装目录也使用 `suites_dir`，默认回退到 `assets/suites/`；
+生成草稿和下载产物默认位于 `.runtime/suite-creation/`。因此当前实现并非数据库全文存储：
+仅备份注册表不能恢复套件正文，部署时还需要备份套件文件及生成产物。
 版本或包摘要改变时更新同一注册记录，保留 ID、启用状态及使用次数；
 文件丢失时不能仅依赖配置快照执行技能。该迁移不改变历史会话正文。
 

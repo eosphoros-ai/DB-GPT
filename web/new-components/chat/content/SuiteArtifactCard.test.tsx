@@ -18,7 +18,7 @@ const snapshot = {
   description: '整理项目材料生成周报',
   version: '1.0.0',
   package_digest: 'digest-1',
-  files: { 'README.md': '# 周报', '.qwenwork-plugin/plugin.json': '{}' },
+  files: { 'README.md': '# 周报', '.dbgpt-plugin/plugin.json': '{}' },
   validation: { status: 'ready', errors: [], warnings: [], dependencies: [], pending_configuration: [] },
 };
 

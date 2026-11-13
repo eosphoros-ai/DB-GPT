@@ -152,7 +152,7 @@ def test_scan_real_official_suites():
             "sql-optimization-expert",
             "metadata-architecture-expert",
         }:
-            assert pkg.snapshot["package_format"] == "qwenwork-plugin"
+            assert pkg.snapshot["package_format"] == "dbgpt-plugin"
             assert not (Path(pkg.path) / "suite.yaml").exists()
             assert pkg.snapshot["context_defaults"]["datasource"] in {
                 "session",
@@ -161,10 +161,10 @@ def test_scan_real_official_suites():
             assert "shell" in pkg.snapshot["tools"]["deny"]
 
 
-def write_plugin(root):
+def write_plugin(root, manifest_filename=".dbgpt-plugin/plugin.json"):
     """A native package with an invocable skill and an internal knowledge skill."""
     root.mkdir(parents=True, exist_ok=True)
-    manifest = root / ".qwenwork-plugin" / "plugin.json"
+    manifest = root / manifest_filename
     manifest.parent.mkdir()
     manifest.write_text(
         json.dumps(
@@ -192,12 +192,13 @@ def write_plugin(root):
     return root
 
 
-def test_native_plugin_derives_commands_without_writing_yaml(tmp_path):
-    root = write_plugin(tmp_path / "native")
+@pytest.mark.parametrize("package_format", ["dbgpt-plugin", "qwenwork-plugin"])
+def test_native_plugin_derives_commands_without_writing_yaml(tmp_path, package_format):
+    root = write_plugin(tmp_path / "native", f".{package_format}/plugin.json")
     pkg = load_suite_dir(root)
     assert pkg is not None
     assert pkg.skills == ["doctor", "knowledge"]
-    assert pkg.snapshot["package_format"] == "qwenwork-plugin"
+    assert pkg.snapshot["package_format"] == package_format
     assert pkg.snapshot["context_defaults"]["datasource"] == "optional"
     assert pkg.snapshot["commands"] == [
         {
@@ -228,7 +229,7 @@ def test_native_plugin_derives_commands_without_writing_yaml(tmp_path):
 )
 def test_native_rejects_missing_outside_and_duplicate_skills(tmp_path, paths):
     root = write_plugin(tmp_path / "native")
-    manifest = root / ".qwenwork-plugin" / "plugin.json"
+    manifest = root / ".dbgpt-plugin" / "plugin.json"
     raw = json.loads(manifest.read_text())
     raw["skills"] = paths
     manifest.write_text(json.dumps(raw))
@@ -251,7 +252,7 @@ def test_native_rejects_ambiguous_command_and_non_boolean_visibility(tmp_path):
 
 def test_native_runtime_extension_preserves_policy_and_command_identity(tmp_path):
     root = write_plugin(tmp_path / "native")
-    manifest = root / ".qwenwork-plugin/plugin.json"
+    manifest = root / ".dbgpt-plugin/plugin.json"
     raw = json.loads(manifest.read_text())
     raw["dbgpt"] = {
         "name": "cannot-override",
@@ -275,6 +276,23 @@ def test_native_runtime_extension_preserves_policy_and_command_identity(tmp_path
     assert pkg.snapshot["context_defaults"]["datasource"] == "session"
     assert pkg.manifest["sop"] == "prompts/query.md"
     assert "sop" not in pkg.snapshot
+
+
+def test_dbgpt_manifest_precedes_legacy_without_falling_back_on_errors(tmp_path):
+    root = write_plugin(tmp_path / "native")
+    legacy = root / ".qwenwork-plugin/plugin.json"
+    legacy.parent.mkdir()
+    legacy.write_text(
+        (root / ".dbgpt-plugin/plugin.json").read_text().replace('"native"', '"legacy"')
+    )
+    package = load_suite_dir(root)
+    assert package.name == "native"
+    assert package.snapshot["package_format"] == "dbgpt-plugin"
+    (root / ".dbgpt-plugin/plugin.json").write_text("{broken")
+    assert load_suite_dir(root) is None
+    packages, warnings = scan_suites(tmp_path)
+    assert not packages
+    assert any("manifest errors" in warning for warning in warnings)
 
 
 def test_builtin_localizations_are_complete_and_keep_execution_identity():

@@ -163,18 +163,21 @@ def test_unpin_clears_only_current_conversation_and_allows_reselection(
     assert registry.current_pin("conv-1") == ("demo-query", "1.0.0")
 
 
-def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry):
+@pytest.mark.parametrize("legacy_format", ["scenario-suite", "qwenwork-plugin"])
+def test_builtin_plugin_migration_updates_same_db_row_preserving_state(
+    registry, legacy_format
+):
     root = Path(__file__).resolve().parents[6] / "assets/suites/db-query"
     native = load_suite_dir(root)
     legacy = replace(
         native,
-        version="1.0.0",
+        version="1.0.0" if legacy_format == "scenario-suite" else native.version,
         digest="legacy-digest",
-        snapshot={**native.snapshot, "package_format": "scenario-suite"},
+        snapshot={**native.snapshot, "package_format": legacy_format},
     )
     registry.sync_official([legacy])
     registry.set_enabled("db-query", False)
-    registry.record_pin("existing-conv", "db-query", "1.0.0")
+    registry.record_pin("existing-conv", "db-query", legacy.version)
     before = registry.get("db-query")
     summary = registry.sync_official([native])
     after = registry.get("db-query")
@@ -184,10 +187,10 @@ def test_builtin_plugin_migration_updates_same_db_row_preserving_state(registry)
     assert after.use_count == before.use_count == 1
     assert after.source == "official"
     assert after.version == "1.1.0"
-    assert after.manifest_snapshot["package_format"] == "qwenwork-plugin"
+    assert after.manifest_snapshot["package_format"] == "dbgpt-plugin"
     assert "sop" not in after.manifest_snapshot
     assert "content" not in str(after.manifest_snapshot["skills"])
-    assert registry.current_pin("existing-conv") == ("db-query", "1.0.0")
+    assert registry.current_pin("existing-conv") == ("db-query", legacy.version)
     assert registry.sync_official([native]).unchanged == ["db-query"]
 
 

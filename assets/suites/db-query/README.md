@@ -3,7 +3,7 @@
 > `db-query@1.1.0` · 作者 `@DB-GPT 官方` · 分类 `official`
 > 三个官方场景套件之一（`db-query` 取数 / `db-analysis` 分析 / `db-ops` 运维）。
 > 设计依据：`docs/design/data-agent-product-design.md`（§4.1 六维配置束、§5.2 manifest、§7.2 智能取数工作台）、`docs/design/scenario-suite-impl-plan.md`（manifest P0 字段约定）。
-> 统一采用 **千问办公原生 plugin 格式**（`.qwenwork-plugin/plugin.json` + `SKILL.md`）。DB-GPT 的路由、数据库要求和工具边界声明在 `plugin.json.dbgpt`；命令由技能 frontmatter 生成。
+> 统一采用 **DB-GPT plugin 格式**（`.dbgpt-plugin/plugin.json` + `SKILL.md`）。DB-GPT 的路由、数据库要求和工具边界声明在 `plugin.json.dbgpt`；命令由技能 frontmatter 生成。导入仍兼容旧版千问办公格式。
 
 ---
 
@@ -41,7 +41,7 @@
 
 ```
 assets/suites/db-query/
-├── .qwenwork-plugin/plugin.json      # 唯一 manifest：原生元数据 + dbgpt 扩展
+├── .dbgpt-plugin/plugin.json         # 唯一 manifest：套件元数据 + dbgpt 扩展
 ├── README.md                         # 本文件
 ├── prompts/
 │   └── query-playbook.md             # SOP 行事规程，注入 system prompt
@@ -142,12 +142,12 @@ assets/suites/db-query/
 
 **P0（官方内置，随仓库出货）**
 
-1. 套件包位于 `assets/suites/db-query/`，loader 解析 `.qwenwork-plugin/plugin.json`。数据库 registry 保存安装状态、版本、路径与派生配置快照；技能及参考正文从包内读取。
+1. 套件包位于 `assets/suites/db-query/`，loader 解析 `.dbgpt-plugin/plugin.json`。数据库 registry 保存安装状态、版本、路径与派生配置快照；技能及参考正文从包内读取。
 2. REST：`GET /suites` 列出（返回版本/状态/推荐问题）；`POST /suites/db-query/enable` 启用；`POST /suites/db-query/disable` 停用。
 3. 启用后首页出现「🔍 智能取数」场景 Tab 与推荐问题（由 registry 渲染）；停用即从首页移除，**进行中对话保留 pin 版本直至结束**。
 4. 会话创建时 binder 产出：`sop` 注入 system prompt、`tools.allow` 与核心 gate 求交、语义层绑定、产物渲染器注册、`approval_overrides` 合并进 policy。
 
-**企业自发布**：套件管理页上传 ZIP（≤50MB），包内包含 `.qwenwork-plugin/plugin.json` 与 `skills/`，支持根目录或一层包目录。
+**企业自发布**：套件管理页上传 ZIP（≤50MB），包内包含 `.dbgpt-plugin/plugin.json` 与 `skills/`，支持根目录或一层包目录；旧版 `.qwenwork-plugin/plugin.json` 包仍可导入。
 
 **校验策略**：必填字段存在 + 类型粗检 + 缺省值补全，**fail-soft**（坏字段跳过并告警），不引入 jsonschema 依赖。本地自检：
 

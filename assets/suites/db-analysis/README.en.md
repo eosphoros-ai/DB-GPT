@@ -73,7 +73,7 @@ Querying is read-only. DDL and shell operations are denied. Declared approval ca
 
 ## Package and history
 
-The plugin uses `.qwenwork-plugin/plugin.json`, skill `SKILL.md` files, a playbook, and a report template. DB-GPT runtime declarations live in `plugin.json.dbgpt`.
+The plugin uses `.dbgpt-plugin/plugin.json`, skill `SKILL.md` files, a playbook, and a report template. DB-GPT runtime declarations live in `plugin.json.dbgpt`.
 
 The backend preloads skill and reference text. Missing, empty, out-of-package, or oversized dependencies block business tools. Conversation history stores document paths and hashes for display; a loading label is distinct from a successful query, chart, or report.
 

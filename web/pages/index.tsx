@@ -1378,7 +1378,6 @@ const Playground: NextPage = () => {
   const [pendingSummaryPresentation, setPendingSummaryPresentation] = useState<{
     responseId: string;
     summaryText: string;
-    targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null;
   } | null>(null);
   const [summaryPresentationResponseId, setSummaryPresentationResponseId] = useState<string | null>(null);
   const summaryPresentationRef = useRef<SummaryPresentation | null>(null);
@@ -1399,10 +1398,8 @@ const Playground: NextPage = () => {
   // or whenever a legacy view (references, sub-agent, step detail) is needed.
   const [railDebug, setRailDebug] = useState(false);
 
-  // Contextual rail behavior: slide open while an artifact preview is
-  // active, slide closed when it clears — but only when the preview itself
-  // opened the rail (manual expansion / gallery stays open).
-  const previewOpenedRailRef = useRef(false);
+  // Preview updates choose the renderer without changing visibility.
+  // Only explicit user actions open the rail.
   const financialPreviewIdentityRef = useRef<string | null>(null);
   useEffect(() => {
     const financialIdentity =
@@ -1412,12 +1409,7 @@ const Playground: NextPage = () => {
     // A repeated artifact or new revision updates data without undoing manual navigation.
     if (refreshingReport) return;
     if (previewArtifact) {
-      previewOpenedRailRef.current = true;
       setRightPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview');
-      setRightPanelCollapsed(false);
-    } else if (previewOpenedRailRef.current) {
-      previewOpenedRailRef.current = false;
-      setRightPanelCollapsed(true);
     }
   }, [previewArtifact]);
 
@@ -2860,17 +2852,6 @@ const Playground: NextPage = () => {
       return;
     }
 
-    const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
-    const imageArtifact = deduped.find(artifact => artifact.type === 'image');
-    let targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null = null;
-    if (htmlArtifact) {
-      setPreviewArtifact(htmlArtifact as Artifact);
-      targetView = 'html-preview';
-    } else if (imageArtifact) {
-      setPreviewArtifact(imageArtifact as Artifact);
-      targetView = 'image-preview';
-    }
-
     if (execution) {
       const skillStep = execution.steps.find(step => {
         if (step.action !== 'shell_interpreter' && step.action !== 'bash') return false;
@@ -2895,22 +2876,13 @@ const Playground: NextPage = () => {
         const skillName = extractCreatedSkillName(allText);
         if (skillName) {
           setCreatedSkillNames(prev => ({ ...prev, [responseId]: skillName }));
-          targetView = 'skill-preview';
         }
       }
     }
 
-    if (targetView) {
-      setRightPanelCollapsed(false);
-    }
-
-    // Artifact preparation and visible navigation are intentionally separate.
-    // Keep the clean summary visible first; the bounded presentation controller
-    // will open the prepared preview after the reveal/hold phase completes.
+    // Reveal the answer in the main conversation without navigating the rail.
     if (summaryText && summaryPresentationResponseIdRef.current === responseId) {
-      setPendingSummaryPresentation({ responseId, summaryText, targetView });
-    } else if (!summaryText && targetView) {
-      setRightPanelView(targetView);
+      setPendingSummaryPresentation({ responseId, summaryText });
     }
 
     setPendingFinalization(null);
@@ -2919,12 +2891,8 @@ const Playground: NextPage = () => {
   useEffect(() => {
     if (!pendingSummaryPresentation) return;
 
-    const { responseId, summaryText, targetView } = pendingSummaryPresentation;
-    if (
-      summaryPresentationResponseIdRef.current !== responseId ||
-      activeViewMsgId !== responseId ||
-      rightPanelView !== 'summary'
-    ) {
+    const { responseId, summaryText } = pendingSummaryPresentation;
+    if (summaryPresentationResponseIdRef.current !== responseId || activeViewMsgId !== responseId) {
       cancelSummaryPresentation();
       return;
     }
@@ -2950,10 +2918,6 @@ const Playground: NextPage = () => {
         setSummaryComplete(true);
         setSummaryPresentationResponseId(null);
         setPendingSummaryPresentation(null);
-        if (targetView) {
-          setRightPanelView(targetView);
-          setRightPanelCollapsed(false);
-        }
       },
     });
 
@@ -2966,7 +2930,7 @@ const Playground: NextPage = () => {
         summaryPresentationRef.current = null;
       }
     };
-  }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
+  }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation]);
 
   const performStart = async (
     inputQuery = query,
@@ -3345,9 +3309,12 @@ const Playground: NextPage = () => {
               payload.type === 'dashboard.generation.failed' ||
               payload.type.startsWith('dashboard.widget.')
             ) {
-              setRailDebug(false);
               setPreviewArtifact(prev => {
-                const states = prev?.type === 'dashboard' ? [prev.content] : [];
+                if (prev?.type !== 'dashboard') return prev;
+                const matchesDashboard = payload.dashboard_id && prev.content.dashboardId === payload.dashboard_id;
+                const matchesTurn = payload.source_turn_id && prev.content.sourceTurnId === payload.source_turn_id;
+                if (!matchesDashboard && !matchesTurn) return prev;
+                const states = [prev.content];
                 const state = reduceDashboardGenerations(states, payload).find(
                   item => item.dashboardId === payload.dashboard_id || item.sourceTurnId === payload.source_turn_id,
                 );
@@ -3629,7 +3596,6 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          if (panelNavigationVersion.current === navigationVersionAtSend) setRightPanelCollapsed(false);
         } else if (payload.type === 'step.meta' || payload.type === 'step.remove') {
           if (payload.type === 'step.remove' || payload.action?.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
@@ -3763,26 +3729,16 @@ const Playground: NextPage = () => {
               payload.content,
               currentConvId,
               responseId,
-              panelNavigationVersion.current === navigationVersionAtSend,
+              false,
               id,
             );
             if (delivery) {
               setArtifacts(previous => mergeArtifacts([...previous, delivery.artifact]));
-              if (delivery.open) {
-                cancelSummaryPresentation();
-                setPreviewArtifact(delivery.artifact);
-                setFinancialCitationTarget(null);
-                setActiveSubAgent(null);
-                setSelectedStepId(null);
-                setRightPanelView('html-preview');
-                setRightPanelCollapsed(false);
-              } else {
-                setPreviewArtifact(previous =>
-                  previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
-                    ? delivery.artifact
-                    : previous,
-                );
-              }
+              setPreviewArtifact(previous =>
+                previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
+                  ? delivery.artifact
+                  : previous,
+              );
             }
           }
         } else if (payload.type === 'step.done') {
@@ -3870,16 +3826,8 @@ const Playground: NextPage = () => {
             setSummaryPresentationResponseId(responseId);
             setStreamingSummary(firstSummaryCharacter);
             setSummaryComplete(false);
-            setRightPanelTab(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
-            setRightPanelView(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
-            setRightPanelCollapsed(false);
-          } else if (finalAnswer.citations.length > 0) {
-            setStreamingSummary('');
-            setSummaryComplete(true);
-            setRailDebug(true);
-            setRightPanelView('references');
           } else {
-            // Server-streamed chunks already filled the panel (or there is
+            // Server-streamed chunks already filled the answer (or there is
             // nothing to present): skip the client-side typewriter.
             setStreamingSummary('');
             setSummaryComplete(true);
@@ -3887,7 +3835,7 @@ const Playground: NextPage = () => {
           delete finalChunkStreamedRef.current[responseId];
 
           // Final is already a complete server event. Build artifacts now;
-          // the bounded summary presentation controls only visible navigation.
+          // the bounded presentation controls only the answer reveal.
           // uploadedFilePath only exists for the legacy single-file protocol;
           // session-file (file_ids) sends carry no server path client-side.
           setPendingFinalization({
@@ -5046,7 +4994,6 @@ const Playground: NextPage = () => {
                   type='button'
                   onClick={() => {
                     setRailDebug(false);
-                    previewOpenedRailRef.current = false;
                     setPreviewArtifact(null);
                     setRightPanelCollapsed(false);
                   }}
@@ -5189,13 +5136,16 @@ const Playground: NextPage = () => {
                                 }}
                                 onRevise={() => setQuery(state.revisionPrompt || '')}
                                 onOpen={() => {
+                                  panelNavigationVersion.current += 1;
                                   setRailDebug(false);
+                                  setRightPanelCollapsed(false);
                                   setPreviewArtifact({
                                     id: `dashboard-${state.dashboardId}`,
                                     type: 'dashboard',
                                     name: state.title,
                                     content: state,
                                     createdAt: Date.now(),
+                                    messageId: round.viewMsg?.id,
                                     tier: 'final',
                                   });
                                 }}
@@ -6004,6 +5954,7 @@ const Playground: NextPage = () => {
                 </Tooltip>
               </div>
               <div
+                data-testid='conversation-artifact-panel'
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
                 {mobileFinancialPanel && (

@@ -41,7 +41,7 @@ Expected outputs include a SQL card, result preview, and source references. An e
 
 ## Package and loading
 
-The source package uses `.qwenwork-plugin/plugin.json` and skill `SKILL.md` files. DB-GPT settings are stored in the manifest's `dbgpt` extension. There is no second `suite.yaml` for this built-in plugin.
+The source package uses `.dbgpt-plugin/plugin.json` and skill `SKILL.md` files. DB-GPT settings are stored in the manifest's `dbgpt` extension. There is no second `suite.yaml` for this built-in plugin.
 
 The backend preloads the selected command's skill and its local Markdown references. Loading failures block business tools. Loaded document paths and hashes are recorded separately from tool execution results and restored from conversation history.
 

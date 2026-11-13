@@ -1,6 +1,6 @@
-"""Scenario-suite and native QwenWork plugin package loader.
+"""DB-GPT plugin loader with QwenWork and scenario-suite compatibility.
 
-A package contains ``.qwenwork-plugin/plugin.json`` and skill frontmatter,
+A package contains ``.dbgpt-plugin/plugin.json`` and skill frontmatter,
 or a legacy ``suite.yaml`` with optional prompts, skills and few shots.
 The package on disk is the **source of truth**; this loader only reads it and
 projects a renderable snapshot for the registry.
@@ -24,7 +24,13 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 MANIFEST_FILENAME = "suite.yaml"
-PLUGIN_MANIFEST_FILENAME = ".qwenwork-plugin/plugin.json"
+PLUGIN_MANIFEST_FILENAME = ".dbgpt-plugin/plugin.json"
+LEGACY_PLUGIN_MANIFEST_FILENAME = ".qwenwork-plugin/plugin.json"
+PLUGIN_MANIFEST_FILENAMES = (
+    PLUGIN_MANIFEST_FILENAME,
+    LEGACY_PLUGIN_MANIFEST_FILENAME,
+)
+PLUGIN_PACKAGE_FORMATS = frozenset({"dbgpt-plugin", "qwenwork-plugin"})
 VALID_KINDS = ("scenario-suite", "scenario-plugin")
 REQUIRED_FIELDS = ("kind", "name", "version")
 
@@ -258,14 +264,16 @@ def _command_input_files(metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     }
 
 
-def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
-    """Project QwenWork's native plugin format into the runtime suite index.
+def _load_plugin_manifest(
+    dirpath: Path, manifest_filename: str = PLUGIN_MANIFEST_FILENAME
+) -> Dict[str, Any]:
+    """Project a DB-GPT or compatible plugin into the runtime suite index.
 
     The JSON manifest and SKILL.md files stay authoritative and unmodified.
     This projection is in memory only; no suite.yaml is generated.
     """
     root = dirpath.resolve()
-    raw = json.loads((root / PLUGIN_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+    raw = json.loads((root / manifest_filename).read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("plugin.json must contain an object")
     for key in ("name", "version"):
@@ -369,7 +377,11 @@ def _load_plugin_manifest(dirpath: Path) -> Dict[str, Any]:
     author = raw.get("author")
     manifest = {
         "kind": "scenario-plugin",
-        "package_format": "qwenwork-plugin",
+        "package_format": (
+            "dbgpt-plugin"
+            if manifest_filename == PLUGIN_MANIFEST_FILENAME
+            else "qwenwork-plugin"
+        ),
         "name": raw["name"],
         "version": raw["version"],
         "display": raw.get("displayNameCn") or raw.get("displayName") or raw["name"],
@@ -456,15 +468,18 @@ def read_skill_summaries(
 def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
     """Parse one suite package directory; None when unusable."""
     dirpath = Path(dirpath)
-    plugin_path = dirpath / PLUGIN_MANIFEST_FILENAME
+    plugin_filename = next(
+        (name for name in PLUGIN_MANIFEST_FILENAMES if (dirpath / name).is_file()),
+        None,
+    )
     manifest_path = dirpath / MANIFEST_FILENAME
-    if not plugin_path.is_file() and not manifest_path.is_file():
+    if plugin_filename is None and not manifest_path.is_file():
         return None
     warnings: List[str] = []
     try:
         raw = (
-            _load_plugin_manifest(dirpath)
-            if plugin_path.is_file()
+            _load_plugin_manifest(dirpath, plugin_filename)
+            if plugin_filename is not None
             else _load_yaml(manifest_path)
         )
     except Exception as exc:  # noqa: BLE001 - fail-soft by design
@@ -536,9 +551,10 @@ def scan_suites(root: Optional[Path]) -> Tuple[List[SuitePackage], List[str]]:
             continue
         pkg = load_suite_dir(child)
         if pkg is None:
-            if (child / MANIFEST_FILENAME).is_file() or (
-                child / PLUGIN_MANIFEST_FILENAME
-            ).is_file():
+            if any(
+                (child / name).is_file()
+                for name in (*PLUGIN_MANIFEST_FILENAMES, MANIFEST_FILENAME)
+            ):
                 warnings.append(f"suite skipped due to manifest errors: {child.name}")
             continue
         warnings.extend(pkg.warnings)

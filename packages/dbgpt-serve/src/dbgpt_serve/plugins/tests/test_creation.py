@@ -12,7 +12,11 @@ import pytest
 from dbgpt.storage.metadata import db
 from dbgpt_serve.plugins.config import ServeConfig
 from dbgpt_serve.plugins.creation import SuiteCreationStore
-from dbgpt_serve.plugins.loader import PLUGIN_MANIFEST_FILENAME, package_digest
+from dbgpt_serve.plugins.loader import (
+    LEGACY_PLUGIN_MANIFEST_FILENAME,
+    PLUGIN_MANIFEST_FILENAME,
+    package_digest,
+)
 from dbgpt_serve.plugins.models.models import SuiteDao, SuiteEventDao
 from dbgpt_serve.plugins.registry import SuiteRegistry
 from dbgpt_serve.plugins.service.service import Service
@@ -88,8 +92,19 @@ def test_build_freezes_revision_and_zip(store):
     assert artifact["validation"]["trial_status"] == "not_run"
     with zipfile.ZipFile(store.download(artifact["artifact_id"])) as archive:
         assert "test-office/skills/report/SKILL.md" in archive.namelist()
+        assert "test-office/.dbgpt-plugin/plugin.json" in archive.namelist()
     with pytest.raises(ValueError, match="revision conflict"):
         store.build(draft["draft_id"], draft["revision"])
+
+
+def test_saved_qwenwork_draft_remains_buildable_without_rewriting_files(store):
+    files = package_files()
+    files[LEGACY_PLUGIN_MANIFEST_FILENAME] = files.pop(PLUGIN_MANIFEST_FILENAME)
+    artifact = build(store, files)
+    assert artifact["validation"]["status"] == "ready"
+    assert artifact["files"] == files
+    with zipfile.ZipFile(store.download(artifact["artifact_id"])) as archive:
+        assert "test-office/.qwenwork-plugin/plugin.json" in archive.namelist()
 
 
 @pytest.mark.parametrize(

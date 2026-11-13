@@ -26,7 +26,7 @@ for (const engine of ['dbgpt', 'pi']) {
       },
     };
     const files = {
-      '.qwenwork-plugin/plugin.json': JSON.stringify(manifest, null, 2),
+      '.dbgpt-plugin/plugin.json': JSON.stringify(manifest, null, 2),
       'README.md': '# 周报办公专家\n根据项目材料生成周报和行动清单。',
       'prompts/workflow.md': '# 工作流程\n阅读材料，生成周报，核对事实与责任人。',
       'skills/report/SKILL.md':

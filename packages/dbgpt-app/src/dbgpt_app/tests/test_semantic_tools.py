@@ -40,7 +40,7 @@ def test_native_query_and_analysis_suites_allow_all_semantic_reads():
     root = Path(__file__).resolve().parents[5] / "assets" / "suites"
     for slug in ("db-query", "db-analysis"):
         manifest = json.loads(
-            (root / slug / ".qwenwork-plugin" / "plugin.json").read_text()
+            (root / slug / ".dbgpt-plugin" / "plugin.json").read_text()
         )
         binding = SuiteBinding(
             name=slug,

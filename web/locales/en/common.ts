@@ -668,7 +668,7 @@ export const CommonEn = {
   suites_scenario_financial: 'Financial reports',
   suites_overrides_note: 'strict-only · enforced by the core gate',
   suites_market_empty:
-    'No plugins available. Use "+ Add" to upload a ZIP (up to 50MB) containing .qwenwork-plugin/plugin.json or a legacy suite.yaml.',
+    'No plugins available. Use "+ Add" to upload a ZIP (up to 50MB) containing .dbgpt-plugin/plugin.json. Legacy QwenWork plugins and suite.yaml packages are also supported.',
   suites_upload_ok: 'Plugin uploaded',
   suites_upload_fail: 'Upload failed',
   suites_uninstall_confirm: 'Uninstall plugin {{name}}? Package files stay on disk.',

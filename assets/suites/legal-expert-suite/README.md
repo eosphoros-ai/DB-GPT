@@ -42,7 +42,7 @@
 ## 目录结构
 
 ```
-.qwenwork-plugin/plugin.json
+.dbgpt-plugin/plugin.json
 README.md
 prompts/workflow.md
 references/citation-and-ethics.md

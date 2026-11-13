@@ -41,9 +41,9 @@ def archive(root, prefix="", extra=None):
     return stream.getvalue()
 
 
-@pytest.fixture
-def native_upload(tmp_path):
-    source = write_plugin(tmp_path / "source")
+@pytest.fixture(params=["dbgpt-plugin", "qwenwork-plugin"])
+def native_upload(tmp_path, request):
+    source = write_plugin(tmp_path / "source", f".{request.param}/plugin.json")
     installed = tmp_path / "installed"
     installed.mkdir()
     service = SimpleNamespace(

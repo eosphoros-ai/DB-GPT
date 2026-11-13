@@ -27,6 +27,9 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
+import sqlparse
+from sqlparse import tokens as T
+
 from .approval_code_risk import code_has_sink, code_provably_safe
 from .tool_names import canonical_tool
 
@@ -103,6 +106,34 @@ def _sql_text(args: dict) -> str:
         if isinstance(value, str):
             return value.strip()
     return ""
+
+
+def _is_readonly_sql(args: dict) -> bool:
+    """Use the executor's SQL boundary, including comments and read-only CTEs."""
+    from .tools.sql_read_only import ReadOnlySqlError, read_only_sql
+
+    sql = _sql_text(args)
+    try:
+        read_only_sql(sql)
+        return True
+    except ReadOnlySqlError:
+        pass
+
+    # Preserve metadata reads supported by other SQL tool implementations.
+    # Check the whole statement so a read prefix cannot hide a later write.
+    statements = sqlparse.parse(sql)
+    if len(statements) != 1:
+        return False
+    statement = statements[0]
+    first = statement.token_first(skip_cm=True)
+    if first is None or first.normalized not in {"SHOW", "DESC", "DESCRIBE"}:
+        return False
+    return not any(
+        token.ttype in T.Keyword.DDL
+        or token.ttype in T.Keyword.DML
+        or (token.ttype in T.Keyword and token.normalized == "INTO")
+        for token in statement.flatten()
+    )
 
 
 def _is_write_without_where(args: dict) -> bool:
@@ -323,7 +354,7 @@ BUILTIN_RULES: List[ApprovalRule] = [
         "sql.read",
         "sql_query",
         TIER_AUTO,
-        pattern=r"^\s*(select|show|desc|describe|explain|with)\b",
+        pred=_is_readonly_sql,
     ),
     ApprovalRule("web.public", "web_fetch", TIER_AUTO),
 ]

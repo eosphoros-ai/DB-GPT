@@ -9,7 +9,7 @@ from dbgpt_serve.plugins.loader import load_suite_dir
 
 
 def write_command(root, **metadata):
-    manifest = root / ".qwenwork-plugin" / "plugin.json"
+    manifest = root / ".dbgpt-plugin" / "plugin.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(
         json.dumps({"name": "reports", "version": "1", "skills": ["skills/report"]}),

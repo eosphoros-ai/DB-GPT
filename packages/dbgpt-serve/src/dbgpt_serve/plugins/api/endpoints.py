@@ -149,12 +149,12 @@ async def upload_suite(
     user_name: Optional[str] = Query(None),
     service: Service = Depends(get_service),
 ) -> Result[SuiteResponse]:
-    """Upload a native QwenWork plugin or a legacy scenario-suite package."""
+    """Upload a DB-GPT plugin or a compatible legacy package."""
     from pathlib import Path
 
     from dbgpt_serve.plugins.loader import (
         MANIFEST_FILENAME,
-        PLUGIN_MANIFEST_FILENAME,
+        PLUGIN_MANIFEST_FILENAMES,
         load_suite_dir,
         resolve_suites_dir,
     )
@@ -195,13 +195,14 @@ async def upload_suite(
         prefixes = {
             member[: -len(filename)]
             for member in names
-            for filename in (PLUGIN_MANIFEST_FILENAME, MANIFEST_FILENAME)
+            for filename in (*PLUGIN_MANIFEST_FILENAMES, MANIFEST_FILENAME)
             if member.endswith(filename) and member[: -len(filename)].count("/") <= 1
         }
         if len(prefixes) != 1:
             raise HTTPException(
                 status_code=400,
-                detail="zip must contain .qwenwork-plugin/plugin.json or suite.yaml "
+                detail="zip must contain .dbgpt-plugin/plugin.json, "
+                ".qwenwork-plugin/plugin.json or suite.yaml "
                 "at root or inside one package directory",
             )
         prefix = prefixes.pop()

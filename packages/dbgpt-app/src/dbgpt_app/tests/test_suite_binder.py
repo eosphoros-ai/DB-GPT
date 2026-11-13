@@ -58,7 +58,11 @@ class SuiteCommandTest(unittest.TestCase):
         )
 
     def make_binding(self, slug="db-query"):
-        root = SUITES_ROOT / slug
+        root = (
+            SUITES_ROOT.parent / "retired-suites" / slug
+            if slug == "db-ops"
+            else SUITES_ROOT / slug
+        )
         package = load_suite_dir(root)
         manifest = package.manifest
         return SuiteBinding(
@@ -172,7 +176,7 @@ class SuiteCommandTest(unittest.TestCase):
             ),
         ):
             binding = load_binding("db-query")
-        self.assertEqual(binding.package_format, "qwenwork-plugin")
+        self.assertEqual(binding.package_format, "dbgpt-plugin")
         self.assertIsNotNone(binding.violation("bash"))
         self.assertIsNotNone(binding.violation("ddl"))
         self.assertIsNone(binding.violation("sql_query"))

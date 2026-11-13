@@ -51,7 +51,7 @@ export interface SuiteSkill {
  * It never contains the SOP body.
  */
 export interface SuiteManifestSnapshot {
-  package_format?: 'qwenwork-plugin' | 'scenario-suite';
+  package_format?: 'dbgpt-plugin' | 'qwenwork-plugin' | 'scenario-suite';
   display?: string;
   display_en?: string;
   icon?: string;

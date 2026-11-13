@@ -57,7 +57,7 @@
 
 ```
 mysql-ops-expert/
-├── .qwenwork-plugin/plugin.json
+├── .dbgpt-plugin/plugin.json
 ├── CONNECTORS.md
 ├── README.md
 └── skills/

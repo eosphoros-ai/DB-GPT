@@ -98,7 +98,7 @@ const suites = [
     status: 'enabled',
     manifest_snapshot: {
       display_en: 'MySQL Operations Expert',
-      package_format: 'qwenwork-plugin',
+      package_format: 'dbgpt-plugin',
       context_defaults: { datasource: 'optional' },
       commands: [
         {

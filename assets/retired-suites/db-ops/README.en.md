@@ -49,7 +49,7 @@ Expected outputs include a diagnostic report and repair plan. Execution plans an
 
 ## Package and loading
 
-The plugin uses `.qwenwork-plugin/plugin.json`, skill `SKILL.md` files, and local playbooks and runbooks. DB-GPT context, tool, and approval declarations live in `plugin.json.dbgpt`.
+The plugin uses `.dbgpt-plugin/plugin.json`, skill `SKILL.md` files, and local playbooks and runbooks. DB-GPT context, tool, and approval declarations live in `plugin.json.dbgpt`.
 
 The backend preloads a selected command's skill and linked Markdown references. Loading errors block business tools; document paths and hashes are saved in conversation history. Loading a skill does not prove that its diagnostic operations have run.
 

@@ -14,7 +14,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Iterator, Optional
 
 from .loader import (
-    PLUGIN_MANIFEST_FILENAME,
+    PLUGIN_MANIFEST_FILENAMES,
     load_suite_dir,
     package_digest,
     read_skill_metadata,
@@ -42,6 +42,17 @@ CREATION_CAPABILITIES = {
 MAX_BYTES = 50 * 1024 * 1024
 MAX_FILES = 256
 _LOCK = threading.RLock()
+
+
+def _draft_manifest(files: Dict[str, str]) -> Dict[str, Any]:
+    """Read the preferred manifest, including drafts saved before migration."""
+    filename = next((name for name in PLUGIN_MANIFEST_FILENAMES if name in files), None)
+    if filename is None:
+        raise ValueError("package requires .dbgpt-plugin/plugin.json")
+    raw = json.loads(files[filename])
+    if not isinstance(raw, dict):
+        raise ValueError("plugin.json must contain an object")
+    return raw
 
 
 def safe_path(root: Path, relative: str) -> Path:
@@ -172,9 +183,7 @@ class SuiteCreationStore:
                 ):
                     raise ValueError("package exceeds 50MB")
                 self._materialize(root, files)
-                raw = json.loads(files.get(PLUGIN_MANIFEST_FILENAME, "{}"))
-                if not isinstance(raw, dict):
-                    raise ValueError("plugin.json must contain an object")
+                raw = _draft_manifest(files)
                 for key in ("name", "version", "description"):
                     if not isinstance(raw.get(key), str) or not raw[key].strip():
                         errors.append(f"plugin.json requires {key}")
@@ -367,7 +376,7 @@ class SuiteCreationStore:
             package = destination / "package"
             package.mkdir()
             self._materialize(package, draft["files"])
-            raw = json.loads(draft["files"][PLUGIN_MANIFEST_FILENAME])
+            raw = _draft_manifest(draft["files"])
             archive = destination / "package.zip"
             with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
                 for path in sorted(package.rglob("*")):

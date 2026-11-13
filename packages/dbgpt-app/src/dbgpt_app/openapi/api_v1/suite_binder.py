@@ -29,6 +29,7 @@ from typing import Any, Dict, Iterator, Optional, Set
 from urllib.parse import unquote, urlsplit
 
 from dbgpt._private.config import Config
+from dbgpt_serve.plugins.loader import PLUGIN_PACKAGE_FORMATS
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +227,7 @@ def load_binding(slug: str) -> Optional[SuiteBinding]:
     )
     binding.semantic_status = _probe_semantic_status(semantic)
     if binding.semantic_status == "degraded" and (
-        binding.package_format != "qwenwork-plugin" or binding.semantic
+        binding.package_format not in PLUGIN_PACKAGE_FORMATS or binding.semantic
     ):
         binding.watermark = SEMANTIC_DEGRADED_WATERMARK
     return binding
@@ -296,7 +297,7 @@ def bind_command(binding: SuiteBinding, command_name: str) -> None:
         # Native plugins reference shared knowledge and templates directly in
         # their SKILL.md. Resolve those links within the installed package,
         # never through the agent's unrestricted filesystem tools.
-        if binding.package_format == "qwenwork-plugin":
+        if binding.package_format in PLUGIN_PACKAGE_FORMATS:
             binding.loaded_documents.extend(
                 _read_linked_documents(root, skill_file, binding.command_skill_text)
             )
@@ -543,7 +544,7 @@ def build_sop_block(binding: SuiteBinding) -> str:
         "以下是本套件的行事规程，优先于你的通用习惯；与用户请求冲突时先说明边界：\n"
     )
     body = binding.sop_text.strip()
-    if binding.package_format == "qwenwork-plugin":
+    if binding.package_format in PLUGIN_PACKAGE_FORMATS:
         body = (
             "本套件以 plugin.json 与各 SKILL.md 为准。"
             "遵循套件声明的数据库及上下文要求；未连接时不得虚构采集结果。"
