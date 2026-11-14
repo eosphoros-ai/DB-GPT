@@ -303,3 +303,76 @@ async def test_execute_skill_script_file_allows_builtin_skill(tmp_path, monkeypa
     result_text = json.dumps(json.loads(result), ensure_ascii=False)
     assert "executed" in result_text
     assert marker.read_text(encoding="utf-8") == "executed"
+
+
+def _write_skill(skill_dir: Path, name: str) -> None:
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        f"---\nname: {name}\ndescription: {name} skill\n---\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_skill_resource_reads_inside_the_skill_directory(
+    tmp_path, monkeypatch
+):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "user" / "report"
+    _write_skill(skill_dir, "report")
+    (skill_dir / "references").mkdir()
+    (skill_dir / "references" / "framework.md").write_text(
+        "SKILL-REFERENCE", encoding="utf-8"
+    )
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+
+    result = await SkillManager(None).get_skill_resource(
+        "report", "references/framework.md"
+    )
+
+    assert json.loads(result)["content"] == "SKILL-REFERENCE"
+
+
+@pytest.mark.asyncio
+async def test_get_skill_resource_rejects_a_name_prefix_sibling_directory(
+    tmp_path, monkeypatch
+):
+    """A sibling folder that only starts with the skill name is outside it."""
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "user" / "report"
+    _write_skill(skill_dir, "report")
+    sibling_dir = skills_dir / "user" / "report-private"
+    sibling_dir.mkdir(parents=True)
+    (sibling_dir / "secret.txt").write_text("PRIVATE-SKILL-DATA", encoding="utf-8")
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+
+    result = await SkillManager(None).get_skill_resource(
+        "report", "../report-private/secret.txt"
+    )
+
+    payload = json.loads(result)
+    assert payload["error"] is True
+    assert "PRIVATE-SKILL-DATA" not in json.dumps(payload)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("skill_name", ["../outside", r"..\outside"])
+async def test_get_skill_resource_rejects_a_traversing_skill_name(
+    tmp_path, monkeypatch, skill_name
+):
+    """The skill name selects a skill folder, it cannot address another folder."""
+    skills_dir = tmp_path / "skills"
+    _write_skill(skills_dir / "report", "report")
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("OUTSIDE-THE-SKILLS-TREE", encoding="utf-8")
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+
+    result = await SkillManager(None).get_skill_resource(skill_name, "secret.txt")
+
+    payload = json.loads(result)
+    assert payload["error"] is True
+    assert "OUTSIDE-THE-SKILLS-TREE" not in json.dumps(payload)
