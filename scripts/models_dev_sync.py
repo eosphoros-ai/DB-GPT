@@ -712,6 +712,56 @@ HAND_CURATED: Dict[str, List[Dict[str, Any]]] = {
             True,
         ),
     ],
+    "proxy/runcrate": [
+        _entry(
+            "deepseek-ai/DeepSeek-V4.1-Flash",
+            "DeepSeek V4.1 Flash (Runcrate)",
+            "DeepSeek V4.1 Flash served by Runcrate.",
+            1048576,
+            1048576,
+            True,
+        ),
+        _entry(
+            "zai-org/GLM-5.3",
+            "GLM 5.3 (Runcrate)",
+            "Zhipu GLM 5.3 served by Runcrate.",
+            1048576,
+            1048576,
+            True,
+        ),
+        _entry(
+            "zai-org/GLM-5.3-Flash",
+            "GLM 5.3 Flash (Runcrate)",
+            "Zhipu GLM 5.3 Flash served by Runcrate.",
+            1048576,
+            1048576,
+            True,
+        ),
+        _entry(
+            "Qwen/Qwen3.8-Flash",
+            "Qwen3.8 Flash (Runcrate)",
+            "Qwen3.8 Flash served by Runcrate.",
+            1000000,
+            1000000,
+            True,
+        ),
+        _entry(
+            "moonshotai/Kimi-K2.6",
+            "Kimi K2.6 (Runcrate)",
+            "Moonshot Kimi K2.6 served by Runcrate.",
+            262144,
+            16384,
+            True,
+        ),
+        _entry(
+            "openai/gpt-oss-120b",
+            "gpt-oss 120B (Runcrate)",
+            "OpenAI gpt-oss 120B served by Runcrate.",
+            131072,
+            117964,
+            True,
+        ),
+    ],
 }
 
 
