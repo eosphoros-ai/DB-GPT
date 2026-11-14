@@ -1,5 +1,7 @@
 """Tests for parsing <api-call> blocks in ApiCall."""
 
+from xml.etree import ElementTree as ET
+
 from dbgpt.agent.util.api_call import ApiCall
 
 
@@ -40,3 +42,24 @@ def test_update_from_context_with_sql_comment_lines():
     assert statuses[0].args["sql"] == (
         "SELECT region, SUM(sales) FROM orders  GROUP BY region"
     )
+
+
+def test_format_api_context_preserves_quoted_sql_comment_markers():
+    raw_api_context = (
+        "<api-call><name>response_text</name><args>"
+        "<description>Here's a query</description>"
+        "<sql>SELECT 'a--b', '/* quoted block markers */' AS markers "
+        "/* actual block comment */ -- actual trailing comment\n"
+        "</sql></args></api-call>"
+    )
+
+    formatted_context = ApiCall()._format_api_context(raw_api_context)
+    api_call_element = ET.fromstring(formatted_context)
+
+    assert api_call_element.findtext("name") == "response_text"
+    assert api_call_element.findtext("args/description") == "Here's a query"
+    assert api_call_element.findtext("args/sql").strip() == (
+        "SELECT 'a--b', '/* quoted block markers */' AS markers"
+    )
+    assert "/* actual block comment */" not in formatted_context
+    assert "-- actual trailing comment" not in formatted_context
