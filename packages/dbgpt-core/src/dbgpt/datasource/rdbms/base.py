@@ -9,7 +9,7 @@ from concurrent.futures import TimeoutError as FutureTimeoutError
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import wraps
-from threading import Event
+from threading import Event, Lock
 from typing import (
     Any,
     Dict,
@@ -164,8 +164,18 @@ class RDBMSConnector(BaseConnector):
         self._sample_rows_in_table_info = sample_rows_in_table_info
         self._indexes_in_table_info = indexes_in_table_info
 
+        # Table metadata is reflected lazily, per table, in ``get_table_info``.
+        # Reflecting the whole schema here made every connector construction
+        # (including the throwaway one built to test a connection) issue
+        # per-table reflection queries, which takes minutes on large databases.
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
+        # Connectors are cached and shared across threads; serialize reflection
+        # so no caller reads a table that another thread is still reflecting.
+        self._metadata_lock = Lock()
+        # Names already passed to ``MetaData.reflect``. Views are listed in
+        # ``_all_tables`` but never reflected (``views=False``), so without this
+        # every ``get_table_info`` call would retry them.
+        self._reflection_attempted: Set[str] = set()
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
 
@@ -323,6 +333,54 @@ class RDBMSConnector(BaseConnector):
         """Information about all tables in the database."""
         return self.get_table_info()
 
+    def _reflection_schema(self) -> Optional[str]:
+        """Return the schema the connector's tables are reflected into.
+
+        Subclasses whose ``_sync_tables_from_db`` reflects into a fallback
+        schema when none is configured (e.g. ``"public"``) override this, so
+        lazy reflection recognizes those tables as already loaded.
+        """
+        return self._schema
+
+    def _reflect_tables(self, table_names: Iterable[str]) -> List[Table]:
+        """Reflect the given tables if needed and return their metadata.
+
+        Only tables in the connector's schema that are not reflected yet are
+        loaded from the database, and each name is reflected at most once.
+        Reading and reflecting happen under the same lock, because
+        ``MetaData.reflect`` registers a table before its columns are loaded.
+        """
+        names = set(table_names)
+        schema = self._reflection_schema()
+        # ``MetaData.reflect`` falls back to the metadata's default schema.
+        target_schema = self._metadata.schema if schema is None else schema
+        if schema is None:
+            # Tables supplied without a schema belong to the connector too.
+            schemas = {None, target_schema}
+        else:
+            schemas = {schema}
+        with self._metadata_lock:
+            # Only tables in the schema ``reflect`` writes to count as loaded,
+            # so a supplied schema-less table never hides the reflected one.
+            reflected = {
+                tbl.name
+                for tbl in self._metadata.sorted_tables
+                if tbl.schema == target_schema
+            }
+            missing = names - reflected - self._reflection_attempted
+            if missing:
+                self._metadata.reflect(
+                    bind=self._engine,
+                    schema=schema,
+                    only=lambda name, _: name in missing,
+                )
+                self._reflection_attempted.update(missing)
+            return [
+                tbl
+                for tbl in self._metadata.sorted_tables
+                if tbl.schema in schemas and tbl.name in names
+            ]
+
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
 
@@ -342,9 +400,8 @@ class RDBMSConnector(BaseConnector):
 
         meta_tables = [
             tbl
-            for tbl in self._metadata.sorted_tables
-            if tbl.name in set(all_table_names)
-            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+            for tbl in self._reflect_tables(all_table_names)
+            if not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []
