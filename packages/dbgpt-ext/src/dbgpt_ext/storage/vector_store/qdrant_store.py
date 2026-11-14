@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import uuid
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -37,6 +38,25 @@ def _chunk_id_to_uuid(chunk_id: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk_id))
 
 
+_LOCAL_CLIENTS: Dict[str, Any] = {}
+_LOCAL_CLIENTS_LOCK = threading.Lock()
+
+
+def _get_local_client(path: str) -> Any:
+    """Return a shared client for a local Qdrant folder.
+
+    Local mode locks its folder, so every store using the same path must share
+    one client.
+    """
+    from qdrant_client import QdrantClient
+
+    key = os.path.abspath(path)
+    with _LOCAL_CLIENTS_LOCK:
+        if key not in _LOCAL_CLIENTS:
+            _LOCAL_CLIENTS[key] = QdrantClient(path=key)
+        return _LOCAL_CLIENTS[key]
+
+
 @register_resource(
     _("Qdrant Config"),
     "qdrant_vector_config",
@@ -59,6 +79,28 @@ def _chunk_id_to_uuid(chunk_id: str) -> str:
             description=_("The REST port of the Qdrant instance."),
             optional=True,
             default=6333,
+        ),
+        Parameter.build_from(
+            _("URL"),
+            "url",
+            str,
+            description=_(
+                "The URL of the Qdrant instance, e.g. a Qdrant Cloud cluster URL. "
+                "Overrides host and port."
+            ),
+            optional=True,
+            default=None,
+        ),
+        Parameter.build_from(
+            _("Path"),
+            "path",
+            str,
+            description=_(
+                "Local folder to run Qdrant embedded, without a server. "
+                "Overrides url, host and port."
+            ),
+            optional=True,
+            default=None,
         ),
         Parameter.build_from(
             _("API Key"),
@@ -130,6 +172,25 @@ class QdrantVectorConfig(VectorStoreConfig):
     port: int = field(
         default_factory=lambda: int(os.getenv("QDRANT_PORT", "6333")),
         metadata={"help": _("The HTTP port of Qdrant store.")},
+    )
+    url: Optional[str] = field(
+        default_factory=lambda: os.getenv("QDRANT_URL"),
+        metadata={
+            "help": _(
+                "The URL of the Qdrant instance, e.g. a Qdrant Cloud cluster URL. "
+                "Overrides host and port. Include the port in the URL if it is "
+                "not 6333."
+            )
+        },
+    )
+    path: Optional[str] = field(
+        default_factory=lambda: os.getenv("QDRANT_PATH"),
+        metadata={
+            "help": _(
+                "Local folder to run Qdrant embedded, without a server. "
+                "Overrides url, host and port."
+            )
+        },
     )
     api_key: Optional[str] = field(
         default_factory=lambda: os.getenv("QDRANT_API_KEY"),
@@ -218,14 +279,24 @@ class QdrantStore(VectorStoreBase):
         self.embeddings = embedding_fn
         self.collection_name = name
 
-        self._client = QdrantClient(
-            host=vector_store_config.host,
-            port=vector_store_config.port,
-            grpc_port=vector_store_config.grpc_port,
-            api_key=vector_store_config.api_key,
-            https=vector_store_config.https,
-            prefer_grpc=vector_store_config.prefer_grpc,
-        )
+        if vector_store_config.path:
+            self._client = _get_local_client(vector_store_config.path)
+        else:
+            if vector_store_config.url:
+                # The client applies `port` to a portless URL, so use the default.
+                location = {"url": vector_store_config.url, "port": 6333}
+            else:
+                location = {
+                    "host": vector_store_config.host,
+                    "port": vector_store_config.port,
+                }
+            self._client = QdrantClient(
+                **location,
+                grpc_port=vector_store_config.grpc_port,
+                api_key=vector_store_config.api_key,
+                https=vector_store_config.https,
+                prefer_grpc=vector_store_config.prefer_grpc,
+            )
         self.create_collection(self.collection_name)
 
     def get_config(self) -> QdrantVectorConfig:
