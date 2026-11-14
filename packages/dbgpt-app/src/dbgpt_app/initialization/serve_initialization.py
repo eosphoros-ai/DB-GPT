@@ -90,6 +90,8 @@ def register_serve_apps(
     if app_config.system.api_keys:
         global_api_keys = ",".join(app_config.system.api_keys)
         system_app.config.set("dbgpt.app.global.api_keys", global_api_keys)
+    if system_app.app is not None:
+        system_app.app.state.api_keys = tuple(app_config.system.api_keys)
     if app_config.system.encrypt_key:
         system_app.config.set(
             "dbgpt.app.global.encrypt_key", app_config.system.encrypt_key
