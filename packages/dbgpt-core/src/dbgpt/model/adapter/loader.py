@@ -92,6 +92,10 @@ def huggingface_loader(
 
     parsed_torch_dtype = _parse_torch_dtype(model_params.torch_dtype)
     kwargs = {}
+    if model_params.trust_remote_code is not None:
+        # Honor the parameter in the default loader path too; the adapter classes
+        # otherwise fall back to their own (True) default.
+        kwargs["trust_remote_code"] = model_params.trust_remote_code
     if device == "cpu":
         default_torch_dtype = torch.float32
     elif device == "cuda":

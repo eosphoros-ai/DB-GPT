@@ -1,4 +1,5 @@
 import logging
+import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type
@@ -18,6 +19,29 @@ from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
+
+_TRUST_REMOTE_CODE_WARNING_EMITTED = False
+_TRUST_REMOTE_CODE_WARNING_LOCK = threading.Lock()
+
+
+def _warn_trust_remote_code() -> None:
+    """Warn once when a model is loaded with remote code execution enabled."""
+    global _TRUST_REMOTE_CODE_WARNING_EMITTED
+
+    if _TRUST_REMOTE_CODE_WARNING_EMITTED or not logger.isEnabledFor(logging.WARNING):
+        return
+
+    with _TRUST_REMOTE_CODE_WARNING_LOCK:
+        if _TRUST_REMOTE_CODE_WARNING_EMITTED:
+            return
+        _TRUST_REMOTE_CODE_WARNING_EMITTED = True
+
+    logger.warning(
+        "Loading a Hugging Face model with trust_remote_code=True: Python code "
+        "shipped in the model repository may be executed. Only load models from "
+        "sources you trust, and set trust_remote_code=False in the model "
+        "parameters to disable remote code execution."
+    )
 
 
 @dataclass
@@ -44,7 +68,14 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
     )
 
     trust_remote_code: Optional[bool] = field(
-        default=True, metadata={"help": _("Trust remote code or not.")}
+        default=True,
+        metadata={
+            "help": _(
+                "Trust remote code or not. When enabled, Python code shipped in the "
+                "model repository may be executed when the model is loaded; only "
+                "enable it for repositories you trust."
+            )
+        },
     )
     quantization: Optional[BaseHFQuantization] = field(
         default=None,
@@ -191,6 +222,8 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         trust_remote_code = from_pretrained_kwargs.get(
             "trust_remote_code", self.trust_remote_code
         )
+        if trust_remote_code is not False:
+            _warn_trust_remote_code()
         low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
         if "trust_remote_code" not in from_pretrained_kwargs:
             from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
@@ -255,6 +288,9 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def load_from_params(self, params: LLMDeployModelParameters):
         """Load the model from the parameters."""
         from .loader import huggingface_loader
+
+        if getattr(params, "trust_remote_code", True) is not False:
+            _warn_trust_remote_code()
 
         return huggingface_loader(self, params)
 
