@@ -3,8 +3,10 @@
 """
 
 import asyncio
+import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -23,6 +25,8 @@ from .base import (
 )
 from .utils import PathUtils, ProcessManager, SecurityUtils
 
+logger = logging.getLogger(__name__)
+
 
 def _bash_executable() -> str:
     """Use native Git Bash for Windows paths instead of the WSL launcher."""
@@ -39,6 +43,79 @@ def _bash_executable() -> str:
                 if executable.is_file():
                     return str(executable)
     return shutil.which("bash") or "bash"
+
+
+def _signal_group(pgid: int, signum: int) -> None:
+    """Signal a process group, ignoring a group that is already gone."""
+    try:
+        os.killpg(pgid, signum)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def _kill_session_leader(pid: int) -> None:
+    """Immediately kill a session-leader child and everything it started.
+
+    A descendant whose parent already exited is re-parented away from the
+    child, so a parent/children walk cannot find it; it keeps the child's
+    process group, though. Descendants that left the group (``setsid``) are
+    still children, so snapshot them before the group kill orphans them.
+
+    The group is stopped first so its members cannot fork between the
+    snapshot and the kill. That stop does not reach a descendant in its own
+    group, so each snapshotted one is stopped too, and a descendant leading
+    its own group is killed together with that group. A descendant that
+    forks in the window between the snapshot and its own stop can still
+    escape; local mode is not a security boundary.
+
+    A group is only signalled by a descendant's PID if that descendant was
+    stopped, led its own group while stopped, and is still the same process
+    (PID and creation time) right before the kill. A stopped process cannot
+    exit by itself, so its PID cannot be reaped and reused by an unrelated
+    process group in between.
+    """
+    _signal_group(pid, signal.SIGSTOP)
+    try:
+        descendants = psutil.Process(pid).children(recursive=True)
+    except psutil.NoSuchProcess:
+        descendants = []
+    except (psutil.Error, OSError):
+        # e.g. /proc mounted with hidepid; the group kill must still happen.
+        logger.warning("Cannot list sandbox processes of %s", pid, exc_info=True)
+        descendants = []
+    stopped = []
+    for descendant in descendants:
+        try:
+            descendant.suspend()
+        except psutil.Error:
+            continue
+        stopped.append(descendant)
+    # Read group leadership before the group kill, while everything is stopped.
+    leaders = []
+    for descendant in stopped:
+        try:
+            if os.getpgid(descendant.pid) == descendant.pid:
+                leaders.append(descendant)
+        except OSError:
+            pass
+    _signal_group(pid, signal.SIGKILL)
+    for descendant in descendants:
+        # is_running() also compares the creation time, so a PID that was
+        # reaped and reused by an unrelated process never gets a group kill.
+        if descendant in leaders and descendant.is_running():
+            _signal_group(descendant.pid, signal.SIGKILL)
+        try:
+            descendant.kill()
+        except psutil.NoSuchProcess:
+            pass
+        except psutil.AccessDenied:
+            logger.warning(
+                "Cannot kill sandbox process %s: permission denied", descendant.pid
+            )
+    # Reap like ProcessManager.kill_process_tree, so none outlives the call.
+    _, alive = psutil.wait_procs(descendants, timeout=3)
+    for process in alive:
+        logger.warning("Sandbox process %s did not exit after kill", process.pid)
 
 
 class LocalSandboxSession(SandboxSession):
@@ -94,7 +171,10 @@ class LocalSandboxSession(SandboxSession):
         try:
             # 清理所有子进程
             for pid in self.process_pool:
-                self.process_manager.kill_process_tree(pid)
+                if os.name == "nt":
+                    self.process_manager.kill_process_tree(pid)
+                else:
+                    _kill_session_leader(pid)
 
             # 清理工作目录 (only clean up auto-created temp dirs, not custom dirs)
             if (
@@ -231,6 +311,7 @@ class LocalSandboxSession(SandboxSession):
     async def _run_with_limits(self, command: List[str]) -> Dict[str, Any]:
         """在资源限制下运行命令"""
         process = None
+        finished = False
         try:
             environment = dict(os.environ, **self.config.environment_vars)
             if (
@@ -254,6 +335,8 @@ class LocalSandboxSession(SandboxSession):
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.work_dir,
                 env=environment,
+                # Own process group, so cleanup can reach every descendant.
+                start_new_session=os.name != "nt",
             )
 
             # 记录进程 PID
@@ -283,6 +366,7 @@ class LocalSandboxSession(SandboxSession):
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(), timeout=self.config.timeout
             )
+            finished = True
 
             # 清理进程记录
             if process.pid in self.process_pool:
@@ -299,10 +383,17 @@ class LocalSandboxSession(SandboxSession):
             # Also runs on cancellation; never leave a timed-out tool running.
             if process is not None:
                 if process.returncode is None:
-                    await asyncio.to_thread(
-                        self.process_manager.kill_process_tree, process.pid
+                    kill = (
+                        self.process_manager.kill_process_tree
+                        if os.name == "nt"
+                        else _kill_session_leader
                     )
+                    await asyncio.to_thread(kill, process.pid)
                     await process.wait()
+                elif not finished and os.name != "nt":
+                    # The script exited, but a descendant kept its output open
+                    # until the timeout. The group outlives its exited leader.
+                    _signal_group(process.pid, signal.SIGKILL)
                 if process.pid in self.process_pool:
                     self.process_pool.remove(process.pid)
 
