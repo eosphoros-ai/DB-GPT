@@ -6,9 +6,56 @@ together.
 
 import copy
 import dataclasses
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+import logging
+from typing import (
+    Any,
+    Callable,
+    Container,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from .base import Resource, ResourceParameters, ResourceType
+
+logger = logging.getLogger(__name__)
+
+
+def unique_resource_key(name: str, taken: Container[str]) -> str:
+    """Return ``name``, or the first ``<name>_<n>`` that is not in ``taken``.
+
+    Resources configured in an app often share a name (the editor gives every new
+    resource the same default name), so code that indexes resources by name uses
+    this to keep each of them.
+    """
+    key = name
+    suffix = 1
+    while key in taken:
+        key = f"{name}_{suffix}"
+        suffix += 1
+    return key
+
+
+def merge_resource_references(
+    target: Dict[str, Any], references: Optional[Dict[str, Any]]
+) -> None:
+    """Merge one resource's references into ``target``.
+
+    Every knowledge resource reports its references under the same ``knowledge``
+    key, so list values for a key that is already present are extended instead of
+    replaced.
+    """
+    if not references or not isinstance(references, dict):
+        return
+    for key, value in references.items():
+        existing = target.get(key)
+        if isinstance(existing, list) and isinstance(value, list):
+            target[key] = existing + value
+        else:
+            target[key] = value
 
 
 @dataclasses.dataclass
@@ -29,16 +76,38 @@ class ResourcePack(Resource[PackResourceParameters]):
         **kwargs,
     ):
         """Initialize the resource pack."""
-        self._resources: Dict[str, Resource] = {
-            resource.name: resource for resource in resources
-        }
         self._name = name
+        self._resources: Dict[str, Resource] = self._index_resources(resources)
         self._prompt_separator = prompt_separator
 
     @classmethod
     def type(cls) -> ResourceType:
         """Return the resource type."""
         return ResourceType.Pack
+
+    def _index_resources(self, resources: List[Resource]) -> Dict[str, Resource]:
+        """Index the resources by name without dropping any of them.
+
+        When several resources share a name, the last one keeps the plain name, so
+        execution by name still reaches the same resource as before. The earlier ones
+        are stored under the first ``<name>_<n>`` key that is not the name of any
+        resource in the pack. The pack keeps the order the resources were given in.
+        """
+        last_index = {resource.name: i for i, resource in enumerate(resources)}
+        taken = set(last_index)
+        keys: List[str] = []
+        for i, resource in enumerate(resources):
+            if last_index[resource.name] == i:
+                key = resource.name
+            else:
+                key = unique_resource_key(resource.name, taken)
+                taken.add(key)
+                logger.warning(
+                    f"Duplicate resource name '{resource.name}' in resource pack "
+                    f"'{self._name}', keeping it as '{key}'."
+                )
+            keys.append(key)
+        return dict(zip(keys, resources))
 
     @property
     def name(self) -> str:
@@ -75,14 +144,26 @@ class ResourcePack(Resource[PackResourceParameters]):
                 **kwargs,
             )
             prompt_list.append(prompt)
-            if resource_reference is not None:
-                info_map.update(resource_reference)
+            merge_resource_references(info_map, resource_reference)
         return self._prompt_separator.join(prompt_list), info_map
 
     def append(self, resource: Resource, overwrite: bool = False):
         """Append a resource to the pack."""
         name = resource.name
-        if name in self._resources and not overwrite:
+        existing = self._resources.get(name)
+        if existing is not None and existing.name != name:
+            # ``name`` is only the key generated for a same-named duplicate, move
+            # that duplicate to another free key.
+            taken = set(self._resources)
+            taken.update(r.name for r in self._resources.values())
+            taken.add(name)
+            new_key = unique_resource_key(existing.name, taken)
+            self._resources = {
+                (new_key if key == name else key): value
+                for key, value in self._resources.items()
+            }
+            existing = None
+        if existing is not None and not overwrite:
             raise ValueError(f"Resource {name} already exists in the pack.")
         self._resources[name] = resource
 
