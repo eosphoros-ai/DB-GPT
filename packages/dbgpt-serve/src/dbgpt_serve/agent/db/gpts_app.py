@@ -53,8 +53,8 @@ class GptsAppDetail(BaseModel):
     prompt_template: Optional[str] = None
     llm_strategy: Optional[str] = None
     llm_strategy_value: Optional[str] = None
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
@@ -121,8 +121,8 @@ class GptsApp(BaseModel):
     sys_code: Optional[str] = None
     is_collected: Optional[str] = None
     icon: Optional[str] = None
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
     details: List[GptsAppDetail] = []
     published: Optional[str] = None
     user_name: Optional[str] = None
