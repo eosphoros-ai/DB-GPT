@@ -38,6 +38,21 @@ def test_md_header_text_splitter() -> None:
     ]
 
 
+def test_md_header_text_splitter_splits_oversized_code_block() -> None:
+    """Markdown header chunks should still honor the configured chunk size."""
+
+    large_yaml_block = "\n".join(f"key_{i}: value_{i}" for i in range(100))
+    markdown_document = f"# Config\n\n```yaml\n{large_yaml_block}\n```\n"
+    chunk_size = 128
+    markdown_splitter = MarkdownHeaderTextSplitter(chunk_size=chunk_size)
+
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert len(output) > 1
+    assert max(len(chunk.content) for chunk in output) <= chunk_size
+    assert all(chunk.metadata == {"Header1": "Config"} for chunk in output)
+
+
 def test_merge_splits() -> None:
     """Test merging splits with a given separator."""
     splitter = CharacterTextSplitter(separator=" ", chunk_size=9, chunk_overlap=2)
