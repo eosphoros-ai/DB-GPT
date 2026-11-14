@@ -49,22 +49,35 @@ export const dashboardGenerationFromHistoryRef = (ref: any): DashboardGeneration
   };
 };
 
-/** A newer generation round supersedes the same board's earlier planning card. */
+/** Hide superseded planning attempts while preserving independently created boards. */
 export const deduplicateDashboardHistoryGenerations = <T extends { dashboardGenerations?: DashboardGenerationState[] }>(
   messages: T[],
 ): T[] => {
   const seen = new Set<string>();
+  const seenPlans = new Set<string>();
   return [...messages]
     .reverse()
     .map(message => ({
       ...message,
-      dashboardGenerations: message.dashboardGenerations?.filter(state => {
-        const key = state.dashboardId || state.sourceTurnId;
-        if (!key) return true;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }),
+      dashboardGenerations: message.dashboardGenerations
+        ? [...message.dashboardGenerations]
+            .reverse()
+            .filter(state => {
+              const key = state.dashboardId;
+              // Retry-created plans have different asset IDs but the same
+              // planning turn, source and title. A later generated board also
+              // supersedes these pending confirmations.
+              const planKey = state.sourceTurnId
+                ? JSON.stringify([state.sourceTurnId, state.dataSourceId, state.title])
+                : undefined;
+              if (key && seen.has(key)) return false;
+              if (key) seen.add(key);
+              if (state.status === 'awaiting_confirmation' && planKey && seenPlans.has(planKey)) return false;
+              if (planKey) seenPlans.add(planKey);
+              return true;
+            })
+            .reverse()
+        : undefined,
     }))
     .reverse();
 };

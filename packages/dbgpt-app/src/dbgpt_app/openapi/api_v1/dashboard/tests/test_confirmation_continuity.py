@@ -94,12 +94,49 @@ def bound_agent(state, pack):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("language", ["zh", "en"])
+@pytest.mark.parametrize("native", [False, True])
 async def test_saved_plan_finishes_without_another_model_call(
-    environment, monkeypatch, language
+    environment, monkeypatch, language, native
 ):
     state, pack = environment[0]("Build a dashboard")
     state["_report_language"] = language
     agent = bound_agent(state, pack)
+    if native:
+        agent.bind(pack)
+        agent.bind(
+            AgentContext(conv_id=state["conv_id"], enable_native_function_calling=True)
+        )
+        object.__setattr__(
+            agent,
+            "_pending_native_tool_calls",
+            [
+                {
+                    "id": "plan-call",
+                    "type": "function",
+                    "function": {
+                        "name": "plan_dashboard",
+                        "arguments": json.dumps(
+                            {
+                                "plan": {
+                                    "title": "Sales",
+                                    "business_theme": "Retail",
+                                    "metrics": ["sales"],
+                                    "widgets": [
+                                        {
+                                            "id": "sales-0",
+                                            "type": "kpi",
+                                            "title": "Sales",
+                                            "business_question": "How much?",
+                                            "metric": "sales",
+                                        }
+                                    ],
+                                }
+                            }
+                        ),
+                    },
+                }
+            ],
+        )
     output = await agent.act(
         AgentMessage(
             model_name="offline",
@@ -124,6 +161,7 @@ async def test_saved_plan_finishes_without_another_model_call(
             ),
         ),
         agent,
+        **agent.prepare_act_param(None, agent),
     )
     assert output.is_exe_success and not output.terminate
     assert output.action == "plan_dashboard"  # Preserve the real tool step.
@@ -133,11 +171,16 @@ async def test_saved_plan_finishes_without_another_model_call(
     assert model_name == "offline"
     summary = extract_terminate_output(reply)
     assert ("规划已保存" if language == "zh" else "Plan") in summary
-    finished = await agent.act(AgentMessage(content=reply), agent)
+    finished = await agent.act(
+        AgentMessage(content=reply),
+        agent,
+        **agent.prepare_act_param(None, agent),
+    )
     assert finished.terminate and finished.is_exe_success
     model.assert_not_awaited()
     assert environment[2].calls == []  # Planning still never generates widget SQL.
     assert environment[1].rows[state["dashboard_record_id"]].current_revision == 1
+    assert len(environment[1].rows) == 1
 
 
 @pytest.mark.asyncio

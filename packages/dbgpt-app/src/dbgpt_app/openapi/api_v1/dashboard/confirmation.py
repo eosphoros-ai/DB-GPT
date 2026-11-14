@@ -233,6 +233,10 @@ class DashboardConfirmationAgent(ToolCallingReActAgent):
         if self._saved_completion is not None:
             summary, model = self._saved_completion
             self._saved_completion = None
+            # This synthetic reply replaces the provider's previous tool call.
+            # Otherwise native dispatch executes that saved call again instead
+            # of the terminate action, creating another plan on every round.
+            object.__setattr__(self, "_pending_native_tool_calls", None)
             return (
                 "Thought: The saved result is ready for review.\n"
                 "Action: terminate\nAction Input: "
