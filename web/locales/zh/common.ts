@@ -228,6 +228,8 @@ export const CommonZh: Resources['translation'] = {
   provider_desc_gitee: 'Gitee AI 模型服务',
   provider_label_infiniai: '无问芯穹',
   provider_desc_infiniai: 'Infini AI 模型服务',
+  provider_label_opper: 'Opper',
+  provider_desc_opper: '欧盟托管的 AI 网关，一个 Key 访问 50+ 家厂商的 700+ 模型，兼容 OpenAI 协议',
   provider_label_ollama: 'Ollama',
   provider_desc_ollama: '本地模型，无需 API Key，确保本地服务已启动',
   Plugins: '插件列表',
