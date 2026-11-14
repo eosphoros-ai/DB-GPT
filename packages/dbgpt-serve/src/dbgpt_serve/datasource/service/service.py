@@ -238,7 +238,15 @@ class Service(
         """
         db_config = self._dao.get_one({"id": datasource_id})
         if db_config:
-            self._db_summary_client.delete_db_profile(db_config.db_name)
+            deleted = self._db_summary_client.delete_db_profile(db_config.db_name)
+            if not deleted:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "Datasource summary indexing is in progress; "
+                        "try deleting the datasource again later."
+                    ),
+                )
             self._dao.delete({"id": datasource_id})
             # Datasource is gone; drop the cached connector so we don't
             # hand callers a connector pointing at a config row that no
@@ -309,7 +317,11 @@ class Service(
         if not db_config:
             raise HTTPException(status_code=404, detail="datasource not found")
 
-        self._db_summary_client.delete_db_profile(db_config.db_name)
+        deleted = self._db_summary_client.delete_db_profile(db_config.db_name)
+        if not deleted:
+            # Startup or a previous refresh is already indexing this database;
+            # do not block the HTTP request behind the schema/embedding job.
+            return True
         # The cached connector's reflected MetaData may be stale relative
         # to whatever caused the refresh; force a rebuild on next access.
         self.datasource_manager.invalidate_connector(db_config.db_name)
