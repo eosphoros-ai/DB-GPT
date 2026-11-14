@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.aimlapi import AimlapiLLMClient
+    from dbgpt.model.proxy.llms.api_route import ApiRouteLLMClient
     from dbgpt.model.proxy.llms.burncloud import BurnCloudLLMClient
     from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
     from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
@@ -59,6 +60,7 @@ def __lazy_import(name):
         "MistralLLMClient": "dbgpt.model.proxy.llms.mistral",
         "VercelAIGatewayLLMClient": "dbgpt.model.proxy.llms.vercel",
         "XaiLLMClient": "dbgpt.model.proxy.llms.xai",
+        "ApiRouteLLMClient": "dbgpt.model.proxy.llms.api_route",
     }
 
     if name in module_path:
@@ -99,4 +101,5 @@ __all__ = [
     "MistralLLMClient",
     "VercelAIGatewayLLMClient",
     "XaiLLMClient",
+    "ApiRouteLLMClient",
 ]
