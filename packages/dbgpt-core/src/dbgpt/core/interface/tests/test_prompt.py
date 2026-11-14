@@ -245,6 +245,15 @@ class TestPromptManager:
         assert len(result) == 1
         assert result[0].content == "test"
 
+    def test_prefer_query_without_sys_code(self, prompt_manager, in_memory_storage):
+        in_memory_storage.save(
+            StoragePromptTemplate(
+                prompt_name="test_prompt", content="test", sys_code="s1"
+            )
+        )
+        result = prompt_manager.prefer_query("test_prompt")
+        assert len(result) == 1
+
     def test_prefer_query_language(self, prompt_manager, in_memory_storage):
         for language in ["en", "zh"]:
             in_memory_storage.save(
