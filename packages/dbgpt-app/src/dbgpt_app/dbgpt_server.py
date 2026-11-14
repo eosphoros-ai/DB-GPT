@@ -3,7 +3,7 @@ import os
 import sys
 from typing import List
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # fastapi import time cost about 0.05s
@@ -36,6 +36,7 @@ from dbgpt_app.component_configs import initialize_components
 from dbgpt_app.config import ApplicationConfig, ServiceWebParameters, SystemParameters
 from dbgpt_app.default_datasources import default_file_datasources
 from dbgpt_serve.core import add_exception_handler
+from dbgpt_serve.utils.auth import get_user_from_headers, v1_auth_middleware
 
 logger = logging.getLogger(__name__)
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,6 +52,7 @@ app = create_app(
 replace_router(app)
 
 system_app = SystemApp(app)
+app.middleware("http")(v1_auth_middleware)
 
 
 def mount_routers(app: FastAPI):
@@ -71,24 +73,44 @@ def mount_routers(app: FastAPI):
     from dbgpt_serve.agent.app.controller import router as gpts_v1
     from dbgpt_serve.agent.app.endpoints import router as app_v2
 
-    app.include_router(api_v1, prefix="/api", tags=["Chat"])
+    v1_auth = [Depends(get_user_from_headers)]
+    app.include_router(api_v1, prefix="/api", tags=["Chat"], dependencies=v1_auth)
     app.include_router(api_v2, prefix="/api", tags=["ChatV2"])
-    app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
-    app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
-    app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"])
+    app.include_router(
+        api_editor_route_v1, prefix="/api", tags=["Editor"], dependencies=v1_auth
+    )
+    app.include_router(
+        api_fb_v1, prefix="/api", tags=["FeedBack"], dependencies=v1_auth
+    )
+    app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"], dependencies=v1_auth)
     app.include_router(app_v2, prefix="/api", tags=["App"])
-    app.include_router(python_upload_router, prefix="/api", tags=["PythonUpload"])
-    app.include_router(examples_router, prefix="/api", tags=["Examples"])
-    app.include_router(agentic_data_api, prefix="/api", tags=["AgenticData"])
-    app.include_router(dashboard_router, prefix="/api", tags=["Dashboards"])
+    app.include_router(
+        python_upload_router, prefix="/api", tags=["PythonUpload"], dependencies=v1_auth
+    )
+    app.include_router(
+        examples_router, prefix="/api", tags=["Examples"], dependencies=v1_auth
+    )
+    app.include_router(
+        agentic_data_api, prefix="/api", tags=["AgenticData"], dependencies=v1_auth
+    )
+    app.include_router(
+        dashboard_router, prefix="/api", tags=["Dashboards"], dependencies=v1_auth
+    )
 
-    app.include_router(knowledge_router, prefix="/api/v1", tags=["Knowledge"])
+    app.include_router(
+        knowledge_router, prefix="/api/v1", tags=["Knowledge"], dependencies=v1_auth
+    )
 
     from dbgpt_serve.agent.app.recommend_question.controller import (
         router as recommend_question_v1,
     )
 
-    app.include_router(recommend_question_v1, prefix="/api", tags=["RecommendQuestion"])
+    app.include_router(
+        recommend_question_v1,
+        prefix="/api",
+        tags=["RecommendQuestion"],
+        dependencies=v1_auth,
+    )
 
 
 def mount_static_files(app: FastAPI, param: ApplicationConfig):
