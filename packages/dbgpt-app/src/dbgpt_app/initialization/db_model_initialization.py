@@ -40,16 +40,6 @@ from dbgpt_serve.plugins.models.models import (
     SuiteEventEntity as PluginsSuiteEventEntity,
 )
 from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
-from dbgpt_serve.semantic.models import SemColumnEntity
-from dbgpt_serve.semantic.models import SemDatasourceEntity
-from dbgpt_serve.semantic.models import SemEntryEntity
-from dbgpt_serve.semantic.models import SemExampleEntity
-from dbgpt_serve.semantic.models import SemMetricEntity
-from dbgpt_serve.semantic.models import SemMetricVersionEntity
-from dbgpt_serve.semantic.models import SemPublishLogEntity
-from dbgpt_serve.semantic.models import SemRelationEntity
-from dbgpt_serve.semantic.models import SemRuleEntity
-from dbgpt_serve.semantic.models import SemTableEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
@@ -62,6 +52,18 @@ from dbgpt_serve.report.models.models import (
 )
 from dbgpt_serve.scheduled_task.models.scheduled_run_model import ScheduledRunEntity
 from dbgpt_serve.scheduled_task.models.scheduled_task_model import ScheduledTaskEntity
+from dbgpt_serve.semantic.models import (
+    SemColumnEntity,
+    SemDatasourceEntity,
+    SemEntryEntity,
+    SemExampleEntity,
+    SemMetricEntity,
+    SemMetricVersionEntity,
+    SemPublishLogEntity,
+    SemRelationEntity,
+    SemRuleEntity,
+    SemTableEntity,
+)
 from dbgpt_serve.session_file.models.models import SessionFileEntity
 
 _MODELS = [

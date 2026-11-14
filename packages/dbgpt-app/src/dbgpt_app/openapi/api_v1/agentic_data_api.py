@@ -99,13 +99,13 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
-from .tool_names import canonical_tool
 from .task_progress import (
     complete_delivery_task,
     reconcile_report_delivery,
     sync_task_plan_steps,
     task_plan_meta,
 )
+from .tool_names import canonical_tool
 
 _CHINESE_RECOMMENDATION_COUNTS = {
     "一": 1,
@@ -4585,7 +4585,10 @@ After partial results, finish only missing requested deliverables, then report.
         from .tools.export_csv import make_export_csv
 
         suite_tools = []
-        if suite_binding.allow is not None and "generate_er_diagram" in suite_binding.allow:
+        if (
+            suite_binding.allow is not None
+            and "generate_er_diagram" in suite_binding.allow
+        ):
             suite_tools.append(make_generate_er_diagram(react_state))
         if suite_binding.violation("export_csv") is None:
             suite_tools.append(make_export_csv(react_state))

@@ -446,7 +446,9 @@ class TestStepMarker:
             patch(
                 "dbgpt_app.operators.taskflow_agent.run_react_agent",
                 new=AsyncMock(
-                    return_value="LLM_PROVIDER_ERROR: Error code: 402 Insufficient Balance"
+                    return_value=(
+                        "LLM_PROVIDER_ERROR: Error code: 402 Insufficient Balance"
+                    )
                 ),
             ),
         ):

@@ -123,7 +123,7 @@ def make_sql_query(
                             "content": f"安全限制: 不允许执行 {forbidden_kw} 语句，"
                             "仅支持 SELECT 查询。",
                         }
-                    ]
+                    ],
                 },
                 ensure_ascii=False,
             )
