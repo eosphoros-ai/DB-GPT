@@ -245,7 +245,9 @@ class MemoryCacheStorage(CacheStorage):
         # Calculate memory size of the new entry
         new_entry_size = _get_object_bytes(item)
         # Evict entries if necessary
-        while self.current_memory_usage + new_entry_size > self.max_memory:
+        while (
+            self.cache and self.current_memory_usage + new_entry_size > self.max_memory
+        ):
             self._apply_cache_policy(cache_config)
 
         # Store the item in the cache.
@@ -262,6 +264,7 @@ class MemoryCacheStorage(CacheStorage):
     def _apply_cache_policy(self, cache_config: Optional[CacheConfig] = None):
         # Remove the oldest/newest item based on the cache policy.
         if cache_config and cache_config.cache_policy == CachePolicy.FIFO:
-            self.cache.popitem(last=False)
+            _, evicted = self.cache.popitem(last=False)
         else:  # Default is LRU
-            self.cache.popitem(last=True)
+            _, evicted = self.cache.popitem(last=True)
+        self.current_memory_usage -= _get_object_bytes(evicted)
