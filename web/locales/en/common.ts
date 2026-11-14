@@ -224,6 +224,9 @@ export const CommonEn = {
   provider_desc_gitee: 'Gitee AI model services',
   provider_label_infiniai: 'Infini AI',
   provider_desc_infiniai: 'Infini AI model services',
+  'provider_label_y-api': 'Y-API',
+  'provider_desc_y-api':
+    'y-api.bestvirtualgoods.com model gateway — one key for DeepSeek / GLM / Kimi / GPT, OpenAI-compatible',
   provider_label_ollama: 'Ollama',
   provider_desc_ollama: 'Local models, no API key required. Make sure the local server is running',
   Plugins: 'Plugins',
