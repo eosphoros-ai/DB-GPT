@@ -246,6 +246,60 @@ def _default_enable_model_names(provider: str) -> List[str]:
     ]
 
 
+async def _start_provider_model(
+    worker_manager: WorkerManager,
+    item: ModelProviderConfigItem,
+    model: str,
+) -> None:
+    """Reuse a running worker, or refresh it when its credentials changed."""
+    from dbgpt.core.interface.parameter import LLMDeployModelParameters
+    from dbgpt.util.configure import ConfigurationManager
+
+    params = _model_startup_params(item, model)
+    startup_req = WorkerStartupRequest(
+        host="", port=0, model=model, worker_type=WorkerType.LLM, params=params
+    )
+    try:
+        await worker_manager.model_startup(startup_req)
+    except Exception as exc:
+        if "worker instances is exist" not in str(exc):
+            raise
+        instances = await worker_manager.get_model_instances(
+            WorkerType.LLM.value, model, healthy_only=False
+        )
+        expected = ConfigurationManager(params).parse_config(LLMDeployModelParameters)
+        # Only adopt workers whose provider and credentials can be verified.
+        # Remote workers without deploy parameters retain the original error.
+        if not instances or any(
+            instance.model_params is None
+            or instance.model_params.provider != expected.provider
+            for instance in instances
+        ):
+            raise
+        if all(
+            not instance.stopped
+            and all(
+                getattr(instance.model_params, field, None)
+                == getattr(expected, field, None)
+                for field in ("api_key", "api_base", "api_secret")
+            )
+            for instance in instances
+        ):
+            return
+        # Reconnecting with another key must not keep using the old key.
+        await worker_manager.model_shutdown(
+            WorkerStartupRequest(
+                host="",
+                port=0,
+                model=model,
+                worker_type=WorkerType.LLM,
+                delete_after=True,
+                params={},
+            )
+        )
+        await worker_manager.model_startup(startup_req)
+
+
 async def _start_provider_models(
     worker_manager: WorkerManager,
     item: ModelProviderConfigItem,
@@ -255,15 +309,7 @@ async def _start_provider_models(
     enabled: List[str] = []
     for model in model_names:
         try:
-            await worker_manager.model_startup(
-                WorkerStartupRequest(
-                    host="",
-                    port=0,
-                    model=model,
-                    worker_type=WorkerType.LLM,
-                    params=_model_startup_params(item, model),
-                )
-            )
+            await _start_provider_model(worker_manager, item, model)
             enabled.append(model)
         except Exception as e:
             logger.warning(f"enable model {model} under {item.provider} failed: {e}")
@@ -303,6 +349,28 @@ async def model_providers(
 
         # Merge user-defined (custom OpenAI-compatible) providers into the catalog.
         for item in storage.list_all():
+            if item.provider == "proxy/xm4" and item.connected:
+                from dbgpt.model.proxy.llms.xm4 import list_xm4_models
+
+                key = f"{item.provider}__{WorkerType.LLM.value}"
+                if key in providers:
+                    try:
+                        models = await list_xm4_models(item.api_key, item.api_base)
+                        providers[key]["models"] = [
+                            {
+                                "model": m.model,
+                                "label": m.label or m.model,
+                                "context_length": m.context_length,
+                                "max_output_length": m.max_output_length,
+                                "function_calling": m.function_calling,
+                                "link": m.link,
+                                "description": m.description,
+                                "enabled": m.model in item.enabled_models,
+                            }
+                            for m in models
+                        ]
+                    except Exception:
+                        logger.warning("Unable to refresh XM4 authorized model catalog")
             if not item.is_custom:
                 continue
             providers[item.provider] = {
@@ -331,6 +399,8 @@ async def model_providers(
         # so the enabled state matches the connection state.
         if worker_type in (None, WorkerType.LLM.value):
             for item in storage.list_all():
+                if item.provider == "proxy/xm4":
+                    continue
                 if item.is_custom or not item.connected or item.enabled_models:
                     continue
                 enabled = await _start_provider_models(
@@ -500,15 +570,40 @@ async def _finish_connect(
     ok, reason = await test_provider_connection(provider, api_key, api_base)
     if not ok:
         return False, reason, []
+    model_names = _default_enable_model_names(provider)
+    if provider == "proxy/xm4":
+        from dbgpt.model.proxy.llms.xm4 import list_xm4_models
+
+        try:
+            model_names = [m.model for m in await list_xm4_models(api_key, api_base)][
+                :DEFAULT_ENABLE_MODEL_COUNT
+            ]
+        except Exception:
+            return False, "cannot load XM4 authorized model catalog", []
+        if not model_names:
+            return False, "no models available for this XM4 key", []
     item = ModelProviderConfigItem(
         provider=provider,
         label=existing.label if existing else None,
         api_key=api_key,
         api_base=api_base,
     )
-    enabled = await _start_provider_models(
-        worker_manager, item, _default_enable_model_names(provider)
-    )
+    enabled = await _start_provider_models(worker_manager, item, model_names)
+    if provider == "proxy/xm4" and existing:
+        for model in set(existing.enabled_models) - set(model_names):
+            try:
+                await worker_manager.model_shutdown(
+                    WorkerStartupRequest(
+                        host="",
+                        port=0,
+                        model=model,
+                        worker_type=WorkerType.LLM,
+                        delete_after=True,
+                        params={},
+                    )
+                )
+            except Exception:
+                logger.warning("Unable to stop unavailable XM4 model %s", model)
     item.enabled_models = enabled
     storage.save_or_update(item)
     return True, "", enabled
@@ -547,14 +642,7 @@ async def enable_provider_model(
         item = storage.get(request.provider)
         if not item or not item.api_key:
             return Result.failed(err_code="E000X", msg="provider not connected")
-        startup_req = WorkerStartupRequest(
-            host="",
-            port=0,
-            model=request.model,
-            worker_type=WorkerType.LLM,
-            params=_model_startup_params(item, request.model),
-        )
-        await worker_manager.model_startup(startup_req)
+        await _start_provider_model(worker_manager, item, request.model)
         enabled = list(item.enabled_models)
         if request.model not in enabled:
             enabled.append(request.model)

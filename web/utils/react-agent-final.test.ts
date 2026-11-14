@@ -215,6 +215,87 @@ test('keeps ordinary JSON answers even when they contain content and citations k
   });
 });
 
+const dashboardResult = {
+  chunks: [{ output_type: 'text', content: 'Dashboard repair saved. 0 widget(s) still need attention.' }],
+  dashboard: {
+    dashboard_id: '92892e8092c14fdbaf5e8efdcad3f47e',
+    source_turn_id: 'a5e603a016e7499c8ec824655ab9c236',
+    title: 'Walmart 销售经营大盘（周度监控）',
+    editor_path: '/dashboards/92892e8092c14fdbaf5e8efdcad3f47e',
+    total_widgets: 4,
+    validated_widgets: 4,
+    failed_widgets: 0,
+    publishable: true,
+  },
+};
+
+test('shows readable dashboard final content without the tool envelope', () => {
+  const content = JSON.stringify(dashboardResult);
+  const expected = { content: dashboardResult.chunks[0].content, citations: [] };
+  assert.deepEqual(decodeAgentFinalAnswer({ type: 'final', content }), expected);
+  assert.deepEqual(decodeAgentFinalAnswer(content), expected);
+});
+
+test('decodes dashboard results from persisted history after reloading', () => {
+  for (const history of [
+    { type: 'react-agent', version: 1, final_content: JSON.stringify(dashboardResult) },
+    { type: 'react-agent', version: 2, protocol_version: 2, final_content: JSON.stringify(dashboardResult) },
+  ]) {
+    assert.deepEqual(decodeAgentHistoryAnswer(JSON.stringify(history)), {
+      content: dashboardResult.chunks[0].content,
+      citations: [],
+    });
+  }
+});
+
+test('supports the original dashboard metadata key and preserves repair errors', () => {
+  const content = JSON.stringify({
+    __dashboard__: { ...dashboardResult.dashboard, failed_widgets: 1, publishable: false },
+    chunks: [
+      { output_type: 'text', content: '仍有 1 个组件需要修复。' },
+      { output_type: 'markdown', content: '**周销售趋势**：日期列无效。' },
+      { output_type: 'query', content: { sql: 'internal SQL' } },
+      null,
+    ],
+  });
+  assert.deepEqual(decodeAgentFinalAnswer(content), {
+    content: '仍有 1 个组件需要修复。\n\n**周销售趋势**：日期列无效。',
+    citations: [],
+  });
+});
+
+test('keeps unrelated JSON and dashboard envelope examples as user content', () => {
+  for (const content of [
+    JSON.stringify({ chunks: dashboardResult.chunks }),
+    JSON.stringify({ ...dashboardResult, dashboard: { title: 'Example' } }),
+    `示例：\n\`\`\`json\n${JSON.stringify(dashboardResult)}\n\`\`\``,
+    '{"chunks": [], "dashboard": {broken}',
+  ]) {
+    assert.deepEqual(decodeAgentFinalAnswer(content), { content, citations: [] });
+  }
+});
+
+test('presents dashboard planning results as a review request without internal instructions', () => {
+  for (const prefix of ['', '__']) {
+    const content = JSON.stringify({
+      chunks: [{ output_type: 'text', content: 'Stop this run. Do not generate SQL in this turn.' }],
+      [`${prefix}dashboard_plan${prefix}`]: { title: '销售监控' },
+      [`${prefix}dashboard_plan_draft${prefix}`]: {
+        dashboard_id: 'plan-1',
+        status: 'awaiting_confirmation',
+      },
+    });
+    assert.equal(
+      decodeAgentFinalAnswer({ content }).content,
+      '已保存「销售监控」的看板规划。请查看规划卡片，确认后生成并验证组件 SQL。',
+    );
+    assert.equal(
+      decodeAgentHistoryAnswer({ type: 'react-agent', version: 1, final_content: content }).content,
+      decodeAgentFinalAnswer({ content }).content,
+    );
+  }
+});
+
 test('drops malformed citations instead of exposing arbitrary tool output', () => {
   const answer = decodeAgentFinalAnswer({
     content: '安全回答',

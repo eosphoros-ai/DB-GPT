@@ -1,5 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
-import type { ResponseType } from '@/client/api';
+import { apiInterceptors } from '@/client/api';
+import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
+import { getSuites } from '@/client/api/suite';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
@@ -29,6 +31,10 @@ import {
 } from '@/modules/session-files';
 import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
+import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
+import ApprovalDock from '@/new-components/chat/content/ApprovalDock';
+import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
+import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
@@ -44,29 +50,85 @@ import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content
 import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
+import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
+import ComposerContextMenu from '@/new-components/chat/input/ComposerContextMenu';
+import SuiteCommandPopover, { type SuiteCommandPopoverHandle } from '@/new-components/chat/input/SuiteCommandPopover';
+import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import ChatDashboardCard from '@/new-components/dashboard/ChatDashboardCard';
+import type { DashboardGenerationState } from '@/new-components/dashboard/DashboardGenerationCard';
 import {
   applyDashboardGenerationToMessages,
   createDashboardGenerationEventGate,
+  reduceDashboardGenerations,
 } from '@/new-components/dashboard/dashboard-generation-state';
-import { dashboardGenerationFromHistoryRef } from '@/new-components/dashboard/dashboard-history-recovery';
+import {
+  dashboardGenerationFromHistoryRef,
+  deduplicateDashboardHistoryGenerations,
+  enrichHistoryWithDashboardRefs,
+} from '@/new-components/dashboard/dashboard-history-recovery';
+import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
+import { getLatestReport } from '@/new-components/financial-analysis/api';
+import {
+  financialStepSubtitle,
+  financialStepTitle,
+  recentFinancialObservations,
+} from '@/new-components/financial-analysis/execution-display';
+import { recoverFinancialHistory } from '@/new-components/financial-analysis/recover-history';
+import {
+  findFinancialCitationArtifact,
+  type FinancialCitation,
+  type FinancialCitationTarget,
+} from '@/new-components/financial-analysis/report-citations';
+import {
+  FinancialReportDelivery,
+  artifactIdentity,
+  mergeArtifacts,
+} from '@/new-components/financial-analysis/report-delivery';
 import { dashboardText as dt } from '@/new-components/dashboard/dashboard-i18n';
 import { DASHBOARD_INTERNAL_SKILLS, dashboardTemplateEntry } from '@/new-components/dashboard/dashboard-template-entry';
-import DashboardGenerationCard, {
-  type DashboardGenerationState,
-} from '@/new-components/dashboard/DashboardGenerationCard';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
+import type { IFlow } from '@/types/flow';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
+import type { SuiteCommand, SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
+import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
+import { executionStatus } from '@/utils/execution-status';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
+import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
+import {
+  querySourcesFromExecution,
+  semanticReadGapsFromExecution,
+  semanticSourcesFromExecution,
+} from '@/utils/semantic-provenance';
+import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
+  getHomeSuites,
+  localizeSuite,
+  resolveSuiteQuestionDatabase,
+  scoreSuites,
+  suiteDisplayName,
+} from '@/utils/suite-routing';
+import {
+  suiteCommandFileError,
+  suiteCommandFileHint,
+  suiteCommandPrompt,
+  validateSuiteCommandFiles,
+} from '@/utils/suite-command-inputs';
+import { getSuiteCommandQuery } from '@/utils/suite-commands';
+import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
+import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
+import { useForegroundResultAcknowledgement } from '@/hooks/use-conversation-attention';
+import {
+  AimOutlined,
+  ApartmentOutlined,
   ApiOutlined,
   ArrowUpOutlined,
   AudioOutlined,
@@ -74,6 +136,8 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
+  CloseCircleFilled,
+  CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
@@ -83,9 +147,12 @@ import {
   FileImageOutlined,
   FileOutlined,
   FilePptOutlined,
+  FilePdfOutlined,
   FileTextOutlined,
+  InboxOutlined,
   LeftOutlined,
-  PaperClipOutlined,
+  LoadingOutlined,
+  PauseCircleOutlined,
   PieChartOutlined,
   PlusOutlined,
   ReadOutlined,
@@ -93,7 +160,6 @@ import {
   SearchOutlined,
   TableOutlined,
   ThunderboltOutlined,
-  UploadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
@@ -103,7 +169,6 @@ import {
   Button,
   ConfigProvider,
   Drawer,
-  Dropdown,
   Input,
   List,
   Modal,
@@ -117,8 +182,10 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { financialText, useFinancialLocale } from '../new-components/financial-analysis/i18n';
+import { financialTopicRetryPrompt } from '../new-components/financial-analysis/topic-retry';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -183,6 +250,208 @@ const _getFileIcon = (fileName: string, mimeType?: string) => {
   return <FileTextOutlined className='text-blue-500 text-lg' />;
 };
 
+/** Image extensions that can be rendered as thumbnails. */
+const SERVE_IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
+
+/**
+ * Map a file artifact's on-disk path to a URL the browser can load, or
+ * null when the backend cannot serve it. Generated images live either in
+ * the static ``/images`` mount (``pilot/message/img``) or under the
+ * generated-work roots (``pilot/tmp``, ``pi_workspace``) exposed via the
+ * scoped ``/v1/chat/harness/artifact-file`` endpoint.
+ */
+const servableImageUrl = (filePath?: string): string | null => {
+  if (!filePath) return null;
+  const p = filePath.replace(/\\/g, '/');
+  const base = p.split('/').pop() || '';
+  if (!SERVE_IMAGE_EXT_RE.test(base)) return null;
+  if (p.includes('/message/img/')) return `/images/${base}`;
+  if (p.includes('/pilot/') || p.includes('/pi_workspace/')) {
+    return `/api/v1/chat/harness/artifact-file?path=${encodeURIComponent(filePath)}`;
+  }
+  return null;
+};
+
+/** Deliverable extensions shown as first-class artifact cards: document
+ *  family only (reports / office / markdown). Charts and images are not
+ *  deliverables — they aggregate into a compact mosaic tile instead. */
+const DELIVERABLE_EXTS = new Set([
+  'html',
+  'htm',
+  'xlsx',
+  'xls',
+  'csv',
+  'pptx',
+  'ppt',
+  'pdf',
+  'docx',
+  'doc',
+  'md',
+  'markdown',
+  'drawio',
+  'dbml',
+  'mmd',
+]);
+/** Image extensions: never a final card, always folded into the chart
+ *  mosaic / process group. */
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']);
+/** Intermediate extensions that never surface as deliverable cards. */
+const PROCESS_EXTS = new Set([
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'py',
+  'sh',
+  'bash',
+  'log',
+  'tmp',
+  'lock',
+  'map',
+  'bak',
+  'ckpt',
+  'npy',
+  'npz',
+]);
+const PROCESS_NAME_RE = /(template|_rows|_check|check_|draft|scratch|intermediate|backup|\.bak|_tmp|tmp_)/i;
+
+/**
+ * Classify a file artifact as presentable deliverable vs intermediate
+ * process file. Files the final answer references (by name or path) are
+ * always deliverables; otherwise extension + naming heuristics decide,
+ * and unknown/no-extension names (path-segment noise) count as process
+ * so they stay out of the artifact strip.
+ */
+/**
+ * Boundary-aware reference check: the name/path must appear in the answer
+ * as a whole path segment or token — plain substring matching would treat
+ * e.g. "chenketing.ckt" (a segment of every absolute path) as referenced.
+ */
+const isReferencedInAnswer = (needle: string, answerText: string | undefined): boolean => {
+  if (!answerText || !needle) return false;
+  let idx = answerText.indexOf(needle);
+  while (idx >= 0) {
+    const before = idx > 0 ? answerText[idx - 1] : ' ';
+    const afterIdx = idx + needle.length;
+    const after = afterIdx < answerText.length ? answerText[afterIdx] : ' ';
+    const okBefore = idx === 0 || /[/\s"'`(=【:：]/.test(before);
+    const okAfter = !/[A-Za-z0-9._\-/\\]/.test(after);
+    if (okBefore && okAfter) return true;
+    idx = answerText.indexOf(needle, idx + 1);
+  }
+  return false;
+};
+
+const classifyFileTier = (
+  name: string,
+  filePath: string | undefined,
+  answerText: string | undefined,
+): { tier: 'final' | 'process'; referenced: boolean } => {
+  const base = (name || (filePath || '').split('/').pop() || '').toLowerCase();
+  const ext = base.includes('.') ? base.split('.').pop() || '' : '';
+  const referenced = isReferencedInAnswer(name, answerText) || isReferencedInAnswer(filePath || '', answerText);
+  // Charts/images are never deliverables: they fold into the mosaic tile
+  // and the process group even when the answer mentions them.
+  if (IMAGE_EXTS.has(ext)) return { tier: 'process', referenced };
+  if (PROCESS_NAME_RE.test(base) || PROCESS_EXTS.has(ext)) {
+    return { tier: 'process', referenced };
+  }
+  if (referenced) return { tier: 'final', referenced };
+  if (DELIVERABLE_EXTS.has(ext)) return { tier: 'final', referenced };
+  return { tier: 'process', referenced };
+};
+
+/**
+ * Synthesize a user-facing intention line for engines whose models do not
+ * emit one (pi): derive it from the tool name + primary argument so the
+ * round header / status row show what the step is doing, localized.
+ */
+const synthesizeIntention = (
+  action: string | undefined,
+  input: any,
+  t: (key: string, options?: any) => string,
+): string | undefined => {
+  if (!action) return undefined;
+  const pick = (keys: string[]): string => {
+    if (input && typeof input === 'object') {
+      for (const k of keys) {
+        if (typeof input[k] === 'string' && input[k]) return input[k] as string;
+      }
+      return '';
+    }
+    if (typeof input === 'string' && input.trim()) {
+      const src = input.trim();
+      try {
+        const obj = JSON.parse(src);
+        if (obj && typeof obj === 'object') {
+          for (const k of keys) {
+            if (typeof obj[k] === 'string' && obj[k]) return obj[k] as string;
+          }
+          return '';
+        }
+      } catch {
+        // python-repr style: {'query': '...', 'max_results': 8}
+        if (src.startsWith('{')) {
+          for (const k of keys) {
+            const m = src.match(new RegExp(`['"]?${k}['"]?\\s*:\\s*(['"])([^'"]*)\\1`));
+            if (m && m[2]) return m[2];
+          }
+          return '';
+        }
+        return src;
+      }
+    }
+    return '';
+  };
+  const clip = (v: string, n = 48) => (v.length > n ? `${v.slice(0, n)}…` : v);
+  const param = (keys: string[]) => clip(pick(keys));
+  switch (action) {
+    case 'web_search': {
+      const q = param(['query', 'q']);
+      return q ? t('intent_web_search', { q }) : (t('intent_web_search_plain') as string);
+    }
+    case 'web_fetch': {
+      const url = param(['url']);
+      return url ? t('intent_web_fetch', { url: clip(url, 64) }) : (t('intent_web_fetch_plain') as string);
+    }
+    case 'sql_query': {
+      const q = param(['sql', 'query']);
+      return q ? t('intent_sql', { q }) : (t('intent_sql_plain') as string);
+    }
+    case 'code_interpreter':
+    case 'code':
+      return t('intent_code');
+    case 'shell_interpreter':
+    case 'bash':
+      return t('intent_shell');
+    case 'html_interpreter':
+      return t('intent_html');
+    case 'read': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_read', { p: pth }) : (t('intent_read_plain') as string);
+    }
+    case 'write': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_write', { p: pth }) : (t('intent_write_plain') as string);
+    }
+    case 'edit': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_edit', { p: pth }) : (t('intent_edit_plain') as string);
+    }
+    case 'todowrite':
+      return t('intent_todo');
+    case 'question':
+      return t('intent_question');
+    default:
+      if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
+      if (/^(load_skill|get_skill|execute_skill)/.test(action)) {
+        const n = param(['skill_name', 'name', 'package']);
+        return n ? t('intent_skill', { n }) : (t('intent_skill_plain') as string);
+      }
+      return action;
+  }
+};
+
 interface DataSource {
   id: number;
   type: string;
@@ -213,10 +482,14 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  executionStatus?: string;
+  /** TaskFlow run metadata (set when this answer was produced by a task flow). */
+  flowRun?: { label: string };
   /** Immutable server snapshots of every session file attached to this message. */
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
   attachedSkill?: { name: string; id: string };
+  attachedSuite?: SuiteMessageReference;
   attachedDb?: { db_name: string; db_type: string };
   taskPlan?: TaskItem[];
   attachedConnectors?: AttachedConnector[];
@@ -231,9 +504,15 @@ interface ExecutionStep {
   step: number;
   title?: string;
   detail: string;
-  status: 'running' | 'done' | 'failed';
+  status: 'running' | 'done' | 'failed' | 'pending';
   action?: string;
   actionInput?: any;
+  /** Wall-clock ms when the step started / finished (timeline durations). */
+  startedAt?: number;
+  endedAt?: number;
+  /** User-facing intent line from step.meta (action_intention). */
+  actionIntention?: string;
+  progressContent?: string;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -254,7 +533,20 @@ interface Skill {
   icon?: string;
 }
 
-type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
+type ArtifactType =
+  | 'file'
+  | 'table'
+  | 'chart'
+  | 'image'
+  | 'code'
+  | 'markdown'
+  | 'summary'
+  | 'html'
+  | 'skill'
+  | 'query'
+  | 'expert_suite'
+  | 'dashboard'
+  | 'artifact_bundle';
 
 interface Artifact {
   id: string;
@@ -270,10 +562,29 @@ interface Artifact {
   filePath?: string;
   /** Which sub-agent produced this artifact (for sub-agent produced files). */
   sourceAgent?: string;
+  /**
+   * Presentation tier for file artifacts: ``final`` deliverables render
+   * as cards; ``process`` intermediates (templates, scratch scripts,
+   * row dumps, unknown-ext noise) collapse into a process-files group.
+   */
+  tier?: 'final' | 'process';
   // Chart-specific metadata
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
 }
+
+/** Output types that materialize as stream artifact cards. */
+const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code', 'query', 'expert_suite']);
+const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutput[]> }): boolean =>
+  Object.values(execution?.outputs || {}).some(arr =>
+    arr.some(
+      o =>
+        ARTIFACT_OUTPUT_TYPES.has(o.output_type) ||
+        ((o.output_type === 'text' || o.output_type === 'markdown') &&
+          typeof o.content === 'string' &&
+          envelopeEmbeddedOutputs(o.content).length > 0),
+    ),
+  );
 
 type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary' | 'report';
 
@@ -333,7 +644,8 @@ const _convertExecutionToMessageParts = (
             ? 'write'
             : step.title?.toLowerCase().includes('code') ||
                 step.title?.toLowerCase().includes('execute') ||
-                actionLower === 'shell_interpreter'
+                actionLower === 'shell_interpreter' ||
+                actionLower === 'bash'
               ? 'bash'
               : 'task';
 
@@ -377,6 +689,8 @@ const convertToManusFormat = (
   const getStepType = (title?: string, action?: string): StepType => {
     // Check action name first — it's the most reliable indicator
     const actionLower = (action || '').toLowerCase();
+    // TaskFlow product node (from the taskflow chat channel)
+    if (actionLower === 'taskflow_node') return 'flow_node';
     if (
       actionLower.includes('skill') ||
       actionLower === 'execute_skill_script_file' ||
@@ -385,7 +699,8 @@ const convertToManusFormat = (
       actionLower === 'load_skill'
     )
       return 'skill';
-    if (actionLower === 'shell_interpreter') return 'bash';
+    if (actionLower === 'shell_interpreter' || actionLower === 'bash') return 'bash';
+    if (actionLower === 'code_interpreter' || actionLower === 'code') return 'code';
     if (actionLower === 'sql_query') return 'sql';
     if (actionLower === 'question') return 'question';
     if (
@@ -441,7 +756,7 @@ const convertToManusFormat = (
   const steps: ManusExecutionStep[] = execution.steps
     .filter(step => {
       const detail = (step.detail || '').toLowerCase();
-      return !detail.includes('action: terminate');
+      return step.action !== '__progress__' && !detail.includes('action: terminate');
     })
     .map(step => {
       const cleanDetail = step.detail?.replace(/^Thought:.*\n?/gm, '').trim();
@@ -451,8 +766,8 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: friendlySubtitle || undefined,
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle: financialStepSubtitle(step, execution.outputs[step.id] || []) || friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
@@ -480,8 +795,9 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle:
+          financialStepSubtitle(step, execution.outputs[step.id] || []) || cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
         action: step.action,
@@ -501,7 +817,7 @@ const convertToManusFormat = (
 
   const stepThoughts = { ...(execution.stepThoughts || {}) };
   execution.steps.forEach(step => {
-    if (step.action === 'dispatch_parallel_tasks') {
+    if (step.action === 'dispatch_parallel_tasks' || financialStepTitle(step)) {
       delete stepThoughts[step.id];
     }
   });
@@ -509,99 +825,107 @@ const convertToManusFormat = (
   return { sections, activeStep, outputs, stepThoughts };
 };
 
-const EXAMPLE_CARDS = [
-  {
-    id: 'olist_ecommerce_report',
-    icon: '🛍️',
-    title: 'Olist 巴西电商经营诊断',
-    description: '使用简化的离线演示数据分析电商经营',
-    query:
-      '分析 2017 年 1 月至 2018 年 8 月的销售和订单趋势、品类与地区表现，以及准时和逾期订单的配送时长与评分差异。使用 demo_orders 和 demo_items，参考知识库口径，给出三条改进建议并生成带图表的报告。',
-    dbName: 'Olist_Ecommerce',
-    knowledgeName: 'Olist_Analytics_Governance_Demo_v2',
-    color: 'from-rose-500/10 to-orange-500/10',
-    borderColor: 'border-rose-200/60 dark:border-rose-800/40',
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-  },
-  {
-    id: 'walmart_sales',
-    icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
-    query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
-    fileName: 'Walmart_Sales.csv',
-    fileType: 'text/csv',
-    fileSize: 98304, // ~96 KB
-    color: 'from-blue-500/10 to-cyan-500/10',
-    borderColor: 'border-blue-200/60 dark:border-blue-800/40',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-    skillName: 'csv-data-analysis',
-  },
-  {
-    id: 'db_profile_report',
-    icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
-    query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
-    dbName: 'Walmart_Sales',
-    color: 'from-emerald-500/10 to-teal-500/10',
-    borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
-  },
-  {
-    id: 'fin_report',
-    icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
-    query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
-    fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
-    fileType: 'application/pdf',
-    fileSize: 2621440, // ~2.5 MB
-    color: 'from-violet-500/10 to-purple-500/10',
-    borderColor: 'border-violet-200/60 dark:border-violet-800/40',
-    iconBg: 'bg-violet-100 dark:bg-violet-900/40',
-    skillName: 'financial-report-analyzer',
-  },
-  {
-    id: 'create_sql_skill',
-    icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
-    query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
-    color: 'from-amber-500/10 to-orange-500/10',
-    borderColor: 'border-amber-200/60 dark:border-amber-800/40',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-    skillName: 'skill-creator',
-  },
-  {
-    id: 'ecommerce_dashboard',
-    icon: '🧩',
-    title: '电商经营分析看板',
-    description: '分析销售趋势、品类贡献与订单表现，创建可筛选、可编辑的看板',
-    query:
-      '请基于所选电商数据创建经营分析看板：展示月度销售额趋势、销售额最高的前 10 个品类和月度订单量趋势，共 3 个图表。先核对实际字段、订单状态和金额口径，展示计划，确认后再生成。',
-    dbName: 'Olist_Ecommerce',
-    skillName: 'dashboard-builder',
-    color: 'from-indigo-500/10 to-sky-500/10',
-    borderColor: 'border-indigo-200/60 dark:border-indigo-800/40',
-    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
-  },
-];
-
 const Playground: NextPage = () => {
+  useFinancialLocale();
   const router = useRouter();
   const templateEntry = dashboardTemplateEntry(router.query);
   const initializedTemplate = useRef<string | null>(null);
   const [selectedDashboardTemplate, setSelectedDashboardTemplate] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
-  const { model, modelList, modelListLoading, setModel } = useContext(ChatContext);
+  const { model, modelList, modelListLoading, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList, unviewedResults, markConvCompleted, markConvViewed, clearConvAttention } =
+    useContext(ChatContext);
   const [query, setQuery] = useState('');
+  const suiteCommandMenuRef = useRef<SuiteCommandPopoverHandle>(null);
+  const composerAnchorRef = useRef<HTMLDivElement>(null);
+  const [composerCaret, setComposerCaret] = useState(0);
+  const [composerFocused, setComposerFocused] = useState(false);
+  const [composerIsComposing, setComposerIsComposing] = useState(false);
+  const [suiteMenuDismissed, setSuiteMenuDismissed] = useState(false);
+  const [suiteActiveDescendant, setSuiteActiveDescendant] = useState<string>();
+  const slashQuery = getSuiteCommandQuery(query, composerCaret);
+  const suiteMenuVisible = composerFocused && !composerIsComposing && !suiteMenuDismissed && slashQuery !== null;
+  // Expert suites (scenario presets) rendered on the home page from the
+  // registry (GET /api/v1/suites).  Tab click = explicit preset initializer;
+  // the route chip is only a suggestion scored from routing.keywords.
+  const [suitePackages, setSuites] = useState<SuiteItem[]>([]);
+  const suiteCreationMode = router.query.creation_mode === 'expert_suite';
+  const [suiteRefresh, setSuiteRefresh] = useState(0);
+  useEffect(() => {
+    const refresh = () => setSuiteRefresh(value => value + 1);
+    window.addEventListener('suites-updated', refresh);
+    return () => window.removeEventListener('suites-updated', refresh);
+  }, []);
+  const suites = useMemo(
+    () => suitePackages.map(suite => localizeSuite(suite, i18n.language)),
+    [suitePackages, i18n.language],
+  );
+  const homeSuites = useMemo(() => getHomeSuites(suites), [suites]);
+  const [activeSuiteTab, setActiveSuiteTab] = useState<string>('');
+  const [suiteQOffset, setSuiteQOffset] = useState(0);
+  // Tab click = explicit preset override; until the user touches a tab the
+  // keyword router decides the bound suite (design §三 routing rules).
+  const [suiteTabTouched, setSuiteTabTouched] = useState(false);
+  const [suiteResetRequested, setSuiteResetRequested] = useState(false);
+  const [selectedSuiteCommand, setSelectedSuiteCommand] = useState<{
+    suite: string;
+    name: string;
+  } | null>(null);
+  const [suiteCommandBindings, setSuiteCommandBindings] = useState<
+    Record<string, { command: string; skill: string; error?: string; documents?: { path: string; status: string }[] }>
+  >({});
+
+  useEffect(() => {
+    let cancelled = false;
+    getSuites()
+      .then(list => {
+        if (cancelled) return;
+        const scenarioOrder: Record<string, number> = { query: 0, analysis: 1 };
+        const enabled = (Array.isArray(list) ? list : [])
+          .filter(s => s?.status === 'enabled')
+          .sort(
+            (a, b) =>
+              (scenarioOrder[a.scenario_id ?? ''] ?? 9) - (scenarioOrder[b.scenario_id ?? ''] ?? 9) ||
+              a.name.localeCompare(b.name),
+          );
+        setSuites(enabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [i18n.language, suiteRefresh]);
+
+  const routedSuiteHit = useMemo(() => scoreSuites(query, suites), [query, suites]);
+  const routedSuite = useMemo(
+    () => suites.find(s => s.name === routedSuiteHit?.slug) ?? null,
+    [suites, routedSuiteHit],
+  );
+  const activeSuite = useMemo(
+    () => (activeSuiteTab ? (suites.find(s => s.name === activeSuiteTab) ?? null) : null),
+    [activeSuiteTab, suites],
+  );
+  // A fresh home page stays neutral until a scene is selected or input is routed.
+  const effectiveSuite = suiteCreationMode ? null : suiteTabTouched ? activeSuite : routedSuite;
+  const typedSuiteCommand = effectiveSuite?.manifest_snapshot?.commands
+    ?.flatMap(cmd => [cmd.name, ...(cmd.aliases || [])])
+    .sort((a, b) => b.length - a.length)
+    .find(name => query.trim() === name || query.trim().startsWith(`${name} `));
+  const effectiveSuiteCommand = effectiveSuite?.manifest_snapshot?.commands?.find(cmd =>
+    [cmd.name, ...(cmd.aliases || [])].includes(
+      typedSuiteCommand ||
+        (selectedSuiteCommand?.suite === effectiveSuite?.name ? selectedSuiteCommand.name : '') ||
+        '',
+    ),
+  );
+  const suiteInputHint = suiteCommandFileHint(effectiveSuiteCommand, i18n.language);
+
+  const rotatedSuiteQuestions = useMemo(() => {
+    const qs = activeSuite?.manifest_snapshot?.recommended_questions ?? [];
+    if (!qs.length) return [] as SuiteRecommendedQuestion[];
+    const off = suiteQOffset % qs.length;
+    return [...qs.slice(off), ...qs.slice(0, off)].slice(0, 4);
+  }, [activeSuite, suiteQOffset]);
   const [loading, setLoading] = useState(false);
-  const exampleRunInFlightRef = useRef(false);
   const sendInFlightRef = useRef(false);
 
   // Selection State
@@ -658,6 +982,7 @@ const Playground: NextPage = () => {
   const openSessionFilePreview = useCallback(async (item: RailItem) => {
     const convId = conversationIdRef.current;
     if (!convId || !item.fileId) return;
+    panelNavigationVersion.current += 1;
     const requestVersion = ++sessionFilePreviewRequestRef.current;
     // Desktop previews render inside the right panel: make sure it is visible.
     setRightPanelCollapsed(false);
@@ -777,6 +1102,7 @@ const Playground: NextPage = () => {
   // through the same preview surfaces (Drawer/desktop right panel).
   const openLegacyFilePreview = useCallback(
     async (file: { name: string; size: number; media_type: string; file_path: string }) => {
+      panelNavigationVersion.current += 1;
       const requestVersion = ++sessionFilePreviewRequestRef.current;
       setRightPanelCollapsed(false);
       setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
@@ -867,6 +1193,8 @@ const Playground: NextPage = () => {
   const [_activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  /** Query artifacts re-run from edited SQL, keyed by view-message id. */
+  const [rerunQueryArtifacts, setRerunQueryArtifacts] = useState<Record<string, StreamArtifact[]>>({});
   const [createdSkillNames, setCreatedSkillNames] = useState<Record<string, string>>({});
   const [_rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('preview');
   const [streamingSummary, setStreamingSummary] = useState<string>('');
@@ -886,6 +1214,145 @@ const Playground: NextPage = () => {
   const [isConnectorPanelOpen, setIsConnectorPanelOpen] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorInstance[]>([]);
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
+
+  // ------------------------------------------------------------------
+  // TaskFlow: the flow selected from the "+" menu runs via chat_flow
+  // ------------------------------------------------------------------
+  const [selectedFlow, setSelectedFlow] = useState<ITaskflowRef | null>(null);
+  const selectedFlowRef = useRef<ITaskflowRef | null>(null);
+  selectedFlowRef.current = selectedFlow;
+  const [flowOptions, setFlowOptions] = useState<ITaskflowRef[]>([]);
+
+  const selectSuiteContext = useCallback(
+    (suite: SuiteItem) => {
+      if (suite.status !== 'enabled') return;
+      if (suiteCreationMode) {
+        const { creation_mode: _mode, ...rest } = router.query;
+        void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+      }
+      setActiveSuiteTab(suite.name);
+      setSuiteTabTouched(true);
+      setSuiteResetRequested(false);
+      setSuiteQOffset(0);
+      setSelectedSuiteCommand(null);
+      setSelectedSkill(null);
+      setSelectedFlow(null);
+      selectedFlowRef.current = null;
+      setSelectedKnowledge(null);
+      setSelectedConnectors([]);
+      if (suite.manifest_snapshot?.context_defaults?.datasource === 'optional') setSelectedDb(null);
+      setIsDbModalOpen(false);
+      setIsKnowledgeModalOpen(false);
+      setIsSkillPanelOpen(false);
+      setIsDbPanelOpen(false);
+      setIsKnowledgePanelOpen(false);
+      setIsConnectorPanelOpen(false);
+    },
+    [router, suiteCreationMode],
+  );
+
+  const handleSelectSuiteCommand = useCallback(
+    (suite: SuiteItem, command: SuiteCommand, prompt?: string) => {
+      if (suite.status !== 'enabled' || !suite.manifest_snapshot?.commands?.some(item => item.name === command.name)) {
+        return;
+      }
+      selectSuiteContext(suite);
+      setSelectedSuiteCommand({ suite: suite.name, name: command.name });
+      const nextQuery = prompt ?? command.prefill ?? '';
+      setQuery(nextQuery);
+      setComposerCaret(nextQuery.length);
+      setSuiteMenuDismissed(true);
+    },
+    [selectSuiteContext],
+  );
+
+  useEffect(() => {
+    if (!router.isReady || !suites.length) return;
+    const suite = suites.find(item => item.name === router.query.suite);
+    const command = suite?.manifest_snapshot?.commands?.find(
+      item => item.name === router.query.suite_command || item.aliases?.includes(String(router.query.suite_command)),
+    );
+    if (!suite || !command) return;
+    handleSelectSuiteCommand(suite, command);
+    const { suite: _suite, suite_command: _command, creation_mode: _mode, ...rest } = router.query;
+    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+  }, [router, router.isReady, router.query.suite, router.query.suite_command, suites, handleSelectSuiteCommand]);
+
+  // Load built-in templates + my taskflow flows for the "+" menu cascade.
+  useEffect(() => {
+    (async () => {
+      try {
+        const [, templatesRes] = await apiInterceptors(getFlowTemplates());
+        const templates = (((templatesRes as any)?.items ?? []) as any[])
+          .map(templateToRef)
+          .filter(Boolean) as ITaskflowRef[];
+        const [, flowsRes] = await apiInterceptors(getChatFlows({ page: 1, page_size: 50 }));
+        const mine = (((flowsRes as any)?.items ?? []) as IFlow[]).map(flowToRef).filter(Boolean) as ITaskflowRef[];
+        // De-duplicate: template instances already created appear in both.
+        const templateNames = new Set(templates.map(item => item.name));
+        setFlowOptions([...templates, ...mine.filter(item => !templateNames.has(item.name.replace(/_instance$/, '')))]);
+      } catch {
+        /* flow menu is best-effort */
+      }
+    })();
+  }, []);
+
+  // Deep link: /?flow=<uid> selects the flow chip (from the TaskFlow list "Run").
+  useEffect(() => {
+    if (!router.isReady) return;
+    const flowUid = router.query.flow as string | undefined;
+    if (!flowUid || selectedFlowRef.current?.uid === flowUid) return;
+    (async () => {
+      const [, flow] = await apiInterceptors(getFlowById(flowUid));
+      const ref = flow ? flowToRef(flow as IFlow) : null;
+      if (ref) {
+        setSelectedFlow(ref);
+        // Consume the query param so a later manual send is unaffected.
+        const { flow: _omit, ...rest } = router.query;
+        router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+      } else {
+        message.warning(t('taskflow_not_taskflow_flow') as string);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.flow]);
+
+  const flowMenuItems = useMemo(() => {
+    const items = flowOptions.map(ref => ({
+      key: `flow_${ref.isTemplate ? 'tpl' : 'flow'}_${ref.name}`,
+      label: (
+        <div className='flex items-center gap-2 py-0.5 max-w-[300px]'>
+          <ApartmentOutlined className='text-blue-500 flex-none' />
+          <div className='flex-1 min-w-0'>
+            <div className='flex items-center gap-1.5 text-[13px] font-medium text-gray-800 dark:text-gray-100'>
+              <span className='truncate'>{ref.label}</span>
+              {ref.isTemplate && (
+                <span className='text-[9px] px-1 rounded bg-blue-50 text-blue-600 flex-none'>
+                  {t('taskflow_builtin')}
+                </span>
+              )}
+            </div>
+            {ref.description && <div className='text-[10.5px] text-gray-400 truncate'>{ref.description}</div>}
+          </div>
+          <span className='text-[10px] text-gray-300 flex-none'>
+            {t('taskflow_nodes_count', { count: ref.nodeCount })}
+          </span>
+        </div>
+      ),
+      onClick: () => setSelectedFlow(ref),
+    }));
+    return [
+      ...items,
+      ...(items.length > 0 ? [{ type: 'divider' as const }] : []),
+      {
+        key: 'taskflow_manage',
+        icon: <ApartmentOutlined />,
+        label: t('taskflow_manage'),
+        onClick: () => router.push('/construct/taskflow'),
+      },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowOptions, t]);
   const [isScheduleOpen, setScheduleOpen] = useState(false);
   const { connectors: connectorsList } = useConnectors();
 
@@ -898,7 +1365,9 @@ const Playground: NextPage = () => {
   });
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  // Right rail is a contextual viewer (artifact previews / debug trace):
+  // collapsed by default so the conversation stream gets full width.
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
   const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
   const [pendingFinalization, setPendingFinalization] = useState<{
@@ -909,13 +1378,158 @@ const Playground: NextPage = () => {
   const [pendingSummaryPresentation, setPendingSummaryPresentation] = useState<{
     responseId: string;
     summaryText: string;
-    targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null;
   } | null>(null);
   const [summaryPresentationResponseId, setSummaryPresentationResponseId] = useState<string | null>(null);
   const summaryPresentationRef = useRef<SummaryPresentation | null>(null);
   const summaryPresentationResponseIdRef = useRef<string | null>(null);
   const summaryPresentationFullTextRef = useRef('');
+  // Response ids that received server-streamed `final.chunk` events. When
+  // set, the `final` event skips the client-side typewriter presentation
+  // because the panel already grew in real time.
+  const finalChunkStreamedRef = useRef<Record<string, boolean>>({});
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+  const [financialCitationTarget, setFinancialCitationTarget] = useState<FinancialCitationTarget | null>(null);
+  const financialCitationRequest = useRef(0);
+  const financialDelivery = useRef(new FinancialReportDelivery());
+  const panelNavigationVersion = useRef(0);
+
+  // Rail mode: viewer (mockup form: artifact preview / gallery) by default;
+  // legacy Execution Steps / Trace / Summary panel behind the debug toggle
+  // or whenever a legacy view (references, sub-agent, step detail) is needed.
+  const [railDebug, setRailDebug] = useState(false);
+
+  // Preview updates choose the renderer without changing visibility.
+  // Only explicit user actions open the rail.
+  const financialPreviewIdentityRef = useRef<string | null>(null);
+  useEffect(() => {
+    const financialIdentity =
+      previewArtifact && isFinancialReportReference(previewArtifact.content) ? artifactIdentity(previewArtifact) : null;
+    const refreshingReport = financialIdentity && financialPreviewIdentityRef.current === financialIdentity;
+    financialPreviewIdentityRef.current = financialIdentity;
+    // A repeated artifact or new revision updates data without undoing manual navigation.
+    if (refreshingReport) return;
+    if (previewArtifact) {
+      setRightPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview');
+    }
+  }, [previewArtifact]);
+
+  /** Skill-package actions on artifact cards (download zip / add). */
+  const handleSkillZipDownload = useCallback(
+    async (skillName: string) => {
+      try {
+        const base = process.env.API_BASE_URL || '';
+        const res = await fetch(`${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`);
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${skillName}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        message.error(t('download_failed', 'Download failed') as string);
+      }
+    },
+    [t],
+  );
+  const handleSkillAdd = useCallback(
+    (skillName: string) => {
+      message.success(t('skill_added_success', { skillName }) as string);
+    },
+    [t],
+  );
+
+  const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
+    panelNavigationVersion.current += 1;
+    setFinancialCitationTarget(null);
+    setPreviewArtifact(artifact as Artifact);
+    setRailDebug(false);
+    setRightPanelCollapsed(false);
+    if (isFinancialReportReference(artifact.content)) {
+      setRightPanelView('html-preview');
+    }
+  }, []);
+
+  /** Edit & re-run a query artifact's SQL against the bound datasource.
+   *  The new result set is appended to the round as a fresh query artifact. */
+  const handleQueryRerun = useCallback(
+    async (sql: string, dbName?: string, messageId?: string) => {
+      const convUid = conversationIdRef.current;
+      if (!convUid) throw new Error(t('qa_rerun_no_conv', '会话未就绪'));
+      const res: any = await axios.post('/api/v1/chat/sql/run', {
+        con_uid: convUid,
+        sql,
+        db_name: dbName,
+      });
+      const body = res?.data;
+      if (!body || body.success === false) {
+        throw new Error(body?.err_msg || t('qa_rerun_failed', '重跑失败'));
+      }
+      const payload = body.data;
+      if (messageId) {
+        setRerunQueryArtifacts(prev => ({
+          ...prev,
+          [messageId]: [
+            ...(prev[messageId] || []),
+            {
+              id: `${messageId}-query-rerun-${Date.now()}`,
+              type: 'query',
+              name: t('qa_artifact_name', '查询结果 · {{count}} 行', {
+                count: payload?.row_count ?? payload?.rows?.length ?? 0,
+              }),
+              content: payload,
+              createdAt: Date.now(),
+              messageId,
+              tier: 'final',
+            },
+          ],
+        }));
+      }
+      return payload;
+    },
+    [t],
+  );
+
+  // Global turn status line (Codex-style): one summary line at the end
+  // of the stream instead of per-panel spinners/badges.
+  const streamStatus = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'view' || !msg.id) continue;
+      const exec = executionMap[msg.id];
+      if (!exec || exec.steps.length === 0) continue;
+      const toolCalls = exec.steps.filter(
+        s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
+      ).length;
+      const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
+      const status = executionStatus(exec.steps, msg.thinking, msg.taskPlan, msg.executionStatus);
+      const running = status === 'running';
+      const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
+      const ends = exec.steps.map(s => s.endedAt).filter((v): v is number => typeof v === 'number');
+      let dur = '';
+      if (starts.length) {
+        const end = running || !ends.length ? Date.now() : Math.max(...ends);
+        const elapsed = end - Math.min(...starts);
+        dur =
+          elapsed >= 60000
+            ? `${Math.floor(elapsed / 60000)}m ${Math.round((elapsed % 60000) / 1000)}s`
+            : `${Math.max(1, Math.round(elapsed / 1000))}s`;
+      }
+      return {
+        running,
+        status,
+        text: t(`agent_status_${status}`, {
+          rounds,
+          calls: toolCalls,
+          dur: dur ? ` · ${dur}` : '',
+        }) as string,
+      };
+    }
+    return null;
+  }, [messages, executionMap, t]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -934,6 +1548,7 @@ const Playground: NextPage = () => {
 
   const handleUserPanelViewChange = useCallback(
     (view: PanelView) => {
+      panelNavigationVersion.current += 1;
       cancelSummaryPresentation();
       setRightPanelView(view);
     },
@@ -952,6 +1567,25 @@ const Playground: NextPage = () => {
     agentId: string;
   } | null>(null);
 
+  const openFinancialCitation = (citation: FinancialCitation, messageId?: string) => {
+    const artifact = findFinancialCitationArtifact(
+      artifacts.filter(item => !messageId || item.messageId === messageId),
+      citation,
+    );
+    if (!artifact) {
+      message.info(financialText('financial.the_referenced_report_is_unavailable_open_the_report_from_this_turn_'));
+      return;
+    }
+    panelNavigationVersion.current += 1;
+    cancelSummaryPresentation();
+    setActiveViewMsgId(artifact.messageId || messageId || null);
+    setActiveSubAgent(null);
+    setPreviewArtifact(artifact);
+    setFinancialCitationTarget({ ...citation, requestId: ++financialCitationRequest.current });
+    setRightPanelView('html-preview');
+    setRightPanelCollapsed(false);
+  };
+
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
   // Snapshot of the exact payload last sent to the agent, captured at send
@@ -967,7 +1601,10 @@ const Playground: NextPage = () => {
   const taskEpochRef = useRef(0);
   const historyRequestRef = useRef(0);
   const historyAbortControllerRef = useRef<AbortController | null>(null);
-  const exampleAbortControllerRef = useRef<AbortController | null>(null);
+  /** In-flight round per conv (the message objects themselves) so re-entering
+   *  a running conversation can re-inject the live human/view pair — history
+   *  only holds flushed rounds and New Task clears the messages state. */
+  const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
   const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
 
   const abortInFlightChat = useCallback(() => {
@@ -979,6 +1616,13 @@ const Playground: NextPage = () => {
   }, [abortInFlightChat]);
 
   const [historyLoading, setHistoryLoading] = useState(false);
+  useForegroundResultAcknowledgement(
+    conversationId,
+    conversationId ? unviewedResults[conversationId] : undefined,
+    !!conversationId && !historyLoading && !runningConvIds.includes(conversationId) &&
+      messages.some(msg => msg.role === 'view' && !msg.thinking && !!msg.context?.trim()),
+    markConvViewed,
+  );
   const [contextStatus, setContextStatus] = useState<{
     state: 'OK' | 'WARNING' | 'ERROR';
     used_tokens: number;
@@ -997,6 +1641,7 @@ const Playground: NextPage = () => {
       custom?: boolean;
     }>;
   } | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
   const resetTaskSession = useCallback(() => {
@@ -1006,12 +1651,13 @@ const Playground: NextPage = () => {
     historyRequestRef.current += 1;
     conversationIdRef.current = null;
     sendInFlightRef.current = false;
-    exampleRunInFlightRef.current = false;
-    abortInFlightChat();
+    setPendingApprovals([]);
+    // Parallel tasks: do NOT abort the in-flight stream — drop the handle so
+    // the stop button targets only the active session while the old SSE
+    // keeps pumping in the background until its own finally clears badges.
+    chatAbortControllerRef.current = null;
     historyAbortControllerRef.current?.abort();
     historyAbortControllerRef.current = null;
-    exampleAbortControllerRef.current?.abort();
-    exampleAbortControllerRef.current = null;
     cancelSummaryPresentation();
     message.destroy('example-loading');
 
@@ -1019,11 +1665,22 @@ const Playground: NextPage = () => {
     closeSessionFilePreview();
     fileDragDepthRef.current = 0;
     terminatedStepIdsRef.current.clear();
+    financialDelivery.current = new FinancialReportDelivery();
     lastSentPayloadRef.current = null;
 
     setMessages([]);
     setConversationId(null);
     setQuery('');
+    setComposerCaret(0);
+    setComposerFocused(false);
+    setComposerIsComposing(false);
+    setSuiteMenuDismissed(false);
+    setActiveSuiteTab('');
+    setSuiteTabTouched(false);
+    setSuiteResetRequested(false);
+    setSuiteQOffset(0);
+    setSelectedSuiteCommand(null);
+    setSuiteCommandBindings({});
     setLoading(false);
     setSelectedDashboardTemplate(null);
     setHistoryLoading(false);
@@ -1037,12 +1694,15 @@ const Playground: NextPage = () => {
     setCreatedSkillNames({});
     setRightPanelTab('preview');
     setRightPanelView('execution');
-    setRightPanelCollapsed(false);
+    // Viewer paradigm: rail stays collapsed across conversation switches;
+    // it slides open only for artifact previews / explicit user actions.
+    setRightPanelCollapsed(true);
     setStreamingSummary('');
     setSummaryComplete(false);
     setTaskPlan([]);
     setSelectedStepId(null);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setSummaryPresentationResponseId(null);
@@ -1055,6 +1715,8 @@ const Playground: NextPage = () => {
     setSelectedDb(null);
     setSelectedKnowledge(null);
     setSelectedSkill(null);
+    setSelectedFlow(null);
+    selectedFlowRef.current = null;
     setSelectedConnectors([]);
     setIsDatabaseRequiredOpen(false);
     setIsDbModalOpen(false);
@@ -1068,37 +1730,33 @@ const Playground: NextPage = () => {
     setIsConnectorPanelOpen(false);
     setConnectorSearchQuery('');
     dismiss();
-  }, [abortInFlightChat, cancelSummaryPresentation, closeSessionFilePreview, dismiss, resetSessionFiles]);
+  }, [cancelSummaryPresentation, closeSessionFilePreview, dismiss, resetSessionFiles]);
 
   useNewTaskOwner(resetTaskSession);
 
-  // A new-task command issued while a turn is streaming (or an example run is
-  // still preparing) is destructive — it aborts the request and discards the
-  // round — so gate it behind an explicit confirmation. Idle sessions resolve
-  // synchronously and never see the dialog.
-  const confirmInterruptRunningTask = useCallback((): boolean | Promise<boolean> => {
-    if (!sendInFlightRef.current && !exampleRunInFlightRef.current) return true;
-    return new Promise<boolean>(resolve => {
-      let settled = false;
-      const settle = (confirmed: boolean) => {
-        if (settled) return;
-        settled = true;
-        resolve(confirmed);
-      };
-      Modal.confirm({
-        title: t('new_task_interrupt_title'),
-        content: t('new_task_interrupt_content'),
-        okText: t('new_task_interrupt_ok'),
-        cancelText: t('cancel'),
-        okButtonProps: { danger: true },
-        onOk: () => settle(true),
-        onCancel: () => settle(false),
-      });
-    });
-  }, [t]);
+  // Tasks run in parallel: starting a new task detaches the in-flight stream
+  // (it keeps running in the background, sidebar badge spinning) instead of
+  // interrupting it, so no confirmation is needed anymore.
+  const confirmInterruptRunningTask = useCallback((): boolean => true, []);
   useNewTaskGuard(confirmInterruptRunningTask);
 
   const startNewTask = useStartNewTask();
+
+  const resolveApproval = useCallback(
+    async (approvalId: string, decision: 'approve' | 'reject', scope: string = 'once', reason?: string) => {
+      try {
+        const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/${approvalId}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision, scope, reason }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('resolveApproval failed:', e);
+      }
+    },
+    [],
+  );
 
   const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
     const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
@@ -1142,6 +1800,16 @@ const Playground: NextPage = () => {
   });
 
   // Fetch Knowledge Bases
+  useEffect(() => {
+    const name = router.query.database_name;
+    if (typeof name !== 'string' || !dataSources?.length) return;
+    const source = dataSources.find((item: DataSource) => item.db_name === name);
+    if (!source) return;
+    setSelectedDb(source);
+    const { database_name: _name, ...rest } = router.query;
+    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+  }, [router, router.query.database_name, dataSources]);
+
   const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
       const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
@@ -1230,6 +1898,7 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
@@ -1241,13 +1910,48 @@ const Playground: NextPage = () => {
         if (taskEpochRef.current !== transitionEpoch) return;
         console.error('Failed to restore conversation files', error);
       });
+      // Refresh recovery: an approval whose gate is still waiting server-side
+      // must re-show its dock after a reload even though the SSE frame that
+      // created it is gone from this page instance.
+      void (async () => {
+        try {
+          const res = await fetch(
+            `${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/pending?con_uid=${encodeURIComponent(convId)}`,
+          );
+          const json = await res.json();
+          if (taskEpochRef.current !== transitionEpoch) return;
+          const rows = (json?.data ?? []) as Array<Record<string, any>>;
+          if (!rows.length) return;
+          setPendingApprovals(prev => {
+            const known = new Set(prev.map(p => p.approval_id));
+            const added = rows
+              .filter(r => r.approval_id && !known.has(r.approval_id))
+              .map(r => ({
+                type: 'approval.requested' as const,
+                approval_id: String(r.approval_id),
+                conv_id: r.conv_id,
+                tool: String(r.tool ?? ''),
+                args_preview: String(r.args_preview ?? ''),
+                rule_id: String(r.rule_id ?? ''),
+                risk: 'confirm',
+                ttl_seconds: 300,
+                ts: r.created_ts,
+                status: 'pending' as const,
+                scope: r.scope,
+              }));
+            return added.length ? [...prev, ...added] : prev;
+          });
+        } catch {
+          // Recovery is best-effort; the live SSE path remains authoritative.
+        }
+      })();
     } else if (!convId && conversationIdRef.current) {
       // Browser back / direct route changes use the same reset command as the
       // explicit new-task affordances. The command itself already clears the
       // ref before removing ?id, so its route completion remains idempotent.
       resetTaskSession();
     }
-  }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
+  }, [rehydrateSessionFiles, resetTaskSession, router.isReady, router.query.id]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -1309,6 +2013,15 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
+  const mobileFinancialPanel =
+    !isDesktopWidth &&
+    !rightPanelCollapsed &&
+    artifacts.some(
+      artifact =>
+        artifact.messageId === selectedViewMsgId &&
+        isFinancialReportReference(artifact.content) &&
+        artifact.content.published === true,
+    );
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -1477,6 +2190,17 @@ const Playground: NextPage = () => {
         break;
       }
       case 'html': {
+        if (isFinancialReportReference(artifact.content)) {
+          try {
+            const { downloadFinancialReport } = await import(
+              '@/new-components/financial-analysis/FinancialReportArtifact'
+            );
+            await downloadFinancialReport(artifact.content);
+          } catch {
+            message.error(financialText('financial.report_download_failed_retry_from_the_report_s_files_tab'));
+          }
+          break;
+        }
         const htmlContent =
           typeof artifact.content === 'string'
             ? artifact.content
@@ -1488,6 +2212,10 @@ const Playground: NextPage = () => {
       case 'code': {
         const blob = new Blob([String(artifact.content)], { type: 'text/plain' });
         triggerBlobDownload(blob, artifact.name || 'code.py');
+        break;
+      }
+      case 'query': {
+        downloadQueryCsv(artifact.content, artifact.name || 'query_result');
         break;
       }
       case 'table': {
@@ -1517,7 +2245,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1526,16 +2254,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('artifact_download_unavailable', '文件暂不可下载'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('artifact_download_failed', '文件下载失败'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
         }
         break;
       }
@@ -1587,6 +2315,7 @@ const Playground: NextPage = () => {
       },
       summaryText?: string,
       filePath?: string | null,
+      answerText?: string,
     ): Artifact[] => {
       const finalArtifacts: Artifact[] = [];
       const now = Date.now();
@@ -1595,7 +2324,19 @@ const Playground: NextPage = () => {
       if (execution) {
         const allSteps = execution.steps || [];
         allSteps.forEach(step => {
-          const stepOutputs = execution.outputs[step.id] || [];
+          const rawOutputs = execution.outputs[step.id] || [];
+          // Harness engines embed html/image payloads inside plain-text
+          // ``{"chunks": [...]}`` envelopes; surface them as first-class
+          // outputs so artifact cards and previews work there too.
+          const stepOutputs: ExecutionOutput[] = [];
+          rawOutputs.forEach(output => {
+            stepOutputs.push(output);
+            if (output.output_type !== 'text' && output.output_type !== 'markdown') return;
+            const content = typeof output.content === 'string' ? output.content : '';
+            for (const embedded of envelopeEmbeddedOutputs(content)) {
+              stepOutputs.push({ output_type: embedded.type, content: embedded.content });
+            }
+          });
           stepOutputs.forEach((output, oIdx) => {
             if (output.output_type === 'code') {
               const codeStr = String(output.content || '').trim();
@@ -1614,6 +2355,20 @@ const Playground: NextPage = () => {
                   downloadable: true,
                 });
               }
+            } else if (output.output_type === 'expert_suite') {
+              const payload = output.content;
+              if (payload?.artifact_id && !finalArtifacts.some(a => a.content?.artifact_id === payload.artifact_id)) {
+                finalArtifacts.push({
+                  id: `${messageId}-suite-${payload.artifact_id}`,
+                  type: 'expert_suite',
+                  name: payload.display || payload.suite_name,
+                  content: payload,
+                  createdAt: now,
+                  messageId,
+                  stepId: step.id,
+                  downloadable: true,
+                });
+              }
             } else if (output.output_type === 'file') {
               finalArtifacts.push({
                 id: `${messageId}-file-${step.id}-${oIdx}`,
@@ -1625,12 +2380,10 @@ const Playground: NextPage = () => {
                 stepId: step.id,
                 downloadable: true,
                 size: output.content?.size,
+                filePath: output.content?.file_path || output.content?.path,
               });
             } else if (output.output_type === 'html') {
-              const htmlContent =
-                typeof output.content === 'string'
-                  ? output.content
-                  : output.content?.content || output.content?.html || String(output.content);
+              const htmlContent = reportArtifactContent(output.content);
               const htmlTitle = output.content?.title || 'Report';
               finalArtifacts.push({
                 id: `${messageId}-html-${step.id}-${oIdx}`,
@@ -1659,59 +2412,92 @@ const Playground: NextPage = () => {
                 stepId: step.id,
                 downloadable: true,
               });
+            } else if (output.output_type === 'query') {
+              // SQL result-set artifact: rendered as the full-width data
+              // block (SQL + table + CSV/Excel export) by ArtifactCards.
+              const payload = output.content || {};
+              const rowCount = payload.row_count ?? payload.rows?.length ?? 0;
+              finalArtifacts.push({
+                id: `${messageId}-query-${step.id}-${oIdx}`,
+                type: 'query',
+                name: t('qa_artifact_name', '查询结果 · {{count}} 行', { count: rowCount }),
+                content: payload,
+                createdAt: now,
+                messageId,
+                stepId: step.id,
+                downloadable: true,
+              });
             }
           });
 
-          // For shell_interpreter steps, extract file paths from code/text outputs
+          // For bash steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          if (step.action === 'shell_interpreter') {
+          const WRITE_SCAN_ACTIONS = new Set([
+            'shell_interpreter',
+            'code_interpreter',
+            'bash',
+            'code',
+            'write',
+            'edit',
+          ]);
+          if (WRITE_SCAN_ACTIONS.has((step.action || '') as string)) {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
             const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
             const seenFilePaths = new Set<string>();
+            // Scan tool outputs plus the step's own detail/observation text:
+            // pi write/edit results live there, not in execution.outputs.
+            const scanTexts: string[] = [];
             stepOutputs.forEach(output => {
               if (output.output_type === 'code' || output.output_type === 'text') {
-                const text = String(output.content || '');
-                // Look for file creation patterns
-                const hasFileCreation = /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>)/.test(text);
-                if (hasFileCreation) {
-                  const foundPaths: string[] = [];
-                  // Extract absolute paths
-                  const absMatches = text.match(absPathPattern) || [];
-                  foundPaths.push(...absMatches);
-                  // Extract relative paths after redirection operators
-                  let relMatch;
-                  while ((relMatch = relFilePattern.exec(text)) !== null) {
-                    const p = relMatch[1].trim();
-                    if (p && !p.startsWith('/')) foundPaths.push(p);
-                  }
-                  foundPaths.forEach(fp => {
-                    // Normalize: strip leading ./ if present
-                    const normalized = fp.replace(/^\.\//, '');
-                    const fileName = normalized.split('/').pop() || normalized;
-                    if (!seenFilePaths.has(fileName.toLowerCase())) {
-                      seenFilePaths.add(fileName.toLowerCase());
-                      const alreadyHasFile = finalArtifacts.some(
-                        a =>
-                          (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
-                      );
-                      if (!alreadyHasFile) {
-                        // Use the path as-is; backend resolves relative paths against pilot/tmp
-                        finalArtifacts.push({
-                          id: `${messageId}-shellfile-${step.id}-${fileName}`,
-                          type: 'file',
-                          name: fileName,
-                          content: { name: fileName, file_path: normalized },
-                          createdAt: now,
-                          messageId,
-                          stepId: step.id,
-                          downloadable: true,
-                          filePath: normalized,
-                        });
-                      }
-                    }
-                  });
+                scanTexts.push(String(output.content || ''));
+              }
+            });
+            const stepExtra = step as unknown as { detail?: string; observation?: string };
+            if (stepExtra.detail) scanTexts.push(String(stepExtra.detail));
+            if (stepExtra.observation) scanTexts.push(String(stepExtra.observation));
+            scanTexts.forEach(text => {
+              // Look for file creation patterns
+              const hasFileCreation =
+                /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>|Successfully wrote\b|Wrote \d+ bytes)/.test(
+                  text,
+                );
+              if (hasFileCreation) {
+                const foundPaths: string[] = [];
+                // Extract absolute paths
+                const absMatches = text.match(absPathPattern) || [];
+                foundPaths.push(...absMatches);
+                // Extract relative paths after redirection operators
+                let relMatch;
+                while ((relMatch = relFilePattern.exec(text)) !== null) {
+                  const p = relMatch[1].trim();
+                  if (p && !p.startsWith('/')) foundPaths.push(p);
                 }
+                foundPaths.forEach(fp => {
+                  // Normalize: strip leading ./ if present
+                  const normalized = fp.replace(/^\.\//, '');
+                  const fileName = normalized.split('/').pop() || normalized;
+                  if (!seenFilePaths.has(fileName.toLowerCase())) {
+                    seenFilePaths.add(fileName.toLowerCase());
+                    const alreadyHasFile = finalArtifacts.some(
+                      a => (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
+                    );
+                    if (!alreadyHasFile) {
+                      // Use the path as-is; backend resolves relative paths against pilot/tmp
+                      finalArtifacts.push({
+                        id: `${messageId}-shellfile-${step.id}-${fileName}`,
+                        type: 'file',
+                        name: fileName,
+                        content: { name: fileName, file_path: normalized },
+                        createdAt: now,
+                        messageId,
+                        stepId: step.id,
+                        downloadable: true,
+                        filePath: normalized,
+                      });
+                    }
+                  }
+                });
               }
             });
           }
@@ -1819,21 +2605,225 @@ const Playground: NextPage = () => {
         }
       }
 
-      // Deduplicate: for artifacts with the same name+type, keep only the last one
-      const deduped: Artifact[] = [];
-      const seen = new Map<string, number>();
-      for (let i = finalArtifacts.length - 1; i >= 0; i--) {
-        const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
-        if (!seen.has(key)) {
-          seen.set(key, i);
-          deduped.unshift(finalArtifacts[i]);
+      // Promote image-extension file artifacts whose bytes the backend can
+      // serve (static /images mount or the scoped artifact-file endpoint)
+      // to first-class image artifacts, so stream cards and the rail
+      // gallery render real thumbnails instead of a generic file glyph.
+      for (const a of finalArtifacts) {
+        if (a.type !== 'file' || !a.filePath) continue;
+        const url = servableImageUrl(a.filePath);
+        if (!url) continue;
+        a.type = 'image';
+        a.content = url;
+      }
+
+      // Tier file artifacts: deliverables vs intermediate process files
+      // (the reference check needs the round's final answer text).
+      const referencedNames = new Set<string>();
+      for (const a of finalArtifacts) {
+        if (a.type === 'image') {
+          // Charts are never first-class deliverables; the mosaic tile and
+          // the process group carry them instead.
+          a.tier = 'process';
+          continue;
+        }
+        if (a.type === 'file') {
+          const cls = classifyFileTier(a.name, a.filePath, answerText || summaryText);
+          a.tier = cls.tier;
+          if (cls.referenced) referencedNames.add(a.name);
+        }
+      }
+      // Draft demotion: unreferenced weak-deliverable files (html/md/csv/
+      // svg) are usually intermediates when the round already produced a
+      // strong deliverable — skill package, rendered html envelope, office/
+      // pdf document, or a file the answer explicitly references.
+      const STRONG_EXTS = new Set(['xlsx', 'xls', 'pptx', 'ppt', 'pdf', 'docx']);
+      const DEMOTABLE_EXTS = new Set(['html', 'htm', 'md', 'csv', 'svg']);
+      const extOfName = (n: string) => ((n.includes('.') ? n.split('.').pop() : '') || '').toLowerCase();
+      const hasStrongDeliverable = finalArtifacts.some(
+        a =>
+          a.type === 'skill' ||
+          a.type === 'expert_suite' ||
+          a.type === 'html' ||
+          (a.type === 'file' && (referencedNames.has(a.name) || STRONG_EXTS.has(extOfName(a.name)))),
+      );
+      if (hasStrongDeliverable) {
+        for (const a of finalArtifacts) {
+          if (a.type === 'query') {
+            // Fetch result sets are the deliverable only for fetch-style
+            // turns. When the turn produced a real deliverable (report,
+            // skill package, office document), the queries are intermediate
+            // evidence: fold them into the process group so the final
+            // surface shows the deliverable, not the scaffolding.
+            a.tier = 'process';
+            continue;
+          }
+          if (
+            a.type === 'file' &&
+            a.tier === 'final' &&
+            !referencedNames.has(a.name) &&
+            DEMOTABLE_EXTS.has(extOfName(a.name))
+          ) {
+            a.tier = 'process';
+          }
         }
       }
 
-      return deduped;
+      // Financial report revisions share a stable run identity.
+      const deduped = mergeArtifacts(finalArtifacts);
+
+      // Directory-level aggregation: >=3 files under one root that
+      // includes SKILL.md collapse into a single skill-package artifact
+      // (folder card + tree preview), matching mockup v2.
+      // Skill roots = directories that directly contain a SKILL.md file;
+      // every descendant file joins the package (scripts/, references/...).
+      const skillRoots = deduped
+        .filter(a => a.type === 'file' && (a.name || '').toUpperCase() === 'SKILL.MD' && a.filePath)
+        .map(a => a.filePath!.split('/').slice(0, -1).join('/'));
+      const collapsedIds = new Set<string>();
+      for (const root of skillRoots) {
+        const members = deduped.filter(
+          a =>
+            (a.type === 'file' || (a.type === 'image' && !!a.filePath)) &&
+            !!a.filePath &&
+            !collapsedIds.has(a.id) &&
+            (a.filePath === `${root}/SKILL.md` || a.filePath.startsWith(`${root}/`)),
+        );
+        if (members.length < 3) continue;
+        deduped.push({
+          id: `${messageId}-skill-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      // Path-based skill folding: member files written under a skills/
+      // tree belong to that package even when SKILL.md landed in another
+      // round; aggregate >=2 of them into a skill card.
+      const SKILL_PATH_RE = /(\/|^)(?:\.?agents\/skills|skills)\/([^/]+)\//;
+      const bySkillRoot = new Map<string, Artifact[]>();
+      for (const a of deduped) {
+        if (collapsedIds.has(a.id) || a.type !== 'file' || !a.filePath) continue;
+        const m = SKILL_PATH_RE.exec(a.filePath);
+        if (!m) continue;
+        const root = a.filePath.slice(0, m.index + m[0].length - 1);
+        const arr = bySkillRoot.get(root) || [];
+        arr.push(a);
+        bySkillRoot.set(root, arr);
+      }
+      for (const [root, members] of bySkillRoot) {
+        if (members.length < 2) continue;
+        deduped.push({
+          id: `${messageId}-skillpath-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      return collapsedIds.size ? deduped.filter(a => !collapsedIds.has(a.id)) : deduped;
     },
-    [],
+    [t],
   );
+
+  // Conversation-level artifact list (rail gallery + header capsule).
+  // Includes the fallback summary artifact of the latest answer so every
+  // conversation has artifacts even when no files were produced.
+  const convArtifacts = useMemo(() => {
+    const list: Artifact[] = [];
+    for (const msg of messages) {
+      if (msg.role !== 'view' || !msg.id) continue;
+      for (const state of msg.dashboardGenerations || []) {
+        if (state.status === 'created' && state.dashboardId) {
+          list.push({
+            id: `dashboard-${state.dashboardId}`,
+            type: 'dashboard',
+            name: state.title,
+            content: state,
+            createdAt: 0,
+            messageId: msg.id,
+            tier: 'final',
+          });
+        }
+      }
+      const exec = executionMap[msg.id];
+      if (!exec || !hasArtifactOutputs(exec)) continue;
+      list.push(...buildArtifactsFromExecution(msg.id, exec, undefined, undefined, msg.context));
+    }
+    // Persisted reports can be restored without the execution steps that produced them.
+    list.push(...artifacts.filter(artifact => isFinancialReportReference(artifact.content)));
+    const lastView = [...messages].reverse().find(m => m.role === 'view' && m.context);
+    if (lastView?.id && lastView.context) {
+      list.push({
+        id: `summary-${lastView.id}`,
+        type: 'summary',
+        name: t('artifact_summary_name', '本回答摘要'),
+        content: lastView.context,
+        createdAt: Date.now(),
+        messageId: lastView.id,
+      });
+    }
+    // Query artifacts re-run from edited SQL live outside executionMap.
+    for (const extras of Object.values(rerunQueryArtifacts)) {
+      for (const extra of extras) list.push(extra as unknown as Artifact);
+    }
+    // Cross-round convergence: charts/regenerations carry a hex run prefix
+    // (``a1d66fa2_correlation_heatmap.png``) or repeat verbatim each round;
+    // keep only the newest artifact per normalized name so the end summary
+    // lists each logical deliverable once.
+    const stripRunPrefix = (n: string) => n.replace(/^[0-9a-f]{8}_/i, '');
+    const deduped: Artifact[] = [];
+    const seen = new Map<string, number>();
+    for (let i = list.length - 1; i >= 0; i--) {
+      const a = list[i];
+      if (a.type === 'summary' || a.type === 'query') {
+        deduped.unshift(a);
+        continue;
+      }
+      const key = isFinancialReportReference(a.content)
+        ? `financial:${a.content.sessionId}:${a.content.runId}`
+        : `${a.type}:${stripRunPrefix(a.name || '').toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.set(key, i);
+      deduped.unshift(a);
+    }
+    return deduped;
+  }, [messages, executionMap, artifacts, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
+
+  // Newest round that produced a query result set: only that round keeps an
+  // expanded query card; every older round folds its queries into its own
+  // "intermediate queries" group so multi-round fetch sessions do not
+  // re-stack one result card per round down the page.
+  const lastQueryRoundId = useMemo(() => {
+    for (let i = convArtifacts.length - 1; i >= 0; i -= 1) {
+      const a = convArtifacts[i];
+      if (a.type === 'query' && a.messageId) return a.messageId;
+    }
+    return null;
+  }, [convArtifacts]);
 
   useEffect(() => {
     if (!pendingFinalization) return;
@@ -1849,25 +2839,27 @@ const Playground: NextPage = () => {
 
     setArtifacts(prevArtifacts => {
       const filtered = prevArtifacts.filter(artifact => artifact.messageId !== responseId);
-      return [...filtered, ...deduped];
+      const delivered = prevArtifacts.filter(
+        artifact => artifact.messageId === responseId && isFinancialReportReference(artifact.content),
+      );
+      return [...filtered, ...mergeArtifacts([...deduped, ...delivered])];
     });
 
-    const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
-    const imageArtifact = deduped.find(artifact => artifact.type === 'image');
-    let targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null = null;
-    if (htmlArtifact) {
-      setPreviewArtifact(htmlArtifact as Artifact);
-      targetView = 'html-preview';
-    } else if (imageArtifact) {
-      setPreviewArtifact(imageArtifact as Artifact);
-      targetView = 'image-preview';
+    // Financial reports arrive before the final answer. Finalization only fills
+    // the artifact list; it must not replace the report/evidence the user is reading.
+    if (financialDelivery.current.hasReport(responseId)) {
+      setPendingFinalization(null);
+      return;
     }
 
     if (execution) {
       const skillStep = execution.steps.find(step => {
-        if (step.action !== 'shell_interpreter') return false;
+        if (step.action !== 'shell_interpreter' && step.action !== 'bash') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
-        const inputHas = step.actionInput?.includes('package_skill') || step.actionInput?.includes('init_skill');
+        // actionInput may be a string (dbgpt) or an args object (pi bridge).
+        const inputText =
+          typeof step.actionInput === 'string' ? step.actionInput : JSON.stringify(step.actionInput ?? '');
+        const inputHas = inputText.includes('package_skill') || inputText.includes('init_skill');
         const outputTexts = (execution.outputs[step.id] || []).map(output => String(output.content)).join(' ');
         const outputHas =
           outputTexts.includes('package_skill') ||
@@ -1884,22 +2876,13 @@ const Playground: NextPage = () => {
         const skillName = extractCreatedSkillName(allText);
         if (skillName) {
           setCreatedSkillNames(prev => ({ ...prev, [responseId]: skillName }));
-          targetView = 'skill-preview';
         }
       }
     }
 
-    if (targetView) {
-      setRightPanelCollapsed(false);
-    }
-
-    // Artifact preparation and visible navigation are intentionally separate.
-    // Keep the clean summary visible first; the bounded presentation controller
-    // will open the prepared preview after the reveal/hold phase completes.
+    // Reveal the answer in the main conversation without navigating the rail.
     if (summaryText && summaryPresentationResponseIdRef.current === responseId) {
-      setPendingSummaryPresentation({ responseId, summaryText, targetView });
-    } else if (!summaryText && targetView) {
-      setRightPanelView(targetView);
+      setPendingSummaryPresentation({ responseId, summaryText });
     }
 
     setPendingFinalization(null);
@@ -1908,12 +2891,8 @@ const Playground: NextPage = () => {
   useEffect(() => {
     if (!pendingSummaryPresentation) return;
 
-    const { responseId, summaryText, targetView } = pendingSummaryPresentation;
-    if (
-      summaryPresentationResponseIdRef.current !== responseId ||
-      activeViewMsgId !== responseId ||
-      rightPanelView !== 'summary'
-    ) {
+    const { responseId, summaryText } = pendingSummaryPresentation;
+    if (summaryPresentationResponseIdRef.current !== responseId || activeViewMsgId !== responseId) {
       cancelSummaryPresentation();
       return;
     }
@@ -1939,10 +2918,6 @@ const Playground: NextPage = () => {
         setSummaryComplete(true);
         setSummaryPresentationResponseId(null);
         setPendingSummaryPresentation(null);
-        if (targetView) {
-          setRightPanelView(targetView);
-          setRightPanelCollapsed(false);
-        }
       },
     });
 
@@ -1955,7 +2930,7 @@ const Playground: NextPage = () => {
         summaryPresentationRef.current = null;
       }
     };
-  }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
+  }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation]);
 
   const performStart = async (
     inputQuery = query,
@@ -1963,9 +2938,10 @@ const Playground: NextPage = () => {
     overrideDb?: DataSource | null,
     explicitLegacyFile?: LegacyServerFile | null,
     overrideKnowledge?: KnowledgeSpace | null,
+    overrideExtInfo?: Record<string, any>,
     overrideDashboardTemplate?: string | null,
   ) => {
-    const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
+    const effectiveSkill = suiteCreationMode ? null : overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     const effectiveKnowledge = overrideKnowledge !== undefined ? overrideKnowledge : selectedKnowledge;
     const effectiveDashboardTemplate =
@@ -1994,12 +2970,45 @@ const Playground: NextPage = () => {
       message.error(dt('暂无可用模型，请检查模型服务后重试。'));
       return;
     }
+    const draftInputFiles = explicitLegacyFile
+      ? [explicitLegacyFile]
+      : sessionFiles.legacyFile
+        ? [sessionFiles.legacyFile]
+        : sessionFiles.files.map(draft => ({
+            name: draft.identity.name,
+            media_type: draft.snapshot?.media_type || draft.file?.type || '',
+          }));
+    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles);
+    if (materialProblem && effectiveSuiteCommand) {
+      message.warning(suiteCommandFileError(materialProblem, effectiveSuiteCommand, i18n.language));
+      return;
+    }
     if (
       (!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile && !explicitLegacyFile) ||
       loading ||
       queuedSendAfterUpload
     )
       return;
+
+    // TaskFlow: a selected flow takes over the send — it runs the compiled
+    // AWEL DAG via the chat_flow channel instead of the ReAct agent.
+    const activeFlow = selectedFlowRef.current;
+    if (!suiteCreationMode && activeFlow && inputQuery.trim()) {
+      await performFlowStart(activeFlow, inputQuery.trim());
+      return;
+    }
+
+    if (
+      suiteTabTouched &&
+      !suiteCreationMode &&
+      effectiveSuite &&
+      effectiveSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional' &&
+      !effectiveDb
+    ) {
+      message.warning(t('suite_database_required'));
+      setIsDbModalOpen(true);
+      return;
+    }
 
     const taskEpoch = taskEpochRef.current;
 
@@ -2011,10 +3020,19 @@ const Playground: NextPage = () => {
 
     // The conversation id must be settled before preparing file sends so the
     // uploads (bound at pick time) and this request share one session scope.
+    const isNewConv = !conversationIdRef.current;
     const currentConvId = conversationIdRef.current || generateUUID();
     if (!conversationIdRef.current) {
       conversationIdRef.current = currentConvId;
       setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: inputQuery,
+        chat_mode: 'chat_react_agent',
+        gmt_created: new Date().toISOString(),
+      } as any);
     }
     let sendSnapshot: SessionFilesSendSnapshot | null = null;
 
@@ -2053,6 +3071,14 @@ const Playground: NextPage = () => {
       }
     }
     if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
+    const preparedFiles = sendSnapshot?.legacyFile
+      ? [sendSnapshot.legacyFile]
+      : (sendSnapshot?.fileIds ?? []).map(fileId => sendSnapshot!.snapshotById[fileId]);
+    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles);
+    if (preparedProblem && effectiveSuiteCommand) {
+      message.warning(suiteCommandFileError(preparedProblem, effectiveSuiteCommand, i18n.language));
+      return;
+    }
     // Shallow-write the conversation id into the URL once the send is
     // committed: every same-page affordance (sidebar logo / explore links,
     // also pointing at '/') becomes a real transition whose id removal
@@ -2087,49 +3113,59 @@ const Playground: NextPage = () => {
     const currentOrder = Math.floor(messages.length / 2) + 1;
 
     const responseId = generateUUID();
+    const navigationVersionAtSend = panelNavigationVersion.current;
 
     const humanId = generateUUID();
 
     // Add user message and AI placeholder message
-    setMessages(prev => [
-      ...prev,
-      {
-        id: humanId,
-        role: 'human',
-        context: inputQuery,
-        order: currentOrder,
-        attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
-        attachedKnowledge: effectiveKnowledge ?? undefined,
-        attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
-        attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
-        attachedConnectors:
-          selectedConnectors.length > 0
-            ? selectedConnectors.map(c => ({
-                id: c.id,
-                connector_type: c.connector_type,
-                display_name: c.display_name,
-              }))
-            : undefined,
-      },
-      {
-        id: responseId,
-        role: 'view',
-        context: '',
-        order: currentOrder,
-        thinking: true,
-      },
-    ]);
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: inputQuery,
+      order: currentOrder,
+      attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
+      attachedKnowledge: effectiveKnowledge ?? undefined,
+      attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
+      attachedSuite: effectiveSuite
+        ? {
+            name: effectiveSuite.name,
+            display: suiteDisplayName(effectiveSuite, i18n.language),
+            command: effectiveSuiteCommand?.name,
+          }
+        : undefined,
+      attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
+      attachedConnectors:
+        selectedConnectors.length > 0
+          ? selectedConnectors.map(c => ({
+              id: c.id,
+              connector_type: c.connector_type,
+              display_name: c.display_name,
+            }))
+          : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
 
     setLoading(true);
     setQuery(''); // Clear input
+    // Analysis commands apply to this send; ordinary follow-ups reuse saved data.
+    if (effectiveSuite?.scenario_id === 'financial') setSelectedSuiteCommand(null);
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    let receivedFinal = false;
     chatAbortControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
@@ -2147,6 +3183,7 @@ const Playground: NextPage = () => {
     // Build ext_info once and reuse it for both the live request and the
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
+    // A suite may require an engine; otherwise the server preference applies.
     const baseExtInfo: Record<string, any> = {
       locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
@@ -2159,6 +3196,18 @@ const Playground: NextPage = () => {
         ? { knowledge_space_name: effectiveKnowledge.name, knowledge_space_id: effectiveKnowledge.id }
         : {}),
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
+      // Suite pin: explicit tab selection wins over keyword routing; the
+      // backend binder records the pin and keeps it sticky for the conv.
+      ...(effectiveSuite
+        ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
+        : {}),
+      ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
+      ...(suiteResetRequested && !overrideExtInfo?.suite ? { suite_reset: true } : {}),
+      ...(effectiveSuite?.manifest_snapshot?.context_defaults?.harness_engine
+        ? { harness_engine: effectiveSuite.manifest_snapshot.context_defaults.harness_engine }
+        : {}),
+      ...(suiteCreationMode ? { creation_mode: 'expert_suite' } : {}),
+      ...overrideExtInfo,
     };
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
@@ -2184,6 +3233,9 @@ const Playground: NextPage = () => {
     };
 
     try {
+      setConvRunning(currentConvId, true);
+      clearConvAttention(currentConvId);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
         headers: {
@@ -2234,7 +3286,6 @@ const Playground: NextPage = () => {
       const acceptDashboardEvent = createDashboardGenerationEventGate();
 
       const processEvent = (raw: string) => {
-        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -2244,9 +3295,55 @@ const Playground: NextPage = () => {
         } catch (_err) {
           return;
         }
+        if (payload.type === 'final' && !controller.signal.aborted) {
+          markConvCompleted(currentConvId, responseId);
+        }
+        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (typeof payload.type === 'string' && payload.type.startsWith('dashboard.')) {
           if (acceptDashboardEvent(payload)) {
-            setMessages(previous => applyDashboardGenerationToMessages(previous, responseId, payload));
+            setMessages(prev => applyDashboardGenerationToMessages(prev, responseId, payload));
+            if (
+              payload.type === 'dashboard.generation.started' ||
+              payload.type === 'dashboard.created' ||
+              payload.type === 'dashboard.updated' ||
+              payload.type === 'dashboard.generation.failed' ||
+              payload.type.startsWith('dashboard.widget.')
+            ) {
+              setPreviewArtifact(prev => {
+                if (prev?.type !== 'dashboard') return prev;
+                const matchesDashboard = payload.dashboard_id && prev.content.dashboardId === payload.dashboard_id;
+                const matchesTurn = payload.source_turn_id && prev.content.sourceTurnId === payload.source_turn_id;
+                if (!matchesDashboard && !matchesTurn) return prev;
+                const states = [prev.content];
+                const state = reduceDashboardGenerations(states, payload).find(
+                  item => item.dashboardId === payload.dashboard_id || item.sourceTurnId === payload.source_turn_id,
+                );
+                if (!state) return prev;
+                return {
+                  id: `dashboard-${state.dashboardId || state.sourceTurnId}`,
+                  type: 'dashboard',
+                  name: state.title,
+                  content: state,
+                  createdAt: Date.now(),
+                  messageId: responseId,
+                  tier: 'final',
+                };
+              });
+            }
+          }
+          return;
+        }
+        if (payload.type === 'suite.bound') {
+          if (payload.command) {
+            setSuiteCommandBindings(prev => ({
+              ...prev,
+              [responseId]: {
+                command: payload.command,
+                skill: payload.skill_loaded ? payload.command_skill : '',
+                error: payload.command_error || undefined,
+                documents: payload.documents || [],
+              },
+            }));
           }
           return;
         }
@@ -2365,6 +3462,24 @@ const Playground: NextPage = () => {
           setPendingQuestion(null);
           return;
         }
+        if (payload.type === 'approval.requested') {
+          setPendingApprovals(prev =>
+            prev.some(p => p.approval_id === payload.approval_id)
+              ? prev
+              : [...prev, { ...payload, status: 'pending' } as PendingApproval],
+          );
+          return;
+        }
+        if (payload.type === 'approval.resolved') {
+          setPendingApprovals(prev => prev.filter(p => p.approval_id !== payload.approval_id));
+          return;
+        }
+        if (payload.type === 'approval.intent') {
+          setPendingApprovals(prev =>
+            prev.map(p => (p.approval_id === payload.approval_id ? { ...p, intent: payload.bullets } : p)),
+          );
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];
@@ -2376,6 +3491,48 @@ const Playground: NextPage = () => {
               }),
             );
           }
+          return;
+        }
+        if (payload.type === 'progress.remove') {
+          setExecutionMap(prev => {
+            const current = prev[responseId];
+            if (!current) return prev;
+            return {
+              ...prev,
+              [responseId]: { ...current, steps: current.steps.filter(step => step.id !== payload.id) },
+            };
+          });
+          return;
+        }
+        if (payload.type === 'progress') {
+          setExecutionMap(prev => {
+            const current = prev[responseId] || {
+              steps: [],
+              outputs: {},
+              activeStepId: null,
+              collapsed: false,
+              stepThoughts: {},
+            };
+            const progressStep: ExecutionStep = {
+              id: payload.id,
+              step: 0,
+              detail: '',
+              status: payload.streaming ? 'running' : 'done',
+              action: '__progress__',
+              progressContent: payload.content,
+            };
+            const exists = current.steps.some(step => step.id === payload.id);
+            const placeholder = current.steps.findIndex(step => step.id === payload.before_step_id);
+            const nextSteps = [...current.steps];
+            nextSteps.splice(placeholder < 0 ? nextSteps.length : placeholder, 0, progressStep);
+            return {
+              ...prev,
+              [responseId]: {
+                ...current,
+                steps: exists ? current.steps.map(step => (step.id === payload.id ? progressStep : step)) : nextSteps,
+              },
+            };
+          });
           return;
         }
         if (payload.type === 'step.start') {
@@ -2406,14 +3563,12 @@ const Playground: NextPage = () => {
                       todoMeta: payload.todo_meta || step.todoMeta,
                       status: 'running' as const,
                     }
-                  : step.status === 'running'
-                    ? { ...step, status: 'done' }
-                    : step,
+                  : step,
               );
             } else {
-              // New step - mark running steps as done and add new step
+              // Only step.done completes a call; sibling tools may run concurrently.
               nextSteps = [
-                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' } : item)),
+                ...current.steps,
                 {
                   id,
                   step: payload.step,
@@ -2423,6 +3578,7 @@ const Playground: NextPage = () => {
                   todoMeta: payload.todo_meta,
                   status: 'running' as const,
                   action: payload.action,
+                  startedAt: Date.now(),
                 },
               ];
             }
@@ -2440,24 +3596,38 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          setRightPanelCollapsed(false);
-        } else if (payload.type === 'step.meta') {
-          if (payload.action && payload.action.toLowerCase() === 'terminate') {
+        } else if (payload.type === 'step.meta' || payload.type === 'step.remove') {
+          if (payload.type === 'step.remove' || payload.action?.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
+            setSelectedStepId(selected => (selected === payload.id ? null : selected));
             setExecutionMap(prev => {
               const current = prev[responseId];
               if (!current) return prev;
               const nextSteps = current.steps.filter(item => item.id !== payload.id);
-              const nextActiveStepId = current.activeStepId === payload.id ? null : current.activeStepId;
+              const nextActiveStepId =
+                current.activeStepId === payload.id
+                  ? nextSteps[nextSteps.length - 1]?.id || null
+                  : current.activeStepId;
+              const nextOutputs = { ...current.outputs };
+              const nextThoughts = { ...current.stepThoughts };
+              delete nextOutputs[payload.id];
+              delete nextThoughts[payload.id];
               return {
                 ...prev,
-                [responseId]: { ...current, steps: nextSteps, activeStepId: nextActiveStepId },
+                [responseId]: {
+                  ...current,
+                  steps: nextSteps,
+                  outputs: nextOutputs,
+                  stepThoughts: nextThoughts,
+                  activeStepId: nextActiveStepId,
+                },
               };
             });
             return;
           }
+          if (terminatedStepIdsRef.current.has(payload.id)) return;
           // Clear manual step selection so the right panel auto-tracks this step
-          if (payload.action) {
+          if (payload.action && panelNavigationVersion.current === navigationVersionAtSend) {
             setSelectedStepId(null);
           }
           setExecutionMap(prev => {
@@ -2472,6 +3642,8 @@ const Playground: NextPage = () => {
                 if (
                   payload.action !== 'code_interpreter' &&
                   payload.action !== 'shell_interpreter' &&
+                  payload.action !== 'code' &&
+                  payload.action !== 'bash' &&
                   payload.action_input
                 ) {
                   const inputStr =
@@ -2488,11 +3660,15 @@ const Playground: NextPage = () => {
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
                 todoMeta: payload.todo_meta || item.todoMeta,
+                actionIntention:
+                  payload.action_intention ||
+                  item.actionIntention ||
+                  synthesizeIntention(payload.action || item.action, payload.action_input || item.actionInput, t),
               };
             });
             // Route model-provided action display fields to the subtle status row.
             const displayThought = buildActionDisplayText({
-              actionIntention: payload.action_intention,
+              actionIntention: payload.action_intention || synthesizeIntention(payload.action, payload.action_input, t),
               actionReason: payload.action_reason,
               thought: payload.thought,
             });
@@ -2509,7 +3685,9 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 stepThoughts: nextThoughts,
                 // Focus right panel on this step when it receives action content
-                ...(payload.action ? { activeStepId: payload.id } : {}),
+                ...(payload.action && panelNavigationVersion.current === navigationVersionAtSend
+                  ? { activeStepId: payload.id }
+                  : {}),
               },
             };
           });
@@ -2546,8 +3724,23 @@ const Playground: NextPage = () => {
             };
           });
 
-          // Artifacts are now generated at task completion (final event),
-          // not during streaming — to avoid showing intermediate outputs as artifacts
+          if (payload.output_type === 'html') {
+            const delivery = financialDelivery.current.receive(
+              payload.content,
+              currentConvId,
+              responseId,
+              false,
+              id,
+            );
+            if (delivery) {
+              setArtifacts(previous => mergeArtifacts([...previous, delivery.artifact]));
+              setPreviewArtifact(previous =>
+                previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
+                  ? delivery.artifact
+                  : previous,
+              );
+            }
+          }
         } else if (payload.type === 'step.done') {
           const id = payload.id;
           if (terminatedStepIdsRef.current.has(id || '')) return;
@@ -2557,7 +3750,9 @@ const Playground: NextPage = () => {
             const targetId = id || current.activeStepId;
             if (!targetId) return prev;
             const nextSteps = current.steps.map(item =>
-              item.id === targetId ? { ...item, status: payload.status || 'done' } : item,
+              item.id === targetId
+                ? { ...item, status: payload.status || 'done', endedAt: item.endedAt || Date.now() }
+                : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2566,7 +3761,24 @@ const Playground: NextPage = () => {
           // timeline. Display copy must come from step.meta action_intention or
           // action_reason, which are constrained to concise, readable text.
           return;
+        } else if (payload.type === 'final.chunk') {
+          const chunkText = typeof payload.content === 'string' ? payload.content : '';
+          if (!chunkText) return;
+          const isFirstFinalChunk = !finalChunkStreamedRef.current[responseId];
+          finalChunkStreamedRef.current[responseId] = true;
+          setMessages(prev =>
+            prev.map(msg => {
+              if (msg.id !== responseId || msg.role !== 'view') return msg;
+              return { ...msg, context: (msg.context || '') + chunkText };
+            }),
+          );
+          if (isFirstFinalChunk) {
+            // The answer streams into the left bubble; the right rail
+            // stays a contextual viewer (artifact previews only).
+            setActiveMessageId(responseId);
+          }
         } else if (payload.type === 'final') {
+          receivedFinal = true;
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
           const finalTaskPlan = Array.isArray(payload.task_plan) ? (payload.task_plan as TaskItem[]) : undefined;
@@ -2594,6 +3806,7 @@ const Playground: NextPage = () => {
                 reportId: finalAnswer.reportId,
                 reportRunId: finalAnswer.reportRunId,
                 thinking: false,
+                executionStatus: payload.execution_status,
                 ...(finalTaskPlan && { taskPlan: finalTaskPlan }),
               };
             }),
@@ -2602,27 +3815,27 @@ const Playground: NextPage = () => {
           setActiveMessageId(responseId);
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (summaryText) {
+          const hadStreamedFinalChunks = !!finalChunkStreamedRef.current[responseId];
+          if (financialDelivery.current.hasReport(responseId)) {
+            setStreamingSummary(summaryText);
+            setSummaryComplete(true);
+          } else if (summaryText && !hadStreamedFinalChunks) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
             setSummaryPresentationResponseId(responseId);
             setStreamingSummary(firstSummaryCharacter);
             setSummaryComplete(false);
-            setRightPanelTab(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
-            setRightPanelView(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
-            setRightPanelCollapsed(false);
-          } else if (finalAnswer.citations.length > 0) {
-            setStreamingSummary('');
-            setSummaryComplete(true);
-            setRightPanelView('references');
           } else {
+            // Server-streamed chunks already filled the answer (or there is
+            // nothing to present): skip the client-side typewriter.
             setStreamingSummary('');
             setSummaryComplete(true);
           }
+          delete finalChunkStreamedRef.current[responseId];
 
           // Final is already a complete server event. Build artifacts now;
-          // the bounded summary presentation controls only visible navigation.
+          // the bounded presentation controls only the answer reveal.
           // uploadedFilePath only exists for the legacy single-file protocol;
           // session-file (file_ids) sends carry no server path client-side.
           setPendingFinalization({
@@ -2670,6 +3883,7 @@ const Playground: NextPage = () => {
                 ...msg,
                 context: partial ? `${partial}\n\n_${stoppedMark}_` : `_${stoppedMark}_`,
                 thinking: false,
+                executionStatus: 'cancelled',
               };
             }),
           );
@@ -2684,11 +3898,332 @@ const Playground: NextPage = () => {
           if (lastMsg && lastMsg.role === 'view') {
             lastMsg.context = err?.message || 'Error occurred';
             lastMsg.thinking = false;
+            lastMsg.executionStatus = 'failed';
           }
           return newMessages;
         });
       }
     } finally {
+      setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
+      bumpDialogueList();
+      if (chatAbortControllerRef.current === controller) {
+        chatAbortControllerRef.current = null;
+      }
+      if (taskEpochRef.current === taskEpoch) {
+        setLoading(false);
+        if (!receivedFinal && financialDelivery.current.hasReport(responseId)) {
+          setExecutionMap(previous => {
+            const current = previous[responseId];
+            if (!current) return previous;
+            return {
+              ...previous,
+              [responseId]: {
+                ...current,
+                steps: current.steps.map(step => (step.status === 'running' ? { ...step, status: 'failed' } : step)),
+              },
+            };
+          });
+          setMessages(previous =>
+            previous.map(item =>
+              item.id !== responseId
+                ? item
+                : {
+                    ...item,
+                    thinking: false,
+                    executionStatus: item.executionStatus || 'incomplete',
+                    context:
+                      item.context ||
+                      (financialDelivery.current.hasPublished(responseId)
+                        ? financialText('financial.the_report_is_ready_with_source_evidence_this_reply_is_incomplete')
+                        : financialText('financial.execution_ended_saved_analysis_remains_available')),
+                    taskPlan: item.taskPlan?.map(task =>
+                      task.status === 'in_progress'
+                        ? {
+                            ...task,
+                            status: 'error' as const,
+                            detail: financialText('financial.execution_ended_saved_content_remains_available'),
+                          }
+                        : task,
+                    ),
+                  },
+            ),
+          );
+        }
+      }
+    }
+  };
+
+  /**
+   * TaskFlow send path: resolve the runnable flow uid (templates are
+   * instantiated on first use), then stream the chat_flow SSE channel. Step
+   * progress is parsed from `vis-flow-step` markers embedded in the answer
+   * text and projected onto the existing Manus execution-step UI.
+   */
+  const performFlowStart = async (flow: ITaskflowRef, flowQuery: string): Promise<void> => {
+    const taskEpoch = taskEpochRef.current;
+    const flowUid = await resolveFlowUid(flow);
+    if (!flowUid) {
+      message.error(t('error_occurred') as string);
+      return;
+    }
+    const isNewConv = !conversationIdRef.current;
+    const currentConvId = conversationIdRef.current || generateUUID();
+    if (!conversationIdRef.current) {
+      conversationIdRef.current = currentConvId;
+      setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: flowQuery,
+        chat_mode: 'chat_flow',
+        gmt_created: new Date().toISOString(),
+      } as any);
+    }
+    if (router.query.id !== currentConvId) {
+      router.replace({ pathname: '/', query: { ...(router.query ?? {}), id: currentConvId } }, undefined, {
+        shallow: true,
+      });
+    }
+
+    const currentOrder = Math.floor(messages.length / 2) + 1;
+    const humanId = generateUUID();
+    const responseId = generateUUID();
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: flowQuery,
+      order: currentOrder,
+      attachedDb: selectedDb ? { db_name: selectedDb.db_name, db_type: selectedDb.db_type } : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+      flowRun: { label: flow.label },
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
+    setQuery('');
+    setLoading(true);
+    setActiveViewMsgId(responseId);
+
+    // Seed the step list from the DSL so the run card shows the full plan
+    // while the DAG executes server-side. Titles use product kind labels
+    // (localized), details show the node's key config summary.
+    const dslNodes = flow.taskflow_source?.nodes ?? [];
+    const flowNodeSummary = (node: (typeof dslNodes)[number]): string => {
+      const config = node.config ?? {};
+      switch (node.kind) {
+        case 'db_query':
+          return config.datasource ? `${config.datasource} · ≤${config.max_rows ?? 1000}` : '';
+        case 'file_data':
+          return config.file_name ?? '';
+        case 'agent': {
+          const goal = (config.goal || '').trim();
+          const short = goal.length > 24 ? `${goal.slice(0, 24)}…` : goal;
+          const toolCount =
+            (config.tools?.length ?? 0) +
+            (config.skills?.length ?? 0) +
+            (config.mcp ? String(config.mcp).split('\n').filter(Boolean).length : 0);
+          return [short, toolCount > 0 ? `${toolCount} tools` : ''].filter(Boolean).join(' · ');
+        }
+        case 'visualize':
+          return `≤${config.max_charts ?? 4}`;
+        case 'human_confirm':
+          return config.message ?? '';
+        default:
+          return '';
+      }
+    };
+    const initialSteps: ExecutionStep[] = dslNodes.map((node, idx) => ({
+      id: node.id,
+      step: idx + 1,
+      title: node.label || (t(`taskflow_kind_${node.kind}`) as string),
+      detail: flowNodeSummary(node),
+      status: (idx === 0 ? 'running' : 'pending') as ExecutionStep['status'],
+      action: 'taskflow_node',
+    }));
+    setExecutionMap(prev => ({
+      ...prev,
+      [responseId]: { steps: initialSteps, outputs: {}, activeStepId: null, collapsed: false, stepThoughts: {} },
+    }));
+
+    const syncSteps = (markers: ReturnType<typeof parseTaskflowStream>['markers'], done: boolean) => {
+      const markerMap = new Map(markers.map(m => [m.step_id, m]));
+      const kindById = new Map(dslNodes.map(n => [n.id, n.kind]));
+      const isBoundary = (id: string) => {
+        const kind = kindById.get(id);
+        return kind === 'start' || kind === 'output';
+      };
+      // A successful run produces a marker for every content node; an unmarked
+      // content node at stream end means the run failed (or was skipped)
+      // before reaching it — don't paint it as done.
+      let runningSet = false;
+      // A live running marker (e.g. an agent node mid-loop) already marks the
+      // current step — don't let the heuristic mark the NEXT one running too.
+      const hasLiveRunning = markers.some(m => m.status === 'running');
+      setExecutionMap(prev => {
+        const exec = prev[responseId];
+        if (!exec) return prev;
+        const completedRun = done && exec.steps.every(s => isBoundary(s.id) || markerMap.has(s.id));
+        const steps = exec.steps.map((step, idx) => {
+          const marker = markerMap.get(step.id);
+          if (marker) {
+            return {
+              ...step,
+              status: (marker.status === 'failed'
+                ? 'failed'
+                : marker.status === 'running'
+                  ? 'running'
+                  : 'done') as ExecutionStep['status'],
+              // Keep the config-summary subtitle; marker.summary (e.g. row
+              // count) renders as its own badge in the flow step row.
+              detail: step.detail,
+            };
+          }
+          if (!done && kindById.get(step.id) === 'start') {
+            // Start has no marker; it completes the moment the trigger fires,
+            // i.e. as soon as any stream reaches the client.
+            return { ...step, status: 'done' as ExecutionStep['status'] };
+          }
+          if (!done && !hasLiveRunning && !runningSet && idx > 0) {
+            runningSet = true;
+            return { ...step, status: 'running' as ExecutionStep['status'] };
+          }
+          if (done) {
+            if (completedRun || kindById.get(step.id) === 'start') {
+              // Start is instant and always ran; other steps (output included)
+              // only count as done when the whole run completed.
+              return { ...step, status: 'done' as ExecutionStep['status'] };
+            }
+            return { ...step, status: 'failed' as ExecutionStep['status'] };
+          }
+          return step;
+        });
+        return { ...prev, [responseId]: { ...exec, steps } };
+      });
+    };
+
+    const controller = new AbortController();
+    chatAbortControllerRef.current = controller;
+    let accumulated = '';
+    let serverError = '';
+    try {
+      setConvRunning(currentConvId, true);
+      clearConvAttention(currentConvId);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
+      const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conv_uid: currentConvId,
+          chat_mode: 'chat_flow',
+          select_param: flowUid,
+          user_input: flowQuery,
+          model_name: model,
+          temperature: 0.6,
+          max_new_tokens: 4000,
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let content = '';
+          try {
+            const parsed = JSON.parse(payload);
+            content = parsed?.choices?.[0]?.message?.content ?? parsed?.vis ?? '';
+            // The chat_flow channel escapes newlines in the wire format
+            // (server-side text.replace("\n", "\\n")); restore them so both
+            // markdown and the vis-flow-step markers parse correctly. Use a
+            // negative lookbehind so escaped backslashes inside the marker
+            // JSON (e.g. code like print('\n')) survive intact.
+            if (typeof content === 'string') content = content.replace(/(?<!\\)\\n/g, '\n');
+          } catch {
+            content = payload.replace(/(?<!\\)\\n/g, '\n');
+          }
+          if (!content) continue;
+          // Flow-level fatal frames (e.g. DAG not registered after a restart
+          // while the flow sat undeployed): surface the real reason instead
+          // of letting the empty stream paint every node as failed at 0:00.
+          if (typeof content === 'string' && content.startsWith('[SERVER_ERROR]')) {
+            serverError = content.replace('[SERVER_ERROR]', '').trim();
+            continue;
+          }
+          accumulated += content;
+          const parsedStream = parseTaskflowStream(accumulated);
+          // Detached (background) flow streams keep pumping so the server
+          // run continues; only the UI apply is skipped for stale sessions.
+          const staleStream = taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId;
+          if (!staleStream) {
+            syncSteps(parsedStream.markers, false);
+            // Keep the RAW text (markers included) in the message: the flow
+            // run card parses per-node sections from it; markers never
+            // render as-is.
+            setMessages(prev =>
+              prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: true } : m)),
+            );
+          }
+        }
+      }
+      if (serverError) {
+        message.error(serverError);
+        if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+          setExecutionMap(prev => {
+            const exec = prev[responseId];
+            if (!exec) return prev;
+            return {
+              ...prev,
+              [responseId]: {
+                ...exec,
+                steps: exec.steps.map(s => ({ ...s, status: 'failed' as ExecutionStep['status'] })),
+              },
+            };
+          });
+          setMessages(prev =>
+            prev.map(m => (m.id === responseId ? { ...m, context: serverError, thinking: false } : m)),
+          );
+        }
+        return;
+      }
+      const parsedStream = parseTaskflowStream(accumulated);
+      if (accumulated.trim() && !controller.signal.aborted &&
+          !parsedStream.markers.some(marker => marker.status === 'failed')) {
+        markConvCompleted(currentConvId, responseId);
+      }
+      if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+        syncSteps(parsedStream.markers, true);
+        setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
+      }
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === responseId ? { ...m, context: `${t('error_occurred')}: ${e?.message ?? e}`, thinking: false } : m,
+          ),
+        );
+      }
+    } finally {
+      setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
+      bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
       }
@@ -2721,7 +4256,7 @@ const Playground: NextPage = () => {
     // React state is only a UI projection and may be stale in callbacks that
     // crossed an await. These refs serialize every send entry point, including
     // the composer and delayed example-card execution.
-    if (sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    if (sendInFlightRef.current) return;
     const taskEpoch = taskEpochRef.current;
     sendInFlightRef.current = true;
     try {
@@ -2733,133 +4268,22 @@ const Playground: NextPage = () => {
     }
   };
 
-  const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
-    const queryKey = `example_${example.id}_query`;
-    const queryVal = t(queryKey) as string;
-    const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
-
-    if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
-    const taskEpoch = taskEpochRef.current;
-    exampleRunInFlightRef.current = true;
-    let exampleController: AbortController | null = null;
-
-    try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
-      let exampleLegacyFile: LegacyServerFile | null = null;
-
-      // Example files already exist on the server: materialize the selected
-      // file, then explicitly hand it to this turn. handleStart atomically
-      // stages the read-only rail item and freezes the legacy file_path send.
-      if (example.fileName) {
-        if (hasSessionFileDrafts) {
-          message.destroy('example-loading');
-          message.warning('示例文件与本地上传的附件不能混用，请先移除已选附件');
-          return;
-        }
-        exampleController = new AbortController();
-        exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post(
-          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`,
-          {
-            example_id: example.id,
-          },
-          {
-            signal: exampleController.signal,
-          },
-        );
-        if (taskEpochRef.current !== taskEpoch) {
-          return;
-        }
-
-        if (res?.success && res?.data) {
-          exampleLegacyFile = {
-            name: example.fileName,
-            size: example.fileSize || 0,
-            media_type: example.fileType,
-            file_path: res.data,
-          };
-        } else {
-          message.destroy('example-loading');
-          const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
-          return;
-        }
+  const handleSuiteQuestionClick = (question: SuiteRecommendedQuestion) => {
+    if (!activeSuite) return;
+    const command = activeSuite.manifest_snapshot?.commands?.find(item => item.name === question.command);
+    if (command) handleSelectSuiteCommand(activeSuite, command, question.text);
+    else {
+      selectSuiteContext(activeSuite);
+      setQuery(question.text);
+    }
+    const needsDatabase = activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional';
+    const database = needsDatabase ? resolveSuiteQuestionDatabase(question, selectedDb, dataSources || []) : null;
+    setSelectedDb(database);
+    if (needsDatabase && !database) {
+      if (question.database_name) {
+        message.warning(t('suite_database_unavailable', { name: question.database_name }));
       }
-
-      message.destroy('example-loading');
-
-      // Auto-select skill if example specifies one
-      let exampleSkill: Skill | null = null;
-      if (example.skillName === 'dashboard-builder') {
-        exampleSkill = { id: 'dashboard-builder', name: 'dashboard-builder', description: '', type: 'official' };
-        setSelectedSkill(exampleSkill);
-      }
-      if (example.skillName && skillsList) {
-        const matched = skillsList.find(s => s.name === example.skillName);
-        if (matched) {
-          exampleSkill = matched;
-          setSelectedSkill(matched);
-        }
-      }
-
-      // Auto-select database if example specifies one
-      let matchedDb: DataSource | null = null;
-      if (example.dbName) {
-        const found = (dataSources || []).find((ds: DataSource) => ds.db_name === example.dbName);
-        if (!found) {
-          message.error(`示例依赖的数据源“${example.dbName}”尚未创建或不可访问`);
-          return;
-        }
-        matchedDb = found;
-        setSelectedDb(found);
-      }
-
-      // A business example must use the governing metric definitions that
-      // belong to it. Resolve the actual server-side space so both its name
-      // and ID travel in ext_info, rather than merely mentioning it in text.
-      let exampleKnowledge: KnowledgeSpace | null = null;
-      if (example.knowledgeName) {
-        message.loading({ content: '正在准备示例知识库...', key: 'example-loading', duration: 0 });
-        exampleController = new AbortController();
-        exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post<
-          ResponseType<KnowledgeSpace | null>,
-          ResponseType<KnowledgeSpace | null>,
-          { example_id: string }
-        >(
-          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/prepare`,
-          { example_id: example.id },
-          { signal: exampleController.signal, timeout: 140000 },
-        );
-        if (taskEpochRef.current !== taskEpoch) return;
-        message.destroy('example-loading');
-        if (!res?.success || !res?.data?.id || res.data.name !== example.knowledgeName) {
-          message.error('准备示例知识库失败: ' + (res?.err_msg || '未返回知识库信息'));
-          return;
-        }
-        exampleKnowledge = res.data;
-        setSelectedKnowledge(exampleKnowledge);
-      }
-
-      // Transfer the single-flight ownership to the common send entry point.
-      // No other browser event can interleave between this ref write and the
-      // synchronous acquisition at the start of handleStart.
-      exampleRunInFlightRef.current = false;
-      setSelectedDashboardTemplate(null);
-      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile, exampleKnowledge, null);
-    } catch (err: unknown) {
-      if (taskEpochRef.current !== taskEpoch) return;
-      message.destroy('example-loading');
-      console.error('Example click error:', err);
-      const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
-    } finally {
-      if (exampleAbortControllerRef.current === exampleController) {
-        exampleAbortControllerRef.current = null;
-      }
-      if (taskEpochRef.current === taskEpoch) {
-        exampleRunInFlightRef.current = false;
-      }
+      setIsDbModalOpen(true);
     }
   };
 
@@ -2873,6 +4297,7 @@ const Playground: NextPage = () => {
 
   const restoreFromHistory = (
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
+    liveTail: ChatMessage[] = [],
   ) => {
     cancelSummaryPresentation();
     setExecutionMap({});
@@ -2883,6 +4308,7 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
@@ -2890,6 +4316,8 @@ const Playground: NextPage = () => {
     const newExecutionMap: typeof executionMap = {};
     const allArtifacts: Artifact[] = [];
     const restoredSkillNames: Record<string, string> = {};
+    const restoredSuiteBindings: typeof suiteCommandBindings = {};
+    let restoredSuiteSelection: SuiteMessageReference | null | undefined;
 
     historyMessages.forEach(msg => {
       if (msg.role === 'human') {
@@ -2904,15 +4332,18 @@ const Playground: NextPage = () => {
         }
 
         if (payload && (payload.version === 1 || payload.version === 2) && payload.type === 'react-agent') {
+          let historyStepNumber = 0;
           const steps: ExecutionStep[] = (payload.steps || []).map((s: any, idx: number) => ({
             id: s.id || `history-step-${idx}`,
-            step: idx + 1,
+            step: s.action === '__progress__' ? 0 : ++historyStepNumber,
             title: s.title || s.action || `Step ${idx + 1}`,
             detail: s.detail || '',
-            status: (s.status === 'failed' ? 'failed' : 'done') as 'done' | 'failed',
+            status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
+            progressContent: s.progress_content,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
+            actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
           }));
 
           const outputs: Record<string, ExecutionOutput[]> = {};
@@ -2927,7 +4358,13 @@ const Playground: NextPage = () => {
                 content: o.content,
               }));
             }
-            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter') && s.action_input) {
+            if (
+              (s.action === 'code_interpreter' ||
+                s.action === 'shell_interpreter' ||
+                s.action === 'code' ||
+                s.action === 'bash') &&
+              s.action_input
+            ) {
               const existingOutputs = outputs[stepId] || [];
               const hasCode = existingOutputs.some((o: ExecutionOutput) => o.output_type === 'code');
               if (!hasCode) {
@@ -2942,7 +4379,7 @@ const Playground: NextPage = () => {
               }
             }
             const historyThought = buildActionDisplayText({
-              actionIntention: s.action_intention,
+              actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
               actionReason: s.action_reason,
               thought: s.thought,
             });
@@ -2969,7 +4406,44 @@ const Playground: NextPage = () => {
           };
 
           const historyAnswer = decodeHistoryAnswer(payload);
-          const finalContent = cleanFinalContent(historyAnswer.content);
+          const finalContent = cleanFinalContent(
+            historyAnswer.content ||
+              (payload.execution_status
+                ? financialText('financial.task_restored_saved_progress_and_results_are_available')
+                : ''),
+          );
+          const recordedBinding = payload.suite_binding;
+          if (recordedBinding && typeof recordedBinding.command === 'string') {
+            restoredSuiteBindings[viewId] = {
+              command: recordedBinding.command,
+              skill: recordedBinding.skill_loaded ? recordedBinding.command_skill : '',
+              error: recordedBinding.command_error || undefined,
+              documents: Array.isArray(recordedBinding.documents) ? recordedBinding.documents : [],
+            };
+          }
+
+          // Restore this turn's recorded reference, never the current suite selection.
+          const reference = payload.suite_reference;
+          if (Object.prototype.hasOwnProperty.call(payload, 'suite_reference')) {
+            restoredSuiteSelection =
+              reference && typeof reference.name === 'string' && typeof reference.display === 'string'
+                ? {
+                    name: reference.name,
+                    display: reference.display,
+                    command: typeof reference.command === 'string' ? reference.command : undefined,
+                  }
+                : null;
+          }
+          if (reference && typeof reference.name === 'string' && typeof reference.display === 'string') {
+            const lastHuman = [...newMessages].reverse().find(m => m.role === 'human');
+            if (lastHuman) {
+              lastHuman.attachedSuite = {
+                name: reference.name,
+                display: reference.display,
+                command: typeof reference.command === 'string' ? reference.command : undefined,
+              };
+            }
+          }
 
           // History payload v2: the turn's input_files snapshot attaches to
           // the human message of this round. v1 stays on the legacy one-item
@@ -2991,12 +4465,29 @@ const Playground: NextPage = () => {
             null,
           );
           allArtifacts.push(...restoredArtifacts);
+          if (isFinancialReportReference(payload.financial_report)) {
+            allArtifacts.push({
+              id: `${viewId}-financial-report`,
+              type: 'html',
+              name: `${payload.financial_report.title}.html`,
+              content: payload.financial_report,
+              createdAt: Date.now(),
+              messageId: viewId,
+              downloadable: true,
+            });
+          }
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
-            if (s.action !== 'shell_interpreter') return false;
+            if (s.action !== 'shell_interpreter' && s.action !== 'bash') return false;
             const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-            const inputHas = s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
+            const inputHas =
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'package_skill',
+              ) ||
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'init_skill',
+              );
             const outputTexts = (outputs[s.id] || []).map(o => String(o.content)).join(' ');
             const outputHas =
               outputTexts.includes('package_skill') ||
@@ -3017,6 +4508,11 @@ const Playground: NextPage = () => {
             }
           }
 
+          const savedTasks = Array.isArray(payload.task_plan)
+            ? payload.task_plan
+            : Array.isArray(payload.tasks)
+              ? payload.tasks
+              : undefined;
           newMessages.push({
             id: viewId,
             role: 'view',
@@ -3029,11 +4525,16 @@ const Playground: NextPage = () => {
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
             order: msg.order,
             thinking: false,
-            taskPlan: Array.isArray(payload.task_plan)
-              ? payload.task_plan
-              : Array.isArray(payload.tasks)
-                ? payload.tasks
-                : undefined,
+            executionStatus: payload.execution_status,
+            taskPlan: savedTasks?.map((task: TaskItem) =>
+              payload.execution_status && task.status === 'in_progress'
+                ? {
+                    ...task,
+                    status: 'cancelled' as const,
+                    detail: financialText('financial.saved_progress_restored_you_can_continue_the_task'),
+                  }
+                : task,
+            ),
           });
         } else {
           const historyAnswer = decodeHistoryAnswer(msg.context || '');
@@ -3051,9 +4552,41 @@ const Playground: NextPage = () => {
       }
     });
 
-    setMessages(newMessages);
+    if (liveTail.length > 0) {
+      // Carry the in-flight round over: history has no row for it yet, and
+      // dropping it left re-entered running conversations blank.
+      newMessages.push(...liveTail);
+      for (const m of liveTail) {
+        if (!m.id) continue;
+        const exec = executionMap[m.id];
+        if (exec) newExecutionMap[m.id] = exec;
+      }
+    }
+    setMessages(deduplicateDashboardHistoryGenerations(newMessages));
+    const latestSuite = liveTail.length
+      ? liveTail.find(m => m.role === 'human')?.attachedSuite
+      : restoredSuiteSelection !== undefined
+        ? restoredSuiteSelection
+        : [...newMessages].reverse().find(m => m.attachedSuite)?.attachedSuite;
+    setSuiteResetRequested(false);
+    if (latestSuite) {
+      setActiveSuiteTab(latestSuite.name);
+      setSuiteTabTouched(true);
+      // History restores the suite, not a completed new-analysis command.
+      const financialCommand =
+        latestSuite.name === 'financial-analysis' && ['/读年报', '/财报对比'].includes(latestSuite.command || '');
+      setSelectedSuiteCommand(
+        latestSuite.command && !financialCommand ? { suite: latestSuite.name, name: latestSuite.command } : null,
+      );
+      setSelectedSkill(null);
+    } else {
+      setActiveSuiteTab('');
+      setSuiteTabTouched(false);
+      setSelectedSuiteCommand(null);
+    }
+    setSuiteCommandBindings(prev => ({ ...prev, ...restoredSuiteBindings }));
     setExecutionMap(newExecutionMap);
-    setArtifacts(allArtifacts);
+    setArtifacts(mergeArtifacts(allArtifacts));
     if (Object.keys(restoredSkillNames).length > 0) {
       setCreatedSkillNames(prev => ({ ...prev, ...restoredSkillNames }));
     }
@@ -3061,9 +4594,16 @@ const Playground: NextPage = () => {
     const lastView = [...newMessages].reverse().find(m => m.role === 'view');
     if (lastView?.id) {
       setActiveMessageId(lastView.id);
-      setStreamingSummary(lastView.context || '');
-      setSummaryComplete(true);
-      setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      if (liveTail.length > 0) {
+        // Live round: keep the streaming summary / presentation state that
+        // the in-flight SSE handlers own; only re-anchor the active ids.
+        if (lastView.flowRun) setActiveViewMsgId(lastView.id);
+      } else {
+        setActiveViewMsgId(lastView.id);
+        setStreamingSummary(lastView.context || '');
+        setSummaryComplete(true);
+        setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      }
     }
   };
 
@@ -3089,9 +4629,47 @@ const Playground: NextPage = () => {
       } else if (Array.isArray(res)) {
         msgList = res;
       }
+      if (msgList?.length === 0) {
+        // Older interrupted turns have a saved financial run but no messages.
+        // Recovery is scoped by the authenticated owner and this conversation.
+        try {
+          const report = await getLatestReport(convUid, controller.signal);
+          if (controller.signal.aborted) return;
+          if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
+          if (report) msgList = [recoverFinancialHistory(report, convUid)];
+        } catch (recoveryError) {
+          if (controller.signal.aborted) return;
+          console.warn('Financial report recovery failed', recoveryError);
+        }
+      }
+      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       if (msgList) {
+        // A draft can be saved just before a stream disconnects, before the
+        // final answer stores its reference. Reconcile with persisted assets.
+        try {
+          const boards: any = await axios.get('/api/v1/dashboards', {
+            params: { conversation_id: convUid, include_generated: true },
+            signal: controller.signal,
+          });
+          if (boards?.success && Array.isArray(boards.data)) {
+            msgList = enrichHistoryWithDashboardRefs(msgList, boards.data);
+          }
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          console.warn('Unable to recover dashboard references', error);
+        }
+        if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
         conversationIdRef.current = convUid;
         setConversationId(convUid);
+        // Re-entering a RUNNING conversation: the server history only holds
+        // flushed rounds, so the in-flight round (human + view pair and its
+        // live execution state) is carried over from memory — without it the
+        // page rendered empty until the turn finished server-side.
+        const live = liveRoundRef.current[convUid];
+        const liveFlushed = (msgList || []).some(
+          (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
+        );
+        const liveTail = live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
         restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
@@ -3099,12 +4677,13 @@ const Playground: NextPage = () => {
             order: m.order,
             model_name: m.model_name,
           })),
+          liveTail,
         );
       }
     } catch (e) {
       if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(financialText('financial.failed_to_load_conversation_history'));
     } finally {
       if (historyAbortControllerRef.current === controller) {
         historyAbortControllerRef.current = null;
@@ -3187,7 +4766,8 @@ const Playground: NextPage = () => {
   // Upload Props
   const uploadProps: any = {
     name: 'file',
-    multiple: true,
+    multiple: effectiveSuiteCommand?.input_files?.max !== 1,
+    accept: effectiveSuiteCommand?.input_files?.types.join(','),
     showUploadList: false,
     beforeUpload: (file: any) => {
       // Session-files flow: antd calls beforeUpload once per picked file; the
@@ -3203,6 +4783,186 @@ const Playground: NextPage = () => {
       return false; // Prevent auto upload, the session-files module owns it
     },
   };
+
+  const clearCreationContext = () => {
+    const { creation_mode: _mode, ...rest } = router.query;
+    void router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+    setSuiteTabTouched(true);
+    setActiveSuiteTab('');
+    setSelectedSuiteCommand(null);
+  };
+  const clearSuiteSelection = () => {
+    setActiveSuiteTab('');
+    // An explicit cancellation overrides keyword routing for this draft.
+    setSuiteTabTouched(true);
+    setSuiteResetRequested(true);
+    setSelectedSuiteCommand(null);
+    setSuiteQOffset(0);
+    if (typedSuiteCommand) {
+      setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
+    }
+  };
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (composerIsComposing || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+    if (suiteCommandMenuRef.current?.handleKeyDown(event)) return;
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      void handleStart();
+      return;
+    }
+    if (
+      (!effectiveSuite && !suiteCreationMode) ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      (event.key !== 'Backspace' && event.key !== 'Delete') ||
+      event.currentTarget.selectionStart !== 0 ||
+      event.currentTarget.selectionEnd !== 0
+    )
+      return;
+    event.preventDefault();
+    if (suiteCreationMode) clearCreationContext();
+    else clearSuiteSelection();
+  };
+  const composerTextareaProps = {
+    value: query,
+    onKeyDown: handleComposerKeyDown,
+    'aria-controls': suiteMenuVisible ? 'composer-suite-command-list' : undefined,
+    'aria-expanded': suiteMenuVisible,
+    'aria-activedescendant': suiteActiveDescendant,
+    'aria-autocomplete': 'list' as const,
+    onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setQuery(event.target.value);
+      setComposerCaret(event.target.selectionStart);
+      setSuiteMenuDismissed(false);
+    },
+    onSelect: (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+      const caret = event.currentTarget.selectionStart;
+      if (caret !== composerCaret) setSuiteMenuDismissed(false);
+      setComposerCaret(caret);
+    },
+    onFocus: (event: React.FocusEvent<HTMLTextAreaElement>) => {
+      setComposerFocused(true);
+      setComposerCaret(event.currentTarget.selectionStart);
+      setSuiteMenuDismissed(false);
+    },
+    onBlur: () => setComposerFocused(false),
+    onCompositionStart: () => setComposerIsComposing(true),
+    onCompositionEnd: (event: React.CompositionEvent<HTMLTextAreaElement>) => {
+      setComposerIsComposing(false);
+      setComposerCaret(event.currentTarget.selectionStart);
+    },
+  };
+  const suiteCommandMenu = (
+    <SuiteCommandPopover
+      ref={suiteCommandMenuRef}
+      id='composer-suite-command-list'
+      visible={suiteMenuVisible}
+      suites={suites}
+      query={slashQuery ?? ''}
+      locale={i18n.language}
+      anchorRef={composerAnchorRef}
+      onActiveDescendantChange={setSuiteActiveDescendant}
+      onSelect={(suite, command) => handleSelectSuiteCommand(suite, command, suiteCommandPrompt(command, query))}
+      onClose={() => setSuiteMenuDismissed(true)}
+    />
+  );
+  const suiteMaterialGuide = suiteInputHint ? (
+    <div className='mb-2 flex flex-wrap items-center gap-2'>
+      <p className='text-xs leading-5 text-gray-500 dark:text-gray-400' data-testid='suite-material-guide'>
+        {suiteInputHint}
+        {effectiveSuite?.scenario_id === 'financial' &&
+          (i18n.language.startsWith('en')
+            ? '. For saved-report follow-ups, ask directly without selecting a new-analysis command.'
+            : '；追问已有报告时直接输入问题，无需重新选择分析命令。')}
+      </p>
+      <Upload {...uploadProps}>
+        <Button size='small' icon={<FilePdfOutlined />} data-testid='suite-upload-files'>
+          {suiteInputHint}
+        </Button>
+      </Upload>
+    </div>
+  ) : null;
+  const composerContextProps = {
+    suites,
+    selectedSuite: effectiveSuite?.name,
+    onSelectSuite: (suite: SuiteItem) => {
+      if (effectiveSuite?.name === suite.name) {
+        clearSuiteSelection();
+        return;
+      }
+      selectSuiteContext(suite);
+      if (typedSuiteCommand) setQuery(query.trim().slice(typedSuiteCommand.length).trimStart());
+      else if (selectedSkill && query.startsWith(`/${selectedSkill.name} `)) {
+        setQuery(query.slice(selectedSkill.name.length + 2));
+      }
+    },
+    onManageSuites: () => {
+      void router.push('/construct/suites');
+    },
+    uploadProps,
+    skillItems: (skillsList || []).map(skill => ({
+      key: `skill-${skill.id}`,
+      icon: <ThunderboltOutlined />,
+      label: (
+        <span className='flex items-center gap-2 max-w-[268px]'>
+          <span className='truncate'>{skill.name}</span>
+          <span className='text-xs text-gray-400 truncate flex-1'>{skill.description}</span>
+        </span>
+      ),
+      onClick: () => {
+        setSelectedSkill(skill);
+        setSelectedSuiteCommand(null);
+        setQuery(`/${skill.name} `);
+      },
+    })),
+    onViewSkills: () => setIsSkillPanelOpen(true),
+    onSelectConnector: () => setIsConnectorPanelOpen(true),
+    flowItems: flowMenuItems,
+  };
+  const suiteComposerPrefix = suiteCreationMode ? (
+    <span
+      data-testid='suite-creation-prefix'
+      className='inline-flex items-center gap-2 max-w-full text-sm leading-7 text-[#18a447]'
+    >
+      <SuiteHammerIcon className='flex-shrink-0' />
+      <span>{i18n.language.startsWith('en') ? 'Create expert suite' : '专家套件创建'}</span>
+      <button
+        type='button'
+        data-testid='suite-creation-remove'
+        aria-label={i18n.language.startsWith('en') ? 'Cancel suite creation' : '取消套件创建'}
+        onClick={clearCreationContext}
+        className='inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-green-100'
+      >
+        <CloseOutlined className='text-xs' />
+      </button>
+    </span>
+  ) : (
+    effectiveSuite && (
+      <span
+        data-testid='suite-composer-prefix'
+        title={t('suite_prefix_hint')}
+        className='inline-flex items-center gap-2 max-w-full flex-shrink-0 text-sm leading-7 text-[#18a447] dark:text-[#79cc94]'
+      >
+        <SuiteHammerIcon className='flex-shrink-0' />
+        <span className='truncate'>
+          {suiteDisplayName(effectiveSuite, i18n.language)}
+          {effectiveSuiteCommand && ` · ${effectiveSuiteCommand.display || effectiveSuiteCommand.name}`}
+        </span>
+        <button
+          type='button'
+          data-testid='suite-composer-remove'
+          aria-label={t('suite_remove_selection')}
+          title={t('suite_remove_selection')}
+          onClick={clearSuiteSelection}
+          className='inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500'
+        >
+          <CloseOutlined className='text-xs' />
+        </button>
+      </span>
+    )
+  );
 
   // A report run can be demonstrated inside the data-assistant surface without
   // changing normal chat state or the standard home-page flow.
@@ -3229,6 +4989,21 @@ const Playground: NextPage = () => {
                   {getDbIcon(selectedDb.type)} <span className='font-medium ml-1'>{selectedDb.db_name}</span>
                 </Tag>
               )}
+              {convArtifacts.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setRailDebug(false);
+                    setPreviewArtifact(null);
+                    setRightPanelCollapsed(false);
+                  }}
+                  className='flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[.06]'
+                >
+                  <InboxOutlined />
+                  <span>{t('rail_artifacts_title')}</span>
+                  <b className='text-gray-800 dark:text-gray-200 font-semibold'>{convArtifacts.length}</b>
+                </button>
+              )}
               {messages.length > 0 && (
                 <Button type='text' size='small' onClick={handleClearChat} className='text-gray-500'>
                   Clear Chat
@@ -3253,260 +5028,378 @@ const Playground: NextPage = () => {
           )}
 
           {/* Chat Messages or Hero Section */}
-          {/* When from_task mode and loading history, show loading spinner instead of Hero */}
-          {router.query.from_task && historyLoading && messages.length === 0 ? (
+          {/* Keep conversation recovery visible instead of flashing the new-task hero. */}
+          {historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
               <Spin size='large' tip='加载对话历史...' />
             </div>
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 ${mobileFinancialPanel ? 'hidden' : 'flex'} flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
-                <div className='flex-1 min-h-0 overflow-y-auto'>
-                  {rounds.map((round, roundIndex) => {
-                    const isLastRound = roundIndex === rounds.length - 1;
-                    const isSelected = round.viewMsg?.id === selectedViewMsgId;
-                    const isCurrentRoundCollapsed = !isLastRound && !isSelected;
+                <div data-testid='conversation-content' className='flex-1 min-h-0 overflow-y-auto'>
+                  <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
+                    {rounds.map((round, roundIndex) => {
+                      const isLastRound = roundIndex === rounds.length - 1;
+                      const isSelected = round.viewMsg?.id === selectedViewMsgId;
+                      const isCurrentRoundCollapsed = !isLastRound && !isSelected;
 
-                    const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
-                    const {
-                      sections,
-                      activeStep: _activeStep,
-                      outputs: _outputs,
-                      stepThoughts,
-                    } = convertToManusFormat(execution, round.humanMsg?.context, t);
-                    const isWorking =
-                      (isLastRound &&
-                        (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
-                      false;
+                      const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
+                      const {
+                        sections,
+                        activeStep: _activeStep,
+                        outputs: _outputs,
+                        stepThoughts,
+                      } = convertToManusFormat(execution, round.humanMsg?.context, t);
+                      const isWorking =
+                        (isLastRound &&
+                          (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
+                        false;
 
-                    const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
-                    const roundAssistantText = isPresentingThisRound
-                      ? streamingSummary
-                      : round.viewMsg?.context || undefined;
-                    const roundCitations = round.viewMsg?.citations || [];
+                      const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
+                      const roundAssistantText = isPresentingThisRound
+                        ? streamingSummary
+                        : round.viewMsg?.context || undefined;
+                      const roundCitations = round.viewMsg?.citations || [];
 
-                    return (
-                      <div key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
-                        <ManusLeftPanel
-                          sections={sections}
-                          subAgentSlot={
-                            execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
-                              <SubAgentSection
-                                subAgents={execution.subAgents}
-                                artifactCount={execution.subAgentArtifacts}
-                                activeSubAgentId={
-                                  isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
-                                    ? activeSubAgent.agentId
-                                    : null
-                                }
-                                onSubAgentClick={agentId => {
-                                  if (round.viewMsg?.id) {
-                                    setActiveViewMsgId(round.viewMsg.id);
-                                    setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                      // DSH-style timeline view (default on; set
+                      // __db_gpt_timeline_view=off to fall back to the
+                      // card list inside ManusLeftPanel).
+                      const useTimelineView =
+                        typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
+                      const timelineBlocks = useTimelineView
+                        ? stepsToTimelineBlocks(
+                            execution?.steps ?? [],
+                            stepThoughts,
+                            execution?.outputs,
+                            round.viewMsg?.id ? suiteCommandBindings[round.viewMsg.id] : undefined,
+                          )
+                        : [];
+                      const roundArtifacts: StreamArtifact[] =
+                        useTimelineView && round.viewMsg?.id
+                          ? mergeArtifacts([
+                              ...(execution && hasArtifactOutputs(execution)
+                                ? buildArtifactsFromExecution(
+                                    round.viewMsg.id,
+                                    execution,
+                                    undefined,
+                                    undefined,
+                                    round.viewMsg.context,
+                                  )
+                                : []),
+                              // Saved reports may outlive their tool steps. The
+                              // latest delivered/restored reference wins here.
+                              ...artifacts.filter(
+                                a => a.messageId === round.viewMsg?.id && isFinancialReportReference(a.content),
+                              ),
+                            ]).map(a => ({
+                              id: a.id,
+                              type: a.type,
+                              name: a.name,
+                              size: a.size,
+                              content: a.content,
+                              stepId: a.stepId,
+                              tier: a.tier,
+                            }))
+                          : [];
+                      const roundIntent = useTimelineView
+                        ? null
+                        : execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
+                      const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
+                      const rerunExtra = (round.viewMsg?.id && rerunQueryArtifacts[round.viewMsg.id]) || [];
+                      const roundArtifactsAll = rerunExtra.length ? [...roundArtifacts, ...rerunExtra] : roundArtifacts;
+
+                      return (
+                        <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
+                          <ManusLeftPanel
+                            key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
+                            dashboardSlot={round.viewMsg?.dashboardGenerations?.map((state, index) => (
+                              <ChatDashboardCard
+                                key={state.dashboardId || state.sourceTurnId || index}
+                                state={state}
+                                busy={loading}
+                                onConfirm={() => {
+                                  const db = dataSources?.find(
+                                    item =>
+                                      item.db_name === state.dataSourceId || String(item.id) === state.dataSourceId,
+                                  );
+                                  if (!db) {
+                                    message.error(t('dashboard_chat_missing_source'));
+                                    return;
                                   }
-                                  setRightPanelView('execution');
+                                  void performStart(state.confirmationPrompt, null, db, undefined, null, {
+                                    creation_mode: 'dashboard',
+                                    suite: 'db-analysis',
+                                    suite_command: '/dashboard',
+                                  });
+                                }}
+                                onRevise={() => setQuery(state.revisionPrompt || '')}
+                                onOpen={() => {
+                                  panelNavigationVersion.current += 1;
+                                  setRailDebug(false);
                                   setRightPanelCollapsed(false);
+                                  setPreviewArtifact({
+                                    id: `dashboard-${state.dashboardId}`,
+                                    type: 'dashboard',
+                                    name: state.title,
+                                    content: state,
+                                    createdAt: Date.now(),
+                                    messageId: round.viewMsg?.id,
+                                    tier: 'final',
+                                  });
                                 }}
                               />
-                            ) : undefined
-                          }
-                          activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
-                          onStepClick={(stepId, _sectionId) => {
-                            if (round.viewMsg?.id) {
-                              setActiveViewMsgId(round.viewMsg.id);
-                              setSelectedStepId(stepId);
-                              // Clicking a main-agent step exits the sub-agent
-                              // process view, so the right panel shows this step.
-                              setActiveSubAgent(null);
-                              setRightPanelView('execution');
-                              setRightPanelCollapsed(false);
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: {
-                                  ...prev[round.viewMsg!.id!],
-                                  activeStepId: stepId,
-                                },
-                              }));
+                            ))}
+                            sections={useTimelineView ? [] : sections}
+                            flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
+                            answerSeparated={
+                              useTimelineView && (timelineBlocks.length > 0 || roundArtifactsAll.length > 0)
                             }
-                          }}
-                          isWorking={isWorking}
-                          userQuery={round.humanMsg?.context}
-                          attachedFiles={round.humanMsg?.attachedFiles}
-                          attachedKnowledge={round.humanMsg?.attachedKnowledge}
-                          attachedSkill={round.humanMsg?.attachedSkill}
-                          attachedDb={round.humanMsg?.attachedDb}
-                          taskPlan={round.viewMsg?.taskPlan}
-                          attachedConnectors={round.humanMsg?.attachedConnectors}
-                          assistantText={roundAssistantText}
-                          isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
-                          citationIndexes={roundCitations.map(citation => citation.index)}
-                          reportId={round.viewMsg?.reportId}
-                          reportRunId={round.viewMsg?.reportRunId}
-                          onReportClick={() => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setActiveSubAgent(null);
-                            setRightPanelView('report');
-                            setRightPanelCollapsed(false);
-                          }}
-                          onReferencesClick={
-                            roundCitations.length > 0
-                              ? () => {
-                                  if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                  setSelectedCitationIndex(roundCitations[0].index);
-                                  setRightPanelView('references');
-                                  setRightPanelCollapsed(false);
+                            timelineSlot={
+                              // Flow rounds render their own node chain + node
+                              // cards via FlowRunView; the generic agent timeline
+                              // would duplicate the DSL-node steps.
+                              useTimelineView &&
+                              !round.viewMsg?.flowRun &&
+                              (timelineBlocks.length > 0 || roundArtifactsAll.length > 0) ? (
+                                <div className='flex flex-col'>
+                                  {roundIntent && (
+                                    <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+                                      <AimOutlined className='text-[#8b8b84] flex-none' />
+                                      <span className='truncate'>{roundIntent}</span>
+                                      {roundCount > 0 && (
+                                        <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
+                                          {t('round_count_suffix', { count: roundCount })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {timelineBlocks.length > 0 && (
+                                    <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
+                                  )}
+                                </div>
+                              ) : undefined
+                            }
+                            artifactSlot={useTimelineView && roundArtifactsAll.length > 0 ? (
+                              <ArtifactCards
+                                artifacts={roundArtifactsAll}
+                                consolidate
+                                onPreview={handlePreviewStreamArtifact}
+                                onSkillAdd={handleSkillAdd}
+                                onSkillDownload={handleSkillZipDownload}
+                                onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                                foldAllQueries={round.viewMsg?.id !== lastQueryRoundId}
+                              />
+                            ) : undefined}
+                            flowRun={
+                              round.viewMsg?.flowRun
+                                ? {
+                                    label: round.viewMsg.flowRun.label,
+                                    running: !!round.viewMsg.thinking,
+                                    done:
+                                      execution?.steps.filter(s => s.action !== '__progress__' && s.status === 'done')
+                                        .length ?? 0,
+                                    total: execution?.steps.filter(s => s.action !== '__progress__').length ?? 0,
+                                  }
+                                : undefined
+                            }
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                            subAgentSlot={
+                              execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                                <SubAgentSection
+                                  subAgents={execution.subAgents}
+                                  artifactCount={execution.subAgentArtifacts}
+                                  activeSubAgentId={
+                                    isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                      ? activeSubAgent.agentId
+                                      : null
+                                  }
+                                  onSubAgentClick={agentId => {
+                                    if (round.viewMsg?.id) {
+                                      setActiveViewMsgId(round.viewMsg.id);
+                                      setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                    }
+                                    setRailDebug(true);
+                                    setRightPanelView('execution');
+                                    setRightPanelCollapsed(false);
+                                  }}
+                                />
+                              ) : undefined
+                            }
+                            activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
+                            onStepClick={(stepId, _sectionId) => {
+                              if (round.viewMsg?.id) {
+                                setActiveViewMsgId(round.viewMsg.id);
+                                setSelectedStepId(stepId);
+                                // Timeline view expands step details inline in
+                                // the stream; the rail stays an artifact viewer.
+                                if (useTimelineView) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: stepId,
+                                    },
+                                  }));
+                                  return;
                                 }
-                              : undefined
-                          }
-                          modelName={round.viewMsg?.model_name || model}
-                          stepThoughts={stepThoughts}
-                          artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
-                          onArtifactClick={artifact => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            if (artifact.type === 'html') {
-                              setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('html-preview');
-                            } else if (artifact.type === 'code' && artifact.stepId) {
-                              setSelectedStepId(artifact.stepId);
-                              setRightPanelView('execution');
-                              if (round.viewMsg?.id && execution) {
+                                // Clicking a main-agent step exits the sub-agent
+                                // process view, so the right panel shows this step.
+                                setActiveSubAgent(null);
+                                setRailDebug(true);
+                                handleUserPanelViewChange('execution');
+                                setRightPanelCollapsed(false);
                                 setExecutionMap(prev => ({
                                   ...prev,
                                   [round.viewMsg!.id!]: {
                                     ...prev[round.viewMsg!.id!],
-                                    activeStepId: artifact.stepId!,
+                                    activeStepId: stepId,
                                   },
                                 }));
                               }
-                            } else if (artifact.type === 'file') {
-                              // Image file artifacts: preview instead of download
-                              if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                            }}
+                            isWorking={isWorking}
+                            userQuery={round.humanMsg?.context}
+                            attachedFiles={round.humanMsg?.attachedFiles}
+                            attachedKnowledge={round.humanMsg?.attachedKnowledge}
+                            attachedSkill={round.humanMsg?.attachedSkill}
+                            attachedSuite={round.humanMsg?.attachedSuite}
+                            attachedDb={round.humanMsg?.attachedDb}
+                            taskPlan={round.viewMsg?.taskPlan}
+                            financialUpdates={
+                              execution ? recentFinancialObservations(execution.steps, execution.outputs) : []
+                            }
+                            attachedConnectors={round.humanMsg?.attachedConnectors}
+                            assistantText={roundAssistantText}
+                            onFinancialCitationClick={citation => openFinancialCitation(citation, round.viewMsg?.id)}
+                            isAssistantStreaming={
+                              (isPresentingThisRound && !_summaryComplete) ||
+                              (!!round.viewMsg?.thinking && !!roundAssistantText)
+                            }
+                            citationIndexes={roundCitations.map(citation => citation.index)}
+                            semanticSources={semanticSourcesFromExecution(
+                              execution?.steps ?? [],
+                              execution?.outputs ?? {},
+                            )}
+                            querySources={querySourcesFromExecution(execution?.steps ?? [], execution?.outputs ?? {})}
+                            semanticReadGaps={semanticReadGapsFromExecution(
+                              execution?.steps ?? [],
+                              execution?.outputs ?? {},
+                            )}
+                            reportId={round.viewMsg?.reportId}
+                            reportRunId={round.viewMsg?.reportRunId}
+                            onReportClick={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setActiveSubAgent(null);
+                              handleUserPanelViewChange('report');
+                              setRightPanelCollapsed(false);
+                            }}
+                            onReferencesClick={
+                              roundCitations.length > 0
+                                ? () => {
+                                    if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                    setSelectedCitationIndex(roundCitations[0].index);
+                                    setRailDebug(true);
+                                    handleUserPanelViewChange('references');
+                                    setRightPanelCollapsed(false);
+                                  }
+                                : undefined
+                            }
+                            stepThoughts={stepThoughts}
+                            artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
+                            onArtifactClick={artifact => {
+                              setFinancialCitationTarget(null);
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              if (artifact.type === 'html') {
                                 setPreviewArtifact(artifact as Artifact);
-                                setRightPanelView('image-preview');
-                              } else {
-                                downloadArtifact(artifact as Artifact);
-                              }
-                            } else if (artifact.type === 'image') {
-                              setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
-                            }
-                          }}
-                          onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
-                          onViewAllFiles={() => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            setRightPanelView('files');
-                          }}
-                          isCollapsed={isCurrentRoundCollapsed}
-                          onExpand={() => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          }}
-                          createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
-                          onSkillCardClick={_skillName => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            setRightPanelView('skill-preview');
-                            // Find the package_skill step and select it so right panel shows SkillCardRenderer
-                            if (execution) {
-                              const skillStep = execution.steps.find((s: ExecutionStep) => {
-                                if (s.action !== 'shell_interpreter') return false;
-                                const detailHas =
-                                  s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                                const inputHas =
-                                  s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
-                                const outputTexts = (execution.outputs[s.id] || [])
-                                  .map(o => String(o.content))
-                                  .join(' ');
-                                const outputHas =
-                                  outputTexts.includes('package_skill') ||
-                                  outputTexts.includes('init_skill') ||
-                                  outputTexts.includes('Successfully packaged');
-                                return detailHas || inputHas || outputHas;
-                              });
-                              if (skillStep) {
-                                setSelectedStepId(skillStep.id);
-                                setExecutionMap(prev => ({
-                                  ...prev,
-                                  [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
-                                }));
-                              }
-                            }
-                          }}
-                          onSkillDownload={async skillName => {
-                            try {
-                              const base = process.env.API_BASE_URL || '';
-                              const res = await fetch(
-                                `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
-                              );
-                              if (!res.ok) throw new Error('Download failed');
-                              const blob = await res.blob();
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `${skillName}.zip`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              URL.revokeObjectURL(url);
-                            } catch {
-                              // Download failed silently
-                            }
-                          }}
-                        />
-                        {round.viewMsg?.dashboardGenerations?.map((state, index) => (
-                          <div className='px-4 pb-4' key={state.dashboardId || state.sourceTurnId || index}>
-                            <DashboardGenerationCard
-                              state={state}
-                              busy={loading || !!router.query.from_task}
-                              onOpen={() => {
-                                if (state.dashboardId)
-                                  void router.push({
-                                    pathname: `/dashboards/${encodeURIComponent(state.dashboardId)}`,
-                                    query: state.assetState === 'saved' ? {} : { view: 'preview' },
-                                  });
-                              }}
-                              onConfirm={() => {
-                                if (state.confirmationPrompt)
-                                  void handleStart(
-                                    state.confirmationPrompt,
-                                    {
-                                      id: 'dashboard-builder',
-                                      name: 'dashboard-builder',
-                                      description: '',
-                                      type: 'official',
+                                handleUserPanelViewChange('html-preview');
+                              } else if (artifact.type === 'code' && artifact.stepId) {
+                                setSelectedStepId(artifact.stepId);
+                                setRailDebug(true);
+                                handleUserPanelViewChange('execution');
+                                if (round.viewMsg?.id && execution) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: artifact.stepId!,
                                     },
-                                    dataSources?.find(source => source.db_name === state.dataSourceId) || null,
-                                  );
-                              }}
-                              onRevise={() => {
-                                setSelectedSkill({
-                                  id: 'dashboard-builder',
-                                  name: 'dashboard-builder',
-                                  description: '',
-                                  type: 'official',
-                                });
-                                setSelectedDb(
-                                  dataSources?.find(source => source.db_name === state.dataSourceId) || null,
-                                );
-                                setQuery(`${state.revisionPrompt || ''} `);
-                              }}
-                            />
-                          </div>
-                        ))}
+                                  }));
+                                }
+                              } else if (artifact.type === 'file') {
+                                // Image file artifacts: preview instead of download
+                                if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                                  setPreviewArtifact(artifact as Artifact);
+                                  handleUserPanelViewChange('image-preview');
+                                } else {
+                                  downloadArtifact(artifact as Artifact);
+                                }
+                              } else if (artifact.type === 'image') {
+                                setPreviewArtifact(artifact as Artifact);
+                                handleUserPanelViewChange('image-preview');
+                              }
+                            }}
+                            onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
+                            onViewAllFiles={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              handleUserPanelViewChange('files');
+                            }}
+                            isCollapsed={isCurrentRoundCollapsed}
+                            onExpand={() => {
+                              panelNavigationVersion.current += 1;
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            }}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+                    {streamStatus && (
+                      <div
+                        role='status'
+                        aria-label={t('agent_execution_status')}
+                        className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'
+                      >
+                        {streamStatus.running ? (
+                          <LoadingOutlined spin className='text-blue-500' />
+                        ) : streamStatus.status === 'done' ? (
+                          <CheckCircleFilled className='text-emerald-500' />
+                        ) : streamStatus.status === 'incomplete' ? (
+                          <PauseCircleOutlined className='text-slate-400' />
+                        ) : (
+                          <CloseCircleFilled
+                            className={streamStatus.status === 'failed' ? 'text-red-500' : 'text-amber-500'}
+                          />
+                        )}
+                        <span className='tabular-nums'>{streamStatus.text}</span>
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
 
                 {/* Input Area at Bottom for Chat Mode - Hidden in read-only task replay mode */}
                 {!router.query.from_task && (
                   <div className='bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-[#1a1b1e] dark:via-[#1a1b1e]/95 dark:to-[#1a1b1e]/80 p-4 md:p-6'>
-                    <div className='max-w-[720px] mx-auto'>
+                    <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
+                        {selectedFlow && (
+                          <Tag
+                            closable
+                            onClose={() => setSelectedFlow(null)}
+                            className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                          >
+                            <ApartmentOutlined />
+                            <span className='font-semibold'>
+                              {t('taskflow_flow_chip')} · {selectedFlow.label}
+                            </span>
+                            <span className='text-blue-400 text-[10px]'>
+                              {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                            </span>
+                          </Tag>
+                        )}
                         {selectedDb && (
                           <Tag
                             closable
@@ -3541,6 +5434,11 @@ const Playground: NextPage = () => {
                         )}
                       </div>
 
+                      {/* Human-in-the-loop Tool Approval Dock (floats above composer) */}
+                      {pendingApprovals.length > 0 && (
+                        <ApprovalDock approvals={pendingApprovals} onResolve={resolveApproval} />
+                      )}
+
                       {/* Human-in-the-loop Question Dock */}
                       {pendingQuestion && (
                         <div className='mb-3 w-full'>
@@ -3558,10 +5456,12 @@ const Playground: NextPage = () => {
 
                       {/* Outer Frame - Floating Effect */}
                       <div
+                        ref={composerAnchorRef}
                         className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'
                         {...composerDragHandlers}
                       >
                         {composerDragOverlay}
+                        {suiteCommandMenu}
                         {/* White Inner Box - Clean Glass Card */}
                         <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
                           <AttachmentRail
@@ -3582,29 +5482,22 @@ const Playground: NextPage = () => {
                             onClosePreview={closeSessionFilePreview}
                             className='mb-2'
                           />
-                          {taskPlan.length > 0 && (
+                          {taskPlan.length > 0 && !taskPlan.some(task => task.kind === 'financial-stage') && (
                             <div className='mb-3'>
                               <TaskPlanCard tasks={taskPlan} embedded />
                             </div>
                           )}
+                          {suiteMaterialGuide}
+                          {suiteComposerPrefix}
                           <Input.TextArea
-                            value={query}
-                            onChange={e => {
-                              const newValue = e.target.value;
-                              setQuery(newValue);
-                              if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
-                                setIsSkillPanelOpen(true);
-                              }
-                            }}
-                            onPressEnter={e => {
-                              if (!e.shiftKey) {
-                                e.preventDefault();
-                                handleStart();
-                              }
-                            }}
+                            {...composerTextareaProps}
                             placeholder={
-                              t('ask_data_question') ||
-                              'Ask a question about your database, upload a CSV, or generate a report...'
+                              suiteCreationMode
+                                ? i18n.language.startsWith('en')
+                                  ? 'Describe the suite you need: tasks, skills, outputs. Attach reference materials.'
+                                  : '描述你想创建的套件：任务、技能、产物要求，也可以上传参考材料'
+                                : t('ask_data_question') ||
+                                  'Ask a question about your database, upload a CSV, or generate a report...'
                             }
                             autoSize={{ minRows: 2, maxRows: 6 }}
                             className='flex-1 resize-none !border-none !shadow-none !bg-transparent px-0 py-2'
@@ -3615,50 +5508,24 @@ const Playground: NextPage = () => {
                           <div className='flex items-center justify-between mt-1'>
                             <div className='flex items-center gap-3'>
                               {/* Add Button */}
-                              <Dropdown
-                                menu={{
-                                  items: [
-                                    {
-                                      key: 'upload',
-                                      label: (
-                                        <Upload {...uploadProps}>
-                                          <div className='w-full'>Upload File</div>
-                                        </Upload>
-                                      ),
-                                      icon: <UploadOutlined />,
-                                    },
-                                    {
-                                      key: 'database',
-                                      label: 'Select Data Source',
-                                      icon: <DatabaseOutlined />,
-                                      onClick: () => setIsDbModalOpen(true),
-                                    },
-                                    {
-                                      key: 'knowledge',
-                                      label: 'Select Knowledge Base',
-                                      icon: <BookOutlined />,
-                                      onClick: () => setIsKnowledgeModalOpen(true),
-                                    },
-                                    {
-                                      key: 'connector',
-                                      label: t('use_connector'),
-                                      icon: <ApiOutlined />,
-                                      onClick: () => setIsConnectorPanelOpen(true),
-                                    },
-                                  ],
+                              <ComposerContextMenu
+                                {...composerContextProps}
+                                onSelectDatabase={() => setIsDbModalOpen(true)}
+                                onSelectKnowledge={() => setIsKnowledgeModalOpen(true)}
+                              />
+
+                              {/* High-risk tool permission badge (per conversation) */}
+                              <ApprovalModeBadge
+                                convId={conversationId}
+                                ensureConvId={() => {
+                                  if (!conversationIdRef.current) {
+                                    const fresh = generateUUID();
+                                    conversationIdRef.current = fresh;
+                                    setConversationId(fresh);
+                                  }
+                                  return conversationIdRef.current;
                                 }}
-                                trigger={['click']}
-                              >
-                                <Tooltip title={t('add_context')}>
-                                  <Button
-                                    type='text'
-                                    shape='circle'
-                                    size='small'
-                                    icon={<PlusOutlined />}
-                                    className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
-                                  />
-                                </Tooltip>
-                              </Dropdown>
+                              />
 
                               {/* Skill Selector Button with Badge */}
                               <Popover
@@ -4072,7 +5939,10 @@ const Playground: NextPage = () => {
               <div className='relative z-20 flex-shrink-0'>
                 <Tooltip title={rightPanelCollapsed ? t('expand_panel') : t('collapse_panel')} placement='left'>
                   <button
-                    onClick={() => setRightPanelCollapsed(prev => !prev)}
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(prev => !prev);
+                    }}
                     className='absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-8 flex items-center justify-center bg-white dark:bg-[#1a1b1e] border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:w-5 hover:shadow-md transition-all duration-200 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                   >
                     {rightPanelCollapsed ? (
@@ -4084,8 +5954,21 @@ const Playground: NextPage = () => {
                 </Tooltip>
               </div>
               <div
+                data-testid='conversation-artifact-panel'
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
+                {mobileFinancialPanel && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(true);
+                    }}
+                    className='shrink-0 border-b border-slate-200 bg-white px-4 py-3 text-left text-sm text-sky-700 dark:border-slate-800 dark:bg-[#111217] dark:text-sky-300'
+                  >
+                    <LeftOutlined className='mr-2' /> {financialText('financial.back_to_chat')}
+                  </button>
+                )}
                 {showInlineAttachmentPreview ? (
                   <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
                     <div className='flex h-12 flex-shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 dark:border-white/10 dark:bg-[#1a1b1e]/95'>
@@ -4151,8 +6034,15 @@ const Playground: NextPage = () => {
                       isRunning = activeSub.status === 'running';
                     }
 
-                    return (
+                    return railDebug || isFinancialReportReference(previewArtifact?.content) ? (
                       <ManusRightPanel
+                        financialCitationTarget={financialCitationTarget}
+                        onFinancialCitationClick={citation => openFinancialCitation(citation, activeViewMsg?.id)}
+                        onFinancialTopicRetry={(reference, topicId) => {
+                          if (loading || reference.sessionId !== conversationId) return;
+                          const prompt = financialTopicRetryPrompt(reference.runId, topicId);
+                          if (prompt) void handleStart(prompt);
+                        }}
                         activeStep={activeStep}
                         outputs={outputs}
                         conversationId={conversationId}
@@ -4170,12 +6060,13 @@ const Playground: NextPage = () => {
                         artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
                         inputFiles={rounds.find(r => r.viewMsg?.id === activeViewMsg?.id)?.humanMsg?.attachedFiles}
                         onArtifactClick={artifact => {
+                          setFinancialCitationTarget(null);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
+                            handleUserPanelViewChange('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             if (activeViewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -4188,12 +6079,12 @@ const Playground: NextPage = () => {
                           } else if (artifact.type === 'file') {
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
+                              handleUserPanelViewChange('image-preview');
                               setRightPanelCollapsed(false);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
+                            handleUserPanelViewChange('image-preview');
                             setRightPanelCollapsed(false);
                           }
                         }}
@@ -4206,7 +6097,10 @@ const Playground: NextPage = () => {
                             ? streamingSummary
                             : activeViewMsg?.context || ''
                         }
-                        isSummaryStreaming={summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete}
+                        isSummaryStreaming={
+                          (summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete) ||
+                          (!!activeViewMsg?.thinking && !!activeViewMsg?.context)
+                        }
                         citations={activeViewMsg?.citations || []}
                         selectedCitationIndex={
                           activeViewMsg?.citations?.some(citation => citation.index === selectedCitationIndex)
@@ -4227,16 +6121,33 @@ const Playground: NextPage = () => {
                               activeStepId: stepId,
                             },
                           }));
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;
                           setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}
+                      />
+                    ) : (
+                      <ArtifactRail
+                        artifacts={convArtifacts}
+                        previewArtifact={previewArtifact}
+                        onPreview={artifact => {
+                          panelNavigationVersion.current += 1;
+                          setFinancialCitationTarget(null);
+                          setPreviewArtifact(artifact as Artifact | null);
+                        }}
+                        onDebug={() => setRailDebug(true)}
+                        onClose={() => setRightPanelCollapsed(true)}
+                        onTrace={() => {
+                          setRailDebug(true);
+                          setRightPanelView('trace');
+                          setRightPanelCollapsed(false);
+                        }}
                       />
                     );
                   })()
@@ -4245,8 +6156,8 @@ const Playground: NextPage = () => {
             </div>
           ) : (
             // Welcome Mode: Display Hero Section
-            <div className='flex-1 flex flex-col items-center justify-center px-6 py-4 pb-20 overflow-y-auto'>
-              <div className='w-full max-w-[860px] flex flex-col items-center animate-fade-in-up'>
+            <div className='flex-1 flex flex-col items-center justify-start lg:justify-center px-6 py-4 pb-20 overflow-y-auto'>
+              <div className='w-full max-w-[860px] 2xl:max-w-[1000px] flex flex-col items-center animate-fade-in-up'>
                 <h1 className='text-4xl md:text-5xl font-serif text-gray-900 dark:text-gray-100 mb-4 text-center flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-xl bg-white dark:bg-[#1a1b1e] shadow-md flex items-center justify-center flex-shrink-0'>
                     <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={32} height={32} className='object-contain' />
@@ -4258,16 +6169,16 @@ const Playground: NextPage = () => {
                   {t('home_subtitle')}
                 </p>
 
-                {/* Input Box Container - Premium Layered Style */}
-                <div className='w-full relative'>
+                {/* Composer follows the suite reference: quiet frame and inline preset. */}
+                <div ref={composerAnchorRef} className='w-full relative'>
+                  {suiteCommandMenu}
                   {/* Outer Frame - Floating Effect */}
                   <div
-                    className='w-full relative transition-all duration-500 rounded-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
+                    className='suite-composer w-full relative rounded-[28px] shadow-[0_12px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.2)]'
                     {...composerDragHandlers}
                   >
                     {composerDragOverlay}
-                    {/* White Inner Box - Clean Glass Card */}
-                    <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-[28px] border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-5 relative z-10'>
+                    <div className='bg-white dark:bg-[#1e1f24] rounded-[28px] border border-gray-300 dark:border-[#44464d] p-5 relative z-10'>
                       <AttachmentRail
                         drafts={sessionFiles.files}
                         legacyFiles={sessionFiles.legacyFile ? [sessionFiles.legacyFile] : []}
@@ -4286,8 +6197,23 @@ const Playground: NextPage = () => {
                         className='mb-2'
                       />
                       {/* Database, Knowledge, Connector Tags */}
-                      {(selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
+                      {(selectedFlow || selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
                         <div className='flex flex-wrap gap-2 mb-2'>
+                          {selectedFlow && (
+                            <Tag
+                              closable
+                              onClose={() => setSelectedFlow(null)}
+                              className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                            >
+                              <ApartmentOutlined />
+                              <span className='font-semibold'>
+                                {t('taskflow_flow_chip')} · {selectedFlow.label}
+                              </span>
+                              <span className='text-blue-400 text-[10px]'>
+                                {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                              </span>
+                            </Tag>
+                          )}
                           {selectedDb && (
                             <Tag
                               closable
@@ -4324,84 +6250,47 @@ const Playground: NextPage = () => {
                         </div>
                       )}
 
-                      <Input.TextArea
-                        value={query}
-                        onChange={e => {
-                          const newValue = e.target.value;
-                          setQuery(newValue);
-                          if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
-                            setIsSkillPanelOpen(true);
+                      {suiteMaterialGuide}
+                      <div className='flex flex-col sm:flex-row items-start gap-x-3 gap-y-1 px-1 pt-2 mb-4'>
+                        {suiteComposerPrefix}
+                        <Input.TextArea
+                          {...composerTextareaProps}
+                          placeholder={
+                            suiteCreationMode
+                              ? i18n.language.startsWith('en')
+                                ? 'Describe the suite you need: tasks, skills, outputs. Attach reference materials.'
+                                : '描述你想创建的套件：任务、技能、产物要求，也可以上传参考材料'
+                              : t('ask_data_question') ||
+                                'Ask a question about your database, upload a CSV, or generate a report...'
                           }
-                        }}
-                        onPressEnter={e => {
-                          if (!e.shiftKey) {
-                            e.preventDefault();
-                            handleStart();
-                          }
-                        }}
-                        placeholder={
-                          t('ask_data_question') ||
-                          'Ask a question about your database, upload a CSV, or generate a report...'
-                        }
-                        autoSize={{ minRows: 3, maxRows: 8 }}
-                        className='text-lg resize-none !border-none !shadow-none !bg-transparent px-2 py-2 mb-2'
-                        style={{ backgroundColor: 'transparent' }}
-                      />
+                          autoSize={{ minRows: 3, maxRows: 8 }}
+                          className='w-full sm:w-auto flex-1 min-w-0 text-base resize-none !border-none !shadow-none !bg-transparent !p-0 !leading-7'
+                          style={{ backgroundColor: 'transparent' }}
+                        />
+                      </div>
 
                       {/* Input Toolbar */}
-                      <div className='flex items-center justify-between px-1 mt-1'>
-                        <div className='flex items-center gap-4'>
+                      <div className='flex flex-wrap items-center justify-between gap-3 px-1 mt-1'>
+                        <div className='flex flex-wrap items-center gap-2'>
                           {/* Add Button with Dropdown Menu */}
-                          <Dropdown
-                            menu={{
-                              items: [
-                                {
-                                  key: 'upload',
-                                  label: (
-                                    <Upload {...uploadProps}>
-                                      <div className='w-full'>{t('add_from_local')}</div>
-                                    </Upload>
-                                  ),
-                                  icon: <PaperClipOutlined />,
-                                },
-                                {
-                                  key: 'skill',
-                                  label: t('use_skill'),
-                                  icon: <ThunderboltOutlined />,
-                                  onClick: () => setIsSkillPanelOpen(true),
-                                },
-                                {
-                                  key: 'knowledge',
-                                  label: t('use_knowledge'),
-                                  icon: <BookOutlined />,
-                                  onClick: () => setIsKnowledgePanelOpen(true),
-                                },
-                                {
-                                  key: 'database',
-                                  label: t('use_database'),
-                                  icon: <DatabaseOutlined />,
-                                  onClick: () => setTimeout(() => setIsDbPanelOpen(true), 100),
-                                },
-                                {
-                                  key: 'connector',
-                                  label: t('use_connector'),
-                                  icon: <ApiOutlined />,
-                                  onClick: () => setIsConnectorPanelOpen(true),
-                                },
-                              ],
+                          <ComposerContextMenu
+                            {...composerContextProps}
+                            onSelectDatabase={() => setIsDbPanelOpen(true)}
+                            onSelectKnowledge={() => setIsKnowledgePanelOpen(true)}
+                          />
+
+                          {/* High-risk tool permission badge (per conversation) */}
+                          <ApprovalModeBadge
+                            convId={conversationId}
+                            ensureConvId={() => {
+                              if (!conversationIdRef.current) {
+                                const fresh = generateUUID();
+                                conversationIdRef.current = fresh;
+                                setConversationId(fresh);
+                              }
+                              return conversationIdRef.current;
                             }}
-                            trigger={['click']}
-                          >
-                            <Tooltip title={t('add_context')}>
-                              <Button
-                                type='text'
-                                shape='circle'
-                                size='small'
-                                icon={<PlusOutlined />}
-                                className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
-                              />
-                            </Tooltip>
-                          </Dropdown>
+                          />
 
                           {/* Skill Selector Button with Badge - Purple Gradient */}
                           <Popover
@@ -4973,6 +6862,20 @@ const Playground: NextPage = () => {
                                 `,
                             }}
                           />
+                          {/* Smart-routing chip: keyword scoring over enabled suites */}
+                          {routedSuite && !suiteTabTouched && (
+                            <span
+                              className={`ml-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
+                                routedSuite
+                                  ? 'bg-[#eef6ff] text-[#0069fe] border-[#cfe3ff] dark:bg-[#0d1b2e] dark:border-[#1d4ed8]'
+                                  : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                              }`}
+                            >
+                              {routedSuite
+                                ? t('suite_route_hit', { name: suiteDisplayName(routedSuite, i18n.language) })
+                                : t('suite_route_idle')}
+                            </span>
+                          )}
                         </div>
 
                         <div className='flex items-center gap-3'>
@@ -4988,12 +6891,13 @@ const Playground: NextPage = () => {
                             />
                           </Tooltip>
 
-                          {/* Send Button with blue gradient + gloss */}
+                          {/* Circular send control matches the reference composer. */}
                           <Button
                             type='primary'
                             shape={queuedSendAfterUpload ? 'round' : 'circle'}
                             size='large'
                             icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
+                            aria-label={t('sent')}
                             onClick={() => handleStart()}
                             disabled={
                               (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
@@ -5001,35 +6905,23 @@ const Playground: NextPage = () => {
                               queuedSendAfterUpload
                             }
                             loading={loading || queuedSendAfterUpload}
-                            className={`group/send relative overflow-hidden border-none shadow-lg transition-all duration-200 ${
+                            className={`border-none !shadow-none transition-colors duration-200 ${
                               queuedSendAfterUpload ? 'px-4' : ''
                             } ${
                               query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
+                                ? '!bg-[#171717] hover:!bg-[#333333] dark:!bg-gray-100 dark:!text-gray-900'
                                 : 'bg-gray-200 text-gray-400'
                             }`}
-                            style={
-                              query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
-                                : undefined
-                            }
                           >
                             {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
-                            {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
-                              <span
-                                className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
-                                style={{
-                                  background:
-                                    'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
-                                  animation: 'glossSweepHero 1.8s ease-in-out infinite',
-                                }}
-                              />
-                            )}
                           </Button>
                         </div>
                         <style
                           dangerouslySetInnerHTML={{
-                            __html: `@keyframes glossSweepHero { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`,
+                            __html: `
+                              .suite-composer .ant-btn-circle { box-shadow: none !important; background-image: none !important; transform: none !important; }
+                              .suite-composer .model-selector-premium .ant-select-selector { background: transparent !important; box-shadow: none !important; border-radius: 999px !important; }
+                            `,
                           }}
                         />
                       </div>
@@ -5037,52 +6929,158 @@ const Playground: NextPage = () => {
                   </div>
                 </div>
 
-                {/* Recommended Examples */}
-                <div className='mt-10 w-full'>
-                  <div className='flex items-center justify-center gap-2 mb-4'>
-                    <div className='h-px flex-1 bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-700' />
-                    <span className='text-xs font-medium text-gray-400 dark:text-gray-500 tracking-wider uppercase'>
-                      {t('recommend_examples')}
-                    </span>
-                    <div className='h-px flex-1 bg-gradient-to-l from-transparent to-gray-200 dark:to-gray-700' />
-                  </div>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                    {EXAMPLE_CARDS.map(example => (
+                {/* Official home tabs; all installed suites remain available in the composer menu. */}
+                <div className='mt-8 w-full'>
+                  <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
+                    {homeSuites.map(suite => (
                       <button
-                        type='button'
-                        key={example.id}
-                        onClick={() => handleExampleClick(example)}
-                        className={`group relative text-left bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
+                        key={suite.name}
+                        aria-pressed={activeSuiteTab === suite.name}
+                        onClick={() => {
+                          if (effectiveSuite?.name === suite.name) {
+                            clearSuiteSelection();
+                            return;
+                          }
+                          selectSuiteContext(suite);
+                        }}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
+                          activeSuiteTab === suite.name
+                            ? 'border-[#9edab1] bg-[#f2faf5] text-[#188842] dark:bg-[#16231a] dark:border-[#3b6a48] dark:text-[#79cc94]'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-400'
+                        }`}
                       >
-                        <div className='flex items-start gap-3'>
-                          <div
-                            className={`w-10 h-10 ${example.iconBg} rounded-xl flex items-center justify-center text-xl flex-shrink-0`}
-                          >
-                            {example.icon}
-                          </div>
-                          <div className='flex-1 min-w-0'>
-                            <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                              {(() => {
-                                const key = `example_${example.id}_title`;
-                                const val = t(key) as string;
-                                return val && val !== key ? val : example.title;
-                              })()}
-                            </h3>
-                            <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
-                              {(() => {
-                                const key = `example_${example.id}_desc`;
-                                const val = t(key) as string;
-                                return val && val !== key ? val : example.description;
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
-                          <RightOutlined className='text-xs text-gray-400' />
-                        </div>
+                        <span className='text-[17px] text-[#18a447]' aria-hidden='true'>
+                          {suite.scenario_id === 'query' || suite.name === 'sql-optimization-expert' ? (
+                            <ConsoleSqlOutlined />
+                          ) : suite.scenario_id === 'analysis' ? (
+                            <BarChartOutlined />
+                          ) : suite.name === 'metadata-architecture-expert' ? (
+                            <ApartmentOutlined />
+                          ) : (
+                            <ThunderboltOutlined />
+                          )}
+                        </span>
+                        {suiteDisplayName(suite, i18n.language)}
                       </button>
                     ))}
                   </div>
+                  {activeSuite && (
+                    <div
+                      className='flex flex-wrap items-center justify-center gap-2 mb-4'
+                      aria-label={t('suites_cmds')}
+                    >
+                      {(activeSuite.manifest_snapshot?.commands || []).map(command => (
+                        <Tooltip key={command.name} title={command.description || command.summary}>
+                          <button
+                            type='button'
+                            aria-pressed={effectiveSuiteCommand?.name === command.name}
+                            onClick={() => handleSelectSuiteCommand(activeSuite, command)}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                              effectiveSuiteCommand?.name === command.name
+                                ? 'border-green-300 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                                : 'border-gray-200 text-gray-600 hover:border-green-300 dark:border-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {command.display || command.name}
+                          </button>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  )}
+                  {activeSuite && (
+                    <>
+                      <p className='text-center text-xs text-gray-500 dark:text-gray-400 mb-4'>
+                        {t('suite_usage_hint')}
+                      </p>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                        {rotatedSuiteQuestions.map((q, idx) => {
+                          const command = activeSuite.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command);
+                          const fileHint = suiteCommandFileHint(command, i18n.language);
+                          const needsDatabase = activeSuite.manifest_snapshot?.context_defaults?.datasource !== 'optional';
+                          return (
+                          <div
+                            key={`${activeSuite?.name}-${idx}-${q.text}`}
+                            role='button'
+                            tabIndex={0}
+                            aria-label={q.title || q.text}
+                            onClick={() => handleSuiteQuestionClick(q)}
+                            onKeyDown={event => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                handleSuiteQuestionClick(q);
+                              }
+                            }}
+                            className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-sm hover:border-[#cfe0ff] transition-colors duration-200'
+                          >
+                            <div className='flex items-start gap-3'>
+                              <div
+                                aria-hidden='true'
+                                className='w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-[#e8f4ff] dark:bg-[#0d1b2e]'
+                              >
+                                {activeSuite?.icon || '🧩'}
+                              </div>
+                              <div className='flex-1 min-w-0'>
+                                <h3 className='line-clamp-2 pr-3 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                                  {q.title || q.text}
+                                </h3>
+                                {q.hint && (
+                                  <p className='text-xs text-gray-500 dark:text-gray-400 truncate' title={q.hint}>
+                                    {q.hint}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className='mt-3 flex min-w-0 items-center gap-3 text-[11px]'>
+                              {q.command && (
+                                <span className='shrink-0 rounded-md bg-green-50 px-2 py-0.5 font-mono text-green-700 dark:bg-green-900/20 dark:text-green-300'>
+                                  {activeSuite?.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command)
+                                    ?.display || q.command}
+                                </span>
+                              )}
+                              {fileHint ? (
+                                <span
+                                  className='flex min-w-0 items-center gap-1.5 text-gray-400 dark:text-gray-500'
+                                  title={fileHint}
+                                >
+                                  <FilePdfOutlined aria-hidden='true' />
+                                  <span className='truncate'>{fileHint}</span>
+                                </span>
+                              ) : needsDatabase ? (
+                              <span
+                                className='flex min-w-0 items-center gap-1.5 text-gray-400 dark:text-gray-500'
+                                title={t('suite_database_label', {
+                                  name: q.database_name || selectedDb?.db_name || t('suite_database_choose'),
+                                })}
+                              >
+                                <DatabaseOutlined aria-hidden='true' />
+                                <span className='truncate'>
+                                  {q.database_name || selectedDb?.db_name || t('suite_database_choose')}
+                                </span>
+                              </span>
+                              ) : null}
+                            </div>
+                            <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
+                              <RightOutlined className='text-xs text-gray-400' />
+                            </div>
+                          </div>
+                          );
+                        })}
+                        {rotatedSuiteQuestions.length === 0 && (
+                          <div className='col-span-2 text-center text-xs text-gray-400 dark:text-gray-500 py-6'>
+                            {t('suite_questions_empty')}
+                          </div>
+                        )}
+                      </div>
+                      {(activeSuite?.manifest_snapshot?.recommended_questions?.length ?? 0) > 4 && (
+                        <div
+                          className='text-center text-xs text-gray-400 dark:text-gray-500 mt-3 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300'
+                          onClick={() => setSuiteQOffset(o => o + 4)}
+                        >
+                          ⟳ {t('suite_swap_batch')}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

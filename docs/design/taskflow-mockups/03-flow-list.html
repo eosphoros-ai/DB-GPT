@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>任务流程 · 管理</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .page { flex: 1; overflow-y: auto; padding: 22px 30px 60px; }
+  .page-head { display: flex; align-items: flex-end; gap: 14px; }
+  .page-head h2 { font-size: 21px; font-weight: 750; }
+  .page-head .sub { color: var(--tx-3); font-size: 12.5px; margin-top: 3px; }
+  .page-head .acts { margin-left: auto; display: flex; gap: 8px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; margin: 18px 0 16px; }
+  .tabs { display: flex; gap: 2px; background: var(--bg-2); border-radius: 10px; padding: 3px; }
+  .tab { padding: 5px 14px; font-size: 12.5px; color: var(--tx-2); border-radius: 8px; cursor: pointer; }
+  .tab.active { background: #fff; color: var(--tx-1); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .search {
+    margin-left: auto; display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border-1); background: #fff; border-radius: 9px;
+    padding: 6px 12px; color: var(--tx-3); font-size: 12.5px; width: 220px;
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .fcard {
+    background: #fff; border: 1px solid var(--border-1); border-radius: 16px;
+    padding: 16px 16px 13px; display: flex; flex-direction: column; gap: 10px;
+    cursor: pointer; transition: all .15s;
+  }
+  .fcard:hover { border-color: var(--border-2); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .fcard .top { display: flex; align-items: flex-start; gap: 10px; }
+  .fcard .f-ico { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex: none; }
+  .fcard .nm { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+  .fcard .ds { font-size: 12px; color: var(--tx-3); line-height: 1.5; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .fcard .more { margin-left: auto; color: var(--tx-3); flex: none; }
+
+  .chain {
+    display: flex; align-items: center; gap: 0; background: var(--bg-1);
+    border: 1px solid var(--border-1); border-radius: 10px; padding: 8px 10px;
+    overflow: hidden;
+  }
+  .chain .c-node {
+    width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; flex: none; background: #fff;
+    border: 1px solid var(--border-1);
+  }
+  .chain .c-line { flex: 1; min-width: 8px; height: 1.5px; background: var(--border-2); }
+  .chain .c-more { font-size: 10.5px; color: var(--tx-3); margin-left: 8px; flex: none; }
+
+  .fcard .meta { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--tx-3); }
+  .fcard .meta b { color: var(--tx-2); font-weight: 600; }
+  .fcard .foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-1); padding-top: 10px; }
+  .fcard .foot .spacer { flex: 1; }
+  .run-stat { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--tx-3); }
+
+  .new-card {
+    border: 1.5px dashed var(--border-2); background: var(--bg-1);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--tx-3); min-height: 198px; border-radius: 16px; cursor: pointer;
+  }
+  .new-card:hover { border-color: var(--pri); color: var(--pri); background: var(--pri-soft); }
+  .new-card .plus { font-size: 26px; }
+  .new-card .t { font-size: 13px; font-weight: 600; }
+
+  .sec-title { font-size: 13px; font-weight: 700; color: var(--tx-2); margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .sec-title .line { flex: 1; height: 1px; background: var(--border-1); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">DB</div><div class="logo-name">DB-GPT</div></div>
+    <button class="new-task-btn">＋ new_task</button>
+    <div class="side-tabs">
+      <div class="side-tab">🕘 tasks</div>
+      <div class="side-tab active">⚡ skills</div>
+      <div class="side-tab">🗄 datasources</div>
+    </div>
+    <div class="nav-item"><span class="ico">⚡</span> 技能</div>
+    <div class="nav-item active"><span class="ico">🧩</span> 任务流程</div>
+    <div class="nav-item"><span class="ico">📚</span> 知识库</div>
+    <div class="nav-item"><span class="ico">🗄</span> 数据源</div>
+    <div style="flex:1"></div>
+    <div class="side-bottom"><div class="nav-item"><span class="ico">⚙</span> settings</div></div>
+  </aside>
+
+  <main class="app-main">
+    <div class="topbar">
+      <span class="ver">任务流程</span>
+      <div class="right"><span style="color:var(--tx-3)">🔔</span><span class="chip">⚡ 300</span><span class="ico-box sm" style="background:var(--pri);color:#fff">A</span></div>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h2>任务流程</h2>
+          <div class="sub">把「取数 → 分析 → 可视化 → 报告」沉淀为可复用流程，在对话中一键调用</div>
+        </div>
+        <div class="acts">
+          <button class="btn">📥 导入</button>
+          <button class="btn">🗂 模板中心</button>
+          <button class="btn primary">＋ 新建流程</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs">
+          <div class="tab active">全部</div>
+          <div class="tab">内置模板</div>
+          <div class="tab">我的流程</div>
+          <div class="tab">已发布</div>
+        </div>
+        <div class="search">⌕ 搜索流程名称 / 描述</div>
+      </div>
+
+      <div class="sec-title">内置模板 <span class="line"></span></div>
+      <div class="grid">
+        <div class="fcard">
+          <div class="top">
+            <div class="f-ico" style="background:var(--pri-soft)">🧬</div>
+            <div>
+              <div class="nm">数据分析流 <span class="tag blue">内置</span></div>
+              <div class="ds">执行数据读取、分析计算、可视化与报告生成的完整分析流程，适合常规经营分析</div>
+            </div>
+            <div class="more">⋯</div>
+          </div>
+          <div class="chain">
+            <div class="c-node" style="color:var(--ok)">▶</div><div class="c-line"></div>
+            <div class="c-node">🗄</div><div class="c-line"></div>
+            <div class="c-node">🧮</div><div class="c-line"></div>
+            <div class="c-node">📊</div><div class="c-line"></div>
+            <div class="c-node">📝</div><div class="c-line"></div>
+            <div class="c-node" style="color:var(--ok)">✓</div>
+            <span class="c-more">7 节点</span>
+          </div>
+          <div class="foot">
+            <span class="run-stat">▶ 运行 <b>128</b> 次</span>
+            <span class="run-stat">✓ 成功率 <b>96%</b></span>
+            <div class="spacer"></div>
+            <button class="btn sm">编辑副本</button>
+            <button class="btn sm blue">▶ 运行</button>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <div class="top">
+            <div class="f-ico" style="background:var(--cyan-soft)">⚡</div>
+            <div>
+              <div class="nm">通用快速取数 <span class="tag blue">内置</span></div>
+              <div class="ds">按业务口径快速定位数据并执行有界只读查询，直接返回结果与口径说明</div>
+            </div>
+            <div class="more">⋯</div>
+          </div>
+          <div class="chain">
+            <div class="c-node" style="color:var(--ok)">▶</div><div class="c-line"></div>
+            <div class="c-node">🗄</div><div class="c-line"></div>
+            <div class="c-node" style="color:var(--ok)">✓</div>
+            <span class="c-more">3 节点</span>
+          </div>
+          <div class="foot">
+            <span class="run-stat">▶ 运行 <b>342</b> 次</span>
+            <span class="run-stat">✓ 成功率 <b>99%</b></span>
+            <div class="spacer"></div>
+            <button class="btn sm">编辑副本</button>
+            <button class="btn sm blue">▶ 运行</button>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <div class="top">
+            <div class="f-ico" style="background:var(--violet-soft)">📈</div>
+            <div>
+              <div class="nm">Excel 透视分析 <span class="tag blue">内置</span></div>
+              <div class="ds">上传表格后自动完成清洗、透视与图表解读，输出分析结论与建议</div>
+            </div>
+            <div class="more">⋯</div>
+          </div>
+          <div class="chain">
+            <div class="c-node" style="color:var(--ok)">▶</div><div class="c-line"></div>
+            <div class="c-node">📄</div><div class="c-line"></div>
+            <div class="c-node">🧹</div><div class="c-line"></div>
+            <div class="c-node">🧮</div><div class="c-line"></div>
+            <div class="c-node">📊</div><div class="c-line"></div>
+            <div class="c-node">✓</div>
+            <span class="c-more">6 节点</span>
+          </div>
+          <div class="foot">
+            <span class="run-stat">▶ 运行 <b>56</b> 次</span>
+            <span class="run-stat">✓ 成功率 <b>93%</b></span>
+            <div class="spacer"></div>
+            <button class="btn sm">编辑副本</button>
+            <button class="btn sm blue">▶ 运行</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">我的流程 <span class="line"></span></div>
+      <div class="grid">
+        <div class="fcard">
+          <div class="top">
+            <div class="f-ico" style="background:var(--pink-soft)">🧪</div>
+            <div>
+              <div class="nm">AB 实验复盘 <span class="tag green">已发布</span></div>
+              <div class="ds">拉取实验分组数据，对比核心指标并输出显著性结论与放量建议</div>
+            </div>
+            <div class="more">⋯</div>
+          </div>
+          <div class="chain">
+            <div class="c-node" style="color:var(--ok)">▶</div><div class="c-line"></div>
+            <div class="c-node">🗄</div><div class="c-line"></div>
+            <div class="c-node">🧮</div><div class="c-line"></div>
+            <div class="c-node">🧪</div><div class="c-line"></div>
+            <div class="c-node">📝</div><div class="c-line"></div>
+            <div class="c-node" style="color:var(--ok)">✓</div>
+            <span class="c-more">8 节点</span>
+          </div>
+          <div class="foot">
+            <span class="run-stat">▶ 运行 <b>12</b> 次</span>
+            <span class="run-stat">更新于 <b>2 天前</b></span>
+            <div class="spacer"></div>
+            <button class="btn sm">编辑</button>
+            <button class="btn sm blue">▶ 运行</button>
+          </div>
+        </div>
+
+        <div class="fcard">
+          <div class="top">
+            <div class="f-ico" style="background:var(--warn-soft)">📮</div>
+            <div>
+              <div class="nm">每日经营快报 <span class="tag amber">草稿</span></div>
+              <div class="ds">每天 9 点拉取核心经营指标，生成快报并推送到飞书群（含定时触发器）</div>
+            </div>
+            <div class="more">⋯</div>
+          </div>
+          <div class="chain">
+            <div class="c-node" style="color:var(--warn)">⏰</div><div class="c-line"></div>
+            <div class="c-node">🗄</div><div class="c-line"></div>
+            <div class="c-node">📝</div><div class="c-line"></div>
+            <div class="c-node">🔔</div>
+            <span class="c-more">5 节点</span>
+          </div>
+          <div class="foot">
+            <span class="run-stat">▶ 试运行 <b>3</b> 次</span>
+            <span class="run-stat">更新于 <b>5 小时前</b></span>
+            <div class="spacer"></div>
+            <button class="btn sm">编辑</button>
+            <button class="btn sm">发布</button>
+          </div>
+        </div>
+
+        <div class="new-card">
+          <div class="plus">＋</div>
+          <div class="t">新建任务流程</div>
+          <div style="font-size:11.5px">从空白画布开始，或复制一个内置模板</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

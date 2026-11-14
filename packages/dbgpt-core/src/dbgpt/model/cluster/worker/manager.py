@@ -311,7 +311,6 @@ class LocalWorkerManager(WorkerManager):
         if not success:
             msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
             logger.warning(f"{msg}, worker_params: {worker_params}")
-            self._remove_worker(worker_params, model_name)
             raise Exception(msg)
         supported_types = WorkerType.values()
         if worker_type not in supported_types:

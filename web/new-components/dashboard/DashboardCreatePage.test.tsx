@@ -72,6 +72,13 @@ const plan = {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.unstubAllGlobals();
+  const stored = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => stored.get(key) ?? null,
+    setItem: (key: string, value: string) => stored.set(key, value),
+    removeItem: (key: string) => stored.delete(key),
+    clear: () => stored.clear(),
+  });
   state.query = {};
   state.isReady = true;
   state.getDbList.mockResolvedValue({

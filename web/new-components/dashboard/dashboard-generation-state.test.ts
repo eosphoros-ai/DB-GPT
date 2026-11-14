@@ -7,6 +7,28 @@ import {
 } from './dashboard-generation-state';
 
 describe('dashboard SSE state reducer', () => {
+  it('keeps an invalid saved draft in generation until repair passes', () => {
+    let state = reduceDashboardGeneration(undefined, {
+      type: 'dashboard.generation.started',
+      dashboard_id: 'plan',
+      total_widgets: 4,
+    });
+    state = reduceDashboardGeneration(state, {
+      type: 'dashboard.created',
+      dashboard_id: 'plan',
+      validated_widgets: 3,
+      failed_widgets: 1,
+    });
+    expect(state).toMatchObject({ status: 'generating', validatedWidgets: 3, failedWidgets: 1 });
+    state = reduceDashboardGeneration(state, {
+      type: 'dashboard.created',
+      dashboard_id: 'plan',
+      validated_widgets: 4,
+      failed_widgets: 0,
+    });
+    expect(state).toMatchObject({ status: 'created', validatedWidgets: 4, failedWidgets: 0 });
+  });
+
   it('also blocks imperative navigation for a late created event after timeout', () => {
     const accept = createDashboardGenerationEventGate();
     const identity = { dashboard_id: 'plan', generation_id: 'old' };
@@ -194,7 +216,7 @@ describe('dashboard SSE state reducer', () => {
     });
 
     expect(state).toMatchObject({
-      status: 'created',
+      status: 'generating',
       dashboardId: 'dashboard-1',
       editorPath: '/dashboards/dashboard-1',
       totalWidgets: 2,

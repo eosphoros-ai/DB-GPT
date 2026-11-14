@@ -4,7 +4,8 @@ import asyncio
 import dataclasses
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from contextvars import ContextVar
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
@@ -16,6 +17,29 @@ from ...resource.base import AgentResource, Resource, ResourceType
 from ...resource.tool.pack import ToolPack
 
 logger = logging.getLogger(__name__)
+
+
+# ── Human-in-the-loop tool approval gate ────────────────────────────────────
+# The agentic API layer installs a per-conversation gate (risk policy classify
+# + ApprovalCenter wait) via this ContextVar before spawning the agent task.
+# ``run_tool`` consults it before executing any tool; a non-None return value
+# short-circuits execution and is fed back to the model as the tool
+# observation (policy-deny / user-reject / timeout wording).
+ToolGate = Callable[[str, dict], Awaitable[Optional[str]]]
+
+_CURRENT_TOOL_GATE: ContextVar[Optional[ToolGate]] = ContextVar(
+    "dbgpt_current_tool_gate", default=None
+)
+
+
+def set_current_tool_gate(gate: Optional[ToolGate]):
+    """Install the approval gate for the current async context (returns token)."""
+    return _CURRENT_TOOL_GATE.set(gate)
+
+
+def reset_current_tool_gate(token) -> None:
+    """Restore the previous gate binding."""
+    _CURRENT_TOOL_GATE.reset(token)
 
 
 class ToolInput(BaseModel):
@@ -168,6 +192,9 @@ async def run_tool(
     raw_tool_input: Optional[str] = None,
 ) -> ActionOutput:
     """Run the tool."""
+    batch = split_joined_action(name, args)
+    if batch:
+        return await run_tools_batch(batch, resource, render_protocol, need_vis_render)
     is_terminal = None
     try:
         tool_packs = ToolPack.from_resource(resource)
@@ -195,10 +222,50 @@ async def run_tool(
             except Exception:
                 pass
 
+        action_input = json.dumps(args, ensure_ascii=False)
         try:
-            tool_result = await tool_pack.async_execute(resource_name=name, **args)
-            status = Status.COMPLETE.value
-            is_terminal = tool_pack.is_terminal(name)
+            execution_tool = tool_pack._get_execution_tool(name)
+            missing = [
+                key
+                for key, parameter in (execution_tool.args or {}).items()
+                if parameter.required and key not in args
+            ]
+            if missing:
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    action_input=action_input,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: "
+                        + name
+                        + " missing required arguments: "
+                        + ", ".join(missing)
+                        + ". No tool was executed. Submit a complete JSON object "
+                        "in the native function arguments, or include Action Input "
+                        "after Action in text mode. Do not repeat the bare Action."
+                        + "\nRequired parameter schemas: "
+                        + json.dumps(
+                            {
+                                key: execution_tool.args[key].to_json_schema()
+                                for key in missing
+                            },
+                            ensure_ascii=False,
+                        )
+                    ),
+                )
+            # Validate arguments before asking for approval; the gate still
+            # applies to every valid single or batched tool invocation.
+            gate = _CURRENT_TOOL_GATE.get()
+            gate_observation = await gate(name, args) if gate is not None else None
+            if gate_observation is not None:
+                response_success = False
+                status = Status.FAILED.value
+                tool_result = gate_observation
+                logger.info("Tool [%s] blocked by approval gate", name)
+            else:
+                tool_result = await tool_pack.async_execute(resource_name=name, **args)
+                status = Status.COMPLETE.value
+                is_terminal = tool_pack.is_terminal(name)
         except Exception as e:
             response_success = False
             logger.exception(f"Tool [{name}] execute failed!")
@@ -260,6 +327,8 @@ async def run_tool(
 
         return ActionOutput(
             is_exe_success=response_success,
+            action=name,
+            action_input=action_input,
             content=in_context_content,
             view=view,
             observations=result_str,
@@ -292,6 +361,35 @@ class ToolCallSpec:
     args: Dict[str, Any] = dataclasses.field(default_factory=dict)
     call_id: Optional[str] = None
     raw_tool_input: Optional[str] = None
+
+
+def split_joined_action(name: str, args: Any) -> Optional[List[ToolCallSpec]]:
+    """Split a text-ReAct turn that joined several actions into one line.
+
+    The text protocol occasionally emits ``Action: tool_a, tool_b`` together
+    with an array ``Action Input: [{...}, {...}]``. Forwarding that verbatim
+    crashes ``ToolPack.async_execute(**args)`` ("argument after ** must be a
+    mapping, not list"). Pair the comma-joined names with the array elements
+    so the turn executes as a real batch instead.
+    """
+    if not isinstance(args, list) or not args:
+        return None
+    names = [n.strip() for n in str(name).split(",") if n.strip()]
+    if not names:
+        return None
+    if len(names) == 1 and len(args) == 1:
+        # A singleton array still belongs to the selected tool's parser.
+        return None
+    specs: List[ToolCallSpec] = []
+    for index, item in enumerate(args):
+        spec_name = names[index] if index < len(names) else names[-1]
+        specs.append(
+            ToolCallSpec(
+                name=spec_name,
+                args=item if isinstance(item, dict) else {},
+            )
+        )
+    return specs
 
 
 async def run_tools_batch(
@@ -336,6 +434,8 @@ async def run_tools_batch(
         # so native single-tool turns still carry the tool name on ActionOutput.
         if not getattr(out, "action", None):
             out.action = spec.name
+        if out.action_input is None:
+            out.action_input = json.dumps(spec.args, ensure_ascii=False)
         return out
 
     async def _run_one(spec: ToolCallSpec) -> ActionOutput:

@@ -237,4 +237,4 @@ uv run dbgpt start webserver --config configs/dbgpt-proxy-ollama.toml
 * 配置模型提供方：[模型提供方](/docs/getting-started/providers/)
 * 使用 Docker 部署：[Docker 部署](/docs/getting-started/deploy/docker)
 * 了解 Web UI：[Web UI 指南](/docs/getting-started/web-ui/)
-* 构建第一个 AWEL 工作流：[AWEL Quickstart](/docs/awel/cookbook/quickstart_basic_awel_workflow)
+* 构建第一个工作流：[工作流快速开始](/docs/workflow/quickstart)

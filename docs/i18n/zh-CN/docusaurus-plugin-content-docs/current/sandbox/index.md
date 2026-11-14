@@ -162,7 +162,7 @@ DB-GPT 当前 sandbox 设计的一个重要点，是支持**基于 session 的�
 
 - `packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py`
 
-中的 `shell_interpreter` 工具，就使用了 `dbgpt-sandbox` 的 `LocalRuntime` 执行 shell 命令，并具备：
+中的 `bash` 工具，就使用了 `dbgpt-sandbox` 的 `LocalRuntime` 执行 shell 命令，并具备：
 
 - 进程隔离
 - 内存限制

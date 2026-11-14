@@ -119,6 +119,35 @@ def test_date_values_with_neutral_name_and_quoted_identifiers_are_discovered(tmp
     assert list(connector.get_table_names()) == ["observations"]
 
 
+@pytest.mark.parametrize(
+    "values,expected",
+    [
+        (["31-01-2024", "15-02-2024"], ["2024-01-31", "2024-02-15"]),
+        (["01/31/2024", "02/15/2024"], ["2024-01-31", "2024-02-15"]),
+    ],
+)
+def test_sqlite_normalization_expression_parses_observed_dates(
+    tmp_path, values, expected
+):
+    connector = _connector(tmp_path, values)
+    fact = collect_temporal_evidence(connector)["columns"][0]
+    expression = fact["normalized_date_sql"]
+    _, rows = connector.query_ex(f"SELECT {expression} FROM observations")
+    assert [row[0] for row in rows] == expected
+
+
+def test_ambiguous_or_bounded_dates_do_not_get_a_guessed_sql_expression(tmp_path):
+    connector = _connector(tmp_path, ["01-02-2024", "03-04-2024"])
+    assert (
+        "normalized_date_sql" not in collect_temporal_evidence(connector)["columns"][0]
+    )
+    connector = _connector(tmp_path, ["31-01-2024", "15-02-2024"])
+    assert (
+        "normalized_date_sql"
+        not in collect_temporal_evidence(connector, max_distinct=1)["columns"][0]
+    )
+
+
 def test_only_connector_allowed_tables_are_profiled(tmp_path):
     connector = _connector(tmp_path, ["2024-02-29"], hidden=True)
     facts = collect_temporal_evidence(connector)["columns"]

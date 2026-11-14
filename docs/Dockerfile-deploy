@@ -46,7 +46,7 @@ RUN git config --global user.email "dbgpt@example.com" && \
 # New logic for building versions directly in Dockerfile
 RUN git config --global --add safe.directory /app && \
     # Record the current position
-    CURRENT_POSITION=$(git rev-parse --abbrev-ref HEAD) && \
+    CURRENT_POSITION=$(git rev-parse HEAD) && \
     # Get the latest tags
     TAGS=$(git tag --sort=-creatordate | head -n $NUM_VERSION | tac) && \
     # If there are no tags, get the latest commits

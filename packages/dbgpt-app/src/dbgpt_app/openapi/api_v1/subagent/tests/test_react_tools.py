@@ -20,10 +20,12 @@ _EXPECTED_TOOLS = {
     "load_tools",
     "knowledge_retrieve",
     "sql_query",
-    "code_interpreter",
-    "shell_interpreter",
+    "code",
+    "bash",
     "execute_skill_script_file",
     "html_interpreter",
+    "web_search",
+    "web_fetch",
 }
 
 
@@ -80,8 +82,8 @@ async def test_code_interpreter_isolates_generated_images_per_state():
     tools_a = make_react_tools(state_a)
     tools_b = make_react_tools(state_b)
 
-    out_a = await tools_a["code_interpreter"](code="")
-    out_b = await tools_b["code_interpreter"](code="")
+    out_a = await tools_a["code"](code="")
+    out_b = await tools_b["code"](code="")
     assert "No code provided" in json.loads(out_a)["chunks"][0]["content"]
     assert "No code provided" in json.loads(out_b)["chunks"][0]["content"]
 

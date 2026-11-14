@@ -1,0 +1,40 @@
+{
+  "name": "legal-expert-suite",
+  "version": "1.0.0",
+  "displayNameCn": "法律专家套件",
+  "displayNameEn": "Legal Expert Suite",
+  "description": "面向企业法务与执业律师的法律工作助手：梳理案情事实、检索并核验法条案例、审查合同风险、评估争议解决路径、起草法律文书；所有结论标注依据来源并提示需执业律师复核。",
+  "skills": [
+    "skills/legal-intake",
+    "skills/legal-research",
+    "skills/contract-review",
+    "skills/dispute-strategy",
+    "skills/legal-drafting"
+  ],
+  "dbgpt": {
+    "scenario_id": "expert",
+    "execution": "react",
+    "sop": "prompts/workflow.md",
+    "tools": {
+      "allow": ["web_search", "web_fetch", "generate_report"],
+      "deny": []
+    },
+    "context_defaults": {
+      "datasource": "optional"
+    },
+    "required_resources": [],
+    "recommended_questions": [
+      "审查这份采购合同的付款、违约与解除条款，我方是买方",
+      "对方拖欠货款 8 个月，评估协商、仲裁、起诉三条路径的优劣",
+      "根据这些聊天记录和送货单，起草一封催款律师函",
+      "检索《民法典》关于违约金调整的现行规定并给出条文来源"
+    ],
+    "artifacts": [
+      {"type": "markdown", "name": "法务工作底稿"},
+      {"type": "markdown", "name": "法律文书初稿"}
+    ],
+    "output_contract": {
+      "completion": "交付须包含：事实与争点摘要、带来源 URL 与核查日期的法律依据表、P0-P3 分级风险清单、争议解决路径对比、行动时间表；每条法律结论标注依据编号或标记未核验；未知信息以 [[待补充]] 占位；结尾附非正式法律意见免责声明与人工复核提示"
+    }
+  }
+}

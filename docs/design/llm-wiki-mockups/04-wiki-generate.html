@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>04 · 开启与生成 — DB-GPT LLM-Wiki 设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="app" style="filter: brightness(0.75) saturate(0.85);">
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">D</div><div class="logo-name">DB-GPT</div></div>
+    <div class="nav-item"><span class="ico">💬</span> 对话</div>
+    <div class="nav-item active"><span class="ico">📚</span> 知识库</div>
+    <div class="nav-item"><span class="ico">🤖</span> 智能体</div>
+  </aside>
+  <main class="app-main">
+    <header class="page-head">
+      <div class="crumbs"><span>知识库</span><span class="sep">›</span><span class="cur" style="color:var(--tx-1)">全部空间</span></div>
+    </header>
+    <!-- KB 列表：Wiki 徽标态 -->
+    <div class="kb-grid">
+      <div class="kb-card">
+        <span class="kb-badge">📖 Wiki</span>
+        <div class="nm">星云科技员工手册</div>
+        <div class="ds">HR 制度、报销流程与员工 handbook，含智能家居产品资料</div>
+        <div class="meta"><span>📄 12 文档</span><span>🧩 1,284 分块</span></div>
+      </div>
+      <div class="kb-card">
+        <span class="kb-badge" style="color:var(--warn);border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.08)">⏳ Wiki 生成中</span>
+        <div class="nm">DB-GPT 产品文档</div>
+        <div class="ds">框架文档、部署手册与最佳实践，开启 Wiki 后首次全量生成</div>
+        <div class="meta"><span>📄 48 文档</span><span>🧩 6,102 分块</span></div>
+      </div>
+      <div class="kb-card">
+        <div class="nm">财报数据集 2024</div>
+        <div class="ds">结构化财务数据，未启用 Wiki（仅向量检索）</div>
+        <div class="meta"><span>📄 6 文档</span><span>🧩 331 分块</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ Wiki 配置弹窗（ KnowledgeBaseEditorModal 内嵌 section） ============ -->
+<div class="modal-mask">
+  <div class="modal" style="width:660px">
+    <div class="modal-head">编辑知识库 · 索引策略 <span class="x">✕</span></div>
+    <div class="modal-body">
+      <!-- 开关 -->
+      <div class="form-row" style="display:flex;gap:14px;align-items:flex-start;border:1px solid var(--border-2);border-radius:12px;padding:14px 16px;background:var(--pri-tint);border-color:rgba(3,76,255,.45)">
+        <div class="switch on" style="margin-top:3px"><div class="knob"></div></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14.5px">启用 LLM-Wiki 索引</div>
+          <div class="form-hint">文档入库后由 Agent 自动生成结构化、互相链接的 Markdown Wiki 页面与知识图谱；增量文档跟随更新，删除文档自动回收引用。</div>
+        </div>
+      </div>
+
+      <!-- 抽取粒度 -->
+      <div class="form-row" style="margin-top:16px">
+        <div class="form-label">抽取粒度 granularity</div>
+        <div class="radio-cards">
+          <div class="radio-card">
+            <div class="t">聚焦 focused</div>
+            <div class="d">只抽取核心实体与概念，页面少而精，成本最低</div>
+          </div>
+          <div class="radio-card on">
+            <div class="t">标准 standard</div>
+            <div class="d">推荐。实体 + 概念 + 摘要页，兼顾覆盖与成本</div>
+          </div>
+          <div class="radio-card">
+            <div class="t">穷举 exhaustive</div>
+            <div class="d">尽可能多产页面，适合高价值语料，成本最高</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模型 & 上限 -->
+      <div class="form-row" style="display:flex;gap:12px">
+        <div style="flex:1">
+          <div class="form-label">生成模型（缺省用空间摘要模型）</div>
+          <select class="input"><option>proxyllm · DeepSeek-V3（推荐）</option><option>qwen2.5-72b-instruct</option><option>glm-4-plus</option></select>
+        </div>
+        <div style="width:180px">
+          <div class="form-label">单次入库最大新增页</div>
+          <input class="input" value="8" />
+        </div>
+      </div>
+
+      <!-- 指令 -->
+      <div class="form-row">
+        <div class="form-label">内容侧重点指令 <span class="dim">（可空）</span></div>
+        <textarea class="input" rows="2" style="resize:vertical">面向新员工入职场景组织内容；表格与流程图优先；每页不超过 800 字。</textarea>
+      </div>
+      <div class="form-row" style="margin-bottom:4px">
+        <div class="form-label">抽取侧重指令 <span class="dim">（可空）</span></div>
+        <textarea class="input" rows="2" style="resize:vertical">重点抽取：休假、报销、审批权限；忽略招聘广告类内容。</textarea>
+      </div>
+      <div class="form-hint">成本提示：standard 粒度下每 MB 文档约 6–10 次 LLM 调用；「生成模型」建议长上下文 + 强指令遵循。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost">取消</button>
+      <button class="btn">仅保存</button>
+      <button class="btn primary">保存并全量生成 →</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

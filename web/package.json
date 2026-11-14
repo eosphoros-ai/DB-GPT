@@ -28,7 +28,10 @@
     "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
     "test:e2e:report": "playwright test --config playwright.report.config.ts",
-    "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build"
+    "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build",
+    "test:financial": "vitest run --config vitest.financial.config.mts",
+    "test:e2e:financial": "playwright test --config playwright.financial.config.ts --project=offline",
+    "test:e2e:financial:live": "playwright test --config playwright.financial.config.ts --project=live"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
@@ -99,7 +102,8 @@
     "ajv": "^8.20.0",
     "react-grid-layout": "^2.2.4",
     "react-markdown": "9.0.1",
-    "react-resizable": "3.2.0"
+    "react-resizable": "3.2.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.2",
@@ -132,7 +136,9 @@
     "@playwright/test": "^1.62.0",
     "jsdom": "^26.1.0",
     "vitest": "4.1.10",
-    "@types/uuid": "^9.0.8"
+    "@types/uuid": "^9.0.8",
+    "terser": "5.51.2",
+    "webpack": "5.112.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

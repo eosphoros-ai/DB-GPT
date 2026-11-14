@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>任务流程编辑器 · Agent 答疑流(多 Agent 串联)</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .editor { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .ed-top {
+    height: 54px; flex: none; display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; border-bottom: 1px solid var(--border-1); background: #fff;
+  }
+  .ed-back { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--tx-2); font-size: 16px; }
+  .ed-back:hover { background: var(--bg-2); }
+  .ed-name { display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 700; }
+  .ed-name .edit { color: var(--tx-3); font-size: 13px; cursor: pointer; }
+  .ed-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .save-state { color: var(--tx-3); font-size: 12px; margin-right: 6px; }
+  .ed-body { flex: 1; display: flex; min-height: 0; }
+
+  /* ================= 左:节点面板 ================= */
+  .palette { width: 250px; flex: none; border-right: 1px solid var(--border-1); background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+  .palette-head { padding: 12px 14px 8px; }
+  .palette-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .palette-search { display: flex; align-items: center; gap: 7px; background: var(--bg-2); border-radius: 8px; padding: 6px 10px; color: var(--tx-3); font-size: 12.5px; }
+  .palette-list { flex: 1; overflow-y: auto; padding: 4px 10px 16px; }
+  .p-group { margin-top: 10px; }
+  .p-group-name { font-size: 11.5px; color: var(--tx-3); padding: 0 4px 6px; display: flex; align-items: center; gap: 6px; font-weight: 600; letter-spacing: 0.3px; }
+  .p-group-name .cnt { margin-left: auto; font-weight: 400; color: var(--tx-4); }
+  .p-node { display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 10px; border: 1px solid transparent; cursor: grab; margin-bottom: 4px; background: #fff; }
+  .p-nodec:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
+  .p-node .tx { min-width: 0; flex: 1; }
+  .p-node .nm { font-size: 13px; font-weight: 600; color: var(--tx-1); line-height: 1.3; }
+  .p-node .ds { font-size: 11px; color: var(--tx-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-ntool_action.pyode .add { width: 20px; height: 20px; border-radius: 6px; color: var(--pri); font-size: 15px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .p-node .add:hover { background: var(--pri-soft); }
+  .p-node.new-tag .nm::after { content: "新"; font-size: 10px; color: #fff; background: var(--violet); border-radius: 4px; padding: 0 4px; margin-left: 5px; font-weight: 600; }
+
+  /* ================= 中:画布 ================= */
+  .canvas-wrap { flex: 1; position: relative; overflow: auto; background: var(--bg-1); }
+  .canvas-tip { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; align-items: center; padding: 8px 18px; font-size: 12px; color: var(--tx-3); background: var(--bg-1); }
+  .canvas-tip b { color: var(--tx-2); font-weight: 600; }
+  .canvas { min-height: 100%; padding: 10px 0 120px; background-image: radial-gradient(circle, #d6d3d1 1px, transparent 1px); background-size: 22px 22px; display: flex; flex-direction: column; align-items: center; }
+  .flow-node { width: 320px; background: #fff; border: 1.5px solid var(--border-1); border-radius: 12px; padding: 11px 13px; display: flex; gap: 10px; align-items: center; box-shadow: var(--shadow-sm); cursor: pointer; position: relative; }
+  .flow-node:hover { border-color: var(--border-2); }
+  .flow-node.selected { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+  .flow-node .tx { flex: 1; min-width: 0; }
+  .flow-node .nm { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
+  .flow-node .ds { font-size: 11.5px; color: var(--tx-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flow-node .step { color: var(--tx-4); font-size: 11px; font-family: var(--mono); flex: none; }
+  .flow-node .node-menu { position: absolute; top: 8px; right: 8px; color: var(--tx-4); font-size: 12px; display: none; }
+  .flow-node:hover .node-menu { display: block; }
+  .flow-node.agent { border-left: 3px solid var(--violet); }
+  .agent-ava { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--violet-soft); }
+  .flow-node .tools-mini { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+  .tool-chip { font-size: 10px; background: var(--bg-2); color: var(--tx-2); border-radius: 4px; padding: 0 5px; border: 1px solid var(--border-1); }
+  .tool-chip.mcp { color: var(--cyan); background: var(--cyan-soft); border-color: transparent; }
+  .conn { width: 2px; height: 30px; background: var(--border-2); position: relative; }
+  .conn .plus { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1px solid var(--border-2); color: var(--tx-3); font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .conn .plus:hover { border-color: var(--pri); color: var(--pri); }
+  .conn-label { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 10.5px; color: var(--tx-4); white-space: nowrap; }
+
+  /* ================= 右:属性面板 ================= */
+  .props { width: 320px; flex: none; border-left: 1px solid var(--border-1); background: #fff; overflow-y: auto; }
+  .props-head { padding: 14px 16px 10px; border-bottom: 1px solid var(--border-1); }
+  .props-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+  .props-sub { font-size: 11.5px; color: var(--tx-3); margin-top: 3px; }
+  .props-sec { padding: 12px 16px; border-bottom: 1px solid var(--border-1); }
+  .props-sec h5 { font-size: 11.5px; color: var(--tx-3); font-weight: 600; margin-bottom: 9px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: space-between; }
+  .fld { margin-bottom: 12px; }
+  .fld:last-child { margin-bottom: 2px; }
+  .fld label { display: block; font-size: 12.5px; color: var(--tx-2); margin-bottom: 5px; font-weight: 500; }
+  .fld label .req { color: var(--err); }
+  .fld .in { width: 100%; border: 1px solid var(--border-2); border-radius: 8px; padding: 7px 10px; font-size: 12.5px; color: var(--tx-1); background: #fff; }
+  .fld textarea.in { resize: vertical; min-height: 72px; line-height: 1.5; }
+  .fld .desc { font-size: 11px; color: var(--tx-3); margin-top: 4px; }
+  .select-mock { display: flex; align-items: center; justify-content: space-between; }
+  .select-mock .v { display: flex; align-items: center; gap: 8px; }
+  .profile-ava { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; background: var(--violet-soft); }
+  .profile-sub { font-size: 11px; color: var(--tx-3); }
+  .kv { display: flex; align-items: center; gap: 8px; border: 1px dashed var(--border-2); border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--tx-2); margin-bottom: 6px; }
+  .kv .k { color: var(--tx-1); font-weight: 600; }
+
+  /* 工具勾选列表(对齐对标产品的连接器 UI) */
+  .tool-group { margin-bottom: 10px; }
+  .tool-group-name { font-size: 11px; color: var(--tx-4); margin-bottom: 5px; font-weight: 600; }
+  .tool-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 12.5px; }
+  .tool-item:hover { background: var(--bg-1); }
+  .tool-item .cb { width: 15px; height: 15px; border-radius: 4px; background: var(--ok); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .tool-item .cb.off { background: #fff; border: 1.5px solid var(--border-2); }
+  .tool-item .ti { flex: 1; min-width: 0; }
+  .tool-item .ti .sub { font-size: 10.5px; color: var(--tx-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tool-item .mcp-tag { font-size: 9.5px; color: var(--cyan); background: var(--cyan-soft); border-radius: 3px; padding: 0 4px; flex: none; }
+  .tool-add { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--pri); padding: 5px 8px; cursor: pointer; }
+  .tool-add:hover { background: var(--pri-soft); border-radius: 8px; }
+
+  /* 资源多选下拉(技能 / 数据源 / 知识库) */
+  .multi-mock { border: 1px solid var(--border-2); border-radius: 8px; padding: 5px 8px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; background: #fff; cursor: pointer; }
+  .multi-mock:hover { border-color: var(--pri); }
+  .multi-mock .ph { color: var(--tx-4); font-size: 12.5px; }
+  .multi-mock .arrow { margin-left: auto; color: var(--tx-4); font-size: 11px; }
+  .sel-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--pri-soft); color: var(--pri); border-radius: 6px; padding: 1px 7px; font-size: 11.5px; font-weight: 500; }
+  .sel-chip .x { color: var(--pri); opacity: 0.55; font-size: 11px; cursor: pointer; }
+  .sel-chip.kb { background: var(--cyan-soft); color: var(--cyan); }
+  .sel-chip.kb .x { color: var(--cyan); }
+  .sel-chip.sk { background: var(--violet-soft); color: var(--violet); }
+  .sel-chip.sk .x { color: var(--violet); }
+  /* 下拉展开态(第三个字段演示) */
+  .multi-drop { border: 1px solid var(--pri); border-radius: 8px; background: #fff; box-shadow: var(--shadow-md); margin-top: 4px; overflow: hidden; }
+  .multi-drop .opt { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 12.5px; }
+  .multi-drop .opt:hover { background: var(--bg-1); }
+  .multi-drop .opt .cb { width: 15px; height: 15px; border-radius: 4px; background: var(--ok); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .multi-drop .opt .cb.off { background: #fff; border: 1.5px solid var(--border-2); }
+  .multi-drop .opt .sub { margin-left: auto; font-size: 10.5px; color: var(--tx-4); }
+  .multi-drop .search { border-bottom: 1px solid var(--border-1); padding: 7px 10px; color: var(--tx-3); font-size: 12.5px; display: flex; gap: 7px; align-items: center; }
+</style>
+</head>
+<body>
+<div class="editor">
+  <!-- ============ 顶栏 ============ -->
+  <div class="ed-top">
+    <button class="ed-back">←</button>
+    <div class="ed-name">Agent 答疑流 <span class="edit">✎</span></div>
+    <span class="tag violet">多 Agent</span>
+    <span class="tag green">已发布</span>
+    <div class="ed-actions">
+      <span class="save-state">已自动保存 · 1 分钟前</span>
+      <button class="btn">▶ 试运行</button>
+      <button class="btn">导入 / 导出</button>
+      <button class="btn primary">发布</button>
+    </div>
+  </div>
+
+  <div class="ed-body">
+    <!-- ============ 左侧节点面板 ============ -->
+    <aside class="palette">
+      <div class="palette-head">
+        <div class="palette-title">节点</div>
+        <div class="palette-search">⌕&nbsp; 搜索节点</div>
+      </div>
+      <div class="palette-list">
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-analysis)">●</span> Agent <span class="cnt">3</span></div>
+          <div class="p-node new-tag">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🤖</div>
+            <div class="tx"><div class="nm">Agent</div><div class="ds">指派一个 Agent 自主完成本步目标</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🧭</div>
+            <div class="tx"><div class="nm">主 Agent(规划)<span class="tag gray" style="margin-left:4px">P1</span></div><div class="ds">拆解目标并调度多个子 Agent 并行</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🧮</div>
+            <div class="tx"><div class="nm">智能分析</div><div class="ds">围绕分析目标执行计算与洞察</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-source)">●</span> 数据来源 <span class="cnt">2</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">🗄</div>
+            <div class="tx"><div class="nm">数据库查询</div><div class="ds">自然语言或 SQL 查询数据源</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">📄</div>
+            <div class="tx"><div class="nm">文件数据</div><div class="ds">上传 CSV / Excel 作为分析数据</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-output)">●</span> 输出 <span class="cnt">1</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--ok-soft);color:var(--ok)">✅</div>
+            <div class="tx"><div class="nm">输出</div><div class="ds">汇总各节点结果为最终答复</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ 中间画布:3 个 Agent 串联 ============ -->
+    <div class="canvas-wrap">
+      <div class="canvas-tip">💡 Agent 节点可<b>连续串联 2 个、3 个或更多</b>:每个 Agent 都能看到<b>所有上游节点的产出</b>作为上下文,按连线顺序依次执行</div>
+      <div class="canvas">
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--ok-soft);color:var(--ok)">▶</div>
+          <div class="tx"><div class="nm">Start <span class="tag green">BOUNDARY</span></div><div class="ds">读取目标与对话上下文</div></div>
+          <span class="step">1</span>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node agent">
+          <div class="agent-ava">📚</div>
+          <div class="tx">
+            <div class="nm">思考并回复</div>
+            <div class="ds">知识答疑 Agent · 能答就答,拿不准先查知识库</div>
+            <div class="tools-mini"><span class="tool-chip">知识库检索</span></div>
+          </div>
+          <span class="step">2</span>
+          <span class="node-menu">⋯</span>
+        </div>
+        <div class="conn"><div class="plus">+</div><span class="conn-label">结论 → 作为下一 Agent 的上下文</span></div>
+
+        <div class="flow-node agent selected">
+          <div class="agent-ava">🧐</div>
+          <div class="tx">
+            <div class="nm">专家审核</div>
+            <div class="ds">数据分析 Agent · 复核结论数字与口径</div>
+            <div class="tools-mini"><span class="tool-chip">SQL 查询</span><span class="tool-chip">代码解释器</span></div>
+          </div>
+          <span class="step">3</span>
+          <span class="node-menu">⋯</span>
+        </div>
+        <div class="conn"><div class="plus">+</div><span class="conn-label">审核意见 → 继续传递</span></div>
+
+        <div class="flow-node agent">
+          <div class="agent-ava">✍️</div>
+          <div class="tx">
+            <div class="nm">发送最终消息</div>
+            <div class="ds">通用任务 Agent · 汇总为面向用户的终稿</div>
+            <div class="tools-mini"><span class="tool-chip">无工具</span></div>
+          </div>
+          <span class="step">4</span>
+          <span class="node-menu">⋯</span>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--ok-soft);color:var(--ok)">✔</div>
+          <div class="tx"><div class="nm">Output <span class="tag green">BOUNDARY</span></div><div class="ds">汇总最终答案</div></div>
+          <span class="step">5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 右侧属性面板:Agent 节点配置 ============ -->
+    <aside class="props">
+      <div class="props-head">
+        <div class="props-title"><span class="agent-ava" style="width:24px;height:24px;font-size:13px">🧐</span> Agent</div>
+        <div class="props-sub">指派一个 Agent 自主规划并调用工具完成本步目标</div>
+      </div>
+
+      <div class="props-sec">
+        <h5>基本</h5>
+        <div class="fld">
+          <label>节点名称</label>
+          <input class="in" value="专家审核" />
+        </div>
+        <div class="fld">
+          <label>指派 Agent <span class="req">*</span></label>
+          <div class="in select-mock">
+            <span class="v">
+              <span class="profile-ava">🧐</span>
+              <span>
+                <div>数据分析 Agent</div>
+                <div class="profile-sub">擅长取数复核与计算</div>
+              </span>
+            </span>
+            <span style="color:var(--tx-4)">▾</span>
+          </div>
+          <div class="desc">内置画像,或选择「我的 Agent 应用」(P1)</div>
+        </div>
+        <div class="fld">
+          <label>模型</label>
+          <div class="in select-mock"><span class="v">默认模型(跟随对话)</span><span style="color:var(--tx-4)">▾</span></div>
+        </div>
+        <div class="fld">
+          <label>目标 Prompt <span class="req">*</span></label>
+          <textarea class="in">复核上一个 Agent 的结论:关键数字必须用 SQL 重新计算验证,口径不一致处给出修正;输出「确认 / 修正」结论,不超过 150 字。</textarea>
+          <div class="desc">用户问题与所有上游节点产出会自动作为上下文注入</div>
+        </div>
+      </div>
+
+      <div class="props-sec">
+        <h5>工具 / 连接器 <span style="font-weight:400;color:var(--pri);cursor:pointer">↻</span></h5>
+        <div class="tool-group">
+          <div class="tool-group-name">内置工具</div>
+          <div class="tool-item"><span class="cb">✓</span><span class="ti">SQL 查询<div class="sub">对当前数据源执行只读 SQL</div></span></div>
+          <div class="tool-item"><span class="cb">✓</span><span class="ti">代码解释器<div class="sub">沙箱执行 Python 复核计算</div></span></div>
+          <div class="tool-item"><span class="cb off"></span><span class="ti">知识库检索</span></div>
+          <div class="tool-item"><span class="cb off"></span><span class="ti">HTML 生成</span></div>
+        </div>
+        <div class="tool-group">
+          <div class="tool-group-name">资源(多选,作为 Agent 的能力范围)</div>
+          <div class="fld" style="margin-bottom:8px">
+            <label style="font-size:12px">技能 Skill</label>
+            <div class="multi-mock">
+              <span class="sel-chip sk">excel-analyzer <span class="x">✕</span></span>
+              <span class="sel-chip sk">mysql-dba <span class="x">✕</span></span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="desc">选中技能的 SKILL.md 与脚本对本节点可用</div>
+          </div>
+          <div class="fld" style="margin-bottom:8px">
+            <label style="font-size:12px">数据源</label>
+            <div class="multi-mock">
+              <span class="sel-chip">sqlite_dbgpt <span class="x">✕</span></span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="desc">SQL 查询工具的可用范围(只读)</div>
+          </div>
+          <div class="fld" style="margin-bottom:2px">
+            <label style="font-size:12px">知识库</label>
+            <div class="multi-mock" style="border-color:var(--pri);border-bottom-left-radius:0;border-bottom-right-radius:0">
+              <span class="sel-chip kb">售后知识库 <span class="x">✕</span></span>
+              <span class="ph" style="font-size:12px">选择知识库…</span>
+              <span class="arrow">▴</span>
+            </div>
+            <div class="multi-drop">
+              <div class="search">⌕ 搜索知识库</div>
+              <div class="opt"><span class="cb">✓</span>售后知识库 <span class="sub">128 文档</span></div>
+              <div class="opt"><span class="cb off"></span>产品 FAQ <span class="sub">86 文档</span></div>
+              <div class="opt"><span class="cb off"></span>研发 wiki <span class="sub">1.2k 文档</span></div>
+            </div>
+            <div class="desc">知识库检索工具的可用范围</div>
+          </div>
+        </div>
+        <div class="tool-group">
+          <div class="tool-group-name">MCP 连接器</div>
+          <div class="tool-add">+ 添加 MCP server(URL / Token)</div>
+          <div class="desc" style="padding:0 8px">默认无连接器;添加后以勾选方式挂载到本节点</div>
+        </div>
+        <div class="fld" style="margin-top:4px">
+          <label>最大回合数</label>
+          <input class="in" type="number" value="10" />
+          <div class="desc">限制 Agent「思考 → 工具」循环上限,控制时延与成本</div>
+        </div>
+      </div>
+
+      <div class="props-sec">
+        <h5>输入 / 输出</h5>
+        <div class="kv"><span class="k">输入</span> 用户目标 + 全部上游产出(结论 / 数据表)</div>
+        <div class="kv"><span class="k">输出</span> Agent 最终回答(供下游与结果汇总)</div>
+      </div>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

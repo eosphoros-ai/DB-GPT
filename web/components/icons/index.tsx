@@ -13,6 +13,7 @@ import FileError from './file-error';
 import FileSync from './file-sync';
 import Knowledge from './knowledge';
 import ModelSvg from './model-svg';
+import PanelLeft from './panel-left';
 import PendingIcon from './pending-icon';
 import StarsSvg from './stars-svg';
 import SunnySvg from './sunny-svg';
@@ -34,6 +35,7 @@ export {
   FileSync,
   Knowledge,
   ModelSvg,
+  PanelLeft,
   PendingIcon,
   StarsSvg,
   SunnySvg,

@@ -184,10 +184,10 @@ KB detail-page chat (knowledge-agent)    Generic agent chat (react-agent)
 ┌─────────────────────────┐             ┌─────────────────────────────┐
 │ KB tools only:          │             │ All tools:                  │
 │  • kb_semantic_search   │             │  • kb_* (knowledge)         │
-│  • kb_grep / kb_cat     │             │  • shell_interpreter        │
+│  • kb_grep / kb_cat     │             │  • bash        │
 │  • kb_ls / kb_glob      │             │  • sql_query                │
 │  • kb_codegraph_*       │             │  • html_interpreter         │
-│  • todowrite / terminate│             │  • code_interpreter         │
+│  • todowrite / terminate│             │  • code         │
 └─────────────────────────┘             │  • execute_skill_script     │
         ↑                                │  • todowrite / terminate    │
    focused on KB retrieval              └─────────────────────────────┘

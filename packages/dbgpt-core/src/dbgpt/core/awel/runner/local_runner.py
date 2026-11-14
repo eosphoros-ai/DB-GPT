@@ -111,9 +111,16 @@ class DefaultWorkflowRunner(WorkflowRunner):
                 "awel_node_name": node.node_name,
             },
         ):
-            await self._execute_node(
-                job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
-            )
+            if any(
+                getattr(task, "parallel_group", None) for task in job_manager._all_nodes
+            ):
+                await self._execute_parallel_groups(
+                    job_manager, dag_ctx, node_outputs, skip_node_ids, system_app
+                )
+            else:
+                await self._execute_node(
+                    job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
+                )
         if not streaming_call and node.dag and exist_dag_ctx is None:
             # streaming call not work for dag end
             # if exist_dag_ctx is not None, it means current dag is a sub dag
@@ -121,6 +128,74 @@ class DefaultWorkflowRunner(WorkflowRunner):
         # if node.dag:
         #     del self._running_dag_ctx[node.dag.dag_id]
         return dag_ctx
+
+    async def _execute_parallel_groups(
+        self,
+        job_manager: JobManager,
+        dag_ctx: DAGContext,
+        node_outputs: Dict[str, TaskContext],
+        skip_node_ids: Set[str],
+        system_app: Optional[SystemApp],
+    ) -> None:
+        """Run ready members of an explicit group, at most two at a time.
+
+        Ungrouped operators keep their sequential execution semantics. Only
+        completed upstreams are scheduled, so shared ancestors execute once
+        and branch skip decisions are settled before their children run.
+        """
+        pending = {
+            task.node_id: task
+            for task in job_manager._all_nodes
+            if task.node_id not in node_outputs
+        }
+
+        async def execute(task: BaseOperator) -> None:
+            await self._execute_node(
+                job_manager,
+                task,
+                dag_ctx.fork(),
+                node_outputs,
+                skip_node_ids,
+                system_app,
+            )
+
+        while pending:
+            ready = [
+                task
+                for task in pending.values()
+                if all(parent.node_id in node_outputs for parent in task.upstream)
+            ]
+            if not ready:
+                raise ValueError("Workflow has unresolved dependencies")
+            # Finish clocks, markers and control nodes before launching agents.
+            first = next(
+                (task for task in ready if not getattr(task, "parallel_group", None)),
+                ready[0],
+            )
+            group = getattr(first, "parallel_group", None)
+            batch = (
+                [
+                    task
+                    for task in ready
+                    if getattr(task, "parallel_group", None) == group
+                ][:2]
+                if group
+                else [first]
+            )
+            tasks = [asyncio.create_task(execute(task)) for task in batch]
+            try:
+                await asyncio.gather(*tasks)
+            finally:
+                # Failure/caller cancellation must not leave a sibling running
+                # or let the report consume incomplete branch results.
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+            for task in batch:
+                pending.pop(task.node_id)
+
+        dag_ctx.set_current_task_context(node_outputs[job_manager._end_node.node_id])
 
     async def _execute_node(
         self,
@@ -136,8 +211,6 @@ class DefaultWorkflowRunner(WorkflowRunner):
             return
 
         # Run all upstream nodes
-        # TODO: run in parallel, there are some code to be changed:
-        #  dag_ctx.set_current_task_context(task_ctx)
         for upstream_node in node.upstream:
             if isinstance(upstream_node, BaseOperator):
                 await self._execute_node(

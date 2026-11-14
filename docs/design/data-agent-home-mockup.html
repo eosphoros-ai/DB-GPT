@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB-GPT 数据 Agent · 首页与三场景产品设计稿</title>
+<style>
+  :root{
+    --primary:#0069fe; --gL:#00DAEF; --gR:#105EFF;
+    --bg:#f7f7f7; --card:#ffffff; --line:#e8ebf0; --line2:#dfe3ea;
+    --txt:#1f2329; --txt2:#5a6472; --txt3:#8a94a3;
+    --ok:#52C41A; --err:#FF4D4F; --warn:#FAAD14; --info:#0069fe;
+    --grad:linear-gradient(90deg,#00DAEF,#105EFF);
+    --sh:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+    --sh2:0 8px 30px rgba(16,24,40,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Josefin Sans",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.6}
+  /* ===== mockup chrome ===== */
+  .chrome{position:sticky;top:0;z-index:100;background:#111827;color:#e5e7eb;border-bottom:1px solid #1f2937}
+  .chrome .in{max-width:1360px;margin:0 auto;padding:9px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .chrome .ttl{font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px}
+  .chrome .ttl .dot{width:16px;height:16px;border-radius:5px;background:var(--grad)}
+  .vtabs{display:flex;gap:4px;margin-left:6px}
+  .vtabs button{background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:5px 13px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;transition:.15s}
+  .vtabs button:hover{color:#e5e7eb}
+  .vtabs button.on{background:var(--grad);border-color:transparent;color:#fff}
+  .chrome .right{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:11.5px;color:#9ca3af}
+  .toggle{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+  .sw{width:34px;height:19px;border-radius:20px;background:#374151;position:relative;transition:.2s}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#9ca3af;transition:.2s}
+  .toggle.on .sw{background:var(--primary)} .toggle.on .sw::after{left:17px;background:#fff}
+  .vtag{font-size:10.5px;background:#374151;padding:2px 8px;border-radius:20px;color:#d1d5db}
+  /* ===== product shell ===== */
+  .app{max-width:1360px;margin:0 auto;min-height:calc(100vh - 44px);display:flex;flex-direction:column}
+  .topnav{display:flex;align-items:center;gap:20px;padding:0 26px;height:56px;background:rgba(255,255,255,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);position:sticky;top:44px;z-index:60}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;letter-spacing:.3px}
+  .brand .mk{width:26px;height:26px;border-radius:8px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:800}
+  .nav{display:flex;gap:3px;margin-left:8px}
+  .nav a{padding:7px 13px;border-radius:8px;color:var(--txt2);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;transition:.15s}
+  .nav a:hover{background:#eef1f6;color:var(--txt)}
+  .nav a.on{background:#e8f0ff;color:var(--primary)}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;position:relative;color:var(--txt2)}
+  .iconbtn:hover{border-color:var(--line2);color:var(--txt)}
+  .dotbadge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:9px;background:var(--err);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px;border:2px solid #fff}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#31afff,#1677ff);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;cursor:pointer}
+  /* ===== views ===== */
+  .view{display:none;flex:1}
+  .view.on{display:block}
+  /* annotations */
+  .anno{display:none}
+  body.anno-on .anno{display:flex}
+  .anno{position:absolute;z-index:40;align-items:flex-start;gap:6px;pointer-events:none}
+  .anno .num{flex:none;width:20px;height:20px;border-radius:50%;background:#ff7a45;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 8px rgba(255,122,69,.5)}
+  .anno .txt{background:#fff7f0;border:1px solid #ffd8bf;border-radius:8px;padding:5px 10px;font-size:11.5px;color:#a8480f;max-width:260px;line-height:1.5;box-shadow:var(--sh)}
+  /* ===== HOME ===== */
+  .hero{position:relative;padding:0 26px;flex:1;display:flex;flex-direction:column;align-items:center;
+    background:radial-gradient(1200px 400px at 50% -80px,#e6f0ff 0%,rgba(230,240,255,0) 70%),linear-gradient(180deg,#fbfcff,#f7f7f7)}
+  .hero-inner{width:100%;max-width:900px;margin-top:52px;position:relative}
+  .greet{text-align:center;margin-bottom:26px}
+  .greet h1{font-size:30px;font-weight:800;letter-spacing:.5px}
+  .greet h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .greet p{color:var(--txt2);margin-top:8px;font-size:14.5px}
+  /* composer */
+  .composer{background:#fff;border:1px solid var(--line2);border-radius:18px;box-shadow:var(--sh2);padding:6px;position:relative}
+  .composer .routehint{display:flex;align-items:center;gap:7px;padding:9px 14px 3px;font-size:12px;color:var(--txt3)}
+  .composer .routehint .rt{background:#eef6ff;color:var(--primary);border:1px solid #cfe3ff;padding:1px 9px;border-radius:20px;font-weight:700;font-size:11px}
+  .composer textarea{width:100%;border:0;outline:0;resize:none;padding:8px 14px;font-size:15px;font-family:inherit;color:var(--txt);background:transparent;min-height:52px;line-height:1.6}
+  .composer textarea::placeholder{color:#b3bac5}
+  .composer .bar{display:flex;align-items:center;gap:8px;padding:6px 10px 8px;border-top:1px solid #f2f4f7}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;border:1px solid var(--line2);background:#fff;font-size:12.5px;color:var(--txt2);cursor:pointer;font-weight:600;transition:.15s}
+  .chip:hover{border-color:#c9d3e0;color:var(--txt)}
+  .chip.sel{border-color:var(--primary);background:#eaf2ff;color:var(--primary)}
+  .chip .k{font-size:11px;color:var(--txt3);font-weight:500}
+  .sendbtn{margin-left:auto;width:38px;height:38px;border-radius:11px;background:var(--grad);border:0;color:#fff;font-size:17px;cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 14px rgba(16,94,255,.35)}
+  .sendbtn:hover{filter:brightness(1.06)}
+  /* scenario cards */
+  .scen-label{width:100%;max-width:900px;margin:34px auto 12px;display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12.5px;font-weight:700;letter-spacing:.5px}
+  .scen-label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .scen-grid{width:100%;max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;position:relative}
+  @media(max-width:820px){.scen-grid{grid-template-columns:1fr}}
+  .scen{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.2s;position:relative;overflow:hidden;box-shadow:var(--sh)}
+  .scen:hover{transform:translateY(-3px);box-shadow:var(--sh2);border-color:#cfe0ff}
+  .scen::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);opacity:0;transition:.2s}
+  .scen:hover::before{opacity:1}
+  .scen .sic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;margin-bottom:12px}
+  .scen.ops .sic{background:#fff3e6} .scen.query .sic{background:#e8f4ff} .scen.analysis .sic{background:#eafbea}
+  .scen h3{font-size:15.5px;font-weight:750;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+  .scen h3 .en{font-size:11px;color:var(--txt3);font-weight:600}
+  .scen p{color:var(--txt2);font-size:12.6px;min-height:38px}
+  .scen .egs{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+  .scen .eg{font-size:11.8px;color:var(--txt3);background:#f6f8fb;border-radius:8px;padding:6px 10px;cursor:pointer;transition:.15s;border:1px solid transparent}
+  .scen .eg:hover{background:#eef4ff;color:var(--primary);border-color:#d6e6ff}
+  .scen .go{margin-top:13px;font-size:12.5px;color:var(--primary);font-weight:700;display:flex;align-items:center;gap:5px}
+  /* home lower row */
+  .home-lower{width:100%;max-width:900px;margin:26px auto 40px;display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+  @media(max-width:820px){.home-lower{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px;box-shadow:var(--sh)}
+  .panel .ph{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:750;margin-bottom:11px}
+  .panel .ph .more{margin-left:auto;font-size:11.5px;color:var(--txt3);font-weight:600;cursor:pointer}
+  .rec{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:9px;cursor:pointer}
+  .rec:hover{background:#f6f8fb}
+  .rec .ric{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex:none}
+  .rec .rt{font-size:12.8px;font-weight:600} .rec .rs{font-size:11px;color:var(--txt3)}
+  .rec .time{margin-left:auto;font-size:11px;color:var(--txt3)}
+  .stat{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #f2f4f7}
+  .stat:last-child{border:0}
+  .stat .n{font-size:20px;font-weight:800} .stat .l{font-size:11.5px;color:var(--txt3)}
+  .stat .badge{margin-left:auto;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+  /* ===== WORKSPACE (shared) ===== */
+  .ws{display:grid;grid-template-columns:250px 1fr 0px;height:calc(100vh - 100px);transition:grid-template-columns .28s ease}
+  .ws.open{grid-template-columns:250px 1fr 360px}
+  .rail{border-right:1px solid var(--line);background:#fcfcfd;display:flex;flex-direction:column;overflow:hidden}
+  .rail .rh{padding:14px 16px 10px;font-size:12px;font-weight:750;color:var(--txt3);letter-spacing:.4px;display:flex;align-items:center;gap:7px}
+  .rail .rh .back{cursor:pointer;color:var(--txt2)} .rail .rh .back:hover{color:var(--primary)}
+  .tl{flex:1;overflow:auto;padding:0 12px 16px}
+  .tl-item{position:relative;padding:8px 10px 8px 26px;border-radius:9px;margin-bottom:2px;cursor:pointer}
+  .tl-item:hover{background:#f2f5f9}
+  .tl-item.on{background:#eaf2ff}
+  .tl-item::before{content:"";position:absolute;left:11px;top:0;bottom:0;width:1.5px;background:var(--line2)}
+  .tl-item:first-child::before{top:14px} .tl-item:last-child::before{bottom:calc(100% - 14px)}
+  .tl-item .nd{position:absolute;left:6px;top:12px;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--line2);z-index:1}
+  .tl-item.done .nd{border-color:var(--ok);background:var(--ok)}
+  .tl-item.run .nd{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px #0069fe22}
+  .tl-item .t{font-size:12.4px;font-weight:650;color:var(--txt)}
+  .tl-item .d{font-size:11px;color:var(--txt3);margin-top:1px}
+  .tl-item .tools{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px}
+  .tl-item .tools span{font-size:10px;background:#eef1f6;color:var(--txt2);padding:1px 7px;border-radius:5px;font-family:monospace}
+  .center{display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#fff,#fbfcfe);position:relative}
+  .ws-head{padding:12px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.7);backdrop-filter:blur(6px)}
+  .ws-head .st{font-size:14px;font-weight:750;display:flex;align-items:center;gap:8px}
+  .ws-head .st .sic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px}
+  .ws-head .ctx{margin-left:auto;display:flex;align-items:center;gap:7px}
+  .tagchip{font-size:11.5px;padding:3px 10px;border-radius:8px;background:#f2f5f9;color:var(--txt2);border:1px solid var(--line);font-weight:600;cursor:pointer}
+  .tagchip.sem{background:#f3ecff;color:#7c3aed;border-color:#e4d6ff}
+  .tagchip:hover{border-color:var(--line2)}
+  .conv{flex:1;overflow:auto;padding:22px 26px}
+  .msg{margin-bottom:20px;max-width:820px}
+  .msg.user{margin-left:auto}
+  .bubble-u{background:var(--grad);color:#fff;padding:10px 15px;border-radius:15px 15px 4px 15px;font-size:13.6px;display:inline-block;max-width:80%;box-shadow:0 3px 12px rgba(16,94,255,.22)}
+  .msg.user{text-align:right}
+  .ai-row{display:flex;gap:11px}
+  .ai-av{width:28px;height:28px;border-radius:9px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:13px;flex:none;font-weight:800}
+  .ai-body{flex:1;min-width:0}
+  .ai-txt{font-size:13.6px;color:var(--txt);margin-bottom:8px}
+  .ai-txt b{color:var(--primary)}
+  /* artifact cards */
+  .art{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;margin:9px 0;box-shadow:var(--sh)}
+  .art .ah{padding:8px 13px;background:#fafbfc;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--txt2)}
+  .art .ah .ty{font-size:10px;padding:1px 8px;border-radius:5px;font-weight:700}
+  .ty.sql{background:#e8f4ff;color:#0069fe} .ty.chart{background:#eafbea;color:#389e0d} .ty.table{background:#fff3e6;color:#d46b08} .ty.report{background:#f3ecff;color:#7c3aed} .ty.diag{background:#fff1f0;color:#cf1322}
+  .art .ah .open{margin-left:auto;font-size:11px;color:var(--primary);cursor:pointer;font-weight:700}
+  .art .ab{padding:12px 14px}
+  pre.code{background:#0d1526;color:#c9d5e3;border-radius:9px;padding:12px 14px;font-family:"SF Mono",Menlo,monospace;font-size:12px;line-height:1.7;overflow:auto;margin:0}
+  pre.code .k{color:#ff7b9c} pre.code .s{color:#9be89b} pre.code .c{color:#6b7f99;font-style:italic} pre.code .n{color:#79c0ff} pre.code .f{color:#ffd479}
+  table.data{width:100%;border-collapse:collapse;font-size:12.3px}
+  table.data th,table.data td{padding:7px 11px;border-bottom:1px solid var(--line);text-align:left}
+  table.data th{background:#fafbfc;color:var(--txt3);font-weight:700;font-size:11px}
+  table.data tr:hover td{background:#f8faff}
+  .num-cell{font-family:monospace;text-align:right}
+  /* mini bar chart */
+  .bars{display:flex;align-items:flex-end;gap:12px;height:120px;padding:8px 4px 0}
+  .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%}
+  .bars .b .bar{width:70%;background:var(--grad);border-radius:6px 6px 0 0;transition:.3s;min-height:4px}
+  .bars .b .lb{font-size:10.5px;color:var(--txt3)}
+  .bars .b .vl{font-size:10.5px;font-weight:700;color:var(--txt2)}
+  .concl{background:#f6ffed;border:1px solid #b7eb8f;border-radius:10px;padding:11px 14px;font-size:12.8px;color:#237804;margin-top:9px}
+  .concl b{color:#135200}
+  /* composer dock (approval/question) */
+  .dock{margin:0 26px 12px;border-radius:14px;border:1px solid #ffd591;background:#fffbf0;box-shadow:var(--sh2);overflow:hidden;animation:slideup .3s ease}
+  @keyframes slideup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .dock .dh{padding:11px 15px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #ffe7ba;background:#fff7e6}
+  .dock .dh .ic{width:22px;height:22px;border-radius:7px;background:var(--warn);color:#fff;display:grid;place-items:center;font-size:12px}
+  .dock .dh .tt{font-size:13px;font-weight:750;color:#874d00}
+  .dock .dh .risk{margin-left:auto;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#fff1f0;color:#cf1322;border:1px solid #ffccc7}
+  .dock .db{padding:13px 15px}
+  .dock .db .desc{font-size:12.6px;color:#7a5b1e;margin-bottom:9px}
+  .dock .db .sqlmini{background:#0d1526;border-radius:8px;padding:9px 12px;font-family:monospace;font-size:11.5px;color:#c9d5e3;margin-bottom:11px}
+  .dock .db .sqlmini .k{color:#ff7b9c} .dock .db .sqlmini .s{color:#9be89b}
+  .dock .meta{display:flex;gap:16px;font-size:11.5px;color:#9a7b3f;margin-bottom:12px;flex-wrap:wrap}
+  .dock .meta b{color:#6b4e16}
+  .dock .acts{display:flex;gap:9px;align-items:center}
+  .dbtn{padding:7px 16px;border-radius:9px;font-size:12.6px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:#fff;color:var(--txt2)}
+  .dbtn:hover{border-color:#c9d3e0}
+  .dbtn.pri{background:var(--grad);border:0;color:#fff;box-shadow:0 3px 10px rgba(16,94,255,.28)}
+  .dbtn.dan{background:#fff1f0;border-color:#ffccc7;color:#cf1322}
+  .dock .scope{margin-left:auto;font-size:11px;color:#9a7b3f;display:flex;align-items:center;gap:6px}
+  .dock .scope select{font-size:11px;padding:3px 7px;border-radius:7px;border:1px solid #ffe7ba;background:#fff;color:#874d00;font-family:inherit}
+  .resolved{margin:0 26px 12px;padding:9px 15px;border-radius:11px;background:#f6ffed;border:1px solid #b7eb8f;color:#237804;font-size:12.4px;font-weight:600;display:none}
+  /* ws composer */
+  .ws-comp{padding:0 26px 20px}
+  .ws-comp .box{background:#fff;border:1px solid var(--line2);border-radius:14px;box-shadow:var(--sh);padding:5px}
+  .ws-comp textarea{width:100%;border:0;outline:0;resize:none;padding:9px 12px;font-size:13.6px;font-family:inherit;background:transparent;min-height:40px}
+  .ws-comp .cbar{display:flex;align-items:center;gap:7px;padding:4px 8px 6px}
+  .mini{font-size:11.5px;padding:4px 10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--txt2);cursor:pointer;font-weight:600}
+  .mini:hover{border-color:#c9d3e0}
+  .mini.mode{background:#f3ecff;border-color:#e4d6ff;color:#7c3aed}
+  .sendmini{margin-left:auto;width:32px;height:32px;border-radius:9px;background:var(--grad);border:0;color:#fff;cursor:pointer;font-size:15px}
+  /* status line */
+  .statusline{padding:6px 26px;font-size:11.5px;color:var(--txt3);border-top:1px solid var(--line);background:#fcfcfd;display:flex;align-items:center;gap:8px}
+  .statusline .live{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  /* right viewer */
+  .viewer{border-left:1px solid var(--line);background:#fff;overflow:hidden;display:flex;flex-direction:column}
+  .viewer .vh{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750}
+  .viewer .vh .x{margin-left:auto;cursor:pointer;color:var(--txt3);font-size:16px} .viewer .vh .x:hover{color:var(--txt)}
+  .viewer .vb{flex:1;overflow:auto;padding:16px}
+  .vtabs2{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  .vtabs2 button{background:transparent;border:0;border-bottom:2px solid transparent;padding:7px 12px;font-size:12.5px;color:var(--txt2);cursor:pointer;font-weight:600;margin-bottom:-1px}
+  .vtabs2 button.on{color:var(--primary);border-bottom-color:var(--primary)}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f2f4f7;font-size:12.4px}
+  .kv .k{color:var(--txt3)} .kv .v{font-weight:650;font-family:monospace}
+  .lineage{font-size:12px}
+  .lineage .row{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .lineage .pill2{background:#f2f5f9;border:1px solid var(--line);border-radius:7px;padding:3px 9px;font-family:monospace;font-size:11px}
+  .arrow{color:var(--txt3)}
+  .hamb{cursor:pointer;color:var(--txt2);font-size:17px}
+</style>
+</head>
+<body class="anno-on">
+
+<!-- ===== mockup chrome ===== -->
+<div class="chrome">
+  <div class="in">
+    <div class="ttl"><span class="dot"></span>DB-GPT 数据 Agent · 产品设计稿</div>
+    <div class="vtabs" id="vtabs">
+      <button data-v="home" class="on">首页</button>
+      <button data-v="ops">DB 运维</button>
+      <button data-v="query">DB 取数</button>
+      <button data-v="analysis">DB 数据分析</button>
+    </div>
+    <div class="right">
+      <span class="vtag">v1.0 · 亮色 · 贴现有 UI token</span>
+      <div class="toggle on" id="annoToggle"><span>设计标注</span><span class="sw"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ===== product top nav (shared) ===== -->
+  <div class="topnav">
+    <div class="brand"><span class="mk">D</span>DB-GPT</div>
+    <div class="nav">
+      <a class="on">对话</a><a>数据源</a><a>知识库</a><a>语义层</a><a>技能</a><a>看板</a>
+    </div>
+    <div class="nav-right">
+      <div class="iconbtn" title="待处理审批">🛡️<span class="dotbadge" id="apprBadge">2</span></div>
+      <div class="iconbtn" title="通知">🔔</div>
+      <div class="avatar">CK</div>
+    </div>
+  </div>
+
+  <!-- ================= HOME ================= -->
+  <section class="view on" id="home">
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="anno" style="left:-268px;top:4px"><span class="num">1</span><span class="txt">对话优先：首页即一个大输入框，说需求自动识别场景路由，对标 Codex/OpenCode 与阿里 Data Agent 全局入口</span></div>
+        <div class="greet">
+          <h1>你好，chenketing —— <span>今天想对数据做点什么？</span></h1>
+          <p>用自然语言描述需求，我会自动判断是 <b>运维排障</b>、<b>取数查询</b> 还是 <b>数据分析</b>，并调用对应能力完成。</p>
+        </div>
+
+        <div class="composer">
+          <div class="routehint">
+            <span class="rt" id="routeTag">智能路由：待识别</span>
+            <span>输入需求，实时识别目标场景 · 或点下方场景卡直接开始</span>
+          </div>
+          <textarea id="homeInput" placeholder="例如：帮我看下订单库昨晚的慢查询，或者 统计近30天各品类客单价 …"></textarea>
+          <div class="bar">
+            <span class="chip sel" id="modelChip">🧠 <span>Auto 智能调度</span> <span class="k">▾</span></span>
+            <span class="chip" id="apprChip">🛡️ 审批：<b style="color:#7c3aed">请求批准</b> <span class="k">▾</span></span>
+            <span class="chip">@ 上下文 <span class="k">表/语义模型/文件</span></span>
+            <button class="sendbtn" id="homeSend">➤</button>
+          </div>
+        </div>
+        <div class="anno" style="right:-6px;bottom:-4px"><span class="num">2</span><span class="txt">composer 内置：模型调度、会话级审批模式（对齐新版 Data Agent 5 档）、@上下文引用（表/语义模型/Rules/文件）</span></div>
+      </div>
+
+      <div class="scen-label">三大场景 · 点击直接进入</div>
+      <div class="scen-grid">
+        <div class="scen ops" data-go="ops">
+          <div class="anno" style="right:6px;top:6px"><span class="num">3</span></div>
+          <div class="sic">🩺</div>
+          <h3>DB 运维 <span class="en">O&amp;M</span></h3>
+          <p>慢查询诊断、健康巡检、告警根因定位、库表结构优化建议。</p>
+          <div class="egs">
+            <div class="eg" data-fill="订单库昨晚 22:00-24:00 有哪些慢查询？帮我定位根因">💡 订单库昨晚慢查询根因</div>
+            <div class="eg" data-fill="对生产库做一次健康巡检，出报告">💡 生产库健康巡检</div>
+          </div>
+          <div class="go">进入运维工作台 →</div>
+        </div>
+        <div class="scen query" data-go="query">
+          <div class="sic">🔍</div>
+          <h3>DB 取数 <span class="en">NL2SQL</span></h3>
+          <p>自然语言生成 SQL、绑定语义模型精准取数、结果即时预览，高危操作审批拦截。</p>
+          <div class="egs">
+            <div class="eg" data-fill="查近7天各渠道新增用户数，按天拆开">💡 近7天各渠道新增用户</div>
+            <div class="eg" data-fill="导出上季度华东区 GMV TOP20 商品">💡 上季度华东 GMV TOP20</div>
+          </div>
+          <div class="go">进入取数工作台 →</div>
+        </div>
+        <div class="scen analysis" data-go="analysis">
+          <div class="sic">📊</div>
+          <h3>DB 数据分析 <span class="en">ChatBI</span></h3>
+          <p>基于数据集多轮问数、自动图表、结论提炼，产出可分享的图文分析报告。</p>
+          <div class="egs">
+            <div class="eg" data-fill="分析本月各品类销售情况，给出结论">💡 本月各品类销售分析</div>
+            <div class="eg" data-fill="对比华东华南近半年订单占比趋势">💡 华东华南订单占比对比</div>
+          </div>
+          <div class="go">进入分析工作台 →</div>
+        </div>
+        <div class="anno" style="left:50%;top:-38px;transform:translateX(-50%)"><span class="num">4</span><span class="txt">三场景卡带真实示例 prompt，点击填充到输入框或直接进对应工作台首屏</span></div>
+      </div>
+
+      <div class="home-lower">
+        <div class="panel">
+          <div class="ph">🕑 最近会话 <span class="more">查看全部 ›</span></div>
+          <div class="rec" data-go="query"><span class="ric" style="background:#e8f4ff">🔍</span><div><div class="rt">近30天各品类客单价</div><div class="rs">DB 取数 · ads_ctlive_item_stats</div></div><span class="time">12 分钟前</span></div>
+          <div class="rec" data-go="ops"><span class="ric" style="background:#fff3e6">🩺</span><div><div class="rt">订单库慢查询排障</div><div class="rs">DB 运维 · 已定位索引失效</div></div><span class="time">1 小时前</span></div>
+          <div class="rec" data-go="analysis"><span class="ric" style="background:#eafbea">📊</span><div><div class="rt">Q3 区域销售复盘</div><div class="rs">数据分析 · 已导出 PDF</div></div><span class="time">昨天</span></div>
+        </div>
+        <div class="panel">
+          <div class="ph">📡 工作区概览</div>
+          <div class="stat"><div><div class="n">14</div><div class="l">已接入数据源</div></div><span class="badge" style="background:#eafbea;color:#389e0d">全部健康</span></div>
+          <div class="stat"><div><div class="n">6</div><div class="l">语义模型</div></div><span class="badge" style="background:#f3ecff;color:#7c3aed">2 待发布</span></div>
+          <div class="stat"><div><div class="n" style="color:var(--err)">2</div><div class="l">待处理审批</div></div><span class="badge" style="background:#fff1f0;color:#cf1322">需确认</span></div>
+        </div>
+      </div>
+      <div class="anno" style="left:50%;bottom:8px;transform:translateX(-50%)"><span class="num">5</span><span class="txt">下方轻量总览：最近会话（按场景着色）+ 工作区概览（数据源/语义模型/待审批），不做重仪表盘，保持对话优先</span></div>
+    </div>
+  </section>
+
+  <!-- ================= WORKSPACE: OPS ================= -->
+  <section class="view" id="ops">
+    <div class="ws" id="ws-ops">
+      <div class="rail">
+        <div class="rh"><span class="back" data-go="home">‹ 首页</span> · 运维轨迹</div>
+        <div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">慢查询诊断 · 订单库</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">采集执行计划</div><div class="d">扫描慢日志 + EXPLAIN</div><div class="tools"><span>slow_log</span><span>explain</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">聚合多维信息</div><div class="d">索引/锁/统计信息</div><div class="tools"><span>db_metrics</span><span>index_info</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">根因定位</div><div class="d">索引失效 → 全表扫描</div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">生成诊断报告</div><div class="d">输出中…</div></div>
+        </div>
+      </div>
+      <div class="center">
+        <div class="ws-head">
+          <div class="st"><span class="sic" style="background:#fff3e6">🩺</span>DB 运维工作台</div>
+          <div class="ctx">
+            <span class="tagchip">🗄️ order_db (MySQL)</span>
+            <span class="tagchip">🕑 昨晚 22:00-24:00</span>
+            <span class="hamb" data-viewer="ws-ops">⋯</span>
+          </div>
+        </div>
+        <div class="conv">
+          <div class="msg user"><span class="bubble-u">订单库昨晚 22:00-24:00 有哪些慢查询？帮我定位根因</span></div>
+          <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+            <div class="ai-txt">已扫描该时段慢日志，发现 <b>3 条</b>高频慢查询，最严重的一条平均耗时 <b>4.2s</b>。根因定位为 <b>索引失效导致全表扫描</b>：</div>
+            <div class="art">
+              <div class="ah"><span class="ty diag">诊断报告</span>慢查询根因分析 · order_db<span class="open" data-viewer="ws-ops">在右栏展开 ›</span></div>
+              <div class="ab">
+                <table class="data">
+                  <thead><tr><th>SQL 摘要</th><th>次数</th><th>平均耗时</th><th>根因</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>SELECT * FROM orders WHERE status=? AND ...</code></td><td class="num-cell">1,284</td><td class="num-cell" style="color:var(--err)">4.2s</td><td>status 字段隐式类型转换致索引失效</td></tr>
+                    <tr><td><code>SELECT ... FROM order_items JOIN ...</code></td><td class="num-cell">326</td><td class="num-cell" style="color:var(--warn)">1.8s</td><td>JOIN 顺序不合理</td></tr>
+                    <tr><td><code>SELECT COUNT(*) FROM orders WHERE ...</code></td><td class="num-cell">91</td><td class="num-cell">1.1s</td><td>统计信息过期</td></tr>
+                  </tbody>
+                </table>
+                <div class="concl"><b>修复建议：</b>① 为 <code>orders(status, create_time)</code> 建联合索引；② 应用侧统一 status 传参类型避免隐式转换；③ <code>ANALYZE TABLE orders</code> 刷新统计信息。预估 P95 可从 4.2s 降至 &lt;200ms。</div>
+              </div>
+            </div>
+            <div class="ai-txt" style="margin-top:6px">是否需要我生成建索引的 DDL？该操作会修改生产表结构，需你确认。</div>
+          </div></div></div>
+        </div>
+        <!-- approval dock -->
+        <div class="dock" id="dock-ops">
+          <div class="dh"><span class="ic">🛡️</span><span class="tt">破坏性操作确认 · 生产表结构变更</span><span class="risk">高风险</span></div>
+          <div class="db">
+            <div class="desc">Agent 建议执行以下 DDL 以修复索引失效：</div>
+            <div class="sqlmini"><span class="k">ALTER TABLE</span> orders <span class="k">ADD INDEX</span> idx_status_ctime (status, create_time);</div>
+            <div class="meta"><span>影响表：<b>orders</b></span><span>预估锁表：<b>&lt;3s（online DDL）</b></span><span>数据量：<b>1.2 亿行</b></span><span>环境：<b>生产</b></span></div>
+            <div class="acts">
+              <button class="dbtn pri" data-resolve="ops">批准执行</button>
+              <button class="dbtn dan" data-reject="ops">拒绝</button>
+              <button class="dbtn">先看执行计划</button>
+              <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option><option>该表始终询问</option></select></span>
+            </div>
+          </div>
+        </div>
+        <div class="resolved" id="res-ops">✓ 已批准 · DDL 已提交执行，索引创建中（预计 2 分钟）</div>
+        <div class="ws-comp"><div class="box">
+          <textarea placeholder="继续追问，或让 Agent 执行修复…"></textarea>
+          <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">@ order_db</span><button class="sendmini">➤</button></div>
+        </div></div>
+        <div class="statusline"><span class="live"></span>运维 Agent 运行中 · 已用 3 工具 · Token 输入 4.2k / 输出 1.1k · 耗时 8.3s</div>
+      </div>
+      <div class="viewer" id="viewer-ops">
+        <div class="vh">📋 诊断详情 <span class="x" data-close="ws-ops">✕</span></div>
+        <div class="vb">
+          <div class="vtabs2"><button class="on">根因</button><button>执行计划</button><button>血缘影响</button></div>
+          <div class="kv"><span class="k">目标表</span><span class="v">orders</span></div>
+          <div class="kv"><span class="k">问题字段</span><span class="v">status</span></div>
+          <div class="kv"><span class="k">根因类型</span><span class="v" style="color:var(--err)">隐式类型转换</span></div>
+          <div class="kv"><span class="k">扫描行数</span><span class="v">1.2e8 / 命中 3.4e2</span></div>
+          <div class="kv"><span class="k">现有索引</span><span class="v">PRIMARY, idx_uid</span></div>
+          <p style="font-size:12.4px;color:var(--txt2);margin:12px 0 8px;font-weight:700">建议索引</p>
+          <pre class="code"><span class="k">ALTER TABLE</span> orders
+  <span class="k">ADD INDEX</span> idx_status_ctime (status, create_time);</pre>
+        </div>
+      </div>
+    </div>
+    <div class="anno" style="left:258px;top:120px"><span class="num">6</span><span class="txt">复用你已落地的对话范式：左栏 timeline（意图行+分组工具行）、右栏上下文查看器默认收起仅产物滑出、悬浮 composer 上方审批 dock、流尾全局状态线</span></div>
+  </section>
+
+  <!-- ================= WORKSPACE: QUERY (NL2SQL) ================= -->
+  <section class="view" id="query">
+    <div class="ws" id="ws-query">
+      <div class="rail">
+        <div class="rh"><span class="back" data-go="home">‹ 首页</span> · 取数轨迹</div>
+        <div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">取数 · 近30天客单价</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">加载语义模型</div><div class="d">电商直播域 v3</div><div class="tools"><span>semantic</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">选表选字段</div><div class="d">ads_ctlive_item_stats</div><div class="tools"><span>schema_link</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">生成 SQL</div><div class="d">口径: 客单价=GMV/订单数</div><div class="tools"><span>nl2sql</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">执行 & 返回结果</div><div class="d">运行中…</div></div>
+        </div>
+      </div>
+      <div class="center">
+        <div class="ws-head">
+          <div class="st"><span class="sic" style="background:#e8f4ff">🔍</span>DB 取数工作台</div>
+          <div class="ctx">
+            <span class="tagchip sem">🧬 语义模型：电商直播域 v3 ✓</span>
+            <span class="tagchip">🗄️ MaxCompute</span>
+            <span class="hamb" data-viewer="ws-query">⋯</span>
+          </div>
+        </div>
+        <div class="anno" style="right:20px;top:56px"><span class="num">7</span><span class="txt">取数场景头部常驻"语义模型绑定"chip（紫色），点击可切换/查看 YAML —— 这是问数准确率的地基，需高可见</span></div>
+        <div class="conv">
+          <div class="msg user"><span class="bubble-u">近30天各品类的客单价是多少？</span></div>
+          <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+            <div class="ai-txt">已基于语义模型识别口径 <b>客单价 = GMV / 订单数</b>，选表 <code>ads_ctlive_item_stats</code>，统计周期 <code>30d</code>：</div>
+            <div class="art">
+              <div class="ah"><span class="ty sql">SQL</span>生成语句 · 可编辑执行<span class="open">复制</span></div>
+              <div class="ab"><pre class="code"><span class="c">-- 语义模型: 客单价 = GMV / 订单数 (metric_formulas)</span>
+<span class="k">SELECT</span> cate_level1_name,
+       <span class="f">SUM</span>(gmv)/<span class="f">SUM</span>(order_cnt) <span class="k">AS</span> avg_order_value
+<span class="k">FROM</span> ads_ctlive_item_stats
+<span class="k">WHERE</span> stat_period = <span class="s">'30d'</span>
+<span class="k">GROUP BY</span> cate_level1_name
+<span class="k">ORDER BY</span> avg_order_value <span class="k">DESC</span>;</pre></div>
+            </div>
+            <div class="art">
+              <div class="ah"><span class="ty table">结果</span>查询结果 · 8 行<span class="open" data-viewer="ws-query">导出 CSV ›</span></div>
+              <div class="ab">
+                <table class="data">
+                  <thead><tr><th>一级品类</th><th style="text-align:right">客单价 (元)</th><th style="text-align:right">GMV (元)</th><th style="text-align:right">订单数</th></tr></thead>
+                  <tbody>
+                    <tr><td>美妆个护</td><td class="num-cell">386.20</td><td class="num-cell">12,480,300</td><td class="num-cell">32,318</td></tr>
+                    <tr><td>3C 数码</td><td class="num-cell">342.75</td><td class="num-cell">9,865,400</td><td class="num-cell">28,783</td></tr>
+                    <tr><td>服饰鞋包</td><td class="num-cell">218.40</td><td class="num-cell">15,230,900</td><td class="num-cell">69,738</td></tr>
+                    <tr><td>食品生鲜</td><td class="num-cell">96.30</td><td class="num-cell">6,120,500</td><td class="num-cell">63,556</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div></div></div>
+        </div>
+        <div class="dock" id="dock-query">
+          <div class="dh"><span class="ic">🛡️</span><span class="tt">高代价操作确认 · 预估扫描成本</span><span class="risk">中风险</span></div>
+          <div class="db">
+            <div class="desc">追问"看下明细全量数据"将触发大范围扫描，预估成本较高，请确认：</div>
+            <div class="sqlmini"><span class="k">SELECT</span> * <span class="k">FROM</span> dwd_ctlive_trd_detail <span class="k">WHERE</span> dt <span class="k">BETWEEN</span> <span class="s">'20260920'</span> <span class="k">AND</span> <span class="s">'20261020'</span>;</div>
+            <div class="meta"><span>预估扫描：<b>约 480 GB</b></span><span>预估费用：<b>¥ 62.4</b></span><span>预估耗时：<b>~3 min</b></span></div>
+            <div class="acts">
+              <button class="dbtn pri" data-resolve="query">确认执行</button>
+              <button class="dbtn dan" data-reject="query">取消</button>
+              <button class="dbtn">加 LIMIT 1000 预览</button>
+              <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option></select></span>
+            </div>
+          </div>
+        </div>
+        <div class="resolved" id="res-query">✓ 已确认 · 查询已提交，预计 3 分钟返回</div>
+        <div class="ws-comp"><div class="box">
+          <textarea placeholder="继续追问，如「按地区拆分」「只看 TOP10」…"></textarea>
+          <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">🧬 电商直播域 v3</span><button class="sendmini">➤</button></div>
+        </div></div>
+        <div class="statusline"><span class="live"></span>取数 Agent 运行中 · 语义模型已加载 · Token 输入 3.1k / 输出 0.6k · 耗时 3.7s</div>
+      </div>
+      <div class="viewer" id="viewer-query">
+        <div class="vh">🧬 语义模型 · 电商直播域 v3 <span class="x" data-close="ws-query">✕</span></div>
+        <div class="vb">
+          <div class="vtabs2"><button class="on">指标</button><button>数据集</button><button>YAML</button></div>
+          <div class="kv"><span class="k">metric</span><span class="v">GMV</span></div>
+          <div class="kv"><span class="k">synonyms</span><span class="v">成交额/销售额</span></div>
+          <div class="kv"><span class="k">expression</span><span class="v">SUM(gmv)</span></div>
+          <div class="kv"><span class="k">formula</span><span class="v">客单价=GMV/订单数</span></div>
+          <p style="font-size:12.4px;color:var(--txt2);margin:12px 0 8px;font-weight:700">命中数据集</p>
+          <div class="lineage">
+            <div class="row"><span class="pill2">ads_ctlive_item_stats</span></div>
+            <div class="row" style="color:var(--txt3);font-size:11.5px">字段：cate_level1_name · gmv(metric) · order_cnt · stat_period</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WORKSPACE: ANALYSIS (ChatBI) ================= -->
+  <section class="view" id="analysis">
+    <div class="ws" id="ws-analysis">
+      <div class="rail">
+        <div class="rh"><span class="back" data-go="home">‹ 首页</span> · 分析轨迹</div>
+        <div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">理解分析需求</div><div class="d">本月各品类销售</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">圈定数据集</div><div class="d">电商销售域 · 4 表</div><div class="tools"><span>dataset</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">多步取数</div><div class="d">GMV/订单/客单价</div><div class="tools"><span>nl2sql ×3</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">绘制图表</div><div class="d">柱状 + 趋势</div><div class="tools"><span>chart</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">提炼结论 & 报告</div><div class="d">生成中…</div></div>
+        </div>
+      </div>
+      <div class="center">
+        <div class="ws-head">
+          <div class="st"><span class="sic" style="background:#eafbea">📊</span>DB 数据分析工作台</div>
+          <div class="ctx">
+            <span class="tagchip">📁 数据集：电商销售域（4 表）</span>
+            <span class="tagchip sem">🧬 语义模型 v3 ✓</span>
+            <span class="hamb" data-viewer="ws-analysis">⋯</span>
+          </div>
+        </div>
+        <div class="anno" style="right:20px;top:56px"><span class="num">8</span><span class="txt">分析场景先"圈定数据集"（对齐 ChatBI 前置）：数据集=表范围+绑定语义模型，头部常驻可切换</span></div>
+        <div class="conv">
+          <div class="msg user"><span class="bubble-u">分析本月各品类销售情况，给出结论</span></div>
+          <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+            <div class="ai-txt">已完成本月各品类销售多维分析，关键结论如下：</div>
+            <div class="art">
+              <div class="ah"><span class="ty chart">图表</span>各品类 GMV 对比（本月）<span class="open" data-viewer="ws-analysis">放大 ›</span></div>
+              <div class="ab">
+                <div class="bars">
+                  <div class="b"><span class="vl">1523万</span><div class="bar" style="height:88%"></div><span class="lb">服饰</span></div>
+                  <div class="b"><span class="vl">1248万</span><div class="bar" style="height:72%"></div><span class="lb">美妆</span></div>
+                  <div class="b"><span class="vl">986万</span><div class="bar" style="height:57%"></div><span class="lb">3C</span></div>
+                  <div class="b"><span class="vl">612万</span><div class="bar" style="height:36%"></div><span class="lb">食品</span></div>
+                  <div class="b"><span class="vl">438万</span><div class="bar" style="height:26%"></div><span class="lb">家居</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="art">
+              <div class="ah"><span class="ty report">分析报告</span>本月品类销售复盘<span class="open" data-viewer="ws-analysis">HTML/PDF 分享 ›</span></div>
+              <div class="ab">
+                <div class="concl" style="margin-top:0"><b>核心结论：</b><br>
+                ① <b>服饰鞋包</b> GMV 居首（1523 万），但客单价最低（218 元），走"高频低客单"路线；<br>
+                ② <b>美妆个护</b>客单价最高（386 元），环比 +12%，建议加大投放；<br>
+                ③ <b>食品生鲜</b>订单量最大（6.3 万单）但 GMV 占比仅 11%，履约成本需关注。</div>
+              </div>
+            </div>
+            <div class="ai-txt" style="margin-top:4px">报告可一键导出 HTML 链接或 PDF 分享给团队。需要我补充"环比趋势"或"按地区拆分"吗？</div>
+          </div></div></div>
+        </div>
+        <div class="ws-comp"><div class="box">
+          <textarea placeholder="继续追问，如「加一张环比趋势图」「导出 PDF」…"></textarea>
+          <div class="cbar"><span class="mini mode">🛡️ 自动编辑 ▾</span><span class="mini">📁 电商销售域</span><span class="mini">导出 ▾</span><button class="sendmini">➤</button></div>
+        </div></div>
+        <div class="statusline"><span class="live"></span>分析 Agent 运行中 · 3 次取数 · 2 图表 · Token 输入 6.8k / 输出 2.4k · 耗时 14.2s</div>
+      </div>
+      <div class="viewer" id="viewer-analysis">
+        <div class="vh">📁 数据集 · 电商销售域 <span class="x" data-close="ws-analysis">✕</span></div>
+        <div class="vb">
+          <div class="vtabs2"><button class="on">表</button><button>图表</button><button>报告</button></div>
+          <div class="kv"><span class="k">ads_ctlive_item_stats</span><span class="v">商品成交</span></div>
+          <div class="kv"><span class="k">ads_ctlive_anchor_stats</span><span class="v">主播成交</span></div>
+          <div class="kv"><span class="k">dws_ctlive_trd_item_1d</span><span class="v">明细汇总</span></div>
+          <div class="kv"><span class="k">dim_category</span><span class="v">品类维表</span></div>
+          <p style="font-size:12.4px;color:var(--txt2);margin:14px 0 8px;font-weight:700">绑定语义模型</p>
+          <div class="tagchip sem" style="display:inline-block">🧬 电商直播域 v3</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---- view tabs ----
+const vtabs=document.getElementById('vtabs');
+function show(v){
+  document.querySelectorAll('#vtabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id===v));
+  window.scrollTo({top:0});
+}
+vtabs.addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.v);});
+// scenario cards / recents / back -> switch view
+document.addEventListener('click',e=>{
+  const go=e.target.closest('[data-go]'); if(go){show(go.dataset.go);return;}
+  const eg=e.target.closest('.eg'); if(eg){document.getElementById('homeInput').value=eg.dataset.fill;detectRoute(eg.dataset.fill);}
+});
+// ---- home composer route detection ----
+const ta=document.getElementById('homeInput'),rt=document.getElementById('routeTag');
+function detectRoute(t){
+  let s='智能路由：待识别',c='#eef6ff',fg='#0069fe',bd='#cfe3ff';
+  if(/慢查询|巡检|排障|根因|告警|优化|索引|运维/.test(t)){s='识别场景：DB 运维 🩺';c='#fff3e6';fg='#d46b08';bd='#ffd591';}
+  else if(/分析|趋势|对比|占比|复盘|结论|报告|环比/.test(t)){s='识别场景：DB 数据分析 📊';c='#eafbea';fg='#389e0d';bd='#b7eb8f';}
+  else if(/查|取数|统计|导出|多少|GMV|用户数|top|TOP/.test(t)){s='识别场景：DB 取数 🔍';c='#e8f4ff';fg='#0069fe';bd='#cfe3ff';}
+  rt.textContent=s;rt.style.background=c;rt.style.color=fg;rt.style.borderColor=bd;
+}
+ta.addEventListener('input',()=>detectRoute(ta.value));
+document.getElementById('homeSend').addEventListener('click',()=>{
+  const t=ta.value.trim();if(!t)return;
+  if(/慢查询|巡检|排障|根因|告警|优化|索引|运维/.test(t))show('ops');
+  else if(/分析|趋势|对比|占比|复盘|结论|报告|环比/.test(t))show('analysis');
+  else show('query');
+});
+// ---- model / approval chips (home) ----
+const models=['Auto 智能调度','qwen3.8-max','deepseek-v4-pro','glm-5.2'];let mi=0;
+document.getElementById('modelChip').addEventListener('click',()=>{mi=(mi+1)%models.length;document.getElementById('modelChip').innerHTML='🧠 <span>'+models[mi]+'</span> <span class="k">▾</span>';});
+const modes=[['请求批准','#7c3aed'],['计划 plan','#0069fe'],['自动编辑','#389e0d'],['智能审批 auto','#d46b08'],['完全访问 yolo','#cf1322']];let ai=0;
+document.getElementById('apprChip').addEventListener('click',()=>{ai=(ai+1)%modes.length;document.getElementById('apprChip').innerHTML='🛡️ 审批：<b style="color:'+modes[ai][1]+'">'+modes[ai][0]+'</b> <span class="k">▾</span>';});
+// ---- right viewer toggle ----
+document.addEventListener('click',e=>{
+  const op=e.target.closest('[data-viewer]');
+  if(op){document.getElementById(op.dataset.viewer).classList.add('open');return;}
+  const cl=e.target.closest('[data-close]');
+  if(cl){document.getElementById(cl.dataset.close).classList.remove('open');}
+});
+// ---- approval dock resolve ----
+document.addEventListener('click',e=>{
+  const ok=e.target.closest('[data-resolve]');
+  if(ok){const id=ok.dataset.resolve;document.getElementById('dock-'+id).style.display='none';document.getElementById('res-'+id).style.display='block';bump();}
+  const no=e.target.closest('[data-reject]');
+  if(no){const id=no.dataset.reject;const d=document.getElementById('dock-'+id);d.querySelector('.dh .tt').textContent='已拒绝 · 操作未执行';d.querySelector('.acts').innerHTML='<span style="font-size:12px;color:#cf1322">已拒绝，observation 将回灌给 Agent 重新规划</span>';setTimeout(()=>{d.style.display='none';},1600);}
+});
+function bump(){const b=document.getElementById('apprBadge');let n=+b.textContent-1;b.textContent=Math.max(0,n);if(n<=0)b.style.display='none';}
+// ---- deep link: #home / #ops / #query / #analysis ----
+(function(){var h=(location.hash||'').replace('#','');if(['home','ops','query','analysis'].indexOf(h)>=0)show(h);})();
+</script>
+</body>
+</html>

@@ -163,6 +163,25 @@ async def resolve_annotation_intents(
                 raise ValueError("请先配置可用模型，再发送批注。")
             model = models[0].model
         payload = {
+            "output_contract": {
+                "stage": "intent_routing_only",
+                "instruction": (
+                    "本阶段仅识别意图，不执行修改，不输出 SQL、配置补丁或验证结果。"
+                    "用户要求修改 SQL 时，将完整要求放进 tasks[].prompt，"
+                    "交给后续执行器。响应根字段只能是 reply 和 items。"
+                ),
+                "required_draft_ids": [item.draft_id for item in batch.items],
+                "modify_example": {
+                    "reply": None,
+                    "items": [
+                        {
+                            "draft_id": batch.items[0].draft_id,
+                            "tasks": [{"intent": "modify", "prompt": "完整修改要求"}],
+                            "answered": False,
+                        }
+                    ],
+                },
+            },
             "saved_dashboard": dashboard_context or {},
             "current_view": batch.view_context,
             "conversation": batch.conversation,

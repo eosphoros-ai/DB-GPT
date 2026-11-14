@@ -51,6 +51,32 @@ from .react_agent import (
 logger = logging.getLogger(__name__)
 
 
+_JSON_TYPES = {"string", "number", "integer", "boolean", "object", "array", "null"}
+
+
+def _json_type_spec(raw: Optional[str]) -> Dict[str, Any]:
+    """Convert a ToolParameter type string into a valid JSON-Schema fragment.
+
+    Strict validators (DeepSeek/OpenAI) reject DB-GPT's comma-joined union
+    strings such as ``"object, string"`` produced from ``dict | str``
+    annotations; map them to ``anyOf`` instead.
+    """
+    parts = [x.strip() for x in (raw or "").split(",") if x.strip()]
+    valid = [x for x in parts if x in _JSON_TYPES]
+    if len(valid) == 1:
+        spec: Dict[str, Any] = {"type": valid[0]}
+        if valid[0] == "array":
+            spec["items"] = {}
+        return spec
+    if len(valid) > 1:
+        return {
+            "anyOf": [
+                {"type": t, **({"items": {}} if t == "array" else {})} for t in valid
+            ]
+        }
+    return {}
+
+
 def _build_openai_tools(resource) -> List[Dict[str, Any]]:
     """Build an OpenAI ``tools`` array from the agent's ToolPack.
 
@@ -66,17 +92,11 @@ def _build_openai_tools(resource) -> List[Dict[str, Any]]:
             continue
         parameters = tool.parameters_schema()
         properties = parameters["properties"]
-        # derisk ReActMasterAgentV3-style: inject intent + thought as first-class,
-        # optional tool args so native function calling carries a user-facing
-        # "意图(做什么)" + "思考(为什么/怎么想)" narration. Keep descriptions
-        # minimal (derisk uses "查询意图"/"思考过程") so the model stays terse.
+        # Only the public intention belongs in tool arguments. Private
+        # reasoning uses the provider's separate thinking channel.
         properties["intention"] = {
             "type": "string",
             "description": "这一步的意图（给用户看，一句话）",
-        }
-        properties["thought"] = {
-            "type": "string",
-            "description": "思考过程（给用户看，简短说明）",
         }
         tools.append(
             {
@@ -315,7 +335,14 @@ class NativeToolCallAction(ParallelToolAction):
                         action=name,
                         content="HTML_TOOL_ARGUMENT_INVALID: " + location,
                     )
-                args = {}
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: native function arguments must be "
+                        "valid JSON. No tool was executed; resend the complete object."
+                    ),
+                )
             if not isinstance(args, dict):
                 if name in {
                     "html_interpreter",
@@ -328,7 +355,14 @@ class NativeToolCallAction(ParallelToolAction):
                         action=name,
                         content="HTML_TOOL_ARGUMENT_INVALID: expected a JSON object",
                     )
-                args = {}
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: expected a JSON object; "
+                        "no tool was executed."
+                    ),
+                )
             # derisk-style meta args: strip intention/thought so they never
             # reach the tool's async_execute, but surface them on ActionOutput.
             intention = args.pop("intention", None) or args.pop("intent", None)
@@ -396,6 +430,32 @@ class ToolCallingReActAgent(ReActAgent):
         # Native function-calling tool calls captured during thinking(); kept
         # on the instance (not a pydantic field) and consumed by act().
         object.__setattr__(self, "_pending_native_tool_calls", None)
+        object.__setattr__(self, "_tool_protocol_failures", 0)
+
+    async def _load_thinking_messages(
+        self,
+        received_message: AgentMessage,
+        sender: Agent,
+        observation: Optional[str] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
+        context: Optional[Dict[str, Any]] = None,
+        is_retry_chat: bool = False,
+        current_retry_counter: Optional[int] = None,
+    ) -> Tuple[List[AgentMessage], Optional[Dict]]:
+        """Load thinking messages and reset protocol failures for a new run."""
+        if current_retry_counter == 0:
+            object.__setattr__(self, "_tool_protocol_failures", 0)
+        return await super()._load_thinking_messages(
+            received_message=received_message,
+            sender=sender,
+            observation=observation,
+            rely_messages=rely_messages,
+            historical_dialogues=historical_dialogues,
+            context=context,
+            is_retry_chat=is_retry_chat,
+            current_retry_counter=current_retry_counter,
+        )
 
     def prepare_act_param(
         self,
@@ -498,6 +558,20 @@ class ToolCallingReActAgent(ReActAgent):
         attempts_before: int,
         handled_calls_before: int = 0,
     ) -> ActionOutput:
+        """Apply report repair while preserving the protocol retry limit."""
+        protocol_failure = not output.is_exe_success and any(
+            marker in (output.content or "")
+            for marker in (
+                "TOOL_ARGUMENT_INVALID",
+                "No valid ReAct step",
+                "No correct response found",
+                "Only one action is allowed",
+            )
+        )
+        failures = (
+            getattr(self, "_tool_protocol_failures", 0) + 1 if protocol_failure else 0
+        )
+        object.__setattr__(self, "_tool_protocol_failures", failures)
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
             output.action
@@ -574,6 +648,14 @@ class ToolCallingReActAgent(ReActAgent):
         ):
             output.is_exe_success = False
             output.have_retry = not state.get("_report_retry_exhausted", False)
+        if failures >= 3:
+            output.have_retry = False
+            output.content = (
+                "TOOL_PROTOCOL_RETRY_EXHAUSTED: "
+                "模型连续三次未提交完整的工具调用参数，"
+                "本次执行已停止；已生成的数据和草稿保留，尚未完成的复核不会自动通过。"
+            )
+            output.observations = output.content
         return output
 
     async def verify(
@@ -656,8 +738,17 @@ class ToolCallingReActAgent(ReActAgent):
             raise
 
     def _build_native_tools(self) -> List[Dict[str, Any]]:
-        """Return the OpenAI tools array for native function calling."""
+        """Return the OpenAI tools array, including the initialized completion tool.
+
+        ``build()`` calls the inherited ``preload_resource()``, which registers
+        ``Terminate`` in the resource pack. Native calls can therefore finish via
+        that tool even when protocol repair requires a tool call.
+        """
         return _build_openai_tools(self.resource)
+
+    def _native_tool_choice(self) -> str:
+        """Require a native tool call while recovering from a protocol failure."""
+        return "required" if self._tool_protocol_failures else "auto"
 
     async def _thinking_native(
         self,
@@ -679,6 +770,12 @@ class ToolCallingReActAgent(ReActAgent):
             llm_messages[0]["content"] += (
                 "\nProvider-native function calling is enabled. Use the supplied "
                 "tool_calls functions for actions, with JSON arguments. "
+                "Before each group of tool calls, include a short public "
+                "progress message in the user's language explaining what "
+                "you are doing and what comes next. Keep private reasoning "
+                "in the thinking channel. "
+                "Write ordinary prose without Thought, Action, Action Input "
+                "or other ReAct protocol labels. "
                 "Do not return only reasoning or describe an intended tool call. "
                 "Call terminate with the final result when the task is complete."
             )
@@ -755,6 +852,11 @@ class ToolCallingReActAgent(ReActAgent):
             try:
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
+
+                async def native_stream(payload: Dict[str, Any]) -> None:
+                    if stream_callback:
+                        await stream_callback({**payload, "public_text_stream": True})
+
                 response = await self.llm_client.create_with_output(
                     context=llm_messages[-1].pop("context", None),
                     messages=llm_messages,
@@ -766,9 +868,11 @@ class ToolCallingReActAgent(ReActAgent):
                     conv_id=self.not_null_agent_context.conv_id,
                     sender=sender.role if sender else "?",
                     stream_out=self.stream_out,
-                    stream_callback=stream_callback,
+                    stream_callback=native_stream if stream_callback else None,
                     tools=tools,
-                    tool_choice="required" if is_report_author else "auto",
+                    tool_choice=(
+                        "required" if is_report_author else self._native_tool_choice()
+                    ),
                 )
                 state = getattr(self, "_report_repair_state", None)
                 if state is not None and state.get("_report_render_phase") and response:
@@ -785,6 +889,14 @@ class ToolCallingReActAgent(ReActAgent):
                 tool_calls = getattr(response, "tool_calls", None) or None
                 if tool_calls:
                     object.__setattr__(self, "_pending_native_tool_calls", tool_calls)
+                    if stream_callback:
+                        await stream_callback(
+                            {
+                                "action_start": True,
+                                "public_text": text,
+                                "tool_calls": tool_calls,
+                            }
+                        )
                 return text, llm_model
             except LLMChatError as e:
                 logger.error(f"model:{llm_model} generate Failed!{str(e)}")

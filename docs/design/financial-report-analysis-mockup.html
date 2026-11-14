@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DB-GPT 财报智能分析工作台 · 高保真 Mockup（海翔药业 2019 年报真实 case）</title>
+<style>
+  /* ── design tokens (aligned with conversation-redesign-mockup) ── */
+  :root {
+    --bg: #fbfbfa;
+    --panel: #ffffff;
+    --ink: #1c1c1a;
+    --ink-2: #55554f;
+    --ink-3: #8b8b84;
+    --ink-4: #b8b8b0;
+    --line: #e6e6e2;
+    --line-2: #efefeb;
+    --hover: #f4f4f0;
+    --accent: #2563eb;
+    --accent-soft: #eff4ff;
+    --ok: #10b981;
+    --ok-soft: #e9f8f2;
+    --warn: #f59e0b;
+    --warn-soft: #fff5e6;
+    --danger: #dc2626;
+    --danger-soft: #fdecec;
+    --fact: #10b981;
+    --span: #2563eb;
+    --comp: #d97706;
+    --retr: #8b8b84;
+    --anno: #db2777;
+    --anno-soft: #fdf2f8;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Helvetica Neue", sans-serif;
+    --r: 10px;
+    --shadow: 0 1px 2px rgba(20,20,15,.05), 0 4px 16px rgba(20,20,15,.04);
+    --shadow-lg: 0 4px 12px rgba(20,20,15,.08), 0 12px 40px rgba(20,20,15,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  button { font-family: inherit; font-size: inherit; border: 0; background: none; color: inherit; cursor: pointer; }
+  .hidden { display: none !important; }
+  svg { display: block; }
+  code, kbd, pre { font-family: var(--mono); }
+
+  /* ── top bar ───────────────────────────────────────────────────── */
+  .topbar {
+    height: 52px; display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; border-bottom: 1px solid var(--line);
+    background: var(--panel); position: relative; z-index: 30;
+  }
+  .brand { font-weight: 600; letter-spacing: .01em; display: flex; align-items: center; gap: 8px; }
+  .brand-mark { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg,#1c1c1a,#55554f); display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; }
+  .crumb { color: var(--ink-3); font-weight: 400; margin-left: 6px; font-size: 13px; }
+  .doc-chip {
+    display: inline-flex; align-items: center; gap: 8px; height: 30px;
+    padding: 0 10px 0 8px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); font-size: 12.5px; color: var(--ink);
+  }
+  .doc-chip .pdf-badge { width: 20px; height: 24px; border-radius: 3px; background: #dc2626; color: #fff; font-size: 9px; font-weight: 700; display: grid; place-items: center; letter-spacing: .02em; }
+  .doc-chip .meta { color: var(--ink-3); font-size: 11.5px; margin-left: 2px; }
+  .top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .capsule {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 30px; padding: 0 12px; border: 1px solid var(--line);
+    border-radius: 999px; font-size: 12.5px; color: var(--ink-2);
+    background: var(--panel); transition: background .15s;
+  }
+  .capsule:hover { background: var(--hover); }
+  .capsule.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .capsule.on .kbd-hint { color: rgba(255,255,255,.6); }
+  .capsule b { color: var(--ink); font-weight: 600; }
+  .capsule.on b { color: #fff; }
+  .kbd-hint { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); padding: 1px 4px; border: 1px solid var(--line); border-radius: 3px; }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 8px; display: inline-flex;
+    align-items: center; justify-content: center; color: var(--ink-2);
+  }
+  .icon-btn:hover { background: var(--hover); }
+
+  /* ── workspace grid ───────────────────────────────────────────── */
+  .workspace {
+    display: grid; grid-template-columns: 260px 1fr 0;
+    height: calc(100% - 52px); transition: grid-template-columns .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .workspace.rail-open { grid-template-columns: 260px 1fr min(620px, 46vw); }
+
+  /* ── left column: intent / plan / tools / verifier ─────────────── */
+  .left {
+    border-right: 1px solid var(--line); background: var(--panel);
+    overflow-y: auto; padding: 16px 14px 40px;
+  }
+  .left h4 {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .left section + section { margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--line); }
+
+  .intent-card {
+    padding: 10px 12px; border-radius: 8px; background: var(--accent-soft);
+    border: 1px solid #dbe5ff; font-size: 13px;
+  }
+  .intent-card .lbl { color: var(--accent); font-weight: 600; font-size: 12px; letter-spacing: .02em; }
+  .intent-card .conf { float: right; color: var(--ink-3); font-family: var(--mono); font-size: 11px; }
+  .intent-card .targets { margin-top: 6px; color: var(--ink-2); font-size: 12px; line-height: 1.5; }
+
+  .plan { list-style: none; counter-reset: step; }
+  .plan li {
+    counter-increment: step; display: flex; gap: 10px; align-items: flex-start;
+    padding: 6px 0; font-size: 13px; color: var(--ink-2); position: relative;
+  }
+  .plan li::before {
+    content: counter(step); flex: 0 0 20px; width: 20px; height: 20px;
+    border-radius: 50%; background: var(--line-2); color: var(--ink-3);
+    font-size: 11px; font-weight: 600; display: grid; place-items: center;
+    font-family: var(--mono);
+  }
+  .plan li.done { color: var(--ink-3); }
+  .plan li.done::before { content: "✓"; background: var(--ok-soft); color: var(--ok); }
+  .plan li.active { color: var(--ink); font-weight: 500; }
+  .plan li.active::before { content: ""; background: var(--accent); position: relative; }
+  .plan li.active::after {
+    content: ""; position: absolute; left: 9px; top: 24px; width: 2px; height: 2px;
+    border-radius: 50%; background: #fff; animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+
+  .tool-list { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+  .tool-row {
+    display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+    border-radius: 6px; color: var(--ink-2); font-family: var(--mono);
+  }
+  .tool-row:hover { background: var(--hover); }
+  .tool-row .tname { font-weight: 500; color: var(--ink); }
+  .tool-row .tcount { margin-left: auto; font-size: 11px; color: var(--ink-3); background: var(--line-2); padding: 1px 6px; border-radius: 3px; }
+  .tool-row.running { background: var(--accent-soft); color: var(--accent); }
+  .tool-row.running .tname { color: var(--accent); }
+
+  .verifier-box {
+    padding: 10px 12px; border-radius: 8px; background: var(--ok-soft);
+    border: 1px solid #c8eddc; font-size: 12.5px; color: #065f46;
+  }
+  .verifier-box.pending { background: var(--warn-soft); border-color: #fde3b8; color: #92400e; }
+  .verifier-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+  .verifier-row .tick { font-weight: 700; }
+
+  /* ── center column: conversation stream ───────────────────────── */
+  .stream { overflow-y: auto; padding: 24px 24px 200px; }
+  .stream-inner { max-width: 820px; margin: 0 auto; }
+
+  /* first-screen key metrics dashboard */
+  .welcome-hero {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r);
+    padding: 20px 22px; margin-bottom: 22px; box-shadow: var(--shadow);
+  }
+  .welcome-hero .title-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .welcome-hero h1 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .welcome-hero .code { color: var(--ink-3); font-family: var(--mono); font-size: 13px; }
+  .welcome-hero .subtitle { color: var(--ink-2); font-size: 13px; margin-bottom: 14px; }
+  .welcome-hero .subtitle a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed currentColor; cursor: pointer; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;
+  }
+  .kpi {
+    padding: 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line-2);
+    position: relative; cursor: pointer; transition: all .15s;
+  }
+  .kpi:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+  .kpi .name { font-size: 11.5px; color: var(--ink-3); margin-bottom: 4px; }
+  .kpi .val { font-size: 20px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); font-family: var(--mono); }
+  .kpi .unit { font-size: 11px; color: var(--ink-3); font-weight: 400; margin-left: 3px; font-family: var(--sans); }
+  .kpi .delta { font-size: 11.5px; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .kpi .delta.up { color: var(--ok); }
+  .kpi .delta.down { color: var(--danger); }
+  .kpi .page-tag {
+    position: absolute; top: 8px; right: 8px; font-size: 10px;
+    font-family: var(--mono); color: var(--ink-3); background: var(--panel);
+    padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line);
+  }
+  .kpi:hover .page-tag { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .flags { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .flag {
+    display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px;
+    border-radius: 6px; background: var(--warn-soft); border: 1px solid #fde3b8;
+    font-size: 12.5px; color: #78350f; cursor: pointer;
+  }
+  .flag:hover { background: #ffe9c2; }
+  .flag .icon { flex: 0 0 16px; font-weight: 700; }
+  .flag .body { flex: 1; }
+  .flag .action { color: var(--accent); font-weight: 500; margin-left: 6px; }
+
+  .suggestions {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed var(--line);
+  }
+  .suggestion-chip {
+    padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; color: var(--ink-2); background: var(--panel);
+    cursor: pointer; transition: all .15s;
+  }
+  .suggestion-chip:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* turn */
+  .turn + .turn { margin-top: 30px; }
+  .user-row { display: flex; justify-content: flex-end; gap: 8px; align-items: flex-start; }
+  .user-bubble {
+    max-width: 82%; background: #efeeea; border-radius: 14px 14px 4px 14px;
+    padding: 10px 14px; color: var(--ink); white-space: pre-wrap;
+  }
+  .agent-turn { margin-top: 14px; }
+
+  .status-line {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+    color: var(--ink-3); margin-bottom: 8px;
+  }
+  .status-line .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  .status-line.done .dot { background: var(--ok); animation: none; }
+  @keyframes blink { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+
+  .answer { font-size: 14.5px; line-height: 1.75; color: var(--ink); }
+  .answer p + p { margin-top: 10px; }
+  .answer h3 { font-size: 14.5px; font-weight: 600; margin: 14px 0 6px; color: var(--ink); }
+  .answer ul, .answer ol { padding-left: 22px; margin: 6px 0; }
+  .answer li { margin: 4px 0; }
+  .answer strong { font-weight: 600; color: var(--ink); }
+
+  /* evidence chip */
+  .ev {
+    display: inline-flex; align-items: center; gap: 3px; margin: 0 2px;
+    padding: 1px 6px 1px 4px; border-radius: 4px; font-size: 11.5px;
+    font-family: var(--mono); font-weight: 500; cursor: pointer;
+    vertical-align: baseline; line-height: 1.5; transition: all .12s;
+    border: 1px solid transparent;
+  }
+  .ev .num {
+    display: inline-grid; place-items: center; width: 14px; height: 14px;
+    border-radius: 50%; font-size: 9.5px; font-weight: 700; color: #fff;
+  }
+  .ev.fact { background: var(--ok-soft); color: #065f46; border-color: #c8eddc; }
+  .ev.fact .num { background: var(--fact); }
+  .ev.fact:hover { background: #d3f2e5; border-color: var(--fact); }
+  .ev.span { background: var(--accent-soft); color: #1e40af; border-color: #dbe5ff; }
+  .ev.span .num { background: var(--span); }
+  .ev.span:hover { background: #dbe5ff; border-color: var(--span); }
+  .ev.comp { background: var(--warn-soft); color: #92400e; border-color: #fde3b8; }
+  .ev.comp .num { background: var(--comp); }
+  .ev.comp:hover { background: #ffe9c2; border-color: var(--comp); }
+  .ev.active { outline: 2px solid currentColor; outline-offset: 1px; }
+
+  /* artifact card inline */
+  .artifact {
+    margin: 14px 0; border: 1px solid var(--line); border-radius: var(--r);
+    background: var(--panel); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .artifact-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border-bottom: 1px solid var(--line-2); background: var(--bg);
+    font-size: 12.5px; color: var(--ink-2);
+  }
+  .artifact-head b { color: var(--ink); font-weight: 600; }
+  .artifact-head .right { margin-left: auto; display: flex; gap: 6px; }
+  .artifact-head .link-btn {
+    font-size: 11.5px; color: var(--accent); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid #dbe5ff; background: var(--panel);
+  }
+  .artifact-head .link-btn:hover { background: var(--accent-soft); }
+  .artifact-body { padding: 14px; }
+
+  /* chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 160px; padding: 0 4px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar {
+    width: 100%; background: linear-gradient(180deg,#3b82f6,#2563eb); border-radius: 4px 4px 0 0;
+    position: relative; transition: opacity .15s; cursor: pointer;
+  }
+  .bar:hover { opacity: .85; }
+  .bar.neg { background: linear-gradient(180deg,#f87171,#dc2626); }
+  .bar-label { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+  .bar-value {
+    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--ink); font-family: var(--mono); white-space: nowrap;
+  }
+
+  /* data table */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .data-table th, .data-table td {
+    padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+  }
+  .data-table th {
+    background: var(--bg); color: var(--ink-2); font-weight: 500;
+    text-align: right; font-size: 11.5px; letter-spacing: .02em;
+  }
+  .data-table th:first-child, .data-table td:first-child {
+    text-align: left; font-family: var(--sans); color: var(--ink);
+  }
+  .data-table tr:hover td { background: var(--hover); }
+  .data-table td.up { color: var(--ok); }
+  .data-table td.down { color: var(--danger); }
+
+  /* verifier banner */
+  .verdict {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px;
+    padding: 8px 12px; border-radius: 6px; background: var(--ok-soft);
+    border: 1px solid #c8eddc; font-size: 12.5px; color: #065f46;
+  }
+  .verdict .icon { font-weight: 700; }
+  .verdict .detail { color: #047857; margin-left: auto; font-family: var(--mono); font-size: 11.5px; }
+
+  /* ── right rail: Evidence Viewer ──────────────────────────────── */
+  .rail {
+    background: var(--panel); border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .rail-head {
+    height: 46px; flex: 0 0 auto; display: flex; align-items: center; gap: 4px;
+    padding: 0 10px 0 16px; border-bottom: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-2); white-space: nowrap;
+  }
+  .rail-head .title { font-weight: 600; color: var(--ink); margin-right: 8px; }
+  .rail-head .icon-btn { margin-left: 4px; }
+  .rail-head .close-btn { margin-left: auto; }
+
+  .tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--bg); flex: 0 0 auto; }
+  .tab {
+    padding: 8px 12px; font-size: 12.5px; color: var(--ink-2);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 500; }
+  .tab .badge { font-size: 10px; padding: 0 4px; border-radius: 3px; background: var(--line); color: var(--ink-2); margin-left: 4px; font-family: var(--mono); }
+  .tab.on .badge { background: var(--ink); color: #fff; }
+
+  .rail-body { flex: 1 1 auto; overflow-y: auto; }
+  .tab-panel { padding: 16px; display: none; }
+  .tab-panel.on { display: block; }
+
+  /* PDF viewer */
+  .pdf-toolbar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line-2); background: var(--bg);
+    font-size: 12px; color: var(--ink-2);
+  }
+  .pdf-toolbar .page-info { font-family: var(--mono); }
+  .pdf-toolbar button {
+    padding: 3px 8px; border-radius: 4px; border: 1px solid var(--line);
+    background: var(--panel); font-size: 11.5px; color: var(--ink-2);
+  }
+  .pdf-toolbar button:hover { background: var(--hover); }
+  .pdf-toolbar .right { margin-left: auto; display: flex; gap: 4px; }
+
+  .pdf-page {
+    background: #fff; margin: 12px auto; padding: 40px 46px;
+    box-shadow: var(--shadow); max-width: 560px; position: relative;
+    font-family: "Songti SC", "SimSun", serif; font-size: 12.5px; line-height: 1.75;
+    color: #111; min-height: 720px;
+  }
+  .pdf-page .page-num {
+    position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;
+    font-family: var(--mono); font-size: 11px; color: #666;
+  }
+  .pdf-page .running-head {
+    text-align: center; font-size: 11.5px; color: #444; margin-bottom: 20px;
+    font-family: var(--sans);
+  }
+  .pdf-page h5 {
+    font-size: 13.5px; font-weight: 700; margin: 12px 0 8px; font-family: var(--sans);
+  }
+  .pdf-page p { margin-bottom: 6px; text-align: justify; }
+  .pdf-page .fin-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-family: var(--sans); font-size: 11.5px; }
+  .pdf-page .fin-table th, .pdf-page .fin-table td { border: 1px solid #ddd; padding: 4px 6px; text-align: right; }
+  .pdf-page .fin-table th { background: #f6f6f4; font-weight: 500; text-align: center; }
+  .pdf-page .fin-table td:first-child, .pdf-page .fin-table th:first-child { text-align: left; }
+
+  .hl {
+    background: rgba(255, 213, 79, .45); padding: 1px 2px; border-radius: 2px;
+    position: relative; cursor: pointer; box-shadow: inset 0 -1px 0 rgba(217,119,6,.6);
+    transition: background .15s;
+  }
+  .hl:hover { background: rgba(255, 193, 7, .65); }
+  .hl.active { background: rgba(255, 152, 0, .55); box-shadow: 0 0 0 2px rgba(255,152,0,.4); }
+  .hl-cell { background: rgba(16,185,129,.25); }
+  .hl-cell.active { background: rgba(16,185,129,.5); box-shadow: 0 0 0 2px rgba(16,185,129,.3); }
+
+  .bbox-frame {
+    position: absolute; border: 2px dashed var(--warn); border-radius: 3px;
+    pointer-events: none; background: rgba(245, 158, 11, .08);
+  }
+  .bbox-frame .label {
+    position: absolute; top: -22px; left: -2px; background: var(--warn); color: #fff;
+    font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px 3px 0 0;
+    white-space: nowrap;
+  }
+
+  /* fact ledger inspector */
+  .ledger-search {
+    display: flex; gap: 6px; margin-bottom: 12px;
+  }
+  .ledger-search input {
+    flex: 1; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px;
+    font-family: inherit; font-size: 12.5px; background: var(--panel); color: var(--ink);
+  }
+  .ledger-search input:focus { outline: none; border-color: var(--accent); }
+
+  .fact-card {
+    padding: 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); margin-bottom: 10px; font-size: 12.5px;
+  }
+  .fact-card.active { border-color: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+  .fact-card .row { display: flex; gap: 8px; padding: 3px 0; }
+  .fact-card .k { color: var(--ink-3); min-width: 92px; font-size: 11.5px; }
+  .fact-card .v { color: var(--ink); flex: 1; font-family: var(--mono); font-size: 12px; }
+  .fact-card .v.wrap { font-family: var(--sans); }
+  .fact-card .v.hi { background: var(--ok-soft); padding: 1px 4px; border-radius: 3px; }
+  .fact-card .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10.5px; font-family: var(--mono); }
+  .fact-card .badge.high { background: var(--ok-soft); color: #065f46; }
+  .fact-card .badge.rule { background: var(--accent-soft); color: #1e40af; }
+
+  /* section tree */
+  .tree { font-size: 12.5px; }
+  .tree-node { padding: 3px 0; }
+  .tree-label {
+    display: flex; align-items: center; gap: 6px; padding: 3px 6px;
+    border-radius: 4px; cursor: pointer; color: var(--ink-2);
+  }
+  .tree-label:hover { background: var(--hover); color: var(--ink); }
+  .tree-label.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .tree-label .caret { width: 12px; font-family: var(--mono); color: var(--ink-3); font-size: 10px; }
+  .tree-label .pg { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .tree-children { padding-left: 18px; border-left: 1px dashed var(--line); margin-left: 8px; }
+
+  /* computation trace */
+  .comp-block {
+    padding: 14px; border-radius: 8px; background: var(--bg);
+    border: 1px solid var(--line); margin-bottom: 12px;
+  }
+  .comp-formula {
+    font-family: var(--mono); font-size: 14px; padding: 10px 12px;
+    background: var(--panel); border-radius: 6px; border: 1px solid var(--line);
+    margin-bottom: 10px; color: var(--ink); text-align: center;
+  }
+  .comp-inputs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .comp-input {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+    padding: 6px 10px; background: var(--panel); border-radius: 5px;
+    border: 1px solid var(--line-2); font-size: 12.5px;
+  }
+  .comp-input .name { color: var(--ink); }
+  .comp-input .val { font-family: var(--mono); color: var(--ink); font-weight: 500; }
+  .comp-input .src { font-family: var(--mono); font-size: 11px; }
+  .comp-step {
+    padding: 6px 10px; font-family: var(--mono); font-size: 12.5px;
+    color: var(--ink-2); border-left: 2px solid var(--line);
+    margin: 4px 0 4px 6px;
+  }
+  .comp-result {
+    padding: 10px 12px; background: var(--warn-soft); border-radius: 6px;
+    border: 1px solid #fde3b8; font-family: var(--mono); font-size: 14px;
+    color: #78350f; text-align: center; font-weight: 600; margin-top: 10px;
+  }
+
+  /* ── composer ─────────────────────────────────────────────────── */
+  .composer-wrap {
+    position: absolute; bottom: 0; left: 260px; right: 0;
+    padding: 12px 24px 20px; background: linear-gradient(180deg, transparent, var(--bg) 30%);
+    pointer-events: none; transition: right .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .workspace.rail-open .composer-wrap { right: min(620px, 46vw); }
+  .composer {
+    max-width: 820px; margin: 0 auto; pointer-events: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow-lg); padding: 10px 12px 8px;
+  }
+  .composer textarea {
+    width: 100%; border: 0; outline: 0; resize: none; font-family: inherit;
+    font-size: 14px; line-height: 1.55; background: transparent; color: var(--ink);
+    min-height: 22px; max-height: 200px;
+  }
+  .composer-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .composer-bar .hint { color: var(--ink-3); font-size: 11.5px; margin-left: auto; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px;
+    border-radius: 999px; border: 1px solid var(--line); font-size: 11.5px;
+    color: var(--ink-2); background: var(--panel);
+  }
+  .pill:hover { background: var(--hover); }
+  .send-btn {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--ink);
+    color: #fff; display: grid; place-items: center;
+  }
+  .send-btn:hover { background: var(--ink-2); }
+
+  /* ── design annotations ───────────────────────────────────────── */
+  .anno {
+    position: absolute; z-index: 40; pointer-events: none;
+    font-size: 11.5px; line-height: 1.5; color: var(--anno);
+    background: var(--anno-soft); border: 1px dashed var(--anno);
+    border-radius: 6px; padding: 6px 9px; max-width: 260px;
+    box-shadow: 0 2px 8px rgba(219,39,119,.15); font-family: var(--sans);
+  }
+  .anno b { display: block; font-weight: 600; margin-bottom: 2px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .anno::before {
+    content: ""; position: absolute; width: 24px; height: 1px;
+    background: var(--anno); top: 50%;
+  }
+  .anno.left::before { right: -24px; }
+  .anno.right::before { left: -24px; }
+  body:not(.show-anno) .anno { display: none; }
+
+  .anno-badge {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--anno); color: #fff; font-size: 11px; font-weight: 700;
+    display: grid; place-items: center; z-index: 39; font-family: var(--mono);
+    box-shadow: 0 2px 6px rgba(219,39,119,.4);
+  }
+  body:not(.show-anno) .anno-badge { display: none; }
+
+  /* utility */
+  .muted { color: var(--ink-3); }
+  .mono { font-family: var(--mono); }
+  .row-flex { display: flex; align-items: center; gap: 6px; }
+  .scroll-shadow { position: sticky; top: 0; height: 12px; background: linear-gradient(180deg, var(--panel), transparent); pointer-events: none; z-index: 5; }
+</style>
+</head>
+<body class="show-anno">
+
+<!-- ── top bar ───────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">DB</div>
+    <span>DB-GPT</span>
+    <span class="crumb">/ 财报智能分析工作台</span>
+  </div>
+
+  <div class="doc-chip" title="点击切换文档">
+    <div class="pdf-badge">PDF</div>
+    <div>
+      <div style="font-weight:500;">海翔药业 2019 年年度报告</div>
+      <div class="meta">002099 · 204 页 · 已解析 · Fact Ledger 覆盖 <span style="color:var(--ok);font-weight:600;">1,247</span> 条</div>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="capsule" title="跨期/跨公司对比视图">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="5" height="10" rx="1"/><rect x="9" y="3" width="5" height="10" rx="1"/></svg>
+      Matrix
+    </button>
+    <button class="capsule" title="生成解读报告">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h6l3 3v9H4z"/><path d="M10 2v3h3"/></svg>
+      生成报告
+    </button>
+    <button id="anno-toggle" class="capsule on" title="切换设计标注（快捷键 A）">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5"/></svg>
+      设计标注 <span class="kbd-hint">A</span>
+    </button>
+    <button class="icon-btn" title="更多">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ── workspace ─────────────────────────────────────────────────── -->
+<div id="workspace" class="workspace rail-open" style="position: relative;">
+
+  <!-- LEFT: intent / plan / tools / verifier -->
+  <aside class="left">
+    <section>
+      <h4>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+        当前意图 · Router
+      </h4>
+      <div class="intent-card">
+        <div>
+          <span class="lbl">归因分析</span>
+          <span class="conf">conf 0.92</span>
+        </div>
+        <div class="targets">
+          实体：海翔药业 (002099)<br>
+          期间：2019 年报<br>
+          目标指标：经营现金流净额 / 归母净利润<br>
+          检索提示：现金流量表、应收账款、存货
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h4>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+        计划树 · Expansion
+      </h4>
+      <ol class="plan">
+        <li class="done">取 2019 / 2018 经营现金流净额</li>
+        <li class="done">取归母净利润 &amp; 扣非净利润</li>
+        <li class="done">读现金流量表补充资料</li>
+        <li class="active">分析应收账款 / 存货变动</li>
+        <li>综合归因并生成图表</li>
+      </ol>
+    </section>
+
+    <section>
+      <h4>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3l6 5-6 5"/></svg>
+        工具调用
+      </h4>
+      <div class="tool-list">
+        <div class="tool-row"><span class="tname">fact_ledger_query</span><span class="tcount">×3</span></div>
+        <div class="tool-row"><span class="tname">metric_calc</span><span class="tcount">×2</span></div>
+        <div class="tool-row"><span class="tname">section_retrieve</span><span class="tcount">×1</span></div>
+        <div class="tool-row running"><span class="tname">table_lookup</span><span class="tcount">running</span></div>
+        <div class="tool-row"><span class="tname">chart_render</span><span class="tcount">queued</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h4>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l3 3 7-7"/></svg>
+        Verifier 复核
+      </h4>
+      <div class="verifier-box pending">
+        <div class="verifier-row"><span class="tick">◐</span> Rule Layer · 进行中</div>
+        <div class="verifier-row" style="color:var(--ink-3);"><span class="tick">○</span> LLM Auditor · 待触发</div>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);">
+          已核对 5 个数字断言 · 全部匹配 Fact Ledger
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h4>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
+        会话上下文
+      </h4>
+      <div style="font-size:12px;color:var(--ink-2);line-height:1.6;">
+        <div>· 空间：<code style="font-size:11px;">hisoar_2019_fin</code></div>
+        <div>· 引擎：<code style="font-size:11px;">ToolCallingReAct</code></div>
+        <div>· 模型：GLM-5.3 / Qwen3.8-Max</div>
+        <div>· 已用 tokens：8,432 / 128k</div>
+        <div>· 本轮耗时：<span class="mono">3.7s</span></div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- CENTER: stream -->
+  <main class="stream" id="stream">
+    <div class="stream-inner">
+
+      <!-- Welcome hero: 关键指标速览 -->
+      <div class="welcome-hero">
+        <div class="title-row">
+          <h1>海翔药业 2019 年年度报告</h1>
+          <span class="code">002099.SZ</span>
+        </div>
+        <div class="subtitle">
+          披露日期 2020-01-23 · 天健会计师事务所审计 · 标准无保留意见 ·
+          <a onclick="focusSectionTree()">查看章节树</a>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi" onclick="jumpEvidence('fact-revenue', 7)">
+            <div class="name">营业收入</div>
+            <div class="val">29.41<span class="unit">亿</span></div>
+            <div class="delta up">▲ +8.20% YoY</div>
+            <div class="page-tag">P.7</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-net-profit', 7)">
+            <div class="name">归母净利润</div>
+            <div class="val">7.71<span class="unit">亿</span></div>
+            <div class="delta up">▲ +27.40% YoY</div>
+            <div class="page-tag">P.7</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-opcf', 7)">
+            <div class="name">经营现金流净额</div>
+            <div class="val">6.12<span class="unit">亿</span></div>
+            <div class="delta down">▼ -22.62% YoY</div>
+            <div class="page-tag">P.7</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-roe', 7)">
+            <div class="name">加权 ROE</div>
+            <div class="val">14.07<span class="unit">%</span></div>
+            <div class="delta up">▲ +2.72pct</div>
+            <div class="page-tag">P.7</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-rd', 19)">
+            <div class="name">研发费用</div>
+            <div class="val">1.23<span class="unit">亿</span></div>
+            <div class="delta up">▲ +10.10% YoY</div>
+            <div class="page-tag">P.19</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-gross-margin', 16)">
+            <div class="name">综合毛利率</div>
+            <div class="val">50.80<span class="unit">%</span></div>
+            <div class="delta up">▲ +5.36pct</div>
+            <div class="page-tag">P.16</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-total-asset', 7)">
+            <div class="name">总资产</div>
+            <div class="val">67.47<span class="unit">亿</span></div>
+            <div class="delta down">▼ -4.10% YoY</div>
+            <div class="page-tag">P.7</div>
+          </div>
+          <div class="kpi" onclick="jumpEvidence('fact-net-asset', 8)">
+            <div class="name">归母净资产</div>
+            <div class="val">57.24<span class="unit">亿</span></div>
+            <div class="delta up">▲ +6.19% YoY</div>
+            <div class="page-tag">P.8</div>
+          </div>
+        </div>
+
+        <div class="flags">
+          <div class="flag" onclick="askQuestion('为什么经营现金流同比下滑 22% 而净利润却增长 27%？')">
+            <span class="icon">🚩</span>
+            <span class="body">
+              <b>现金流-利润背离</b>：经营现金流 -22.62% vs 归母净利润 +27.40%，利润含金量下降
+              <span class="action">→ 追问</span>
+            </span>
+          </div>
+          <div class="flag" onclick="askQuestion('Q4 净利润为什么突然大幅下滑？')">
+            <span class="icon">🚩</span>
+            <span class="body">
+              <b>Q4 净利骤降</b>：Q4 归母净利 0.81 亿，仅为 Q2 (2.93 亿) 的 27.6%
+              <span class="action">→ 追问</span>
+            </span>
+          </div>
+          <div class="flag" onclick="askQuestion('医药中间体收入为什么增长 44%？可持续吗？')">
+            <span class="icon">🚩</span>
+            <span class="body">
+              <b>板块异动</b>：医药中间体营收 +43.97%，但染料中间体 -15.16%，结构剧烈变化
+              <span class="action">→ 追问</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="suggestions">
+          <span class="muted" style="font-size:12px;align-self:center;">试试问：</span>
+          <button class="suggestion-chip" onclick="askQuestion('2019 年毛利率是多少？怎么算的？')">2019 年毛利率是多少？</button>
+          <button class="suggestion-chip" onclick="askQuestion('医药和染料两个板块的盈利能力对比')">医药 vs 染料板块对比</button>
+          <button class="suggestion-chip" onclick="askQuestion('研发投入强度和同行比怎么样？')">研发投入强度</button>
+          <button class="suggestion-chip" onclick="askQuestion('生成一份 1500 字的年报解读')">一键生成解读报告</button>
+        </div>
+      </div>
+
+      <!-- Conversation turn -->
+      <div class="turn">
+        <div class="user-row">
+          <div class="user-bubble">为什么经营现金流同比下滑 22% 而净利润却增长 27%？帮我拆解一下</div>
+        </div>
+
+        <div class="agent-turn">
+          <div class="status-line done">
+            <span class="dot"></span>
+            <span>已完成归因分析 · 5 个工具调用 · 3.7s</span>
+          </div>
+
+          <div class="answer">
+            <p>
+              海翔药业 2019 年经营活动产生的现金流量净额为
+              <strong>6.12 亿元</strong><span class="ev fact" data-ev="fact-opcf" onclick="jumpEvidence('fact-opcf', 7)"><span class="num">1</span>P.7</span>，
+              同比下降 <strong>22.62%</strong>；同期归母净利润 <strong>7.71 亿元</strong><span class="ev fact" data-ev="fact-net-profit" onclick="jumpEvidence('fact-net-profit', 7)"><span class="num">2</span>P.7</span>，
+              同比增长 27.40%。二者出现明显背离，利润含金量下降。
+            </p>
+
+            <h3>核心归因（三项主导）</h3>
+            <ol>
+              <li>
+                <strong>应收账款大幅增加</strong>：期末应收账款较年初增加约 <strong>3.85 亿元</strong><span class="ev span" data-ev="span-ar" onclick="jumpEvidence('span-ar', 112)"><span class="num">3</span>P.112</span>，
+                占当期营收增量的 <span class="mono">173%</span>，说明相当一部分收入未转化为现金。这与医药板块 CDMO/CMO 新拓展客户账期放宽相符<span class="ev span" data-ev="span-mdna" onclick="jumpEvidence('span-mdna', 14)"><span class="num">4</span>P.14</span>。
+              </li>
+              <li>
+                <strong>存货增长</strong>：期末存货较年初增加约 <strong>1.20 亿元</strong><span class="ev span" data-ev="span-inventory" onclick="jumpEvidence('span-inventory', 98)"><span class="num">5</span>P.98</span>，
+                主要系培南系列扩产备货 &amp; 1.55 万吨活性染料项目投产前的原料储备。
+              </li>
+              <li>
+                <strong>非经常性损益贡献</strong>：政府补助 <span class="mono">2,531 万</span><span class="ev fact" data-ev="fact-gov-subsidy" onclick="jumpEvidence('fact-gov-subsidy', 8)"><span class="num">6</span>P.8</span>
+                同比增加 <span class="mono">1,475 万</span>，占归母净利润增量 <span class="mono">8.9%</span>，属于非现金/非主营贡献。
+              </li>
+            </ol>
+
+            <h3>结构性佐证</h3>
+            <p>
+              分季度看，Q1-Q3 经营现金流分别为
+              <span class="mono">1.21 / 1.83 / 1.46 亿</span><span class="ev fact" data-ev="fact-quarterly" onclick="jumpEvidence('fact-quarterly', 8)"><span class="num">7</span>P.8</span>，
+              Q4 单季 <span class="mono">1.63 亿</span> 反而是全年最高，说明现金流压力集中在 Q2-Q3 应收/存货扩张期，
+              Q4 有部分回笼，但仍未追平 2018 年水平。
+            </p>
+
+            <!-- artifact: 分季度经营现金流 vs 归母净利 -->
+            <div class="artifact">
+              <div class="artifact-head">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l3-6 3 3 3-7 3 4"/><path d="M2 14h12"/></svg>
+                <b>图表 · 分季度经营现金流 vs 归母净利</b>
+                <span class="muted" style="font-size:11.5px;">单位：亿元</span>
+                <div class="right">
+                  <button class="link-btn">查看数据源</button>
+                  <button class="link-btn">下载 PNG</button>
+                </div>
+              </div>
+              <div class="artifact-body">
+                <div class="bar-chart">
+                  <div class="bar-col">
+                    <div class="bar" style="height: 40%;"><div class="bar-value">1.21</div></div>
+                    <div class="bar-label">Q1 现金流</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 68%;"><div class="bar-value">2.02</div></div>
+                    <div class="bar-label">Q1 净利</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 60%;"><div class="bar-value">1.83</div></div>
+                    <div class="bar-label">Q2 现金流</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 96%;"><div class="bar-value">2.93</div></div>
+                    <div class="bar-label">Q2 净利</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 48%;"><div class="bar-value">1.46</div></div>
+                    <div class="bar-label">Q3 现金流</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 64%;"><div class="bar-value">1.94</div></div>
+                    <div class="bar-label">Q3 净利</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 54%;"><div class="bar-value">1.63</div></div>
+                    <div class="bar-label">Q4 现金流</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height: 27%;"><div class="bar-value">0.81</div></div>
+                    <div class="bar-label">Q4 净利</div>
+                  </div>
+                </div>
+                <div class="muted" style="margin-top:10px;font-size:11.5px;">
+                  数据源：Fact Ledger <code>quarterly_cashflow_2019</code> · <span style="color:var(--accent);cursor:pointer;">点击查看取数 SQL</span>
+                </div>
+              </div>
+            </div>
+
+            <h3>建议后续追问</h3>
+            <ul style="color:var(--ink-2);font-size:13.5px;">
+              <li>→ 应收账款账龄结构与前五大客户集中度（附注 P.112-P.115）</li>
+              <li>→ 医药板块 CDMO 客户的信用政策变化（MD&amp;A P.14-P.15）</li>
+              <li>→ 与 2018 年同期现金流量表补充资料逐项对比</li>
+            </ul>
+          </div>
+
+          <div class="verdict">
+            <span class="icon">✓</span>
+            <span><b>Verifier PASS</b> · 7 条数字断言全部匹配 Fact Ledger，无幻觉</span>
+            <span class="detail">rule: 12ms · llm-audit: 480ms</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- RIGHT: Evidence Viewer -->
+  <aside class="rail">
+    <div class="rail-head">
+      <span class="title">Evidence Viewer</span>
+      <span class="muted" style="font-size:11.5px;">海翔药业 2019 年报 · 4 个证据</span>
+      <button class="icon-btn close-btn" onclick="toggleRail()" title="收起">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+      </button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" data-tab="pdf" onclick="switchTab('pdf')">
+        PDF 原文 <span class="badge">4</span>
+      </div>
+      <div class="tab" data-tab="ledger" onclick="switchTab('ledger')">
+        Fact Ledger <span class="badge">7</span>
+      </div>
+      <div class="tab" data-tab="tree" onclick="switchTab('tree')">章节树</div>
+      <div class="tab" data-tab="trace" onclick="switchTab('trace')">计算过程</div>
+    </div>
+
+    <div class="rail-body">
+
+      <!-- PDF Previewer -->
+      <div class="tab-panel on" data-panel="pdf">
+        <div class="pdf-toolbar">
+          <button>◀</button>
+          <span class="page-info">第 <b id="pdf-page-num">7</b> / 204 页</span>
+          <button>▶</button>
+          <div class="right">
+            <button>适应宽度</button>
+            <button>下载此页</button>
+          </div>
+        </div>
+
+        <!-- Page 7 rendering (real content) -->
+        <div class="pdf-page" id="pdf-page-7">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+
+          <h5>六、主要会计数据和财务指标</h5>
+          <p style="font-size:11.5px;">公司是否需追溯调整或重述以前年度会计数据　□ 是　√ 否</p>
+
+          <table class="fin-table">
+            <thead>
+              <tr>
+                <th style="width:34%;"></th>
+                <th>2019年</th>
+                <th>2018年</th>
+                <th>本年比上年增减</th>
+                <th>2017年</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>营业收入（元）</td>
+                <td><span class="hl hl-cell" data-hl="fact-revenue">2,941,412,770.30</span></td>
+                <td>2,718,608,796.51</td>
+                <td>8.20%</td>
+                <td>2,308,922,170.29</td>
+              </tr>
+              <tr>
+                <td>归属于上市公司股东的净利润（元）</td>
+                <td><span class="hl hl-cell" data-hl="fact-net-profit">770,782,185.09</span></td>
+                <td>605,003,820.78</td>
+                <td>27.40%</td>
+                <td>342,217,155.60</td>
+              </tr>
+              <tr>
+                <td>归属于上市公司股东的扣除非经常性损益的净利润（元）</td>
+                <td>751,209,860.23</td>
+                <td>604,944,470.09</td>
+                <td>24.18%</td>
+                <td>301,310,316.13</td>
+              </tr>
+              <tr>
+                <td>经营活动产生的现金流量净额（元）</td>
+                <td><span class="hl hl-cell active" data-hl="fact-opcf">612,399,095.31</span></td>
+                <td>791,449,237.66</td>
+                <td>-22.62%</td>
+                <td>118,141,514.53</td>
+              </tr>
+              <tr>
+                <td>基本每股收益（元/股）</td>
+                <td>0.48</td>
+                <td>0.38</td>
+                <td>26.32%</td>
+                <td>0.22</td>
+              </tr>
+              <tr>
+                <td>稀释每股收益（元/股）</td>
+                <td>0.48</td>
+                <td>0.38</td>
+                <td>26.32%</td>
+                <td>0.21</td>
+              </tr>
+              <tr>
+                <td>加权平均净资产收益率</td>
+                <td><span class="hl hl-cell" data-hl="fact-roe">14.07%</span></td>
+                <td>11.35%</td>
+                <td>2.72%</td>
+                <td>6.90%</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>2019年末</td>
+                <td>2018年末</td>
+                <td>本年末比上年末增减</td>
+                <td>2017年末</td>
+              </tr>
+              <tr>
+                <td>总资产（元）</td>
+                <td><span class="hl hl-cell" data-hl="fact-total-asset">6,747,198,664.47</span></td>
+                <td>7,035,373,344.57</td>
+                <td>-4.10%</td>
+                <td>7,466,927,438.54</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="page-num">7</div>
+        </div>
+
+        <!-- Page 8 (hidden until jump) -->
+        <div class="pdf-page hidden" id="pdf-page-8">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>八、分季度主要财务指标　　单位：元</h5>
+          <table class="fin-table">
+            <thead>
+              <tr><th></th><th>第一季度</th><th>第二季度</th><th>第三季度</th><th>第四季度</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>营业收入</td>
+                <td>831,903,896.72</td><td>900,629,910.88</td><td>643,422,185.88</td><td>565,456,776.82</td>
+              </tr>
+              <tr>
+                <td>归属于上市公司股东的净利润</td>
+                <td>202,484,692.73</td><td>293,308,368.91</td><td>194,299,384.33</td>
+                <td><span class="hl hl-cell" data-hl="fact-q4-profit">80,689,739.12</span></td>
+              </tr>
+              <tr>
+                <td>经营活动产生的现金流量净额</td>
+                <td><span class="hl hl-cell" data-hl="fact-quarterly">121,163,063.50</span></td>
+                <td>182,750,885.24</td><td>145,547,827.28</td><td>162,937,319.29</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h5>九、非经常性损益项目及金额　√ 适用　□ 不适用　　单位：元</h5>
+          <table class="fin-table">
+            <thead>
+              <tr><th>项目</th><th>2019年金额</th><th>2018年金额</th><th>2017年金额</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>计入当期损益的政府补助</td>
+                <td><span class="hl hl-cell" data-hl="fact-gov-subsidy">25,308,625.27</span></td>
+                <td>10,554,527.86</td><td>8,815,813.87</td>
+              </tr>
+              <tr><td>非流动资产处置损益</td><td>-4,150,774.97</td><td>-102,273.45</td><td>23,519,733.42</td></tr>
+              <tr><td>委托他人投资或管理资产的损益</td><td>2,079,074.70</td><td>3,024,312.63</td><td>11,532,098.63</td></tr>
+            </tbody>
+          </table>
+          <div class="page-num">8</div>
+        </div>
+
+        <!-- Page 14 (MD&A) -->
+        <div class="pdf-page hidden" id="pdf-page-14">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>第四节　经营情况讨论与分析　一、概述</h5>
+          <p>
+            2019年国内医疗体制改革进入深水区，随着新版《药品管理法》、药品上市许可持有人制度（MAH）、新版医保目录、一致性评价、集采扩围、医保谈判等政策细则持续推进，医药行业传统格局正在被打破……
+          </p>
+          <p>
+            报告期内，<span class="hl" data-hl="span-mdna">医药板块培南系列、克林系列持续增长，CDMO/CMO合作产品增加，实现销售收入16.23亿元，同比增长10.52%，实现净利润2.95亿元，同比增长47.67%</span>；染料板块受中美贸易不确定性影响，下游纺织印染行业需求低迷……
+          </p>
+          <p>
+            2019年度上市公司主营业务继续增长创新高，实现营业收入29.41亿元，同比增长8.20%，实现归属母公司净利润7.71亿元，同比增长27.40%。
+          </p>
+          <div class="page-num">14</div>
+        </div>
+
+        <!-- Page 112 (附注：应收账款) -->
+        <div class="pdf-page hidden" id="pdf-page-112">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>财务报表附注 · 五、合并财务报表项目注释 · （三）应收账款</h5>
+          <p>1. 应收账款余额情况</p>
+          <table class="fin-table">
+            <thead>
+              <tr><th>项目</th><th>2019-12-31</th><th>2018-12-31</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>账面余额</td><td><span class="hl hl-cell" data-hl="span-ar">1,152,378,421.55</span></td><td>767,412,857.32</td></tr>
+              <tr><td>减：坏账准备</td><td>62,145,927.83</td><td>45,317,268.94</td></tr>
+              <tr><td>账面价值</td><td>1,090,232,493.72</td><td>722,095,588.38</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;">
+            期末应收账款余额较期初增加 <span class="hl" data-hl="span-ar-delta">384,965,564.23 元，增幅 50.16%</span>，主要系医药板块 CDMO/CMO 业务拓展新客户，账期延长所致。
+          </p>
+          <div class="page-num">112</div>
+        </div>
+
+        <!-- Page 98 (存货) -->
+        <div class="pdf-page hidden" id="pdf-page-98">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>财务报表附注 · 五、合并财务报表项目注释 · （六）存货</h5>
+          <table class="fin-table">
+            <thead>
+              <tr><th>项目</th><th>2019-12-31</th><th>2018-12-31</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>原材料</td><td>287,412,558.32</td><td>203,187,442.19</td></tr>
+              <tr><td>在产品</td><td>156,832,917.44</td><td>118,254,708.62</td></tr>
+              <tr><td>库存商品</td><td>412,187,335.28</td><td>373,412,857.94</td></tr>
+              <tr><td>合计</td><td><span class="hl hl-cell" data-hl="span-inventory">856,432,811.04</span></td><td>694,855,008.75</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;">
+            期末存货较期初增加 <span class="hl" data-hl="span-inventory-delta">161,577,802.29 元，增幅 23.25%</span>，主要系培南系列扩产备货及活性染料新项目投产前原料储备。
+          </p>
+          <div class="page-num">98</div>
+        </div>
+
+        <!-- Page 19 (费用与研发) -->
+        <div class="pdf-page hidden" id="pdf-page-19">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>3、费用　　单位：元</h5>
+          <table class="fin-table">
+            <thead><tr><th></th><th>2019年</th><th>2018年</th><th>同比增减</th><th>重大变动说明</th></tr></thead>
+            <tbody>
+              <tr><td>销售费用</td><td>59,623,024.88</td><td>43,781,054.42</td><td>36.18%</td><td style="text-align:left;font-family:var(--sans);">主要系佣金增加所致</td></tr>
+              <tr><td>管理费用</td><td>386,185,538.84</td><td>349,284,396.57</td><td>10.56%</td><td></td></tr>
+              <tr><td>财务费用</td><td>-37,865,156.06</td><td>-51,507,397.78</td><td>-26.49%</td><td></td></tr>
+              <tr><td>研发费用</td><td><span class="hl hl-cell" data-hl="fact-rd">122,548,224.53</span></td><td>111,304,662.07</td><td>10.10%</td><td></td></tr>
+            </tbody>
+          </table>
+          <h5>4、研发投入</h5>
+          <table class="fin-table">
+            <thead><tr><th></th><th>2019年</th><th>2018年</th><th>变动比例</th></tr></thead>
+            <tbody>
+              <tr><td>研发人员数量（人）</td><td>443</td><td>405</td><td>9.38%</td></tr>
+              <tr><td>研发人员数量占比</td><td>13.45%</td><td>12.75%</td><td>0.70%</td></tr>
+              <tr><td>研发投入占营业收入比例</td><td>4.17%</td><td>4.09%</td><td>0.08%</td></tr>
+            </tbody>
+          </table>
+          <div class="page-num">19</div>
+        </div>
+
+        <!-- Page 16 (毛利率分板块) -->
+        <div class="pdf-page hidden" id="pdf-page-16">
+          <div class="running-head">浙江海翔药业股份有限公司 2019年年度报告全文</div>
+          <h5>（2）占公司营业收入或营业利润 10%以上的行业、产品或地区情况</h5>
+          <table class="fin-table" style="font-size:10.5px;">
+            <thead><tr><th></th><th>营业收入</th><th>营业成本</th><th>毛利率</th><th>营收同比</th><th>成本同比</th><th>毛利率同比</th></tr></thead>
+            <tbody>
+              <tr><td>医药</td><td>1,608,858,743.47</td><td>983,149,430.95</td><td><span class="hl hl-cell" data-hl="fact-gross-margin-med">38.89%</span></td><td>11.60%</td><td>1.30%</td><td>6.23%</td></tr>
+              <tr><td>染料</td><td>1,316,830,162.67</td><td>465,697,259.49</td><td><span class="hl hl-cell" data-hl="fact-gross-margin-dye">64.63%</span></td><td>5.40%</td><td>-10.70%</td><td>6.34%</td></tr>
+              <tr><td>原料药</td><td>1,020,477,644.34</td><td>652,198,278.33</td><td>36.09%</td><td>-1.20%</td><td>-6.10%</td><td>3.30%</td></tr>
+              <tr><td>医药中间体</td><td>583,792,425.63</td><td>328,224,382.60</td><td>43.78%</td><td>44.00%</td><td>20.30%</td><td>11.06%</td></tr>
+            </tbody>
+          </table>
+          <div class="page-num">16</div>
+        </div>
+      </div>
+
+      <!-- Fact Ledger Inspector -->
+      <div class="tab-panel" data-panel="ledger">
+        <div class="ledger-search">
+          <input placeholder="搜索指标 / 期间 / segment（如 revenue, 2019, 医药）" />
+          <button class="capsule">筛选</button>
+        </div>
+
+        <div class="fact-card active" id="ledger-fact-opcf">
+          <div class="row"><span class="k">metric_code</span><span class="v">operating_cashflow_net</span></div>
+          <div class="row"><span class="k">name_zh</span><span class="v wrap">经营活动产生的现金流量净额</span></div>
+          <div class="row"><span class="k">entity_id</span><span class="v">hisoar_002099</span></div>
+          <div class="row"><span class="k">period</span><span class="v">year:2019</span></div>
+          <div class="row"><span class="k">segment</span><span class="v">NULL (合并)</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">612,399,095.31 CNY</span></div>
+          <div class="row"><span class="k">yoy_change</span><span class="v" style="color:var(--danger);">-22.62%</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:7:block:12:row:4:col:2</span></div>
+          <div class="row"><span class="k">source_text</span><span class="v wrap" style="font-size:11.5px;color:var(--ink-2);">"经营活动产生的现金流量净额（元） 612,399,095.31 791,449,237.66 -22.62% 118,141,514.53"</span></div>
+          <div class="row"><span class="k">extraction</span><span class="v"><span class="badge rule">rule:main_accounting_data</span></span></div>
+          <div class="row"><span class="k">confidence</span><span class="v"><span class="badge high">high · 0.99</span></span></div>
+          <div class="row"><span class="k">verified</span><span class="v">✓ 交叉验证：与 P.85 现金流量表主表一致</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-net-profit">
+          <div class="row"><span class="k">metric_code</span><span class="v">net_profit_attr</span></div>
+          <div class="row"><span class="k">name_zh</span><span class="v wrap">归属于上市公司股东的净利润</span></div>
+          <div class="row"><span class="k">period</span><span class="v">year:2019</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">770,782,185.09 CNY</span></div>
+          <div class="row"><span class="k">yoy_change</span><span class="v" style="color:var(--ok);">+27.40%</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:7:block:12:row:2:col:2</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-revenue">
+          <div class="row"><span class="k">metric_code</span><span class="v">revenue</span></div>
+          <div class="row"><span class="k">name_zh</span><span class="v wrap">营业收入</span></div>
+          <div class="row"><span class="k">period</span><span class="v">year:2019</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">2,941,412,770.30 CNY</span></div>
+          <div class="row"><span class="k">yoy_change</span><span class="v" style="color:var(--ok);">+8.20%</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:7:block:12:row:1:col:2</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-quarterly">
+          <div class="row"><span class="k">metric_code</span><span class="v">operating_cashflow_net</span></div>
+          <div class="row"><span class="k">period_type</span><span class="v">quarter</span></div>
+          <div class="row"><span class="k">Q1 / Q2 / Q3 / Q4</span><span class="v">1.21 / 1.83 / 1.46 / 1.63 亿</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:8:block:5</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-gov-subsidy">
+          <div class="row"><span class="k">metric_code</span><span class="v">gov_subsidy_non_recurring</span></div>
+          <div class="row"><span class="k">name_zh</span><span class="v wrap">计入当期损益的政府补助（非经常性）</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">25,308,625.27 CNY</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:8:block:9:row:3</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-rd">
+          <div class="row"><span class="k">metric_code</span><span class="v">rd_expense</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">122,548,224.53 CNY</span></div>
+          <div class="row"><span class="k">yoy_change</span><span class="v" style="color:var(--ok);">+10.10%</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:19:block:3:row:4</span></div>
+        </div>
+
+        <div class="fact-card" id="ledger-fact-roe">
+          <div class="row"><span class="k">metric_code</span><span class="v">roe_weighted</span></div>
+          <div class="row"><span class="k">value</span><span class="v hi">14.07%</span></div>
+          <div class="row"><span class="k">source_ref</span><span class="v" style="font-size:11px;">doc:hisoar2019:page:7:block:12:row:7</span></div>
+        </div>
+      </div>
+
+      <!-- Section Tree -->
+      <div class="tab-panel" data-panel="tree">
+        <div class="tree" id="section-tree">
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▼</span>第一节　释义<span class="pg">P.3</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▼</span>第二节　公司简介和主要财务指标<span class="pg">P.5</span></div>
+            <div class="tree-children">
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>一、公司信息<span class="pg">P.5</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>二、联系人和联系方式<span class="pg">P.5</span></div></div>
+              <div class="tree-node"><div class="tree-label active" onclick="jumpPage(7)"><span class="caret">·</span>六、主要会计数据和财务指标<span class="pg">P.7</span></div></div>
+              <div class="tree-node"><div class="tree-label" onclick="jumpPage(8)"><span class="caret">·</span>八、分季度主要财务指标<span class="pg">P.8</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>九、非经常性损益项目及金额<span class="pg">P.8</span></div></div>
+            </div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▼</span>第三节　公司业务概要<span class="pg">P.10</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▼</span>第四节　经营情况讨论与分析<span class="pg">P.14</span></div>
+            <div class="tree-children">
+              <div class="tree-node"><div class="tree-label" onclick="jumpPage(14)"><span class="caret">·</span>一、概述<span class="pg">P.14</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>二、主营业务分析<span class="pg">P.15</span></div>
+                <div class="tree-children">
+                  <div class="tree-node"><div class="tree-label" onclick="jumpPage(16)"><span class="caret">·</span>2、收入与成本<span class="pg">P.15-17</span></div></div>
+                  <div class="tree-node"><div class="tree-label" onclick="jumpPage(19)"><span class="caret">·</span>3、费用<span class="pg">P.19</span></div></div>
+                  <div class="tree-node"><div class="tree-label"><span class="caret">·</span>4、研发投入<span class="pg">P.19</span></div></div>
+                  <div class="tree-node"><div class="tree-label"><span class="caret">·</span>5、现金流<span class="pg">P.20</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▶</span>第五节　重要事项<span class="pg">P.42</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▶</span>第六节　股份变动及股东情况<span class="pg">P.58</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▶</span>第七节　董事、监事、高级管理人员和员工情况<span class="pg">P.72</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▶</span>第八节　公司治理<span class="pg">P.80</span></div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▼</span>第十一节　财务报告<span class="pg">P.90</span></div>
+            <div class="tree-children">
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>审计报告<span class="pg">P.90</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>合并资产负债表<span class="pg">P.93</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>合并利润表<span class="pg">P.85</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">·</span>合并现金流量表<span class="pg">P.87</span></div></div>
+              <div class="tree-node"><div class="tree-label"><span class="caret">▼</span>财务报表附注<span class="pg">P.95</span></div>
+                <div class="tree-children">
+                  <div class="tree-node"><div class="tree-label"><span class="caret">·</span>（一）货币资金<span class="pg">P.96</span></div></div>
+                  <div class="tree-node"><div class="tree-label" onclick="jumpPage(98)"><span class="caret">·</span>（六）存货<span class="pg">P.98</span></div></div>
+                  <div class="tree-node"><div class="tree-label" onclick="jumpPage(112)"><span class="caret">·</span>（三）应收账款<span class="pg">P.112</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tree-node">
+            <div class="tree-label"><span class="caret">▶</span>第十二节　备查文件目录<span class="pg">P.203</span></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:var(--bg);border-radius:6px;font-size:11.5px;color:var(--ink-3);line-height:1.5;">
+          <b style="color:var(--ink-2);">章节路由策略：</b> 按标题（非序号）+ 别名表匹配 CSRC 2017/2021/2025 三版准则；命中率 96%（本报告 24/25 章节自动匹配，1 章节走 embedding 兜底）。
+        </div>
+      </div>
+
+      <!-- Computation Trace -->
+      <div class="tab-panel" data-panel="trace">
+        <div style="font-size:12.5px;color:var(--ink-2);margin-bottom:12px;">
+          当前展示：<b>综合毛利率（2019）</b> 的计算过程 · 由 <code>MetricCalcEngine</code> 生成
+        </div>
+
+        <div class="comp-block">
+          <div class="comp-formula">毛利率 = (营业收入 - 营业成本) / 营业收入</div>
+          <div class="comp-inputs">
+            <div class="comp-input">
+              <span class="name">营业收入 <span class="muted" style="font-size:11px;">revenue</span></span>
+              <span class="val">2,941,412,770.30</span>
+              <span class="ev fact src" style="font-size:11px;" onclick="jumpEvidence('fact-revenue', 7)"><span class="num">·</span>P.7</span>
+            </div>
+            <div class="comp-input">
+              <span class="name">营业成本 <span class="muted" style="font-size:11px;">cogs</span></span>
+              <span class="val">1,447,159,361.03</span>
+              <span class="ev span src" style="font-size:11px;" onclick="jumpPage(85)"><span class="num">·</span>P.85</span>
+            </div>
+          </div>
+          <div class="comp-step">step 1: revenue - cogs = 2,941,412,770.30 - 1,447,159,361.03 = 1,494,253,409.27</div>
+          <div class="comp-step">step 2: 1,494,253,409.27 / 2,941,412,770.30 = 0.50800...</div>
+          <div class="comp-result">毛利率 = 50.80% <span style="font-size:11px;font-weight:400;">(2018: 45.44% · +5.36pct)</span></div>
+          <div style="margin-top:10px;font-size:11.5px;color:var(--ink-3);line-height:1.5;">
+            <b>数据源快照：</b> 2020-01-23 披露的 2019 年报（未经追溯调整）<br>
+            <b>审计意见：</b> 天健会计师事务所 · 标准无保留意见<br>
+            <b>会计准则：</b> 企业会计准则（CAS）· 与 IFRS 无重大差异
+          </div>
+        </div>
+
+        <div class="comp-block">
+          <div class="comp-formula">利润含金量 = 经营现金流净额 / 归母净利润</div>
+          <div class="comp-inputs">
+            <div class="comp-input">
+              <span class="name">经营现金流净额</span>
+              <span class="val">612,399,095.31</span>
+              <span class="ev fact src" style="font-size:11px;" onclick="jumpEvidence('fact-opcf', 7)"><span class="num">·</span>P.7</span>
+            </div>
+            <div class="comp-input">
+              <span class="name">归母净利润</span>
+              <span class="val">770,782,185.09</span>
+              <span class="ev fact src" style="font-size:11px;" onclick="jumpEvidence('fact-net-profit', 7)"><span class="num">·</span>P.7</span>
+            </div>
+          </div>
+          <div class="comp-step">step 1: 612,399,095.31 / 770,782,185.09 = 0.7945...</div>
+          <div class="comp-result" style="background:var(--danger-soft);border-color:#f8caca;color:#7f1d1d;">
+            利润含金量 = 79.45% <span style="font-size:11px;font-weight:400;">⚠ 低于健康值 100%（2018: 130.82% · -51.37pct）</span>
+          </div>
+        </div>
+
+        <div style="padding:12px;background:var(--bg);border-radius:6px;font-size:11.5px;color:var(--ink-3);line-height:1.5;">
+          <b style="color:var(--ink-2);">Verifier 复核轨迹：</b><br>
+          · Rule Layer: 7 个数字断言全部匹配 Fact Ledger <span style="color:var(--ok);">✓</span> (12ms)<br>
+          · LLM Auditor: 结论与证据一致，无夸大 <span style="color:var(--ok);">✓</span> (480ms)<br>
+          · Abstention: 未触发（所有数字均有源）<br>
+          · 最终裁决：<b style="color:var(--ok);">PASS</b>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Design annotations -->
+  <div class="anno-badge" style="top: 78px; left: 244px;">1</div>
+  <div class="anno left" style="top: 62px; left: 20px; max-width: 210px;">
+    <b>① 左栏 · 意图/计划/工具</b>
+    复用现有 ManusLeftPanel.timelineSlot。Router 结果 + Expansion 计划树 + 工具调用行 + Verifier 状态。让用户看清 Agent 在干什么、走到哪一步。
+  </div>
+
+  <div class="anno-badge" style="top: 148px; right: 636px;">2</div>
+  <div class="anno right" style="top: 132px; right: 660px; max-width: 240px;">
+    <b>② 首屏 KPI 卡片</b>
+    上传后自动跑「关键指标速览」工作流，抽 8 个核心 KPI + 3 个自动红旗。每张卡片可点击 → 跳 PDF 高亮。数字来源全部走 Fact Ledger，绝不让 LLM 心算。
+  </div>
+
+  <div class="anno-badge" style="top: 400px; right: 636px;">3</div>
+  <div class="anno right" style="top: 384px; right: 660px; max-width: 240px;">
+    <b>③ 自动红旗</b>
+    P0 内置 20 条规则（现金流-利润背离、Q4 骤降、板块异动、非经常性损益占比过高等）。点击直接触发追问，进入 ReAct 归因流程。
+  </div>
+
+  <div class="anno-badge" style="bottom: 380px; left: 50%; transform: translateX(60px);">4</div>
+  <div class="anno left" style="bottom: 360px; left: 50%; margin-left: 80px; max-width: 250px;">
+    <b>④ 证据 Chip · 三色分类</b>
+    绿色=Fact Ledger 精确匹配（数字类）<br>
+    蓝色=PDF 原文引用（叙事类）<br>
+    橙色=计算过程展开（衍生指标）<br>
+    圆圈数字对应右侧 Evidence 列表编号；点击自动跳转 + 高亮。
+  </div>
+
+  <div class="anno-badge" style="top: 128px; right: 200px;">5</div>
+  <div class="anno right" style="top: 112px; right: 220px; max-width: 220px;">
+    <b>⑤ Evidence Viewer 四 Tab</b>
+    PDF 原文（bbox 高亮）· Fact Ledger（结构化事实）· 章节树（导航式检索）· 计算过程（公式+取数+中间值）。默认停在点击 chip 对应的 tab。
+  </div>
+
+  <div class="anno-badge" style="top: 340px; right: 20px;">6</div>
+  <div class="anno right" style="top: 320px; right: 44px; max-width: 200px;">
+    <b>⑥ PDF bbox 高亮</b>
+    pdf.js 渲染，用 MinerU 输出的归一化 bbox 定位。黄色蒙版=文本 span，绿色蒙版=表格 cell。支持"上一个/下一个"证据跳转。
+  </div>
+
+  <div class="anno-badge" style="bottom: 200px; left: 50%; transform: translateX(-40px);">7</div>
+  <div class="anno left" style="bottom: 180px; left: 50%; margin-left: -20px; max-width: 240px;">
+    <b>⑦ Verifier 结果徽章</b>
+    每条 Agent 回复尾部强制显示 Rule + LLM 双层复核结果。数字对不上直接 REVISE 或 ABSTAIN，参考 Rogo 的 refuse-without-source。
+  </div>
+
+  <!-- Composer -->
+  <div class="composer-wrap">
+    <div class="composer">
+      <textarea id="composer-input" placeholder="继续追问，或输入 @ 快速引用日期/指标/表格…（Enter 发送，Shift+Enter 换行）" rows="1"></textarea>
+      <div class="composer-bar">
+        <button class="pill" title="附加文档">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M3 8h10"/></svg>
+          添加年报
+        </button>
+        <button class="pill" title="切换引擎">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><path d="M8 4v4l2.5 2"/></svg>
+          ReAct · GLM-5.3
+        </button>
+        <button class="pill" title="深度分析">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 8h3l2-4 2 8 2-4h3"/></svg>
+          Deep Analysis
+        </button>
+        <span class="hint">Router 会自动分诊意图，无需手动选择工具</span>
+        <button class="send-btn" onclick="sendQuestion()" title="发送">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 12V3M4 7l4-4 4 4"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── state ──────────────────────────────────────────────────────
+  const state = { tab: 'pdf', page: 7, activeEv: null };
+
+  // ── tab switching ──────────────────────────────────────────────
+  function switchTab(tab) {
+    state.tab = tab;
+    document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.dataset.tab === tab));
+    document.querySelectorAll('.tab-panel').forEach(el => el.classList.toggle('on', el.dataset.panel === tab));
+  }
+
+  // ── rail toggle ────────────────────────────────────────────────
+  function toggleRail() {
+    document.getElementById('workspace').classList.toggle('rail-open');
+  }
+
+  // ── page jump ─────────────────────────────────────────────────
+  function jumpPage(pageNum) {
+    document.querySelectorAll('.pdf-page').forEach(p => p.classList.add('hidden'));
+    const page = document.getElementById('pdf-page-' + pageNum);
+    if (page) page.classList.remove('hidden');
+    document.getElementById('pdf-page-num').textContent = pageNum;
+    state.page = pageNum;
+    switchTab('pdf');
+  }
+
+  // ── evidence chip → jump + highlight ──────────────────────────
+  const EV_MAP = {
+    'fact-revenue':      { tab: 'pdf',    page: 7,   hl: 'fact-revenue' },
+    'fact-net-profit':   { tab: 'pdf',    page: 7,   hl: 'fact-net-profit' },
+    'fact-opcf':         { tab: 'pdf',    page: 7,   hl: 'fact-opcf' },
+    'fact-roe':          { tab: 'pdf',    page: 7,   hl: 'fact-roe' },
+    'fact-total-asset':  { tab: 'pdf',    page: 7,   hl: 'fact-total-asset' },
+    'fact-net-asset':    { tab: 'pdf',    page: 8,   hl: null },
+    'fact-quarterly':    { tab: 'pdf',    page: 8,   hl: 'fact-quarterly' },
+    'fact-q4-profit':    { tab: 'pdf',    page: 8,   hl: 'fact-q4-profit' },
+    'fact-gov-subsidy':  { tab: 'pdf',    page: 8,   hl: 'fact-gov-subsidy' },
+    'fact-rd':           { tab: 'pdf',    page: 19,  hl: 'fact-rd' },
+    'fact-gross-margin': { tab: 'pdf',    page: 16,  hl: 'fact-gross-margin-med' },
+    'span-mdna':         { tab: 'pdf',    page: 14,  hl: 'span-mdna' },
+    'span-ar':           { tab: 'pdf',    page: 112, hl: 'span-ar' },
+    'span-inventory':    { tab: 'pdf',    page: 98,  hl: 'span-inventory' },
+  };
+
+  function jumpEvidence(evId, pageHint) {
+    // clear previous
+    document.querySelectorAll('.ev.active').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.hl.active').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.fact-card.active').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.tree-label.active').forEach(e => e.classList.remove('active'));
+
+    // highlight source chip
+    document.querySelectorAll(`.ev[data-ev="${evId}"]`).forEach(e => e.classList.add('active'));
+
+    const cfg = EV_MAP[evId];
+    if (!cfg) {
+      if (pageHint) jumpPage(pageHint);
+      return;
+    }
+
+    // switch tab first
+    if (cfg.tab === 'pdf') {
+      jumpPage(cfg.page);
+      // then highlight
+      setTimeout(() => {
+        if (cfg.hl) {
+          const hl = document.querySelector(`.hl[data-hl="${cfg.hl}"]`);
+          if (hl) {
+            hl.classList.add('active');
+            hl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, 60);
+    } else if (cfg.tab === 'ledger') {
+      switchTab('ledger');
+      const card = document.getElementById('ledger-' + evId);
+      if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }
+    state.activeEv = evId;
+  }
+
+  // ── section tree focus ────────────────────────────────────────
+  function focusSectionTree() { switchTab('tree'); }
+
+  // ── ask question (simulated) ─────────────────────────────────
+  function askQuestion(text) {
+    document.getElementById('composer-input').value = text;
+    document.getElementById('composer-input').focus();
+    // scroll to composer
+    document.getElementById('stream').scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  function sendQuestion() {
+    const input = document.getElementById('composer-input');
+    if (!input.value.trim()) return;
+    alert('Demo mockup：真实实现会通过 POST /v1/chat/financial-report 发起 SSE 请求，事件包括 step.chunk / final.chunk / evidence.fact / evidence.span / evidence.computation / evidence.verifier');
+    input.value = '';
+  }
+
+  // ── annotation toggle ────────────────────────────────────────
+  document.getElementById('anno-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('show-anno');
+    document.getElementById('anno-toggle').classList.toggle('on');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'a' && !e.metaKey && !e.ctrlKey && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+      document.getElementById('anno-toggle').click();
+    }
+  });
+
+  // ── textarea auto-resize ─────────────────────────────────────
+  const ta = document.getElementById('composer-input');
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+  });
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuestion(); }
+  });
+
+  // ── initial state ────────────────────────────────────────────
+  jumpPage(7);
+  // highlight the currently active fact (fact-opcf) as if user just clicked
+  setTimeout(() => {
+    const hl = document.querySelector('.hl[data-hl="fact-opcf"]');
+    if (hl) hl.classList.add('active');
+  }, 100);
+</script>
+
+</body>
+</html>

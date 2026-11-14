@@ -32,14 +32,14 @@ class _Client(LLMClient):
 @pytest.mark.parametrize("mode", ["spec", "placeholders"])
 async def test_report_agent_receives_internal_skill_once(monkeypatch, tmp_path, mode):
     repo = next(p for p in Path(__file__).resolve().parents if (p / "skills").is_dir())
-    original = report_agent.PromptTemplate
+    original = report_agent.PromptTemplate.from_literal
     prompts = []
 
-    def capture(*args, **kwargs):
-        prompts.append(kwargs["template"])
-        return original(*args, **kwargs)
+    def capture(template, *args, **kwargs):
+        prompts.append(template)
+        return original(template, *args, **kwargs)
 
-    monkeypatch.setattr(report_agent, "PromptTemplate", capture)
+    monkeypatch.setattr(report_agent.PromptTemplate, "from_literal", capture)
     skills_dir = repo / "skills"
     if mode == "placeholders":
         skills_dir = tmp_path

@@ -5,6 +5,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { useWidgetContentSize } from './use-widget-content-size';
 
 describe('dashboard chart content-box sizing', () => {
+  it('spaces dense date labels while preserving every weekly data point', () => {
+    const data = Array.from({ length: 143 }, (_, index) => ({
+      day: new Date(Date.UTC(2010, 1, 5 + index * 7)).toISOString().slice(0, 10),
+      value: index,
+    }));
+    const config = getDashboardAxisConfig({
+      chartType: 'line',
+      dashboardSurface: true,
+      width: 760,
+      data,
+      xField: 'day',
+      yField: 'value',
+    });
+    const ticks = data.filter((row, index) => config.axis.x.tickFilter(row.day, index));
+    expect(ticks.length).toBeLessThanOrEqual(8);
+    expect(ticks[0]).toBe(data[0]);
+    expect(ticks.at(-1)).toBe(data.at(-1));
+    expect(config.axis.x.labelTransform).toBeUndefined();
+    expect(data).toHaveLength(143);
+  });
   it('keeps horizontal category names level and reserves readable label width', () => {
     const config = getDashboardAxisConfig({
       chartType: 'bar',

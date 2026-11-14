@@ -28,6 +28,9 @@ wheels/
 # Soft link
 /models
 plugins/
+# ...but keep the scenario-suite serve module (product code, not build artifact)
+!packages/dbgpt-serve/src/dbgpt_serve/plugins/
+!packages/dbgpt-serve/src/dbgpt_serve/plugins/**
 
 pip-wheel-metadata/
 share/python-wheels/
@@ -218,8 +221,48 @@ openspec/
 docs/superpowers/
 .gstack/
 
+# --- local runtime state & generated artifacts (dev machine) ---
+/harness_engine.json
+/pi_workspace/
+/python_uploads/
+/upload/
+/packages/dbgpt-app/src/dbgpt_app/python_uploads/
+/packages/dbgpt-app/src/dbgpt_app/*.png
+/*.png
+/*.csv
+/*.html
+/*.skill
+/fix_*.py
+/fix_*.js
+/patch_*.py
+/test_fstring*.py
+/test_script.js
+/screenshot.png
+/web/screenshot-*.png
+/web/public/icons/kb_icon.png
+/docker/examples/test_files/
+/docker/examples/txt/
+/examples/pdf/
+/.work/
 # Generated Dashboard demo data and local share-token encryption key
 /output/
 /examples/dashboard/generated/
 /pilot/meta_data/dashboard-share.key
 /examples/dashboard/olist/data/
+pilot/taskflow_artifacts/
+
+# Local reports, generated examples, and browser verification artifacts
+/output/
+/assets/.suites-installation.lock
+/taskflow-conversation-design/*.png
+/taskflow-conversation-design/browser-verification.*
+/taskflow-conversation-design/implementation-verification.md
+/taskflow-conversation-design/semantic-flow-evidence.json
+/taskflow-conversation-design/semantic-flow-live-evidence.json
+/taskflow-conversation-design/semantic-flow-review.md
+/taskflow-conversation-design/verify-*.cjs
+/taskflow-conversation-design/verify-*.py
+/expert-suite-command-test-*.md
+/expert-suite-demo-test-*.md
+/nl2sql-skill-verification-*.md
+/qwenwork-plugin-test-*.md

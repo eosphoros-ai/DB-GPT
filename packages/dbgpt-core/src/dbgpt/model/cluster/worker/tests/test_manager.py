@@ -114,6 +114,29 @@ async def test_add_worker(
 
 
 @pytest.mark.asyncio
+async def test_duplicate_startup_preserves_running_worker(
+    manager, worker, worker_param, monkeypatch
+):
+    deploy_params = HFLLMDeployModelParameters(
+        name=_TEST_MODEL_NAME, path=_TEST_MODEL_PATH
+    )
+    assert manager.add_worker(worker, worker_param, deploy_params)
+    existing = dict(manager.workers)
+    monkeypatch.setattr(manager, "_build_worker", lambda **kwargs: worker)
+    with pytest.raises(Exception, match="worker instances is exist"):
+        await manager.model_startup(
+            WorkerStartupRequest(
+                host="",
+                port=0,
+                model=_TEST_MODEL_NAME,
+                worker_type=WorkerType.LLM,
+                params=asdict(deploy_params),
+            )
+        )
+    assert manager.workers == existing
+
+
+@pytest.mark.asyncio
 async def test__apply_worker(manager_2_workers: LocalWorkerManager):  # noqa: F811
     manager = manager_2_workers
 

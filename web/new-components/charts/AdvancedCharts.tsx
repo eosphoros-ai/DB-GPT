@@ -12,11 +12,33 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from '@ant-design/icons';
-import { Area, Bar, Column, DualAxes, Line, Pie, Scatter } from '@ant-design/plots';
+import type {
+  AreaConfig,
+  BarConfig,
+  ColumnConfig,
+  DualAxesConfig,
+  LineConfig,
+  PieConfig,
+  ScatterConfig,
+} from '@ant-design/plots';
 import { Button, Tooltip } from 'antd';
+import dynamic from 'next/dynamic';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { dashboardBarLabel } from './dashboard-chart-labels';
 import { attachDashboardLegendTooltip, dashboardColorField, dashboardLegendConfig } from './dashboard-chart-legend';
+
+// Keep plot engines out of SSR, including when only config helpers are used.
+const Area = dynamic<AreaConfig>(() => import('@ant-design/plots').then(module => module.Area), { ssr: false });
+const Bar = dynamic<BarConfig>(() => import('@ant-design/plots').then(module => module.Bar), { ssr: false });
+const Column = dynamic<ColumnConfig>(() => import('@ant-design/plots').then(module => module.Column), { ssr: false });
+const DualAxes = dynamic<DualAxesConfig>(() => import('@ant-design/plots').then(module => module.DualAxes), {
+  ssr: false,
+});
+const Line = dynamic<LineConfig>(() => import('@ant-design/plots').then(module => module.Line), { ssr: false });
+const Pie = dynamic<PieConfig>(() => import('@ant-design/plots').then(module => module.Pie), { ssr: false });
+const Scatter = dynamic<ScatterConfig>(() => import('@ant-design/plots').then(module => module.Scatter), {
+  ssr: false,
+});
 
 // Chart type definitions
 export type ChartType =

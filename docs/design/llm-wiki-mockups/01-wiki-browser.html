@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>01 · Wiki 浏览器 — DB-GPT LLM-Wiki 设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="app">
+  <!-- ============ 应用侧导航 ============ -->
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">D</div><div class="logo-name">DB-GPT</div></div>
+    <div class="nav-item"><span class="ico">💬</span> 对话</div>
+    <div class="nav-item"><span class="ico">🧩</span> 应用</div>
+    <div class="nav-item active"><span class="ico">📚</span> 知识库</div>
+    <div class="nav-item"><span class="ico">🤖</span> 智能体</div>
+    <div class="nav-item"><span class="ico">⚙️</span> 模型</div>
+  </aside>
+
+  <main class="app-main">
+    <!-- ============ 页头：面包屑 + 文档/Wiki/图谱 Tab ============ -->
+    <header class="page-head">
+      <div class="crumbs">
+        <span>知识库</span><span class="sep">›</span>
+        <span class="space">星云科技员工手册</span><span class="sep">›</span>
+        <span class="badge-tiny">已启用 Wiki</span>
+      </div>
+      <div class="kb-tabs">
+        <div class="kb-tab">文档</div>
+        <div class="kb-tab active">⯅ Wiki</div>
+        <div class="kb-tab">图谱</div>
+        <div class="spacer"></div>
+        <div class="head-actions">
+          <span class="pill sync"><span class="dot spin"></span> 生成中 · 2 个任务排队</span>
+          <span class="pill issues" title="2 个待处理问题">⚠ 2 个问题</span>
+          <button class="btn primary sm">＋ 生成 / 重建</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ Wiki 浏览器：左目录树 + 右阅读器 ============ -->
+    <div class="wiki-body">
+      <!-- 左栏 -->
+      <aside class="wiki-side">
+        <div class="row2">
+          <input class="input" placeholder="搜索 Wiki 页面" style="flex:1" />
+        </div>
+        <div class="row2">
+          <span class="tag" style="cursor:pointer">☰ 索引</span>
+          <div class="side-tools" style="margin-left:auto">
+            <span title="树形 / 列表切换">⊞</span>
+            <span>⇅</span>
+            <span>⍗</span>
+          </div>
+        </div>
+        <div class="side-tabs">
+          <div class="side-tab active">知识 <span class="n">44</span></div>
+          <div class="side-tab">摘要 <span class="n">4</span></div>
+          <div class="side-tools" style="margin:-2px 0 0 auto"><span style="font-size:11px;color:var(--tx-4)">树形 ▾</span></div>
+        </div>
+        <div class="tree">
+          <div class="t-dir"><span class="caret">▾</span><span class="name">人力资源</span><span class="cnt">4</span></div>
+          <div class="t-dir indent-1"><span class="caret">▾</span><span class="name">休假</span><span class="cnt">2</span></div>
+          <div class="t-page indent-2 active"><span class="ico">💡</span> 年假</div>
+          <div class="t-page indent-2"><span class="ico">💡</span> 请假流程</div>
+          <div class="t-dir indent-1"><span class="caret">▸</span><span class="name">制度</span><span class="cnt">2</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">人员</span><span class="cnt">6</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">智能家居</span><span class="cnt">12</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">测试</span><span class="cnt">1</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">知识管理</span><span class="cnt">10</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">组织</span><span class="cnt">6</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">财务</span><span class="cnt">3</span></div>
+          <div class="t-dir"><span class="caret">▸</span><span class="name">项目管理</span><span class="cnt">2</span></div>
+          <div class="t-dir" style="color:var(--tx-4)"><span class="name" style="text-align:center;flex:1">── 加载更多 ──</span></div>
+        </div>
+      </aside>
+
+      <!-- 右栏：阅读器 -->
+      <section class="wiki-reader">
+        <div class="reader-top">
+          <div class="back">← <span>制度</span> <span class="dim">/</span> <span>违规处理</span></div>
+          <div class="reader-actions">
+            <span class="tag ver">v3</span>
+            <button class="icon-btn" title="编辑">✎</button>
+            <button class="icon-btn" title="版本历史">🕘</button>
+            <button class="icon-btn" title="在图谱中查看">📈</button>
+            <button class="icon-btn danger" title="删除">🗑</button>
+          </div>
+        </div>
+
+        <div class="reader-pad">
+          <div class="wiki-title">年假</div>
+          <div class="title-meta">
+            <span class="tag t-concept">💡 概念</span>
+            <span class="tag ver">v3</span>
+            <span class="tag src-user">✎ 手动编辑</span>
+            <span class="time">🕘 2026/08/06 17:03 · 来源：03-员工手册-报销与休假.md</span>
+          </div>
+
+          <div class="wiki-content">
+            <p class="lede">年假是<span class="wiki-link entity">星云科技</span>员工根据工龄享有的带薪休假天数及折算规则。</p>
+
+            <h2>年假天数</h2>
+            <p>年假按工龄计算（以入职日期为准）：</p>
+            <table>
+              <tr><th>工龄</th><th>年假天数</th></tr>
+              <tr><td>1 年以下</td><td>5 天</td></tr>
+              <tr><td>1–10 年</td><td>10 天</td></tr>
+              <tr><td>10 年以上</td><td>15 天</td></tr>
+            </table>
+            <p>当年 3 月 31 日前入职的员工，当年年假按剩余月份折算；之后入职次年才开始享受全额年假。</p>
+
+            <h2>请假流程</h2>
+            <ol>
+              <li>提前在 OA 提交请假单，选择类型（年假 / 病假 / 事假等）。<span class="cite">[1][3]</span></li>
+              <li>3 天以内：直属主管审批；3–7 天：部门总监审批；7 天以上：HR 备案。</li>
+              <li>病假连续超过 2 天需附二级以上医院证明。</li>
+            </ol>
+
+            <h2>与项目冲突</h2>
+            <p>若请假期间已有定版的发布节点（如固件 3.5 灰度、知识库 POC 验收），须在项目群同步并指定工作交接人。<span class="wiki-link">张明</span>团队 POC 相关请假，需额外知会产品总监<span class="wiki-link">陈浩</span>。</p>
+          </div>
+
+          <!-- 双向链接 + 来源文档 -->
+          <div class="ref-foot">
+            <div class="ref-row">
+              <div class="k">被链接</div>
+              <div class="links">
+                <span class="ref-chip">03-员工手册-报销与休假.md - Summary</span>
+                <span class="wiki-link" style="color:var(--type-concept)">请假流程</span>
+                <span class="wiki-link entity">星云科技</span>
+                <span class="ref-chip">human-resources-department</span>
+              </div>
+            </div>
+            <div class="ref-row">
+              <div class="k">来源文档</div>
+              <div class="links"><span class="ref-chip">📄 03-员工手册-报销与休假.md</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

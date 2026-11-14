@@ -16,8 +16,8 @@
 
 - `load_skill` → 加载 skill 指令
 - `sql_query` → 在需要时获取结构化数据
-- `code_interpreter` → 计算指标、转换数据、生成图表
-- `shell_interpreter` → 在需要时执行 shell 命令
+- `code` → 计算指标、转换数据、生成图表
+- `bash` → 在需要时执行 shell 命令
 - `html_interpreter` → 渲染最终 HTML 报告或页面
 
 ## 示例场景

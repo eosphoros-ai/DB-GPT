@@ -10,6 +10,7 @@
  * - step.meta: Step metadata { type, id, thought, action, action_input }
  * - step.done: Step completed { type, id, status }
  * - context.status: Context budget status { type, used, budget, ratio, state, compact_layer }
+ * - final.chunk: Incremental final-answer text { type, content }
  * - final: Final answer { type, protocol_version, content, citations }
  * - done: Stream completed { type }
  */
@@ -57,6 +58,11 @@ export interface SSEFinalEvent {
   citations?: unknown[];
   report_id?: string;
   report_run_id?: string;
+}
+
+export interface SSEFinalChunkEvent {
+  type: 'final.chunk';
+  content: string;
 }
 
 export interface SSETaskPreviewEvent {
@@ -109,6 +115,44 @@ export interface SSEQuestionRejectedEvent {
   request_id: string;
 }
 
+// ── Human-in-the-loop: tool approval events ────────────────────────────────
+
+export interface SSEApprovalRequestedEvent {
+  type: 'approval.requested';
+  approval_id: string;
+  conv_id?: string;
+  tool: string;
+  args_preview: string;
+  rule_id: string;
+  risk?: string;
+  /** class-of-call key that session/always scope will remember */
+  memory_key?: string;
+  ttl_seconds?: number;
+  ts?: number;
+}
+
+export interface SSEApprovalResolvedEvent {
+  type: 'approval.resolved';
+  approval_id: string;
+  conv_id?: string;
+  decision: 'approved' | 'rejected' | 'timeout';
+  scope?: string;
+}
+
+export interface SSEApprovalIntentEvent {
+  type: 'approval.intent';
+  approval_id: string;
+  conv_id?: string;
+  /** Bullet lines; risk phrases wrapped in **...** for red-bold rendering. */
+  bullets: string[];
+}
+
+export interface PendingApproval extends SSEApprovalRequestedEvent {
+  status: 'pending' | 'approved' | 'rejected' | 'timeout';
+  scope?: string;
+  intent?: string[];
+}
+
 export type SSEEvent =
   | SSEStepStartEvent
   | SSEStepChunkEvent
@@ -118,6 +162,10 @@ export type SSEEvent =
   | SSEQuestionAskedEvent
   | SSEQuestionRepliedEvent
   | SSEQuestionRejectedEvent
+  | SSEApprovalRequestedEvent
+  | SSEApprovalResolvedEvent
+  | SSEApprovalIntentEvent
+  | SSEFinalChunkEvent
   | SSEFinalEvent
   | SSETaskPreviewEvent
   | SSEDoneEvent;
@@ -159,6 +207,8 @@ export class ReActSSEState {
   private _contextStatus: ContextStatus | null = null;
   private questionSession = new QuestionSession();
   private _taskPreview: string | null = null;
+  private approvals: Map<string, PendingApproval> = new Map();
+  private approvalOrder: string[] = [];
 
   constructor() {
     this.startTime = Date.now();
@@ -189,8 +239,20 @@ export class ReActSSEState {
       case 'question.rejected':
         this.questionSession.apply(event);
         break;
+      case 'approval.requested':
+        this.handleApprovalRequested(event);
+        break;
+      case 'approval.resolved':
+        this.handleApprovalResolved(event);
+        break;
+      case 'approval.intent':
+        this.handleApprovalIntent(event);
+        break;
       case 'final':
         this.handleFinal(event);
+        break;
+      case 'final.chunk':
+        this.handleFinalChunk(event);
         break;
       case 'task.preview':
         if (!this._taskPreview) {
@@ -209,6 +271,34 @@ export class ReActSSEState {
   getPendingQuestion(): SSEQuestionAskedEvent | null {
     const current = this.questionSession.current;
     return current ? { type: 'question.asked', ...current } : null;
+  }
+
+  private handleApprovalRequested(event: SSEApprovalRequestedEvent): void {
+    if (this.approvals.has(event.approval_id)) return;
+    this.approvals.set(event.approval_id, { ...event, status: 'pending' });
+    this.approvalOrder.push(event.approval_id);
+  }
+
+  private handleApprovalResolved(event: SSEApprovalResolvedEvent): void {
+    const pa = this.approvals.get(event.approval_id);
+    if (pa) {
+      pa.status = event.decision;
+      pa.scope = event.scope;
+    }
+  }
+
+  private handleApprovalIntent(event: SSEApprovalIntentEvent): void {
+    const pa = this.approvals.get(event.approval_id);
+    if (pa) {
+      pa.intent = event.bullets;
+    }
+  }
+
+  /** Pending (awaiting user decision) approvals, in request order. */
+  getPendingApprovals(): PendingApproval[] {
+    return this.approvalOrder
+      .map(id => this.approvals.get(id))
+      .filter((pa): pa is PendingApproval => !!pa && pa.status === 'pending');
   }
 
   private handleStepStart(event: SSEStepStartEvent): void {
@@ -271,6 +361,16 @@ export class ReActSSEState {
 
   private handleFinal(event: SSEFinalEvent): void {
     this.finalAnswer = decodeFinalEvent(event);
+  }
+
+  private handleFinalChunk(event: SSEFinalChunkEvent): void {
+    // Incremental final-answer text (native function calling streams the
+    // terminate tool's output). The authoritative `final` event later
+    // replaces this accumulated content wholesale.
+    this.finalAnswer = {
+      ...this.finalAnswer,
+      content: (this.finalAnswer.content || '') + (event.content || ''),
+    };
   }
 
   private handleDone(): void {
@@ -501,6 +601,10 @@ export class ReActSSEState {
    * Get current status text for display
    */
   getCurrentStatus(): string {
+    const pendingApprovals = this.getPendingApprovals();
+    if (pendingApprovals.length > 0) {
+      return `Waiting for your confirmation (${pendingApprovals[0].tool})...`;
+    }
     // Find the last running step
     for (let i = this.stepOrder.length - 1; i >= 0; i--) {
       const step = this.steps.get(this.stepOrder[i]);

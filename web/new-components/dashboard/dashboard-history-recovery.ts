@@ -49,6 +49,39 @@ export const dashboardGenerationFromHistoryRef = (ref: any): DashboardGeneration
   };
 };
 
+/** Hide superseded planning attempts while preserving independently created boards. */
+export const deduplicateDashboardHistoryGenerations = <T extends { dashboardGenerations?: DashboardGenerationState[] }>(
+  messages: T[],
+): T[] => {
+  const seen = new Set<string>();
+  const seenPlans = new Set<string>();
+  return [...messages]
+    .reverse()
+    .map(message => ({
+      ...message,
+      dashboardGenerations: message.dashboardGenerations
+        ? [...message.dashboardGenerations]
+            .reverse()
+            .filter(state => {
+              const key = state.dashboardId;
+              // Retry-created plans have different asset IDs but the same
+              // planning turn, source and title. A later generated board also
+              // supersedes these pending confirmations.
+              const planKey = state.sourceTurnId
+                ? JSON.stringify([state.sourceTurnId, state.dataSourceId, state.title])
+                : undefined;
+              if (key && seen.has(key)) return false;
+              if (key) seen.add(key);
+              if (state.status === 'awaiting_confirmation' && planKey && seenPlans.has(planKey)) return false;
+              if (planKey) seenPlans.add(planKey);
+              return true;
+            })
+            .reverse()
+        : undefined,
+    }))
+    .reverse();
+};
+
 /**
  * Restore dashboard cards from the dashboard asset table when an older final
  * chat message did not persist `dashboard_refs`.
@@ -71,7 +104,7 @@ export const enrichHistoryWithDashboardRefs = (
     if (message.role !== 'view') return;
     try {
       const payload = JSON.parse(message.context);
-      if (payload?.version !== 1 || payload?.type !== 'react-agent') return;
+      if (![1, 2].includes(payload?.version) || payload?.type !== 'react-agent') return;
       payloads.set(index, payload);
       for (const ref of Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : []) {
         if (typeof ref?.dashboard_id === 'string') existingDashboardIds.add(ref.dashboard_id);
@@ -85,7 +118,18 @@ export const enrichHistoryWithDashboardRefs = (
   if (fallbackIndex === undefined) return historyMessages;
 
   for (const dashboard of dashboards) {
-    if (existingDashboardIds.has(dashboard.id)) continue;
+    if (existingDashboardIds.has(dashboard.id)) {
+      for (const payload of payloads.values()) {
+        payload.dashboard_refs = payload.dashboard_refs?.map((ref: any) =>
+          ref.dashboard_id === dashboard.id &&
+          (dashboard.current_revision > Number(ref.current_revision || 1) ||
+            (dashboard.asset_state === 'saved' && ref.asset_state !== 'saved'))
+            ? { ...ref, ...asDashboardRef(dashboard) }
+            : ref,
+        );
+      }
+      continue;
+    }
     const sourceTurnId = dashboard.source_turn_id;
     const targetIndex =
       (sourceTurnId

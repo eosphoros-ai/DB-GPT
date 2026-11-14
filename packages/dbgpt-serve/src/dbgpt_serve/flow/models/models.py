@@ -46,6 +46,17 @@ class ServeEntity(Model):
         nullable=True,
         comment="Flow define type(json or python)",
     )
+    flow_format = Column(
+        String(32),
+        default="awel",
+        nullable=True,
+        comment="Flow definition format(awel or taskflow)",
+    )
+    taskflow_source = Column(
+        Text,
+        nullable=True,
+        comment="TaskFlow DSL source, JSON format(only when flow_format=taskflow)",
+    )
     editable = Column(
         Integer, nullable=True, comment="Editable, 0: editable, 1: not editable"
     )
@@ -162,6 +173,12 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         variables = (
             json.dumps(variables_raw, ensure_ascii=False) if variables_raw else None
         )
+        taskflow_source_raw = request_dict.get("taskflow_source")
+        taskflow_source = (
+            json.dumps(taskflow_source_raw, ensure_ascii=False)
+            if taskflow_source_raw
+            else None
+        )
         new_dict = {
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
@@ -175,6 +192,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "source_url": request_dict.get("source_url"),
             "version": request_dict.get("version"),
             "define_type": request_dict.get("define_type"),
+            "flow_format": request_dict.get("flow_format") or "awel",
+            "taskflow_source": taskflow_source,
             "editable": ServeEntity.parse_editable(request_dict.get("editable")),
             "description": request_dict.get("description"),
             "variables": variables,
@@ -196,6 +215,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         flow_data = json.loads(entity.flow_data)
         variables_raw = json.loads(entity.variables) if entity.variables else None
         variables = ServeRequest.parse_variables(variables_raw)
+        taskflow_source = (
+            json.loads(entity.taskflow_source) if entity.taskflow_source else None
+        )
         return ServeRequest(
             uid=entity.uid,
             dag_id=entity.dag_id,
@@ -209,6 +231,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source_url=entity.source_url,
             version=entity.version,
             define_type=entity.define_type,
+            flow_format=entity.flow_format or "awel",
+            taskflow_source=taskflow_source,
             editable=ServeEntity.to_bool_editable(entity.editable),
             description=entity.description,
             variables=variables,
@@ -230,6 +254,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
         variables_raw = json.loads(entity.variables) if entity.variables else None
         variables = ServeRequest.parse_variables(variables_raw)
+        taskflow_source = (
+            json.loads(entity.taskflow_source) if entity.taskflow_source else None
+        )
         return ServerResponse(
             uid=entity.uid,
             dag_id=entity.dag_id,
@@ -245,6 +272,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             version=entity.version,
             editable=ServeEntity.to_bool_editable(entity.editable),
             define_type=entity.define_type,
+            flow_format=entity.flow_format or "awel",
+            taskflow_source=taskflow_source,
             variables=variables,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
@@ -286,6 +315,12 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             entry.editable = ServeEntity.parse_editable(update_request.editable)
             if update_request.define_type:
                 entry.define_type = update_request.define_type
+            if update_request.flow_format:
+                entry.flow_format = update_request.flow_format
+            if update_request.taskflow_source is not None:
+                entry.taskflow_source = json.dumps(
+                    update_request.taskflow_source, ensure_ascii=False
+                )
 
             if update_request.variables:
                 variables_raw = update_request.get_variables_dict()
@@ -409,3 +444,36 @@ class VariablesDao(BaseDao[VariablesEntity, VariablesRequest, VariablesResponse]
             gmt_modified=gmt_modified_str,
             description=entity.description,
         )
+
+
+def migrate_flow_table_columns():
+    """Best-effort auto migration for newly added flow columns.
+
+    DB-GPT has no formal migration framework for serve tables; new columns are
+    applied with ALTER TABLE when missing (SQLite/MySQL compatible).
+    """
+    from sqlalchemy import inspect, text
+
+    from dbgpt.storage.metadata import db
+
+    engine = db.engine
+    if engine is None:
+        return
+    table = ServeEntity.__tablename__
+    try:
+        columns = {c["name"] for c in inspect(engine).get_columns(table)}
+    except Exception:
+        # Table not created yet; create_all will include the new columns.
+        return
+    ddls = []
+    if "flow_format" not in columns:
+        ddls.append(
+            f"ALTER TABLE {table} ADD COLUMN flow_format VARCHAR(32) DEFAULT 'awel'"
+        )
+    if "taskflow_source" not in columns:
+        ddls.append(f"ALTER TABLE {table} ADD COLUMN taskflow_source TEXT")
+    if not ddls:
+        return
+    with engine.begin() as conn:
+        for ddl in ddls:
+            conn.execute(text(ddl))

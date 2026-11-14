@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>对话内运行态 · 多 Agent 串联(节点内 ReAct 实时轨迹)</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .chat { display: flex; height: 100vh; overflow: hidden; }
+  .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fff; }
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 22px 26px; }
+  .msg-user { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+  .msg-user .b { max-width: 70%; background: var(--bg-2); border-radius: 14px; padding: 8px 14px; font-size: 14px; }
+
+  /* ============ 流程卡(复用 Manus 步骤卡语言) ============ */
+  .flow-card { max-width: 640px; border: 1px solid var(--border-1); border-radius: 14px; overflow: hidden; background: var(--bg-1); }
+  .fc-head { display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-bottom: 1px solid var(--border-1); background: #fff; }
+  .fc-head .fi { width: 26px; height: 26px; border-radius: 7px; background: var(--pri); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .fc-head .ft { font-size: 13.5px; font-weight: 700; }
+  .fc-head .fs { font-size: 11.5px; color: var(--tx-3); margin-top: 1px; }
+  .fc-prog { margin-left: auto; width: 110px; height: 5px; border-radius: 3px; background: var(--bg-3); overflow: hidden; }
+  .fc-prog i { display: block; height: 100%; width: 55%; background: var(--pri); border-radius: 3px; }
+
+  .step { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-1); background: #fff; }
+  .step:last-child { border-bottom: none; }
+  .step .dot { width: 18px; height: 18px; border-radius: 50%; flex: none; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .dot.done { background: var(--ok-soft); color: var(--ok); }
+  .dot.run { background: var(--pri-soft); color: var(--pri); }
+  .dot.wait { background: var(--bg-2); color: var(--tx-4); }
+  .step .tx { flex: 1; min-width: 0; }
+  .step .nm { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 7px; }
+  .step .nm .dur { font-size: 11px; color: var(--tx-3); font-weight: 400; font-family: var(--mono); }
+  .step .nm .ava { font-size: 13px; }
+  .step .sub { font-size: 11.5px; color: var(--tx-3); margin-top: 1px; }
+  .step .expand { color: var(--tx-4); font-size: 12px; flex: none; align-self: center; }
+
+  /* Agent 节点内 ReAct 子步骤轨迹 */
+  .react-trace { margin: 8px 0 2px 4px; border-left: 2px solid var(--violet-soft); padding-left: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .rt { display: flex; gap: 8px; font-size: 12px; align-items: flex-start; }
+  .rt .ri { flex: none; width: 16px; text-align: center; }
+  .rt .rk { color: var(--tx-3); flex: none; }
+  .rt .rv { color: var(--tx-2); min-width: 0; }
+  .rt .rv .code { font-family: var(--mono); font-size: 11px; background: var(--bg-2); border-radius: 4px; padding: 0 5px; }
+  .rt.live .rv { color: var(--pri); }
+  .rt.live .ri { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .rt-cur { font-size: 11.5px; color: var(--pri); background: var(--pri-soft); border-radius: 7px; padding: 5px 9px; margin-top: 7px; display: flex; gap: 7px; align-items: center; }
+  .spin { width: 11px; height: 11px; border: 2px solid var(--pri-tint); border-top-color: var(--pri); border-radius: 50%; animation: sp 0.8s linear infinite; flex: none; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  .answer { max-width: 640px; margin-top: 14px; font-size: 13.5px; line-height: 1.75; color: var(--tx-1); }
+  .thinking-line { display: flex; align-items: center; gap: 8px; color: var(--pri); font-size: 13px; margin: 12px 0; }
+
+  /* ============ 右侧 Computer 面板 ============ */
+  .panel { width: 380px; flex: none; border-left: 1px solid var(--border-1); background: var(--bg-1); display: flex; flex-direction: column; }
+  .panel-top { padding: 12px 16px; border-bottom: 1px solid var(--border-1); background: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .panel-tabs { display: flex; gap: 16px; padding: 9px 16px; border-bottom: 1px solid var(--border-1); background: #fff; font-size: 12.5px; color: var(--tx-3); }
+  .panel-tabs .on { color: var(--tx-1); font-weight: 650; border-bottom: 2px solid var(--tx-1); padding-bottom: 7px; margin-bottom: -9px; }
+  .panel-body { flex: 1; padding: 16px; overflow-y: auto; }
+  .pd-card { background: #fff; border: 1px solid var(--border-1); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .pd-card h6 { font-size: 12px; color: var(--tx-3); margin-bottom: 6px; font-weight: 600; }
+  .pd-card .mono-box { font-family: var(--mono); font-size: 11px; background: var(--bg-1); border-radius: 7px; padding: 8px 10px; color: var(--tx-2); line-height: 1.6; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="chat">
+  <!-- ============ 主对话 ============ -->
+  <div class="chat-main">
+    <div class="chat-scroll">
+      <div class="msg-user"><div class="b">我们产品的退款政策是什么?整理成一段话发我</div></div>
+
+      <div class="flow-card">
+        <div class="fc-head">
+          <div class="fi">⬡</div>
+          <div>
+            <div class="ft">Agent 答疑流</div>
+            <div class="fs">Running · 2/5</div>
+          </div>
+          <div class="fc-prog"><i></i></div>
+        </div>
+
+        <!-- Start -->
+        <div class="step">
+          <div class="dot done">✓</div>
+          <div class="tx"><div class="nm">Start</div></div>
+        </div>
+
+        <!-- Agent 1:完成,展开 ReAct 轨迹 -->
+        <div class="step">
+          <div class="dot done">✓</div>
+          <div class="tx">
+            <div class="nm"><span class="ava">📚</span>思考并回复 <span class="dur">38.2s</span></div>
+            <div class="sub">知识答疑 Agent · 3 次工具调用</div>
+            <div class="react-trace">
+              <div class="rt"><span class="ri">💭</span><span class="rk">思考</span><span class="rv">用户问退款政策,应先检索知识库核实条款,不能凭记忆回答</span></div>
+              <div class="rt"><span class="ri">🔧</span><span class="rk">工具</span><span class="rv">knowledge_retrieve <span class="code">query="退款政策 退货 条件 时限"</span></span></div>
+              <div class="rt"><span class="ri">👁</span><span class="rk">观察</span><span class="rv">命中 3 条:《售后服务条款》§3.2 / §3.5 / FAQ-17</span></div>
+              <div class="rt"><span class="ri">🔧</span><span class="rk">工具</span><span class="rv">knowledge_retrieve <span class="code">query="退款到账时间 原路退回"</span></span></div>
+              <div class="rt"><span class="ri">✅</span><span class="rk">回答</span><span class="rv">已生成答复草稿(引用 2 个来源)</span></div>
+            </div>
+          </div>
+          <span class="expand">⌄</span>
+        </div>
+
+        <!-- Agent 2:运行中,当前动作实时滚动 -->
+        <div class="step" style="background:var(--pri-soft);background:linear-gradient(to right,#fff, var(--pri-soft))">
+          <div class="dot run"><span class="spin"></span></div>
+          <div class="tx">
+            <div class="nm"><span class="ava">🧐</span>专家审核 <span class="dur">12.4s…</span></div>
+            <div class="sub">数据分析 Agent · 复核草稿中的数字与口径</div>
+            <div class="react-trace">
+              <div class="rt"><span class="ri">💭</span><span class="rk">思考</span><span class="rv">草稿提到「7 天无理由」,需用知识库条款原文核对时限口径</span></div>
+              <div class="rt live"><span class="ri">🔧</span><span class="rk">工具</span><span class="rv">knowledge_retrieve <span class="code">query="无理由退货 天数"</span></span></div>
+            </div>
+            <div class="rt-cur"><span class="spin"></span> 正在调用 knowledge_retrieve(第 2 回合 / 最多 10)</div>
+          </div>
+        </div>
+
+        <!-- Agent 3:等待 -->
+        <div class="step">
+          <div class="dot wait">4</div>
+          <div class="tx"><div class="nm"><span class="ava">✍️</span>发送最终消息</div><div class="sub">通用任务 Agent · 汇总终稿</div></div>
+        </div>
+
+        <!-- Output -->
+        <div class="step">
+          <div class="dot wait">5</div>
+          <div class="tx"><div class="nm">Output</div></div>
+        </div>
+      </div>
+
+      <div class="thinking-line"><span class="spin"></span> 专家审核 Agent 执行中…</div>
+
+      <!-- Agent 1 已产出的部分答案(增量可见) -->
+      <div class="answer">
+        根据《售后服务条款》§3.2:自签收之日起 7 日内支持无理由退货(定制类商品除外);退款将在收到退货并验收后 3 个工作日内原路退回…<span style="color:var(--tx-3)">(思考并回复 · 已完成,专家审核中)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 右侧:DB-GPT's Computer ============ -->
+  <div class="panel">
+    <div class="panel-top">🖥 DB-GPT's Computer</div>
+    <div class="panel-tabs"><span class="on">Execution Steps</span><span>Trace</span><span>Summary</span></div>
+    <div class="panel-body">
+      <div class="pd-card">
+        <h6>当前 · 专家审核 Agent · 第 2 回合</h6>
+        <div class="mono-box">💭 草稿提到「7 天无理由」,需核对条款原文的时限口径…
+
+🔧 knowledge_retrieve({
+  "query": "无理由退货 天数"
+})</div>
+      </div>
+      <div class="pd-card">
+        <h6>上一回合观察</h6>
+        <div class="mono-box">命中 2 条:
+1. 《售后服务条款》§3.2 「…自签收之日起 7 日内…」
+2. FAQ-17 「定制类不支持无理由」</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB-GPT Agent — DSH 风格时间线设计稿</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-soft: #16181e;
+    --bg-card: #1a1d24;
+    --border: #262a33;
+    --text: #e6e8ed;
+    --text-dim: #8b8fa3;
+    --text-faint: #5a5e70;
+    --accent: #4f7cff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --radius: 10px;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "PingFang SC", "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 120px;
+  }
+
+  /* ── 顶部状态条 ── */
+  .status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16px; margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .status-left { display: flex; align-items: center; gap: 10px; }
+  .status-title { font-size: 13px; color: var(--text-dim); }
+  .status-title b { color: var(--text); font-weight: 500; }
+  .status-right { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+  /* ── 时间线主体 ── */
+  .timeline { position: relative; }
+  .timeline::before {
+    content: ""; position: absolute; left: 5px; top: 8px; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+
+  /* assistant 文本块 */
+  .block-text {
+    position: relative; padding-left: 28px; margin-bottom: 20px;
+  }
+  .block-text::before {
+    content: ""; position: absolute; left: 0; top: 10px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--accent);
+  }
+  .block-text.streaming::before {
+    border-color: var(--green);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .4; } }
+  .block-text p { color: var(--text); }
+  .block-text p + p { margin-top: 8px; }
+  .block-text strong { font-weight: 600; }
+  .block-text code {
+    font-family: var(--mono); font-size: 12.5px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; color: #a5d6ff;
+  }
+  .block-text h3 { margin: 14px 0 8px; font-size: 16px; }
+  .block-text table {
+    border-collapse: collapse; margin: 10px 0; font-size: 13px;
+  }
+  .block-text th, .block-text td {
+    border: 1px solid var(--border); padding: 6px 14px; text-align: left;
+  }
+  .block-text th { background: var(--bg-soft); color: var(--text-dim); font-weight: 500; }
+
+  /* 工具块（可折叠） */
+  .block-tool {
+    position: relative; padding-left: 28px; margin-bottom: 20px;
+  }
+  .block-tool::before {
+    content: ""; position: absolute; left: 0; top: 8px;
+    width: 11px; height: 11px; border-radius: 3px;
+    background: var(--bg); border: 2px solid var(--text-faint);
+  }
+  .block-tool.success::before { border-color: var(--green); }
+  .block-tool.failed::before { border-color: #f85149; }
+  .block-tool.running::before {
+    border-color: var(--yellow);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .tool-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .tool-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; cursor: pointer; user-select: none;
+    font-size: 13px;
+  }
+  .tool-head:hover { background: rgba(255,255,255,.03); }
+  .tool-chevron {
+    font-size: 10px; color: var(--text-faint);
+    transition: transform .15s; width: 12px; text-align: center;
+  }
+  .block-tool.open .tool-chevron { transform: rotate(90deg); }
+  .tool-name { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+  .tool-summary { color: var(--text-dim); flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tool-duration { color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tool-status { font-size: 12px; }
+  .block-tool.success .tool-status { color: var(--green); }
+  .block-tool.failed .tool-status { color: #f85149; }
+  .block-tool.running .tool-status { color: var(--yellow); }
+  .tool-body {
+    display: none; border-top: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+  .block-tool.open .tool-body { display: block; }
+  .tool-body .section-label {
+    font-size: 11px; color: var(--text-faint); text-transform: uppercase;
+    letter-spacing: .05em; margin: 6px 0 4px;
+  }
+  .tool-body pre {
+    font-family: var(--mono); font-size: 12px; line-height: 1.55;
+    background: var(--bg-soft); border-radius: 6px;
+    padding: 10px 12px; overflow-x: auto;
+    color: var(--text-dim); white-space: pre-wrap; word-break: break-all;
+  }
+
+  /* 重试提示条 */
+  .block-retry {
+    position: relative; padding-left: 28px; margin-bottom: 20px;
+    font-size: 12.5px; color: var(--yellow);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .block-retry::before {
+    content: ""; position: absolute; left: 2px; top: 7px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--yellow);
+  }
+  .block-retry .detail { color: var(--text-faint); }
+
+  /* 系统消息（compaction 等） */
+  .block-sys {
+    position: relative; padding-left: 28px; margin-bottom: 20px;
+    font-size: 12.5px; color: var(--text-faint); font-style: italic;
+  }
+  .block-sys::before {
+    content: ""; position: absolute; left: 2px; top: 8px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--border);
+  }
+
+  /* 底部输入条 */
+  .composer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, var(--bg) 30%);
+    padding: 24px 24px 20px;
+  }
+  .composer-inner {
+    max-width: 712px; margin: 0 auto;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .composer input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-size: 14px;
+  }
+  .composer input::placeholder { color: var(--text-faint); }
+  .composer .send {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 6px 14px; font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* 流式光标 */
+  .cursor {
+    display: inline-block; width: 8px; height: 15px;
+    background: var(--accent); vertical-align: -2px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* 亮主题切换示例（设计稿演示） */
+  body.light {
+    --bg: #ffffff; --bg-soft: #f6f7f9; --bg-card: #ffffff;
+    --border: #e3e6eb; --text: #1f2329; --text-dim: #5f6373;
+    --text-faint: #9ba0ad;
+  }
+  .theme-toggle {
+    position: fixed; top: 20px; right: 24px; z-index: 10;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="document.body.classList.toggle('light')">切换亮/暗</button>
+<div class="page">
+
+  <!-- 顶部状态：整条任务的状态与耗时 -->
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-title">分析 DB-GPT 项目并<b>生成架构报告</b></span>
+    </div>
+    <div class="status-right">已完成 · 用时 8 分 37 秒</div>
+  </div>
+
+  <div class="timeline">
+
+    <!-- ═══ assistant 文本块 ═══ -->
+    <div class="block-text">
+      <p>I'll explore the project structure and README first to understand the architecture.</p>
+    </div>
+
+    <!-- ═══ 工具块：已折叠，成功 ═══ -->
+    <div class="block-tool success" onclick="this.classList.toggle('open')">
+      <div class="tool-card">
+        <div class="tool-head">
+          <span class="tool-chevron">▶</span>
+          <span class="tool-name">read</span>
+          <span class="tool-summary">README.md, packages/dbgpt-core/README.md</span>
+          <span class="tool-duration">1.2s</span>
+          <span class="tool-status">✓</span>
+        </div>
+        <div class="tool-body">
+          <div class="section-label">Input</div>
+          <pre>{"path": "README.md", "offset": 1, "limit": 120}</pre>
+          <div class="section-label">Output</div>
+          <pre># DB-GPT
+DB-GPT is an AI-native data app development framework with AWEL…</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ assistant 文本块 ═══ -->
+    <div class="block-text">
+      <p>Now let me investigate the <code>skyrisk</code> (CoWork) app and how opencode is used.</p>
+    </div>
+
+    <!-- ═══ 工具块：已折叠，成功 ═══ -->
+    <div class="block-tool success" onclick="this.classList.toggle('open')">
+      <div class="tool-card">
+        <div class="tool-head">
+          <span class="tool-chevron">▶</span>
+          <span class="tool-name">bash</span>
+          <span class="tool-summary">执行了命令并已搜索代码</span>
+          <span class="tool-duration">0.8s</span>
+          <span class="tool-status">✓</span>
+        </div>
+        <div class="tool-body">
+          <div class="section-label">Input</div>
+          <pre>{"command": "rg -l 'opencode' --type py | head -20"}</pre>
+          <div class="section-label">Output</div>
+          <pre>packages/dbgpt-app/src/dbgpt_app/agent_harness/pi/runner.py
+packages/dbgpt-serve/…</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ assistant 文本块 ═══ -->
+    <div class="block-text">
+      <p>Key finding: opencode ships both as a <strong>binary</strong> and an <strong>SDK package</strong>. Let me trace how each is used.</p>
+    </div>
+
+    <!-- ═══ 重试提示（系统级） ═══ -->
+    <div class="block-retry">
+      已重试模型请求（1/5）<span class="detail">· 1s · 上游 429，自动重试中</span>
+    </div>
+
+    <!-- ═══ 工具块：展开中（用户点开过），成功 ═══ -->
+    <div class="block-tool success open" onclick="this.classList.toggle('open')">
+      <div class="tool-card">
+        <div class="tool-head">
+          <span class="tool-chevron">▶</span>
+          <span class="tool-name">read</span>
+          <span class="tool-summary">packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py</span>
+          <span class="tool-duration">0.4s</span>
+          <span class="tool-status">✓</span>
+        </div>
+        <div class="tool-body">
+          <div class="section-label">Input</div>
+          <pre>{"path": "packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py", "offset": 430, "limit": 60}</pre>
+          <div class="section-label">Output</div>
+          <pre>async def generate_reply(self, received_message, sender, ...):
+    # Stage 1: THINKING
+    thinking_messages = await self._load_thinking_messages(...)
+    ai_message, model_name = await self.thinking(thinking_messages)
+    …</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ 长回答：assistant 文本块（markdown 完整渲染） ═══ -->
+    <div class="block-text">
+      <h3>一、仓库全景（monorepo）</h3>
+      <p><code>derisk-cowork</code> 是 Skytree monorepo（tnpm 管理），里面并存几套东西：</p>
+      <table>
+        <tr><th>目录</th><th>角色</th></tr>
+        <tr><td><code>packages/dbgpt-core</code></td><td>Agent 核心、AWEL、RAG</td></tr>
+        <tr><td><code>packages/dbgpt-app</code></td><td>HTTP 服务、算子、harness</td></tr>
+        <tr><td><code>packages/dbgpt-serve</code></td><td>服务层（agents、flows）</td></tr>
+      </table>
+    </div>
+
+    <!-- ═══ 工具块：运行中 ═══ -->
+    <div class="block-tool running">
+      <div class="tool-card">
+        <div class="tool-head">
+          <span class="tool-chevron">▶</span>
+          <span class="tool-name">code_interpreter</span>
+          <span class="tool-summary">生成架构报告图表…</span>
+          <span class="tool-duration">3.1s</span>
+          <span class="tool-status">●</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ assistant 文本块：正在流式生长 ═══ -->
+    <div class="block-text streaming">
+      <p>根据收集到的信息，报告主体结构如下。我先绘制模块依赖图，然后填充每个模块的职责说明<span class="cursor"></span></p>
+    </div>
+
+    <!-- ═══ 系统消息：上下文压缩 ═══ -->
+    <div class="block-sys">上下文已压缩（第 12 轮触发，释放约 31K tokens）</div>
+
+  </div>
+</div>
+
+<!-- 底部输入条 -->
+<div class="composer">
+  <div class="composer-inner">
+    <input placeholder="继续追问或给出新指令…（当前引擎：pi）">
+    <button class="send">发送</button>
+  </div>
+</div>
+
+</body>
+</html>

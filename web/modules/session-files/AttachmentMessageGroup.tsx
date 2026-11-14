@@ -58,15 +58,8 @@ const AttachmentMessageGroup: React.FC<AttachmentMessageGroupProps> = ({ files, 
             aria-disabled={!previewable}
             title={file.name}
           >
-            <div
-              className={classNames(
-                'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full',
-                file.status === 'failed'
-                  ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
-                  : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400',
-              )}
-            >
-              <FileKindIcon name={file.name} mediaType={file.media_type} kind={file.kind} className='text-[12px]' />
+            <div className='flex h-5 w-5 flex-shrink-0 items-center justify-center'>
+              <FileKindIcon name={file.name} mediaType={file.media_type} kind={file.kind} className='text-[18px]' />
             </div>
             <span className='min-w-0 truncate font-medium'>{file.name}</span>
             {file.status === 'preview_failed' && (

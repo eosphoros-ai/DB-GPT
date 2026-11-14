@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>02 · Wiki 知识图谱 — DB-GPT LLM-Wiki 设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .gnode { cursor: pointer; }
+  .gnode circle { transition: r 0.15s; }
+  .gnode:hover circle { filter: brightness(1.2); }
+  .glabel { fill: #b7b1b1; font-size: 11px; pointer-events: none; }
+  .glabel.on { fill: #f1ecec; font-weight: 600; }
+  .gedge { stroke: #343030; stroke-width: 1; }
+  .gedge.hl { stroke: var(--type-concept); stroke-width: 1.6; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">D</div><div class="logo-name">DB-GPT</div></div>
+    <div class="nav-item"><span class="ico">💬</span> 对话</div>
+    <div class="nav-item"><span class="ico">🧩</span> 应用</div>
+    <div class="nav-item active"><span class="ico">📚</span> 知识库</div>
+    <div class="nav-item"><span class="ico">🤖</span> 智能体</div>
+    <div class="nav-item"><span class="ico">⚙️</span> 模型</div>
+  </aside>
+
+  <main class="app-main">
+    <header class="page-head">
+      <div class="crumbs">
+        <span>知识库</span><span class="sep">›</span>
+        <span class="space">星云科技员工手册</span><span class="sep">›</span>
+        <span class="badge-tiny">49 / 49 个节点</span>
+      </div>
+      <div class="kb-tabs">
+        <div class="kb-tab">文档</div>
+        <div class="kb-tab">Wiki</div>
+        <div class="kb-tab active">图谱</div>
+        <div class="spacer"></div>
+        <div class="head-actions">
+          <span class="pill issues">⚠ 2 个问题</span>
+          <button class="btn sm ghost">← 返回全库概览</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="graph-wrap">
+      <!-- ===== 力导向画布 ===== -->
+      <svg class="graph-svg" viewBox="0 0 1200 660" preserveAspectRatio="xMidYMid slice">
+        <!-- 普通边 -->
+        <line class="gedge" x1="590" y1="330" x2="470" y2="250"/>
+        <line class="gedge" x1="590" y1="330" x2="700" y2="390"/>
+        <line class="gedge" x1="590" y1="330" x2="620" y2="180"/>
+        <line class="gedge" x1="620" y1="180" x2="740" y2="120"/>
+        <line class="gedge" x1="620" y1="180" x2="520" y2="110"/>
+        <line class="gedge" x1="740" y1="120" x2="860" y2="180"/>
+        <line class="gedge" x1="740" y1="120" x2="800" y2="60"/>
+        <line class="gedge" x1="860" y1="180" x2="950" y2="90"/>
+        <line class="gedge" x1="700" y1="390" x2="810" y2="440"/>
+        <line class="gedge" x1="700" y1="390" x2="640" y2="500"/>
+        <line class="gedge" x1="810" y1="440" x2="920" y2="520"/>
+        <line class="gedge" x1="810" y1="440" x2="900" y2="350"/>
+        <line class="gedge" x1="640" y1="500" x2="540" y2="580"/>
+        <line class="gedge" x1="640" y1="500" x2="740" y2="590"/>
+        <line class="gedge" x1="540" y1="580" x2="420" y2="610"/>
+        <line class="gedge" x1="470" y1="250" x2="360" y2="170"/>
+        <line class="gedge" x1="470" y1="250" x2="330" y2="310"/>
+        <line class="gedge" x1="360" y1="170" x2="240" y2="120"/>
+        <line class="gedge" x1="330" y1="310" x2="210" y2="280"/>
+        <line class="gedge" x1="330" y1="310" x2="300" y2="430"/>
+        <line class="gedge" x1="300" y1="430" x2="200" y2="500"/>
+        <line class="gedge" x1="300" y1="430" x2="410" y2="510"/>
+        <line class="gedge" x1="410" y1="510" x2="470" y2="250"/>
+        <line class="gedge" x1="900" y1="350" x2="1010" y2="300"/>
+        <line class="gedge" x1="950" y1="90" x2="1060" y2="150"/>
+        <line class="gedge" x1="200" y1="500" x2="140" y2="600"/>
+        <line class="gedge" x1="240" y1="120" x2="150" y2="200"/>
+        <line class="gedge" x1="1010" y1="300" x2="1090" y2="400"/>
+        <!-- 高亮：选中“日常费用报销”及其邻居 -->
+        <line class="gedge hl" x1="390" y1="240" x2="470" y2="330"/>
+        <line class="gedge hl" x1="390" y1="240" x2="500" y2="330"/>
+        <line class="gedge hl" x1="390" y1="240" x2="440" y2="410"/>
+
+        <g class="gnode" transform="translate(590,330)"><circle r="16" fill="#34d399" fill-opacity="0.9"/><text class="glabel on" x="20" y="4">星云科技</text></g>
+        <g class="gnode" transform="translate(620,180)"><circle r="12" fill="#4da3ff" fill-opacity="0.9"/><text class="glabel" x="16" y="4">产品知识库 · Index</text></g>
+        <g class="gnode" transform="translate(700,390)"><circle r="13" fill="#34d399" fill-opacity="0.85"/><text class="glabel" x="18" y="4">03-员工手册-报销与休假</text></g>
+        <g class="gnode" transform="translate(470,250)"><circle r="10" fill="#a78bfa" fill-opacity="0.8"/><text class="glabel" x="-10" y="-14" text-anchor="end">产品规划 2026</text></g>
+        <g class="gnode" transform="translate(740,120)"><circle r="9" fill="#f5a623" fill-opacity="0.85"/><text class="glabel" x="14" y="4">智能家居中控 Pro</text></g>
+        <g class="gnode" transform="translate(860,180)"><circle r="8" fill="#4da3ff" fill-opacity="0.75"/><text class="glabel" x="12" y="4">知识图谱</text></g>
+        <g class="gnode" transform="translate(800,60)"><circle r="7" fill="#8e8b8b" fill-opacity="0.7"/><text class="glabel" x="11" y="4">垂直领域微调</text></g>
+        <g class="gnode" transform="translate(950,90)"><circle r="7" fill="#4da3ff" fill-opacity="0.7"/><text class="glabel" x="11" y="4">RAG（检索增强生成）</text></g>
+        <g class="gnode" transform="translate(520,110)"><circle r="7" fill="#f5a623" fill-opacity="0.75"/><text class="glabel" x="-36" y="-6">项目管理</text></g>
+        <g class="gnode" transform="translate(810,440)"><circle r="9" fill="#34d399" fill-opacity="0.8"/><text class="glabel" x="14" y="4">财务报销制度</text></g>
+        <g class="gnode" transform="translate(640,500)"><circle r="9" fill="#f5a623" fill-opacity="0.8"/><text class="glabel" x="13" y="14">员工手册</text></g>
+        <g class="gnode" transform="translate(920,520)"><circle r="8" fill="#4da3ff" fill-opacity="0.75"/><text class="glabel" x="12" y="4">商业智能</text></g>
+        <g class="gnode" transform="translate(900,350)"><circle r="8" fill="#a78bfa" fill-opacity="0.75"/><text class="glabel" x="12" y="-6">数据分析智能体</text></g>
+        <g class="gnode" transform="translate(540,580)"><circle r="7" fill="#34d399" fill-opacity="0.75"/><text class="glabel" x="11" y="4">人工服务台</text></g>
+        <g class="gnode" transform="translate(740,590)"><circle r="7" fill="#f87171" fill-opacity="0.75"/><text class="glabel" x="11" y="4">对比 · RAG vs 微调</text></g>
+        <g class="gnode" transform="translate(420,610)"><circle r="7" fill="#34d399" fill-opacity="0.7"/><text class="glabel" x="11" y="4"> harbor 报销</text></g>
+        <g class="gnode" transform="translate(360,170)"><circle r="9" fill="#a78bfa" fill-opacity="0.8"/><text class="glabel" x="-8" y="-14">01-产品手册</text></g>
+        <g class="gnode" transform="translate(330,310)"><circle r="10" fill="#34d399" fill-opacity="0.8"/><text class="glabel" x="-12" y="18" text-anchor="end">02-产品手册-图模版</text></g>
+        <g class="gnode" transform="translate(240,120)"><circle r="7" fill="#f5a623" fill-opacity="0.7"/><text class="glabel" x="-8" y="-10">报表</text></g>
+        <g class="gnode" transform="translate(210,280)"><circle r="7" fill="#34d399" fill-opacity="0.7"/><text class="glabel" x="-8" y="-10">客服体系</text></g>
+        <g class="gnode" transform="translate(300,430)"><circle r="8" fill="#4da3ff" fill-opacity="0.75"/><text class="glabel" x="-10" y="18" text-anchor="end">知识库功能说明</text></g>
+        <g class="gnode" transform="translate(200,500)"><circle r="7" fill="#f5a623" fill-opacity="0.7"/><text class="glabel" x="11" y="4">考期</text></g>
+        <g class="gnode" transform="translate(410,510)"><circle r="7" fill="#f87171" fill-opacity="0.7"/><text class="glabel" x="11" y="4">A/B 对比</text></g>
+        <g class="gnode" transform="translate(900,350)"><circle r="0"/></g>
+        <g class="gnode" transform="translate(1010,300)"><circle r="7" fill="#34d399" fill-opacity="0.7"/><text class="glabel" x="11" y="4">BI 报表</text></g>
+        <g class="gnode" transform="translate(1060,150)"><circle r="7" fill="#a78bfa" fill-opacity="0.7"/><text class="glabel" x="11" y="4">RERANK 模型</text></g>
+        <g class="gnode" transform="translate(150,200)"><circle r="6" fill="#8e8b8b" fill-opacity="0.7"/><text class="glabel" x="-6" y="-10">index</text></g>
+        <g class="gnode" transform="translate(140,600)"><circle r="6" fill="#34d399" fill-opacity="0.65"/><text class="glabel" x="-6" y="16">Rerank</text></g>
+        <g class="gnode" transform="translate(1090,400)"><circle r="6" fill="#4da3ff" fill-opacity="0.65"/><text class="glabel" x="-6" y="16">Top50 考勤 sample</text></g>
+
+        <!-- 选中节点：橙色高亮 + 外圈 -->
+        <g class="gnode" transform="translate(390,240)">
+          <circle r="17" fill="none" stroke="#f5a623" stroke-width="1.6" stroke-dasharray="3 3"/>
+          <circle r="12" fill="#f5a623"/>
+          <text class="glabel on" x="0" y="32" text-anchor="middle">日常费用报销</text>
+        </g>
+        <g class="gnode" transform="translate(470,330)"><circle r="14" fill="#f5a623" fill-opacity="0.85"/><text class="glabel on" x="0" y="-20" text-anchor="middle">智能家局中控 Pro</text></g>
+        <g class="gnode" transform="translate(500,330)"><circle r="11" fill="#34d399" fill-opacity="0.85"/><text class="glabel on" x="16" y="20">03-员工手册-报销与休假</text></g>
+        <g class="gnode" transform="translate(440,410)"><circle r="10" fill="#f5a623" fill-opacity="0.8"/><text class="glabel on" x="14" y="18">知识库功能说明</text></g>
+      </svg>
+
+      <!-- ===== 搜索覆盖层 ===== -->
+      <div class="g-search">
+        <input class="input" value="🔍 日常费用报销" style="border-color: var(--pri); box-shadow: 0 0 0 2px var(--pri-soft);" />
+      </div>
+
+      <!-- ===== 图例（可点选过滤） ===== -->
+      <div class="g-legend">
+        <div class="lg-row"><span class="lg-dot" style="background:var(--type-summary)"></span> 摘要</div>
+        <div class="lg-row"><span class="lg-dot" style="background:var(--type-entity)"></span> 实体</div>
+        <div class="lg-row"><span class="lg-dot" style="background:var(--type-concept)"></span> 概念</div>
+        <div class="lg-row"><span class="lg-dot" style="background:var(--type-synthesis)"></span> 综合</div>
+        <div class="lg-row"><span class="lg-dot" style="background:var(--type-compare)"></span> 对比</div>
+        <div class="lg-row off"><span class="lg-dot" style="background:var(--type-index)"></span> 索引</div>
+        <div class="hr"></div>
+        <div class="lg-row">⊞ 适应屏幕</div>
+        <div class="lg-row">⊣ 隐藏箭头</div>
+        <div class="lg-row">⤢ 全库概览</div>
+        <div class="ti" style="margin-top:6px">49/49 个节点<br/>已展示知识库全部节点</div>
+      </div>
+
+      <!-- ===== 状态卡 ===== -->
+      <div class="g-status">ego 视图 · 中心「日常费用报销」 · 深度 1 · <a href="#">回到全库概览</a></div>
+
+      <!-- ===== 右侧页面预览抽屉 ===== -->
+      <div class="g-drawer">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag t-concept">💡 概念</span><span class="tag ver">v2</span>
+          <span class="dim" style="margin-left:auto;font-size:12px">49 节点 · 已全部加载</span>
+        </div>
+        <div style="font-size:20px;font-weight:700;margin:12px 0 4px">日常费用报销</div>
+        <div class="nb-hint">点击画布节点切换中心；双击可展开 1 跳邻居资产视图（Bloom 合并，保留既有布局）。</div>
+        <div class="nb-btns">
+          <button class="btn sm primary">＋ 展开邻居（6）</button>
+          <button class="btn sm ghost">⊕ Bloom 前沿（18）</button>
+        </div>
+        <div class="diff-caption">邻居</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="tag">🏬 办公用品采购</span>
+          <span class="tag">🎓 培训费报销</span>
+          <span class="tag">🧪 测试设备采购</span>
+          <span class="tag dim">＋5</span>
+        </div>
+        <div class="diff-caption">正文</div>
+        <div style="border:1px solid var(--border-1);border-radius:10px;padding:10px 14px;background:var(--bg-2)">
+          <div style="font-weight:700;font-size:13.5px">日常费用报销</div>
+          <p style="color:var(--tx-3);font-size:12.5px;margin-top:6px">员工日常办公、培训及测试设备采购等费用的报销流程。</p>
+          <div style="font-size:12.5px;color:var(--tx-2);margin-top:8px">
+            所有发票须在费用发生起 <b style="color:var(--tx-1)">30 日内</b> 提交 OA 报销单，逾期需直属主管 + 财务经理双签说明。
+          </div>
+          <div style="font-size:12.5px;color:var(--tx-2);margin-top:8px">
+            研发人员购买测试用硬件，须先在资产系统创建条目，再关联报销单。参见
+            <span class="wiki-link" style="font-size:12.5px">产品手册 智能家居中控Pro</span>。
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

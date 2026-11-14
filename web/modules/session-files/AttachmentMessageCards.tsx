@@ -9,6 +9,8 @@
  * Cards are read-only: no remove/retry, an optional preview click.
  */
 
+import MessageCopyButton from '@/new-components/common/MessageCopyButton';
+import { userMessageCopyText } from '@/utils/user-message-copy';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import classNames from 'classnames';
 import React, { memo, useMemo } from 'react';
@@ -82,15 +84,8 @@ const AttachmentMessageCards: React.FC<AttachmentMessageCardsProps> = ({ files, 
             )}
             title={file.name}
           >
-            <div
-              className={classNames(
-                'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                failed
-                  ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
-                  : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-              )}
-            >
-              <FileKindIcon name={file.name} mediaType={file.media_type} kind={file.kind} className='text-base' />
+            <div className='w-8 h-8 flex items-center justify-center flex-shrink-0'>
+              <FileKindIcon name={file.name} mediaType={file.media_type} kind={file.kind} className='text-[28px]' />
             </div>
             <div className='min-w-0 flex-1'>
               <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{file.name}</div>
@@ -113,6 +108,10 @@ const AttachmentMessageCards: React.FC<AttachmentMessageCardsProps> = ({ files, 
                 )}
               </div>
             </div>
+            <MessageCopyButton
+              text={userMessageCopyText({ attachedFiles: [file] }, key => t(key))}
+              label={t('copy_reference', { name: file.name })}
+            />
           </div>
         );
       })}

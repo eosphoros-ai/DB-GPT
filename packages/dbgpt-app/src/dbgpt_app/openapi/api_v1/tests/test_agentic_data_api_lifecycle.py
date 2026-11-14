@@ -154,7 +154,11 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
             task_finished.set()
 
     async def _fake_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
@@ -170,7 +174,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         _fake_stream_impl,
     )
 
-    stream = agentic_data_api._react_agent_stream(SimpleNamespace())
+    stream = agentic_data_api._react_agent_stream(
+        SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+    )
     assert await anext(stream) == "data: first\n\n"
 
     await stream.aclose()
@@ -186,7 +192,11 @@ async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
     async def _failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode, agent_task_holder
         if False:
@@ -201,7 +211,9 @@ async def test_runtime_failure_emits_structured_final_and_done(
 
     events = [
         _decode_sse_event(event)
-        async for event in agentic_data_api._react_agent_stream(SimpleNamespace())
+        async for event in agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        )
     ]
 
     assert events == [
@@ -214,12 +226,17 @@ async def test_runtime_failure_emits_structured_final_and_done(
         {"type": "done"},
     ]
     assert "ReAct agent stream failed before normal completion" in caplog.text
+    assert "model stream failed" in caplog.text
 
 
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -235,7 +252,9 @@ async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> 
 
     events = [
         _decode_sse_event(event)
-        async for event in agentic_data_api._react_agent_stream(SimpleNamespace())
+        async for event in agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        )
     ]
 
     assert [event["type"] for event in events] == ["final", "done"]
@@ -244,6 +263,21 @@ async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> 
 
 @pytest.mark.asyncio
 async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> None:
+    from dbgpt.core import StorageConversation
+    from dbgpt.core.interface.storage import InMemoryStorage
+
+    conversations, messages = InMemoryStorage(), InMemoryStorage()
+
+    def read_conversation():
+        return StorageConversation(
+            conv_uid="disconnect-recovery",
+            conv_storage=conversations,
+            message_storage=messages,
+        )
+
+    storage = read_conversation()
+    storage.start_new_round()
+    storage.add_user_message("分析年报")
     task_started = asyncio.Event()
     task_finished = asyncio.Event()
     body_send_started = asyncio.Event()
@@ -258,9 +292,22 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
             task_finished.set()
 
     async def _fake_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode
+        history_checkpoint.bind(
+            storage,
+            lambda status: json.dumps(
+                {
+                    "execution_status": status,
+                    "steps": [{"id": "step-1", "outputs": [{"content": "已读取财报"}]}],
+                }
+            ),
+        )
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
         agent_task_holder.append(task)
@@ -283,7 +330,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         _fake_stream_impl,
     )
     response = agentic_data_api._AgentStreamingResponse(
-        agentic_data_api._react_agent_stream(SimpleNamespace()),
+        agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        ),
         media_type="text/event-stream",
     )
     scope = {
@@ -300,3 +349,83 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
     assert created_tasks[0].cancelled()
     assert created_tasks[0].done()
     assert task_finished.is_set()
+    restored = read_conversation()
+    assert [m.type for m in restored.messages] == ["human", "view"]
+    payload = json.loads(restored.messages[-1].content)
+    assert payload["execution_status"] == "interrupted"
+    assert payload["steps"][0]["outputs"][0]["content"] == "已读取财报"
+
+
+@pytest.mark.asyncio
+async def test_cancel_cleanup_times_out_and_consumes_late_failure(monkeypatch, caplog):
+    monkeypatch.setattr(agentic_data_api, "AGENT_CLEANUP_TIMEOUT_SECONDS", 0.01)
+    started = asyncio.Event()
+    finish = asyncio.Event()
+
+    async def stubborn_task():
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await finish.wait()
+            raise RuntimeError("late cleanup failure")
+
+    task = asyncio.create_task(stubborn_task())
+    await started.wait()
+    try:
+        await asyncio.wait_for(
+            agentic_data_api._cancel_and_await_agent_task(task), timeout=0.5
+        )
+        assert not task.done()
+        assert "exceeded cleanup deadline" in caplog.text
+    finally:
+        finish.set()
+        await asyncio.gather(task, return_exceptions=True)
+        await asyncio.sleep(0)
+    assert "failed after stream cleanup" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        {"financial_user_query": "分析年报"},
+        {"financial_user_query": "请看附件", "financial_suite_command": "/读年报"},
+        {"financial_user_query": "继续", "financial_pending": {"run"}},
+        {
+            "financial_user_query": "为什么",
+            "financial_report_context": {"revision": "saved"},
+        },
+    ],
+)
+def test_unvalidated_financial_terminate_text_is_never_sent_as_a_final_chunk(state):
+    assert (
+        agentic_data_api._react_final_chunk_event("营业收入为 999 亿元", state) is None
+    )
+    events = agentic_data_api._react_terminal_events(
+        None,
+        None,
+        AgentFinalAnswer(content="已核对的最终回答"),
+    )
+    assert _decode_sse_event(events[0])["content"] == "已核对的最终回答"
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        {"financial_user_query": "Explain photosynthesis"},
+        {
+            "financial_user_query": "按地区汇总营业收入",
+            "financial_other_source_used": True,
+        },
+        {
+            "financial_user_query": "按地区汇总营业收入",
+            "financial_other_source_selected": True,
+        },
+    ],
+)
+def test_nonreport_answers_keep_incremental_final_streaming(state):
+    event = agentic_data_api._react_final_chunk_event("A normal answer", state)
+    assert _decode_sse_event(event) == {
+        "type": "final.chunk",
+        "content": "A normal answer",
+    }

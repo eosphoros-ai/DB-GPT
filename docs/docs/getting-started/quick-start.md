@@ -237,4 +237,4 @@ If the Web UI loads and you can start a chat conversation, your DB-GPT is ready 
 * Configure model providers: [Model Providers](/docs/getting-started/providers/)
 * Deploy with Docker: [Docker Deployment](/docs/getting-started/deploy/docker)
 * Explore the Web UI: [Web UI Guide](/docs/getting-started/web-ui/)
-* Build your first AWEL workflow: [AWEL Quickstart](/docs/awel/cookbook/quickstart_basic_awel_workflow)
+* Build your first workflow: [Workflow Quickstart](/docs/workflow/quickstart)

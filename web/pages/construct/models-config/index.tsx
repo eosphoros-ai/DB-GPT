@@ -32,6 +32,7 @@ const MODEL_CAP = 50;
 // Non-listed providers are hidden for now.
 const POPULAR_PROVIDERS: Array<{ id: string }> = [
   { id: 'proxy/openai' },
+  { id: 'proxy/xm4' },
   { id: 'proxy/github_copilot' },
   { id: 'proxy/claude' },
   { id: 'proxy/gemini' },
@@ -81,6 +82,7 @@ function cleanDescription(desc?: string | null): string {
 // (see components/icons/provider-icons.tsx). Preferred over raster assets.
 const PROVIDER_SPRITE_IDS: Record<string, string> = {
   'proxy/openai': 'openai',
+  'proxy/xm4': 'openai',
   'proxy/github_copilot': 'github-copilot',
   'proxy/claude': 'anthropic',
   'proxy/gemini': 'google',
@@ -654,7 +656,16 @@ function ModelsConfig() {
             </div>
           </div>
         ) : (
-          <Form form={connectForm} layout='vertical' onFinish={connectProvider}>
+          <Form
+            form={connectForm}
+            layout='vertical'
+            onFinish={connectProvider}
+            initialValues={
+              current?.provider === 'proxy/xm4'
+                ? { api_base: configs[current.provider]?.api_base || 'https://xm4.meitnru.site:8443/v1' }
+                : undefined
+            }
+          >
             <Form.Item
               name='api_key'
               label={t('model_api_key')}
@@ -677,7 +688,9 @@ function ModelsConfig() {
               />
             </Form.Item>
             <Form.Item name='api_base' label={t('api_base_optional')}>
-              <Input placeholder='https://...' />
+              <Input
+                placeholder={current?.provider === 'proxy/xm4' ? 'https://xm4.meitnru.site:8443/v1' : 'https://...'}
+              />
             </Form.Item>
             <div className='flex justify-end gap-2'>
               <Button onClick={() => setConnectModalOpen(false)}>{t('cancel')}</Button>

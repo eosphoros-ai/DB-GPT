@@ -1,8 +1,8 @@
-# code_interpreter
+# code
 
 ## Overview
 
-`code_interpreter` executes arbitrary Python code and returns stdout / stderr plus generated artifacts.
+`code` executes arbitrary Python code and returns stdout / stderr plus generated artifacts.
 
 It is the main tool for data analysis, calculations, dataframe operations, and chart generation.
 

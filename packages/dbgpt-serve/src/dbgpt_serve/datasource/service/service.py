@@ -158,6 +158,15 @@ class Service(
                 db_name,
                 str_db_type,
             )
+            # Semantic center: auto-register the space (not_activated) and
+            # sync L1 metadata in the background. Never blocks datasource
+            # creation on failure.
+            try:
+                from dbgpt_serve.semantic.sync import semantic_auto_register
+
+                semantic_auto_register(self._system_app, db_name, str_db_type)
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"semantic auto-register skipped: {e}")
         except Exception as e:
             raise ValueError("Add db connect info error!" + str(e))
         return self._to_query_response(res)

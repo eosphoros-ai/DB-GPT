@@ -87,6 +87,29 @@ def _requires_fuzzy_target_resolution(prompt: str) -> bool:
     return any(cue in normalized for cue in _FUZZY_TARGET_CUES)
 
 
+def _is_broad_dashboard_request(prompt: str) -> bool:
+    """Recognize short overview requests, leaving explicit scopes unrestricted."""
+    text = re.sub(r"\[Database:[^\]]+\]", "", prompt, flags=re.I).strip()
+    return (
+        len(text) <= 200
+        and bool(
+            re.search(
+                r"经营大盘|经营仪表板|销售经营看板|"
+                r"\b(?:sales|operational|business) dashboard\b",
+                text,
+                re.I,
+            )
+        )
+        and not re.search(
+            r"组件|图表|指标|KPI|筛选|过滤|包含|包括|分别|至少|"
+            r"\d+\s*(?:个|张)|[一二三四五六七八九十]+\s*(?:个|张)|"
+            r"[\n；;]|\b(?:widgets?|charts?|filters?|include|including)\b",
+            text,
+            re.I,
+        )
+    )
+
+
 def _validate_target_scoped_operations(
     schema: DashboardSchemaV1,
     widget_id: str,
@@ -1371,6 +1394,18 @@ def make_dashboard_planner_tools(
             parsed = verified_olist_plan or model_validate_compat(
                 DashboardPlan, _decode(raw_plan)
             )
+            if not used_verified_olist_plan and _is_broad_dashboard_request(
+                user_prompt
+            ):
+                if len(parsed.widgets) > 4 or parsed.filters:
+                    return _tool_result(
+                        "Dashboard plan scope validation failed: this broad overview "
+                        "request requires 3-4 core widgets total and no unrequested "
+                        "global filters. Call plan_dashboard with one primary KPI, "
+                        "one weekly trend, one dimensional comparison, and an "
+                        "optional detail table. Remove extra topics and filters. "
+                        "Do not rerun discovery. Nothing has been saved."
+                    )
             if "dashboard_selection_evidence" not in react_state:
                 # Selected connector already has the caller's datasource scope.
                 try:
@@ -1699,7 +1734,12 @@ def make_dashboard_planner_tools(
         }
         next_step = (
             f" {failed} widget(s) failed. Call repair_dashboard_draft with corrected "
-            "queries for only those widgets."
+            "queries for only those widgets. Errors: "
+            + "; ".join(
+                f"{item.id}: {item.error.message}"
+                for item in record.schema_payload.widgets
+                if item.error
+            )
             if failed
             else ""
         )
@@ -1768,13 +1808,25 @@ def make_dashboard_planner_tools(
             ) or react_state.get("dashboard_record_id")
             if not dashboard_id:
                 raise ValueError("dashboard_id is required for a later repair.")
+            existing = planner_service.dashboard_service.get_dashboard(
+                str(dashboard_id), owner_id
+            )
+            workflow = existing.schema_payload.metadata.compatibility.get(
+                "agent_dashboard_workflow", {}
+            )
+            if workflow.get(
+                "status"
+            ) == "awaiting_confirmation" and not react_state.get(
+                "dashboard_query_staging"
+            ):
+                return _tool_result(
+                    "This is still a SQL-free plan; no candidate queries from "
+                    "earlier failed turns are available in this run. Start with "
+                    "create_dashboard_draft for ALL confirmed-plan widgets in "
+                    "batches of at most two. Do not repair placeholder widgets "
+                    "or rely on historical tool observations."
+                )
             if stored_plan is None:
-                existing = planner_service.dashboard_service.get_dashboard(
-                    str(dashboard_id), owner_id
-                )
-                workflow = existing.schema_payload.metadata.compatibility.get(
-                    "agent_dashboard_workflow", {}
-                )
                 stored_plan = workflow.get("plan")
             if stored_plan is None:
                 raise ValueError("The original dashboard plan is unavailable.")
@@ -1783,13 +1835,42 @@ def make_dashboard_planner_tools(
                 DashboardQueryDraftRequest,
                 _normalize_model_query_payload(raw_payload, plan),
             )
-            record, _ = await planner_service.repair_draft(
-                dashboard_id=str(dashboard_id),
-                plan=plan,
-                query_request=query_request,
-                owner_id=owner_id,
-                event_callback=stream_callback,
-            )
+            staging = react_state.get("dashboard_query_staging")
+            if staging and staging.get("dashboard_id") == str(dashboard_id):
+                # A contract failure can occur before any real widget is saved.
+                # Repair those staged candidates, not the SQL-free plan's
+                # placeholder widgets, so successful candidates are retained.
+                query_request = model_validate_compat(
+                    DashboardQueryDraftRequest,
+                    {
+                        **model_dump_compat(query_request),
+                        "dashboard_id": str(dashboard_id),
+                        "expected_revision": staging["expected_revision"],
+                    },
+                )
+                query_request, missing = _stage_dashboard_query_batch(
+                    react_state, query_request, plan
+                )
+                if missing:
+                    return _tool_result(
+                        "Repair staged; missing widget queries: " + ", ".join(missing)
+                    )
+                record, _ = await planner_service.complete_plan_draft(
+                    dashboard_id=str(dashboard_id),
+                    query_request=query_request,
+                    owner_id=owner_id,
+                    request_token=request_token,
+                    event_callback=stream_callback,
+                )
+                react_state.pop("dashboard_query_staging", None)
+            else:
+                record, _ = await planner_service.repair_draft(
+                    dashboard_id=str(dashboard_id),
+                    plan=plan,
+                    query_request=query_request,
+                    owner_id=owner_id,
+                    event_callback=stream_callback,
+                )
         except DashboardGenerationTimeout:
             raise
         except DashboardSchemaValidationError as exc:
@@ -1828,7 +1909,17 @@ def make_dashboard_planner_tools(
             "publishable": failed == 0,
         }
         return _tool_result(
-            f"Dashboard repair saved. {failed} widget(s) still need attention.",
+            f"Dashboard repair saved. {failed} widget(s) still need attention."
+            + (
+                " Errors: "
+                + "; ".join(
+                    f"item {item.id}: {item.error.message}"
+                    for item in record.schema_payload.widgets
+                    if item.error
+                )
+                if failed
+                else ""
+            ),
             __dashboard__=dashboard_payload,
         )
 
