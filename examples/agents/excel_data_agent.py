@@ -160,7 +160,7 @@ def load_skill(skill_name: str) -> str:
                 if skill and skill.metadata.name == skill_name:
                     target_skill_path = path
                     break
-            except:
+            except Exception:
                 continue
 
     if not target_skill_path:
