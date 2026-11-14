@@ -52,10 +52,22 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
     def from_dict(
         cls, data: dict, ignore_extra_fields: bool = True
     ) -> "KnowledgeSpaceLoadResourceParameters":
-        """Create a new instance from a dictionary."""
-        copied_data = data.copy()
-        if "space_name" not in copied_data and "value" in copied_data:
-            copied_data["space_name"] = copied_data.pop("value")
+        """Create a new instance from a dictionary or a knowledge space id."""
+        if isinstance(data, dict):
+            copied_data = data.copy()
+            if "space_name" not in copied_data and "value" in copied_data:
+                copied_data["space_name"] = copied_data.pop("value")
+        else:
+            # The AWEL knowledge node may persist the knowledge space id as a
+            # scalar value, for example ``"2"``.
+            copied_data = {"space_name": data}
+
+        space_name = copied_data.get("space_name")
+        if space_name is None or space_name == "":
+            raise ValueError("space_name is required to build a knowledge resource.")
+        copied_data["space_name"] = str(space_name)
+        if not copied_data.get("name"):
+            copied_data["name"] = copied_data["space_name"]
         return super().from_dict(copied_data, ignore_extra_fields=ignore_extra_fields)
 
 
