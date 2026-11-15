@@ -45,8 +45,9 @@ Upstream node outputs (in execution order):
 
 Two consequences worth internalizing:
 
-1. **All prior outputs, not just the parent's.** A review node three hops downstream still sees the
-   grounding card. Context budget caps the total (~20k chars), oldest blocks truncate first.
+1. **Ancestor outputs, not just the immediate parent's.** A review node three hops downstream
+   can receive the grounding card. Independent parallel branches do not receive each other's
+   findings. Context budget caps the total (~20k chars), oldest blocks truncate first.
 2. **Outputs are contracts.** UI protocol (step markers, artifact fences) is stripped before the
    text reaches the next agent — what flows forward is exactly what the node answered.
 
@@ -61,8 +62,9 @@ Nodes without a contract tend to answer in prose that the next agent must guess 
 
 ## Control vs data
 
-Edges define **control order** (when a node may start). They do not limit what a node *sees* —
-that is the data channel above. A star-shaped DAG (all edges from `start`) still gives every node
-the full upstream context; a deep chain mainly buys you ordering and a readable run card.
+Edges define dependencies and therefore which stages are ancestors of a node.
+With a star-shaped DAG, sibling agents share the original question and common ancestor outputs;
+they do not receive each other's results. Connect branches to a common downstream stage to
+combine their results. For parallel execution, use the supported `parallel_group` structure.
 
 Next: [agent node](./agent.md) · [data entry](./data-entry.md) · [confirmation gates](./human-confirm.md)

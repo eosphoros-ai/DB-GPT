@@ -28,6 +28,10 @@ wheels/
 # Soft link
 /models
 plugins/
+!docs/docs/plugins/
+!docs/docs/plugins/**
+!docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/plugins/
+!docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/plugins/**
 # ...but keep the scenario-suite serve module (product code, not build artifact)
 !packages/dbgpt-serve/src/dbgpt_serve/plugins/
 !packages/dbgpt-serve/src/dbgpt_serve/plugins/**

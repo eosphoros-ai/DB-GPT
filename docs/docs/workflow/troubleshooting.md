@@ -50,10 +50,17 @@ provider balance/quota and rerun; the run card shows which node hit it.
   change.
 - Editing *your instance* requires a deploy afterwards (see the 0:00 failure above).
 
-## A flow conversation won't reopen from its URL
+## History opens with incomplete tool details
 
-Flow runs are live-streamed and their replay-from-history entry point is not shipped yet; the
-conversation list shows the run but deep-linking a flow conversation lands on the home page.
-Track it as a known gap, not a broken install.
+Current rendering parses saved Flow markers to reconstruct node cards and artifacts. Older or
+truncated messages can lack structured tool inputs, outputs, and success flags. The renderer
+cannot recover evidence that was never stored. A historical view is not a new live execution.
+
+## What to do after a failure
+
+Find the first failed node and inspect its actual provider/tool error. Fix the resource, model,
+or goal; save and publish configuration changes, then rerun. An existing SQL edit-and-rerun
+control reruns that query, not the full downstream Flow. Do not assume checkpoint continuation,
+reuse of all successful stages, or stream reattachment after refresh.
 
 Next: [runs & artifacts](./runs-and-artifacts.md) · [editor](./editor.md)

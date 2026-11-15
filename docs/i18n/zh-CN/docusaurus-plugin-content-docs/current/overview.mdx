@@ -1,286 +1,55 @@
 ---
 sidebar_position: 0
-title: DB-GPT
+title: 产品概览
 ---
 
-import CommandCopyCard from "@site/src/components/mdx/CommandCopyCard";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+# 打造可信、受控的 Data Agent
 
-# DB-GPT
+DB-GPT 是面向业务数据工作的开源 Data Agent 平台，将业务问题转化为查询、分析、报告与看板。它通过可治理的语义定义、可复用的场景插件、Agentic Workflow 和受控的工具执行，让团队能够委托 Agent 完成数据任务，并核验过程与结果。
 
-<p align="center">
-  <img src={'/img/dbgpt_vision_zh.png'} width="860px" />
-</p>
+我们的愿景是：让团队在明确的数据、业务口径和执行边界内使用 Agent，追溯结果依据、检查执行过程，并将有效的方法沉淀为可复用能力。
 
-<div style={{textAlign: 'center'}}>
-  <strong>一个开源的 AI 数据助手，能够连接你的数据、编写 SQL 和代码、在沙箱环境中运行技能，并将分析过程转化为报告、洞察与行动。</strong><br />
-  DB-GPT 也是一个用于构建 AI Native 数据 Agent、工作流与应用的平台，支持 Agents、AWEL、RAG 和多模型能力。
-</div>
+![首页的五个官方业务场景](/img/data-agent/zh-CN/home.png)
 
-<div style={{textAlign: 'center'}}>
-  <a href="https://github.com/eosphoros-ai/DB-GPT">GitHub</a> ·
-  <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> ·
-  <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a>
-</div>
+## 为什么需要这些能力
 
-## 快速开始
+数据库结构能说明数字存在哪里，却不一定解释数字的业务含义。同一个“收入”可能包含不同的运费与退款口径；明细 JOIN 可能放大金额却不触发 SQL 错误；漂亮的报告也可能缺少可复核的依据。
 
-<div className="quickstart-container">
-  <Tabs className="quickstart-tabs" groupId="install-method">
-    <TabItem value="script" label="📜  Shell 快速开始" default>
-      <div className="quickstart-tab-inner">
-        <span className="quickstart-tab-desc">适用于 macOS 和 Linux 的一键安装脚本——自动下载、配置并完成 DB-GPT 环境搭建。</span>
-        <div className="quickstart-numbered-steps">
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">1</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">安装 DB-GPT</span>
-              <CommandCopyCard command={`curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh | bash`} />
-            </div>
-          </div>
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">2</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">启动服务</span>
-              <CommandCopyCard command={`cd ~/.dbgpt/DB-GPT && uv run dbgpt start webserver --profile <profile>`} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </TabItem>
-    <TabItem value="cli" label="⚡  PIP 快速开始">
-      <div className="quickstart-tab-inner">
-        <span className="quickstart-tab-desc">通过 pip 安装，几秒内即可启动——全平台最快的 DB-GPT 体验方式。</span>
-        <div className="quickstart-numbered-steps">
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">1</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">安装包</span>
-              <CommandCopyCard command={`pip install dbgpt-app`} />
-              <div className="quickstart-tip">
-                <span className="quickstart-tip-icon">🌏</span>
-                <span className="quickstart-tip-text">中国用户可使用国内镜像源加速下载：</span>
-                <CommandCopyCard command={`pip install dbgpt-app -i https://pypi.tuna.tsinghua.edu.cn/simple`} />
-              </div>
-            </div>
-          </div>
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">2</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">启动 DB-GPT</span>
-              <CommandCopyCard command={`dbgpt start`} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </TabItem>
-  </Tabs>
-</div>
+长程任务还会放大协作问题：仅靠 Prompt 或 Skill 约定，多 Agent 容易偏离流程、遗漏任务、传递不可校验的结果，异常后也难以判断如何继续。团队需要可复用的方法、明确的阶段责任和可介入的检查点。
 
-## 什么是 DB-GPT？
+## 四个产品支柱
 
-DB-GPT 是一个面向下一代 **AI + Data** 产品的开源 **Agentic AI 数据助手**。
+| 支柱 | 解决的问题 | 从这里开始 |
+| --- | --- | --- |
+| 可治理的语义 | 管理业务含义，发布 Agent 可读取和引用的指标版本 | [语义中心](./semantic-center/overview.md) |
+| 可复用的场景插件 | 将方法、Skill 和工具配置组织为任务能力包 | [插件中心](./plugins/overview.md) |
+| Agentic Workflow | 明确 Agent 的阶段、任务、产物和 Gate，组织复杂协作 | [Agentic Workflow](./workflow/introduction.md) |
+| 受控的工具执行 | 配置数据、工具、审批和执行环境，检查真实调用结果 | [受控执行](./data-agent/controlled-execution.md) |
 
-它帮助个人与团队：
+“可信”强调定义来源、指标版本、真实执行和交付证据；“受控”强调资源范围、工具边界和复核节点。这些机制帮助团队验证结果，不代表每个生成的计算都自动正确。
 
-- 连接 **数据库、CSV / Excel 文件、数据仓库与知识库**
-- 使用自然语言提问，并让 AI **自动生成 SQL**
-- 运行 **Python / 代码驱动** 的分析流程
-- 加载并执行可复用的 **skills** 以完成领域任务
-- 生成 **图表、仪表盘、HTML 报告与分析摘要**
-- 在 **沙箱环境** 中安全执行任务
+## 聚焦哪些场景
 
-## 为什么选择 DB-GPT？
+- **智能取数**：通过只读 SQL 回答范围明确的数据问题，交付结果和可用的指标引用。
+- **智能分析**：解释业务变化，生成分析、报告或经营看板。
+- **SQL 优化专家**：基于结构和计划证据提出诊断、改写与索引候选。
+- **元数据与架构专家**：交付数据字典、物理 ER 和结构文档，区分声明约束与推断关系。
+- **财报分析**：基于提供的报告文件分析财务信息，注明来源、期间和单位。
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧠</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agentic 数据分析</h3>
-      <p className="overview-card-description">能够规划任务、拆解步骤、调用工具，并端到端完成分析流程。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">💻</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">自主 SQL + 代码执行</h3>
-      <p className="overview-card-description">自动生成 SQL 与代码，用于查询数据、清洗数据集、计算指标并生成结果。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🗂️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">多源数据接入</h3>
-      <p className="overview-card-description">同时处理结构化与非结构化数据，包括数据库、表格、文档和知识库。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧩</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Skills 驱动的可扩展性</h3>
-      <p className="overview-card-description">将领域知识、分析方法和执行流程封装成可复用的 skills。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📈</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">报告与决策支持</h3>
-      <p className="overview-card-description">生成图表、仪表盘、HTML 报告以及可直接用于决策的业务输出。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🛡️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">沙箱执行</h3>
-      <p className="overview-card-description">在隔离环境中运行代码和工具，让分析过程更加安全、可靠。</p>
-    </div>
-  </div>
-</div>
+[查看首页场景与复现步骤](./use_cases.mdx)。
 
-## 产品工作流
+## 从问题到可核验交付
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🔍</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">探索数据</h3>
-      <p className="overview-card-description">在同一个工作空间中连接文件、数据库与知识库。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🪄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">规划并执行</h3>
-      <p className="overview-card-description">让 AI 理解任务、编写 SQL 与代码，并逐步执行。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧰</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">使用技能</h3>
-      <p className="overview-card-description">加载可复用的 skills，用于重复性的业务分析流程。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">生成报告</h3>
-      <p className="overview-card-description">输出图表、仪表盘、HTML 报告以及可直接用于决策的结果。</p>
-    </div>
-  </div>
-</div>
+1. 配置可用模型，连接数据库或提供任务需要的文件。
+2. 在语义中心准备业务定义，审核并发布指标口径。
+3. 在首页选择插件，明确范围、期间、单位和交付物。
+4. 对复杂或重复任务，用 Flow 分离语义与需求、取数、分析、复核和报告。
+5. 查看确认请求、工具执行记录、结果限制与最终成果。
 
-## 核心能力
+先[安装 DB-GPT](./getting-started/index.md)，再完成[第一次数据任务](./data-agent/quickstart.md)。
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🤖</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agentic Analysis</h3>
-      <p className="overview-card-description">任务规划、逐步执行、工具调用与迭代式推理。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧮</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">SQL + Code Execution</h3>
-      <p className="overview-card-description">从自然语言到 SQL、基于 Python 的分析、指标计算和图表生成。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🗃️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Multi-Source Data Access</h3>
-      <p className="overview-card-description">关系型数据库、CSV / Excel、文档、知识库以及混合数据源工作流。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧠</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Skills and Agents</h3>
-      <p className="overview-card-description">可复用 skills、领域工作流、agent 编排与可定制执行流程。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📊</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Reporting</h3>
-      <p className="overview-card-description">数据库分析报告、财报分析、仪表盘、摘要与业务洞察。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🔐</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Safe Execution</h3>
-      <p className="overview-card-description">沙箱代码执行、受控工具调用，以及可复现的输出与产物。</p>
-    </div>
-  </div>
-</div>
+## 当前能力边界
 
-## 平台与生态
+语义工具按选定数据库读取已发布业务定义和指标快照，支持关键词与别名检索；不会自动强制所有语义规则。插件配置声明任务方法与能力，具体运行支持需要核对。Flow 展示节点状态和失败，异常可定位不等于自动断点恢复。
 
-<div className="overview-cards-grid">
-  <a href="./awel/awel" className="overview-card">
-    <div className="overview-card-icon">🔄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">AWEL</h3>
-      <p className="overview-card-description">面向结构化 AI + Data 流程的 Agentic 工作流编排能力。</p>
-    </div>
-  </a>
-  <a href="./agents/introduction/introduction" className="overview-card">
-    <div className="overview-card-icon">🤝</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agents</h3>
-      <p className="overview-card-description">通过工具、记忆、规划与协作能力实现自治任务执行。</p>
-    </div>
-  </a>
-  <a href="./modules/rag" className="overview-card">
-    <div className="overview-card-icon">📚</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">RAG</h3>
-      <p className="overview-card-description">在文档、图谱和私有知识库之上进行知识增强推理。</p>
-    </div>
-  </a>
-  <a href="./modules/smmf" className="overview-card">
-    <div className="overview-card-icon">⚙️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">SMMF</h3>
-      <p className="overview-card-description">面向开源模型和 API 模型的服务化多模型管理框架。</p>
-    </div>
-  </a>
-  <a href="./application/fine_tuning_manual/dbgpt_hub" className="overview-card">
-    <div className="overview-card-icon">🎛️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">DB-GPT-Hub</h3>
-      <p className="overview-card-description">用于领域适配与模型增强的 Text2SQL 与微调工作流。</p>
-    </div>
-  </a>
-  <a href="./modules/connections" className="overview-card">
-    <div className="overview-card-icon">🔗</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Connections</h3>
-      <p className="overview-card-description">连接数据库、文件、数据仓库以及外部数据系统。</p>
-    </div>
-  </a>
-</div>
-
-## 术语说明
-
-| 术语 | 说明 |
-|------|-------------|
-| **DB-GPT** | DataBase Generative Pre-trained Transformer，一个围绕数据库与大模型构建的开源框架 |
-| **Data App** | 基于 DB-GPT 构建的智能数据应用 |
-| **Text2SQL** | 利用大模型能力将自然语言转换为 SQL |
-| **KBQA** | 基于知识库的问答系统 |
-| **GBI** | Generative Business Intelligence，通过对话完成分析与决策 |
-| **LLMOps** | 大模型训练、调优、部署与监控的端到端流程 |
-| **Embedding** | 将文本、音频、视频等内容转换为向量的方法 |
-| **RAG** | Retrieval Augmented Generation，检索增强生成 |
-| **AWEL** | Agentic Workflow Expression Language |
-| **AWEL Flow** | 基于 AWEL 的工作流编排 |
-| **SMMF** | Service-oriented Multi-model Management Framework |
-
-## 社区
-
-如果你在使用过程中遇到问题，可以提交 [issue](https://github.com/eosphoros-ai/DB-GPT/issues)、参与 [discussions](https://github.com/orgs/eosphoros-ai/discussions)，或查看 [releases](https://github.com/eosphoros-ai/DB-GPT/releases)。
+开发者还可以使用[自定义工作流算子](./workflow/custom-operator.md)、[RAG](./modules/rag.md)、[多模型管理](./modules/smmf.md)和[执行 Harness](./harness/introduction.md)扩展产品。

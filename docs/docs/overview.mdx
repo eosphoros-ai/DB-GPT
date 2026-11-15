@@ -1,286 +1,57 @@
 ---
 sidebar_position: 0
-title: DB-GPT
+title: Overview
 ---
 
-import CommandCopyCard from "@site/src/components/mdx/CommandCopyCard";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+# Data agents for trusted, controlled data work
 
-# DB-GPT
+DB-GPT is an open-source Data Agent platform that turns business questions into queries, analysis, reports, and dashboards. It combines governed semantic definitions, reusable scenario plugins, agentic workflows, and controlled tool execution.
 
-<p align="center">
-  <img src={'/img/dbgpt_vision.png'} width="860px" />
-</p>
+Our vision is to let teams delegate data work within explicit business and execution boundaries—and inspect the definitions, process, and evidence behind the result.
 
-<div style={{textAlign: 'center'}}>
-  <strong>An open-source AI data assistant that connects to your data, writes SQL and code, runs skills in sandboxed environments, and turns analysis into reports, insights, and action.</strong><br />
-  DB-GPT is also a platform for building AI-native data agents, workflows, and applications with agents, AWEL, RAG, and multi-model support.
-</div>
+![DB-GPT home with its five official scenarios](/img/data-agent/en/home.png)
 
-<div style={{textAlign: 'center'}}>
-  <a href="https://github.com/eosphoros-ai/DB-GPT">GitHub</a> ·
-  <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> ·
-  <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a>
-</div>
+## Why this matters
 
-## Quick start
+A database schema tells an agent where a number lives; it rarely explains what that number means. “Revenue” may include freight in one team and exclude it in another. A join can multiply payment amounts without raising a SQL error. A polished report can hide missing evidence.
 
-<div className="quickstart-container">
-  <Tabs className="quickstart-tabs" groupId="install-method">
-    <TabItem value="script" label="📜  Shell Quick Start" default>
-      <div className="quickstart-tab-inner">
-        <span className="quickstart-tab-desc">One-line installer for macOS &amp; Linux — downloads, configures, and sets up DB-GPT automatically.</span>
-        <div className="quickstart-numbered-steps">
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">1</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">Install DB-GPT</span>
-              <CommandCopyCard command={`curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh | bash`} />
-            </div>
-          </div>
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">2</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">Start the server</span>
-              <CommandCopyCard command={`cd ~/.dbgpt/DB-GPT && uv run dbgpt start webserver --profile <profile>`} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </TabItem>
-    <TabItem value="cli" label="⚡  PIP Quick Start">
-      <div className="quickstart-tab-inner">
-        <span className="quickstart-tab-desc">Install with pip and start in seconds — the fastest way to try DB-GPT on any platform.</span>
-        <div className="quickstart-numbered-steps">
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">1</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">Install the package</span>
-              <CommandCopyCard command={`pip install dbgpt-app`} />
-              <div className="quickstart-tip">
-                <span className="quickstart-tip-icon">🌏</span>
-                <span className="quickstart-tip-text">Users in China region can use a mirror for faster downloads:</span>
-                <CommandCopyCard command={`pip install dbgpt-app -i https://pypi.tuna.tsinghua.edu.cn/simple`} />
-              </div>
-            </div>
-          </div>
-          <div className="quickstart-ns">
-            <span className="quickstart-ns-num">2</span>
-            <div className="quickstart-ns-body">
-              <span className="quickstart-ns-label">Start DB-GPT</span>
-              <CommandCopyCard command={`dbgpt start`} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </TabItem>
-  </Tabs>
-</div>
+Long tasks add another problem: instructions alone do not reliably coordinate several agents. Work can drift from the plan, skip a step, or pass an unverified result downstream. Teams need reusable methods, visible responsibilities, and places to intervene.
 
-## What is DB-GPT?
+## Four foundations
 
-DB-GPT is an open-source **agentic AI data assistant** for the next generation of **AI + Data** products.
+| Foundation | What it helps you do | Start here |
+| --- | --- | --- |
+| Governed semantics | Maintain business meanings and publish versioned metric definitions that agents can read and cite. | [Semantic Center](./semantic-center/overview.md) |
+| Reusable scenario plugins | Select a task-specific package of skills, instructions, and tool configuration. | [Plugins](./plugins/overview.md) |
+| Agentic Workflow | Give each agent a stage, responsibility, and deliverable; coordinate dependencies and add review gates. | [Agentic Workflow](./workflow/introduction.md) |
+| Controlled execution | Configure data access, tool availability, approval policies, and execution environments; inspect actual tool results. | [Controlled execution](./data-agent/controlled-execution.md) |
 
-It helps users and teams:
+“Trusted” means being able to check definition sources, metric versions, executed queries, and delivered artifacts. “Controlled” means making the available resources, tools, and review points explicit. These mechanisms support verification; they do not guarantee every generated calculation is correct.
 
-- connect to **databases, CSV / Excel files, warehouses, and knowledge bases**
-- ask questions in natural language and let AI **write SQL autonomously**
-- run **Python- and code-driven analysis** workflows
-- load and execute reusable **skills** for domain-specific tasks
-- generate **charts, dashboards, HTML reports, and analysis summaries**
-- execute tasks safely in **sandboxed environments**
+## Choose your first scenario
 
-## Why DB-GPT?
+The homepage exposes five official plugins:
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧠</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agentic data analysis</h3>
-      <p className="overview-card-description">Plan tasks, break work into steps, call tools, and complete analysis workflows end to end.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">💻</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Autonomous SQL + code execution</h3>
-      <p className="overview-card-description">Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🗂️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Multi-source data access</h3>
-      <p className="overview-card-description">Work across structured and unstructured sources, including databases, spreadsheets, documents, and knowledge bases.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧩</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Skills-driven extensibility</h3>
-      <p className="overview-card-description">Package domain knowledge, analysis methods, and execution workflows into reusable skills.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📈</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Reporting and decision support</h3>
-      <p className="overview-card-description">Produce charts, dashboards, HTML reports, and decision-ready business outputs.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🛡️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Sandboxed execution</h3>
-      <p className="overview-card-description">Run code and tools in isolated environments for safer, more reliable analysis.</p>
-    </div>
-  </div>
-</div>
+- **Smart Data Query**: answer a bounded data question with SQL, results, and available metric references.
+- **Smart Data Analysis**: investigate changes and deliver analysis, reports, or dashboards.
+- **SQL Optimization Expert**: diagnose queries and propose rewrites or indexes with evidence and validation limits.
+- **Metadata and Architecture Expert**: document physical schemas, build ER diagrams, and distinguish declared constraints from inferred relationships.
+- **Financial Report Analysis**: analyze supplied financial reports with document, period, and unit references.
 
-## Product workflow
+[Explore the scenarios and reproduction steps](./use_cases.mdx).
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🔍</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Explore data</h3>
-      <p className="overview-card-description">Connect files, databases, and knowledge bases in one workspace.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🪄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Plan and execute</h3>
-      <p className="overview-card-description">Let AI reason through the task, write SQL and code, and execute step by step.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧰</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Use skills</h3>
-      <p className="overview-card-description">Load reusable skills for repeatable business analysis workflows.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Generate reports</h3>
-      <p className="overview-card-description">Produce charts, dashboards, HTML reports, and decision-ready outputs.</p>
-    </div>
-  </div>
-</div>
+## From a question to a checkable result
 
-## Core capabilities
+1. Configure a working model and connect a database or attach the required files.
+2. Prepare business definitions in Semantic Center when the task depends on a specific metric.
+3. Choose a plugin on the homepage and state the scope, period, units, and expected deliverable.
+4. For recurring complex work, use a Flow to separate grounding, fetching, analysis, review, and reporting.
+5. Review any confirmation request and inspect the executed queries, result limits, and artifacts.
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🤖</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agentic Analysis</h3>
-      <p className="overview-card-description">Task planning, step-by-step execution, tool use, and iterative reasoning.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧮</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">SQL + Code Execution</h3>
-      <p className="overview-card-description">Natural language to SQL, Python-based analysis, metric calculation, and chart generation.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🗃️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Multi-Source Data Access</h3>
-      <p className="overview-card-description">Relational databases, CSV / Excel, documents, knowledge bases, and mixed-source workflows.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧠</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Skills and Agents</h3>
-      <p className="overview-card-description">Reusable skills, domain workflows, agent orchestration, and customizable execution flows.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📊</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Reporting</h3>
-      <p className="overview-card-description">Database profiling reports, financial analysis reports, dashboards, summaries, and insights.</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🔐</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Safe Execution</h3>
-      <p className="overview-card-description">Sandboxed code execution, controlled tool use, and reproducible outputs and artifacts.</p>
-    </div>
-  </div>
-</div>
+[Install DB-GPT](./getting-started/index.md), then follow [Your first data task](./data-agent/quickstart.md).
 
-## Platform & ecosystem
+## What to expect today
 
-<div className="overview-cards-grid">
-  <a href="./awel/awel" className="overview-card">
-    <div className="overview-card-icon">🔄</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">AWEL</h3>
-      <p className="overview-card-description">Agentic workflow orchestration for structured AI + data pipelines.</p>
-    </div>
-  </a>
-  <a href="./agents/introduction/introduction" className="overview-card">
-    <div className="overview-card-icon">🤝</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Agents</h3>
-      <p className="overview-card-description">Autonomous task execution with tools, memory, planning, and collaboration.</p>
-    </div>
-  </a>
-  <a href="./modules/rag" className="overview-card">
-    <div className="overview-card-icon">📚</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">RAG</h3>
-      <p className="overview-card-description">Knowledge-enhanced reasoning across documents, graphs, and private knowledge bases.</p>
-    </div>
-  </a>
-  <a href="./modules/smmf" className="overview-card">
-    <div className="overview-card-icon">⚙️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">SMMF</h3>
-      <p className="overview-card-description">Service-oriented multi-model management for open-source and API-based models.</p>
-    </div>
-  </a>
-  <a href="./application/fine_tuning_manual/dbgpt_hub" className="overview-card">
-    <div className="overview-card-icon">🎛️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">DB-GPT-Hub</h3>
-      <p className="overview-card-description">Text2SQL and fine-tuning workflows for domain adaptation and model improvement.</p>
-    </div>
-  </a>
-  <a href="./modules/connections" className="overview-card">
-    <div className="overview-card-icon">🔗</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">Connections</h3>
-      <p className="overview-card-description">Connect databases, files, warehouses, and external data systems.</p>
-    </div>
-  </a>
-</div>
+Semantic tools read published business meanings and metric snapshots for the selected database. Keyword and alias search is available; automatic enforcement of every semantic rule is not. Plugin configuration is a method and capability declaration, whose runtime support must be checked. Flow exposes node status and failures; failure visibility is not a promise of checkpoint recovery.
 
-## Terminology
-
-| Term | Description |
-|------|-------------|
-| **DB-GPT** | DataBase Generative Pre-trained Transformer — open-source framework around databases and LLMs |
-| **Data App** | An intelligent data application built on DB-GPT |
-| **Text2SQL** | Generate SQL from natural language using LLM capabilities |
-| **KBQA** | Knowledge-Based Q&A system |
-| **GBI** | Generative Business Intelligence — analysis and decisions through dialogue |
-| **LLMOps** | End-to-end workflow for training, tuning, deploying, and monitoring LLMs |
-| **Embedding** | Methods to convert text, audio, video into vectors |
-| **RAG** | Retrieval Augmented Generation |
-| **AWEL** | Agentic Workflow Expression Language |
-| **AWEL Flow** | Workflow orchestration using AWEL |
-| **SMMF** | Service-oriented Multi-model Management Framework |
-
-## Community
-
-If you encounter problems, submit an [issue](https://github.com/eosphoros-ai/DB-GPT/issues), join [discussions](https://github.com/orgs/eosphoros-ai/discussions), or check the [releases](https://github.com/eosphoros-ai/DB-GPT/releases).
+The platform also provides developer building blocks: [custom workflow operators](./workflow/custom-operator.md), [RAG](./modules/rag.md), [multi-model management](./modules/smmf.md), and [execution harnesses](./harness/introduction.md). Use them to extend the product around your own data and operating requirements.

@@ -1,55 +1,45 @@
-# Quickstart: Create and Run a Workflow
+---
+title: Agentic Workflow quickstart
+---
 
-This guide takes you from a built-in template to a workflow of your own, in about ten minutes.
+# Run your first Agentic Workflow
 
-## 1. Pick a template
+Start with a template, understand its stages, and bind a working database before running.
 
-Open **Task Flow → Built-in Templates**. Each card shows the node chain at a glance; **Run**
-starts it in chat, **Edit a Copy** opens it in the editor as your own flow.
+## 1. Choose a template
 
-![Built-in template center](/img/workflow/en/fig-01-template-center.png)
+Open **Workflow → Built-in Templates**. **DB Data Fetch** is a small first task; **DB Intelligent Analysis** separates grounding, planning, parallel analysis/data-quality checks, numeric review, and reporting.
 
-The shipped set covers the DB domain:
+![Template center](/img/data-agent/en/workflow-templates.png)
 
-- **DB Schema & Docs QA** — grounding → cited answer.
-- **DB Data Fetch** — grounding/plan → SQL fetch with self-repair → verification & caliber notes.
-- **DB Intelligent Analysis** — grounding → plan → pivot analysis → numeric review → HTML report.
+Click **Edit a Copy** to inspect and customize the template. Your changes do not modify the shipped template.
 
-## 2. Run it from chat
+## 2. Configure responsibilities and resources
 
-You can also start a workflow from the chat composer: open the attachment menu, pick the flow,
-type your question and send. The selected flow appears as a chip above the composer.
+Select the workflow database in the editor and inspect each agent node's datasources and tools. Give each stage a clear deliverable. The database attachment in the main composer is not a substitute for the Flow's node resource configuration.
 
-![Composer with a workflow selected](/img/workflow/en/fig-02-flow-composer.png)
+![Analysis template stages in the editor](/img/data-agent/en/workflow-editor.png)
 
-The run card appears immediately with the **full node chain** — nodes the DAG has not reached yet
-render as dashed *pending* chips, so you always see the whole plan:
+For a sales analysis, specify the reporting period, currency, date encoding, grouping dimensions, and how a reviewer should check totals. The `Walmart_Sales` example is a demo dataset, not live operating data.
 
-![Node chain with pending nodes](/img/workflow/en/fig-03-run-pending.png)
+## 3. Save and publish
 
-## 3. Read the result
+**Save** retains a draft. **Publish** deploys the Flow for chat execution. Verify its runnable state after publication. A saved but undeployed Flow can fail with “dag id not found.”
 
-When the run settles, each node card carries its trace and outputs. The report node registers its
-HTML as an artifact chip — click the name to preview in the right rail, or the download icon to
-save the file.
+## 4. Run with a bounded question
 
-![Completed run with artifact chips](/img/workflow/en/fig-04-run-complete.png)
-![HTML report preview in the right rail](/img/workflow/en/fig-05-html-preview.png)
+Use **Run** from the Flow list or choose a Flow from the composer context menu.
 
-## 4. Make it yours
+```text
+Analyze sales by store and month in the configured demo database.
+Check the date format before grouping, reconcile the totals independently,
+and produce a report with SQL evidence, units, and data-quality limitations.
+```
 
-**Edit a Copy** opens the editor with the template's nodes. Change a node's goal, swap its tools,
-re-point its datasource, add or remove nodes — then **save and deploy**.
+The run view displays stage progress. Open the active node to inspect its tools; review the report artifact after completion.
 
-:::warning
-Saving in the editor leaves the flow in `developing` (undeployed) state. Chat runs only pick up
-`running` flows — deploy after editing, otherwise chat reports *dag not found*. See
-[Troubleshooting](./troubleshooting.md).
-:::
+## 5. Add a gate when a decision matters
 
-## 5. Reuse it
+For a custom Flow, add `human_confirm` after planning when a person must approve the scope before expensive analysis. This is a deliberate pause, not a required node in every template.
 
-Deployed flows appear under **My Flows** and in the chat attachment menu. The first chat run of a
-built-in template creates a personal instance; your edits never mutate the shipped template.
-
-Next: [Editor guide](./editor.md) · [Node reference](./nodes/overview.md)
+Next: [Editor](./editor.md) · [Contracts and gates](./contracts-and-gates.md).

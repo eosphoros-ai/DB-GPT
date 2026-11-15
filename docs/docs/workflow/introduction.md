@@ -1,49 +1,46 @@
-# What is a Workflow?
+---
+title: Agentic Workflow
+---
 
-A **workflow** (TaskFlow) is a reusable, multi-agent pipeline that you invoke with one message in
-chat. Instead of one generalist agent improvising every step, a workflow runs a declared chain of
-focused nodes — grounding, fetching, analyzing, reviewing, reporting — where each node is an
-independent agent with its own goal, tool boundary and output contract.
+# Agentic Workflow
 
-![A completed workflow run in chat](/img/workflow/en/fig-04-run-complete.png)
+Agentic Workflow organizes agents around explicit **stages, tasks, deliverables, and gates**. An agent decides how to complete its assigned work within its resources and tool boundary. The Flow coordinates dependencies, exposes progress, and provides points for review and intervention.
 
-## Why workflows instead of a single agent
+TaskFlow is the product's Flow implementation; it compiles to an AWEL graph. The business task node is an agent with one responsibility. The graph also includes auxiliary start, output, data-entry, and human-confirmation nodes.
 
-| | Single-agent chat | Workflow |
-|---|---|---|
-| Planning | Implicit, per conversation | Declared once, reused everywhere |
-| Verification | Hope the agent double-checks | A dedicated review node recomputes key numbers |
-| Tool safety | One big tool belt | Per-node tool boundary (checkboxes ARE the boundary) |
-| Deliverables | Text in chat | First-class artifacts (HTML reports, query result sets) |
-| Cost/latency control | Unbounded loop | Per-node turn budgets |
+![Built-in agentic workflow templates](/img/data-agent/en/workflow-templates.png)
 
-## The orchestration model
+## The problem Flow addresses
 
-A workflow is a DAG compiled to AWEL at deploy time. Three channels connect the nodes:
+Prompt- or Skill-based multi-agent coordination can be weak in long, complex tasks. Agents may drift from the intended process, omit work, hand off results that cannot be verified, or leave the user unsure how to proceed after an exception.
 
-- **Question channel** — the end user's original message is broadcast to every node, so each agent
-  keeps the business question in view.
-- **Control channel** — the declared edges enforce execution order; a node starts when its
-  upstream control edge completes.
-- **Data channel** — every node receives the *clean outputs of all prior nodes* (not just its
-  direct parent), labelled with the source node name and kind, capped by a context budget.
+Flow makes the stages and handoffs visible. Resource boundaries, review stages, status monitoring, and failure interception help the team see what happened and decide what to do next.
 
-Nodes never see each other's internal reasoning or tool traces — only final outputs. That is what
-makes a node's **output contract** (the `Output:` line in its goal) the interface between nodes:
-downstream agents parse upstream sections against those contracts.
+| Approach | What you model | Where coordination lives |
+| --- | --- | --- |
+| Preset operation workflow | API calls, parameters, and branches | Predefined operations and engine rules |
+| Prompt/Skill coordination | Roles and written instructions | Agent context and instruction following |
+| Agentic Workflow | Agent responsibilities, deliverables, dependencies, and gates | Flow structure between stages; agent autonomy within stages |
 
-## What you get in chat
+Start from a template and name stages in business terms. This reduces the need to design every technical operation in advance, while still requiring deliberate resource and output configuration.
 
-- A **run card**: progress header, horizontal node chain (pending / running / success / failed),
-  and one expandable card per node carrying its ReAct trace.
-- **Artifacts**: HTML reports render as chips on the producing node (preview + download); SQL
-  result sets render as inline query blocks with edit-and-rerun.
-- **Confirmation gates**: a `human_confirm` node pauses the run and floats a dock above the
-  composer until you approve.
+## An example responsibility chain
 
-## Where to go next
+```mermaid
+flowchart LR
+  S[Definitions and scope] --> G{Confirm plan}
+  G --> F[Fetch data]
+  F --> A[Analyze]
+  A --> V[Independent review]
+  V --> R[Report]
+```
 
-- [Quickstart](./quickstart.md) — run a built-in template, then make it yours.
-- [Node reference](./nodes/overview.md) — what each node kind does.
-- [Custom operators](./custom-operator.md) — from zero-code config to Python operators.
-- [Runs & artifacts](./runs-and-artifacts.md) — how to read a run card.
+This is a suggested custom design, not the exact built-in template. The current **DB Intelligent Analysis** template includes grounding and planning, parallel trend/contribution and data-quality agents, combined numeric review, and reporting.
+
+## What is explicit—and what still needs checking
+
+An agent goal describes its responsibility and output requirements. An `Output:` line is a prompt contract, not a deterministic schema validator. An independent review agent adds a second check, but its conclusion also requires evidence. A `human_confirm` node pauses for a stage decision; tool approval governs an individual operation.
+
+Failure visibility and downstream interception do not imply automatic checkpoint recovery. See [Runs and artifacts](./runs-and-artifacts.md) for replay boundaries and [Troubleshooting](./troubleshooting.md) for available recovery actions.
+
+Next: [Quickstart](./quickstart.md) · [Contracts and gates](./contracts-and-gates.md) · [Examples](./examples.md).

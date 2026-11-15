@@ -1,95 +1,118 @@
 ---
-title: 案例展示
+title: 场景案例
 sidebar_position: 1
 ---
 
-# 案例展示
+# 场景案例
 
-DB-GPT 帮助团队把数据问题变成 SQL、代码、图表、看板、报告与知识驱动的工作流。以下每个
-场景都在 **pi harness 引擎** 上对内置 `Walmart_Sales` 示例库端到端真实跑出；截图取自亮色
-主题下的真实产品界面。
+从首页五个官方场景开始。每个配方说明输入、操作、预期交付与核验方法。
 
-## DB-GPT 能做什么
+入口截图使用中文界面；取数与看板成果来自重新打开的**历史运行**，不是本轮新的实跑。已保存的指标名称、数据值、报告内容与看板标签保持原语言，语言切换不翻译这些内容。SQL、元数据和财报案例展示操作入口，不作为成功交付证据。
 
-<div className="overview-cards-grid">
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">📈</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">分析 CSV / Excel 文件</h3>
-      <p className="overview-card-description">上传文件、检查数据、计算指标并生成可视化报告。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🗄️</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">连接数据库</h3>
-      <p className="overview-card-description">探索 schema、查询生产级数据并生成画像报告。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧾</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">自然语言转 SQL</h3>
-      <p className="overview-card-description">用业务语言提问，由 AI 自动生成 SQL。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">💹</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">财报深度分析</h3>
-      <p className="overview-card-description">结合文档、代码、图表与摘要支持决策。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧰</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">沉淀可复用技能</h3>
-      <p className="overview-card-description">为重复任务创建领域工作流与可复用 SQL / 分析技能。</p>
-    </div>
-  </div>
-  <div className="overview-card overview-card--static">
-    <div className="overview-card-icon">🧠</div>
-    <div className="overview-card-content">
-      <h3 className="overview-card-title">代码 + SQL + 检索 + 工具组合</h3>
-      <p className="overview-card-description">为团队与产品构建下一代 AI + Data 助手。</p>
-    </div>
-  </div>
-</div>
+![首页五个官方场景](/img/data-agent/zh-CN/home.png)
 
-## 场景一——自然语言取数与一等取数产物
+## 1. 智能取数：按已发布口径查询净实收
 
-用业务语言直接提问；pi 引擎先接地 schema（表清单、字段统计），再写 SQL 执行。每个结果集
-以**取数产物**形式到达：可复制、可编辑重跑的 SQL 块，带行数与截断说明的结果表，以及一键
-CSV / Excel 导出。
+**业务问题：**2026 年 1 月按获客来源拆分的净实收是多少，使用哪个版本？
 
-![pi 引擎取数回合：SQL 块 + 结果表产物与导出入口](/img/showcases/zh/fig-01-fetch.png)
+**前提：**可用模型、模拟 `Semantic_Commerce_Case` 数据库、审核后的业务定义和已发布净实收指标。演示库及定义需要另外准备，真实任务使用自己的已治理指标。
 
-- schema 接地查询同样是产物，回合结束后整条推理链仍可检查。
-- **编辑重跑**允许就地修改生成的 SQL 并重新执行；重跑端点复核会话与数据源所有权并强制
-  只读 SQL，便利不扩大信任边界。
-- 结果 payload 展示截断（2000 行），导出始终携带全量。
+选择**智能取数 → 语义中心：净实收取数**，检查数据库绑定，再发送推荐问题，要求事件月份归属、有效性条件、先汇总后 JOIN、SQL、金额与引用。
 
-## 场景二——自主画像到可视化 HTML 报告
+![智能取数入口](/img/data-agent/zh-CN/query-entry.png)
 
-一句话（"画像这个库并给我可视化报告"）让 pi 引擎自主规划探针——总行数、日期范围、Top
-门店、集中度——随后经 HTML 工具渲染出带样式的 HTML 分析报告。报告以 **HTML 产物** 落地：
-会话内产物卡、rail 缩略图与就地预览面板。
+历史例子读取指标 `17@v1`，执行渠道取数，返回自然渠道 126 元、广告渠道 212 元，合计 338 元，并保留独立对账查询。数字仅适用于该模拟数据和口径。
 
-![pi 引擎分析回合，HTML 报告在 rail 预览中打开](/img/showcases/zh/fig-02-report.png)
+![历史取数成果，中文界面保留原英文回答内容](/img/data-agent/zh-CN/query-result.png)
 
-- 产物随会话持久化：刷新页面后时间线、轨迹与每张产物卡一致重建。
-- Trace 入口打开 pi 回合的合成 span 树（思考、工具动作、terminate），长自主回合仍可审计。
-- 任何场景中的高危工具调用都弹出同一确认 dock，session/always 记忆按调用类记忆。
+**核验：**实际 SQL、结果行和截断、`semantic::Semantic_Commerce_Case/metric/17@v1`、支付与退款时间规则。检查运费分配假设，不将固定月份示例推广为跨月分期支付规则。
 
-## 场景三——把重复分析沉淀为声明式工作流
+按[语义中心上手](./semantic-center/quickstart.md)复现先读口径再取数的方法。
 
-当分析模式重复出现，把它从即兴对话升级为 **TaskFlow 工作流**：声明式 DAG 的专注 agent
-节点（接地 → 取数 → 透视 → 数字复核 → 报告），每个节点带自己的工具边界与输出契约。节点
-运行复用同一 harness 契约，因此工作流产出与上述场景相同的取数产物、HTML 报告与轨迹。见
-[工作流指南](../workflow/introduction.md)。
+## 2. 智能分析：经营看板
 
-## 选择你的引擎
+**业务问题：**销售如何随时间变化，不同地区如何贡献？
 
-所有场景都可运行在你选择的 harness 引擎上——内置 DB-GPT 循环或外部 pi harness——工具、
-审批与产物完全一致。引擎选择、可用性与扩展契约见
-[Harness 指南](../harness/introduction.md)。
+**前提：**数据库或合适文件、业务目标、时间范围、单位和维度。首页 Walmart 示例依赖 `Walmart_Sales`。
+
+选择**智能分析**和看板推荐问题，先审核组件规划再确认生成。SQLite 中 `DD-MM-YYYY` 文本日期需要先规范为 ISO 日历顺序再分组。
+
+![智能分析入口](/img/data-agent/zh-CN/analysis-entry.png)
+
+```text
+为选定演示数据库制作销售看板。
+先确认可用日期范围、单位和表结构。
+包含月度销售、地区贡献和明细表，解释各组件 SQL，
+核验日期轴与合计，再交付看板。
+```
+
+下图是已保存的 **Olist 结构模拟数据**看板，不是上述 Walmart 任务。草稿有五个组件，可以打开；原会话保存草稿后达到轮次上限，截图不能证明会话正常结束。
+
+![中文界面中的历史看板预览](/img/data-agent/zh-CN/analysis-dashboard.png)
+
+**核验：**组件 SQL、全局过滤、关联粒度、单位、时间轴和合计。该草稿的 GMV/订单合并卡目前只显示一个值并使用 `order` 单位，仍需审核展示配置；它是可检查的草稿，不是已认证经营看板。草稿保存或 SQL 执行成功都不足以判定验收通过。
+
+## 3. SQL 优化专家：带依据的诊断
+
+**业务问题：**瓶颈依据是什么，如何验证改写？
+
+**前提：**数据库、引擎版本、原 SQL、参数、现有索引和症状。
+
+选择**SQL 优化专家 → 诊断这条 SQL 的性能瓶颈，输出带证据的优化报告**，补充原 SQL 再发送。
+
+![SQL 诊断入口](/img/data-agent/zh-CN/sql-entry.png)
+
+```text
+诊断提供的 SQL，读取结构、索引和可用的估计执行计划。
+区分事实与假设，不运行变更或 EXPLAIN ANALYZE。
+交付原 SQL、改写/索引候选、语义等价检查和实测计划，
+没有实测时明确性能收益未验证。
+```
+
+**预期交付：**诊断，以及用户要求且真实生成成功的报告。**核验：**计划来源、语义等价、索引读写与空间成本、成果状态。索引候选不是已执行变更；入口截图不证明诊断已完成。
+
+## 4. 元数据与架构专家：物理数据字典
+
+**业务问题：**选定表有哪些字段，哪些关系真实声明？
+
+**前提：**数据库、schema/表范围和目录查询权限。
+
+选择**元数据与架构专家 → 为选中的业务表生成数据字典，并导出 CSV**，填写具体表清单。
+
+![元数据专家入口](/img/data-agent/zh-CN/metadata-entry.png)
+
+```text
+根据真实执行的目录查询描述选定表。
+列出字段、类型、可空、默认值、键、注释和采集时点，
+业务含义未知时标注待确认，仅从完整证据导出。
+需要 ER 时区分声明外键与推断关系。
+```
+
+**预期交付：**字典/CSV，ER 请求交付真实渲染成果。**核验：**目录范围、截断、复合键列映射和文件链接。推断只用于解释，不转成真实或 DBML 外键。截图不展示已完成导出。
+
+## 5. 财报分析：基于来源解读年报
+
+**业务问题：**财务表现发生了什么变化，证据在哪里？
+
+**前提：**一份年报 PDF，比较任务提供可比 PDF，明确来源、期间、货币与单位。首页解读年报不要求数据库。
+
+选择**财报分析 → 解读一份年报**，上传文件并检查问题；比较时选择**比较多份财报**，说明同业或跨年范围。
+
+![财报分析入口](/img/data-agent/zh-CN/financial-entry.png)
+
+```text
+分析上传年报，先确认主体、期间、币种和单位。
+引用文档解释收入、盈利、现金流和重大风险，
+区分披露事实与解释，列出缺失信息，
+只基于有来源数字生成报告。
+```
+
+**预期交付：**带引用分析及真实生成的报告。**核验：**上传完成、文档/页码引用、会计范围、期间可比性和单位。入口截图不证明 PDF 已成功解析或财报已完成。
+
+## 用 Agentic Workflow 扩展场景
+
+重复或复杂任务可以用 Flow 分配不同责任。分析模板包含语义与计划、并行趋势/质量检查、联合复核和报告。
+
+![Agentic 分析模板](/img/data-agent/zh-CN/workflow-editor.png)
+
+为每个节点配置资源、产物和预算，在必要范围决策处加入人工 Gate。详见[上手](./workflow/quickstart.md)、[契约与 Gate](./workflow/contracts-and-gates.md)和[异常处理](./workflow/troubleshooting.md)。

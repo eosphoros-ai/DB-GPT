@@ -53,7 +53,13 @@ endpoint.
 ## History
 
 Completed runs keep their markers and artifact metadata in the stored conversation, so node cards,
-traces and artifact chips survive page reloads. (Live-only caveat: re-attaching to a run that is
-still executing server-side after a reload is not supported yet.)
+traces and artifact chips can be reconstructed when the saved message includes the structured
+Flow markers. Old or truncated records may lack tool inputs, outputs, or success fields; do not
+infer missing evidence. Historical replay does not execute the task again.
+
+Re-attaching to an active stream, checkpoint resume, and recovery after a service restart are
+different capabilities. Do not rely on automatic resume: inspect the failed stage and use the
+available rerun operation after fixing the cause. Re-registering a deployed Flow after restart
+restores its definition, not an interrupted run.
 
 Next: [troubleshooting](./troubleshooting.md) · [introduction](./introduction.md)

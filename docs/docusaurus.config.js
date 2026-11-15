@@ -39,7 +39,7 @@ function getNextVersionName() {
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'DB-GPT',
-  tagline: 'Revolutionizing Database Interactions with Private LLM Technology',
+  tagline: 'Open-source data agents for trusted, controlled data work',
   favicon: 'img/eosphoros.jpeg',
 
   // Set the production url of your site here
@@ -75,13 +75,6 @@ const config = {
       },
     },
   },
-
-  scripts: [
-    {
-      src: '/redirect.js',
-      async: true,
-    },
-  ],
 
   markdown: {
     mermaid: true,

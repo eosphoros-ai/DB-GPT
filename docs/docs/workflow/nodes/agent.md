@@ -17,9 +17,12 @@ tool traces — only the goal you give it, the user's question, and upstream out
 | `mcp` | list | Inline MCP specs (`sse:<url>` / `http:<url>`); failing servers are skipped, not fatal. |
 | `max_turns` | 1–30 | ReAct loop cap for this node. |
 | `model` | text | Override the chat model for this node (default: session model). |
+| `parallel_group` | text | Group independent agent branches for supported parallel execution. |
 
 Available tool ids: `sql_query`, `code`, `knowledge_retrieve`, `html_interpreter`,
-`bash`, `web_search`, `web_fetch`.
+`bash`, `web_search`, `web_fetch`, and the semantic read tools when configured:
+`semantic_get_metadata`, `semantic_search_business`, `semantic_search_metrics`,
+`semantic_get_metric`. Check the editor's available options for your deployment.
 
 ## Writing goals that compose
 
@@ -63,8 +66,13 @@ Patterns that pay off across the built-in templates:
 
 ## Turn budgets
 
-Budget per node complexity, keep the chain ≤ ~40 turns total: grounding 4–6, planning 4, analysis
-8–10, review 6–8, report 6. A node that regularly hits its cap needs a tighter goal or smaller
-scope, not a bigger cap.
+Budget per node complexity: grounding 4–6, planning 4, analysis 8–10, review 6–8, report 6
+are starting estimates, not a flow-wide limit. Include the work of every parallel branch
+when estimating model usage. If a node regularly hits its cap, inspect repeated calls,
+missing resources, and task scope before changing its budget.
 
 Next: [data entry](./data-entry.md) · [confirmation gates](./human-confirm.md) · [custom operators](../custom-operator.md)
+
+An `Output:` line requests a handoff format; it does not automatically enforce a schema,
+metric formula, or evidence completeness. Configure a separate review/check stage where
+needed. Agent autonomy stays within the configured resources and turn budget.

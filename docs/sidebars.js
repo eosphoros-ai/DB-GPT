@@ -428,7 +428,10 @@ const sidebars = {
   sidebarStart: [
     { type: "doc", id: "overview", label: "Overview" },
     { type: "doc", id: "getting-started/model-providers-ui", label: "Model Providers UI" },
-    { type: "doc", id: "use_cases", label: "Show Cases" },
+    { type: "doc", id: "use_cases", label: "Showcases" },
+    { type: "doc", id: "data-agent/quickstart", label: "Your First Data Task" },
+    { type: "doc", id: "data-agent/concepts", label: "Data Agent Concepts" },
+    { type: "doc", id: "data-agent/controlled-execution", label: "Controlled Execution" },
     {
       type: "category",
       label: "Core Concepts",
@@ -836,9 +839,11 @@ const sidebars = {
   ],
 
   sidebarAwel: [
-    { type: "doc", id: "workflow/introduction", label: "What is a Workflow?" },
+    { type: "doc", id: "workflow/introduction", label: "Agentic Workflow" },
     { type: "doc", id: "workflow/quickstart", label: "Quickstart" },
     { type: "doc", id: "workflow/editor", label: "The Flow Editor" },
+    { type: "doc", id: "workflow/contracts-and-gates", label: "Contracts & Gates" },
+    { type: "doc", id: "workflow/examples", label: "Examples" },
     {
       type: "category",
       label: "Node Reference",
@@ -865,6 +870,27 @@ module.exports = {
       collapsed: false,
       collapsible: true,
       items: sidebars.sidebarStart,
+    },
+    {
+      type: "category",
+      label: "Semantic Center",
+      items: [
+        "semantic-center/overview",
+        "semantic-center/quickstart",
+        "semantic-center/metrics-and-governance",
+        "semantic-center/using-with-data-agent",
+        "semantic-center/troubleshooting",
+      ],
+    },
+    {
+      type: "category",
+      label: "Plugins",
+      items: [
+        "plugins/overview",
+        "plugins/using-plugins",
+        "plugins/official-plugins",
+        "plugins/package-reference",
+      ],
     },
     {
       type: "category",
@@ -918,7 +944,7 @@ module.exports = {
     },
     {
       type: "category",
-      label: "Workflow",
+      label: "Agentic Workflow",
       collapsed: false,
       collapsible: true,
       items: sidebars.sidebarAwel,
