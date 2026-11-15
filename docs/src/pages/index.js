@@ -72,6 +72,12 @@ const featureGroups = [
         icon: '🔗',
       },
       {
+        title: ['Knowledge Base', '知识库'],
+        description: ['Import documents, keep sources current, and verify answers with references.', '导入文档、同步来源，并根据引用核验回答。'],
+        link: '/docs/getting-started/web-ui/knowledge-base',
+        icon: '📚',
+      },
+      {
         title: ['Harness', '执行 Harness'],
         description: ['Configure or extend the agent execution engine.', '配置或扩展 Agent 执行引擎。'],
         link: '/docs/harness/introduction',

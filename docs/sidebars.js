@@ -573,17 +573,6 @@ const sidebars = {
   sidebarKnowledge: [
     {
       type: "category",
-      label: "Principles",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
-        { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
-        { type: "doc", id: "design/traceable_analysis_report" },
-      ],
-    },
-    {
-      type: "category",
       label: "Usage Manual",
       collapsed: false,
       collapsible: true,
@@ -607,6 +596,22 @@ const sidebars = {
           id: "getting-started/web-ui/llm-wiki",
           label: "LLM-Wiki",
         },
+        {
+          type: "doc",
+          id: "application/apps/chat_knowledge",
+          label: "Chat Knowledge Base",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Principles",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
+        { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+        { type: "doc", id: "design/traceable_analysis_report" },
       ],
     },
     { type: "doc", id: "modules/rag", label: "RAG Overview" },

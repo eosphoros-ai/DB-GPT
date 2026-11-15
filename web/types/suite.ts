@@ -66,7 +66,7 @@ export interface SuiteManifestSnapshot {
   recommended_questions?: SuiteRecommendedQuestion[];
   commands?: SuiteCommand[];
   tools?: { allow?: string[]; deny?: string[] };
-  artifacts?: string[];
+  artifacts?: (string | { type: string; name?: string; name_en?: string })[];
   context_defaults?: Record<string, any>;
   semantic?: Record<string, any>;
   output_contract?: string;

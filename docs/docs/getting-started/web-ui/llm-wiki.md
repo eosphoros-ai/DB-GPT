@@ -3,109 +3,58 @@ sidebar_position: 4
 title: LLM-Wiki
 ---
 
-# LLM-Wiki
+# Organize knowledge with LLM-Wiki
 
-LLM-Wiki turns a knowledge space into a **living wiki**: an agent reads your
-documents and auto-generates interlinked Markdown pages (entities, concepts,
-per-document summaries, a catalog page), a link graph for visual exploring,
-and keeps everything updated incrementally as new documents arrive.
+LLM-Wiki adds a reading layer to a knowledge space. It uses a language model to organize document content into summaries, concept or entity pages, and links between them. Use it when readers need to understand a collection's structure before searching for a specific passage.
 
-The wiki is fully consumable:
-browse it tab-by-tab, query it from any agent via `kb_wiki_*` tools, and rely
-on it in normal knowledge chat (wiki chunks get a retrieval boost).
+For metric governance, a Wiki can bring together the definition of net receipts, refund attribution, and related terms. These pages are generated interpretations. The source documents remain the authority.
 
-## Enabling LLM-Wiki
+## Enable Wiki generation
 
-Open the space creation wizard (or an existing space's binding flow) and check
-**LLM-Wiki Index** under *Index Methods*:
+When creating a [knowledge space](/docs/getting-started/web-ui/knowledge-base), select **LLM-Wiki Index** under **Index Method**.
 
-![Index methods with LLM-Wiki enabled and its config](/images/web-ui/llm-wiki-en/04-wiki-config.png)
+![Creation form with the optional LLM-Wiki index](/img/data-agent/en/knowledge-create.png)
 
-Optional tuning (defaults are fine):
+The screenshot shows the option before it is selected. Enable it for the space where you want Wiki generation. Review the Wiki settings offered by the form:
 
-| Field | Meaning |
+| Setting | Use it to |
 |---|---|
-| Extraction granularity | Focused (fewer, high-signal pages) / **Standard** (recommended) / Exhaustive (most pages) |
-| Generation model | Defaults to the first available model |
-| Max new pages per ingest | Cost ceiling per document batch (default 8) |
-| Content instructions | Free-form guidance, e.g. "organize for onboarding; prefer tables" |
+| Extraction granularity | Choose a focused collection or more detailed page coverage |
+| Generation model | Select an available model for generation |
+| Maximum new pages | Limit how many new pages a batch may introduce |
+| Content instructions | Guide the organization, such as “group by business concept and preserve source references” |
 
-## Generating the wiki
+Check model access before importing a large collection. Wiki generation adds model calls beyond document processing; an enabled option does not guarantee a successful generation job.
 
-Documents are the trigger. Any of these starts a debounced (30s) generation
-run — no manual click needed:
+## Generate and inspect
 
-- Binding an external source (first sync immediately, then per schedule)
-- Uploading / re-syncing a file through File View
+Upload or synchronize documents and confirm their processing state. In a Wiki-enabled space, source processing can enqueue incremental Wiki generation. Open **Wiki** to inspect its results; use **Generate / Rebuild** when you need to generate or rebuild the collection.
 
-For a wholesale rebuild (e.g. after changing wiki settings) open the space →
-**Wiki** tab → **Generate / Rebuild**:
+![Wiki tab before any pages have been generated](/img/data-agent/en/knowledge-wiki.png)
 
-![Wiki tab with catalog tree](/images/web-ui/llm-wiki-en/06-wiki-tab.png)
+This is the English UI of an empty Wiki. Zero pages means there is no generated collection to read yet. The presence of the tab or a document's `FINISHED` state is not proof that Wiki generation succeeded.
 
-## Browsing the wiki
+Before retrying an empty or failed Wiki, check the source documents, the selected model, generation errors, and server logs. A quota or permission error requires fixing model access.
 
-The **Wiki** tab shows the space's wiki:
+## Read and review pages
 
-- **Catalog tree** — folders two levels deep, page rows carry their type
-  (概念/实体/摘要…) and version pill; use the search box to find pages
-  directly.
-- **Reader** — every page renders with its aliase模型s, source documents and
-  backlinks; `[[links]]` inside the text navigate between pages.
+Once generation succeeds, use the catalog and search to find a page. The **Knowledge** and **Summaries** views help distinguish organized topics from document summaries. Review a page's source references and backlinks, then follow related page links.
 
-![Reader on a concept page](/images/web-ui/llm-wiki-en/07-wiki-reader.png)
+Use **Wiki Graph** to explore links between generated pages. This is separate from Markdown/code graph processing and does not certify relationships in a live database.
 
-- **Wiki Graph** tab — the link graph between pages; click a node to preview,
-  double-click to re-center the neighborhood.
+For each important page, check:
 
-![Wiki graph](/images/web-ui/llm-wiki-en/08-wiki-graph.png)
+1. Its definition agrees with the source passages.
+2. Exceptions and date/version qualifications are preserved.
+3. Related pages do not introduce conflicting rules.
+4. References point to the intended source material.
 
-## Editing and version history
+For missing or incorrect content, inspect the source first. Use the page's editing and history controls where available; review the recorded versions when comparing or reverting changes. Regeneration can introduce new interpretations, so inspect important pages again afterward.
 
-Every page carries its revision history. Agent edits, the generation pipeline
-and manual edits are all recorded with a provenance label
-(`auto generated` / `agent edit` / `manual edit`) and can be rolled back to
-any prior version (a revert itself becomes a new version).
+## Use Wiki in an agent task
 
-Click **Edit** for inline editing (optimistic locking — if someone else saved
-first you get a 409 with reload/overwrite options).
+Select the Wiki-enabled knowledge space for the task. An agent with Wiki tools can browse the catalog, search pages, and read a selected page through `kb_wiki_index`, `kb_wiki_search`, and `kb_wiki_read_page`. Tool availability depends on the selected space and execution context.
 
-## Consuming the wiki from agents
+Try: “Map the concepts related to net receipts in this knowledge base, then cite the source rules for refund attribution.” Inspect both the generated page and the original document references. Page-writing tools are available only in supported contexts; selecting a knowledge space alone is not a guarantee of edit access.
 
-When a knowledge space has LLM-Wiki enabled, agents bound to that space get
-three read tools automatically (mounted only when the space is wiki-enabled):
-
-| Tool | Purpose |
-|---|---|
-| `kb_wiki_index` | Folder/page catalog with one-line summaries |
-| `kb_wiki_search` | Search pages by keywords |
-| `kb_wiki_read_page` | Read a page by slug (`'index'` = catalog) |
-
-Space-internal flows (chat on the space detail page / maintainer agents) can
-also *write* wiki pages via `kb_wiki_write_page` / `kb_wiki_replace_text` —
-all writes are recorded as agent edits and remain revertible.
-
-In the Data Assistant you will see these tools listed under the knowledge
-base section once a wiki-enabled space is selected; ask for the space's
-overall structure and the agent will reach for `kb_wiki_index` first.
-
-## Selecting a wiki-enabled space
-
-The knowledge base picker in the assistant shows a **📖 Wiki** badge on every
-wiki-enabled space, so you know which bases carry curated wiki knowledge:
-
-![Knowledge base picker with Wiki badge](/images/web-ui/llm-wiki-en/12-picker-badge.png)
-
-## How generation works (short version)
-
-1. Documents are chunked/embedded as usual; each sync enqueues a debounced
-   wiki ingest.
-2. The pipeline extracts page candidates per document, grounds them with
-   chunk citations, merges duplicates, plans a two-level folder structure,
-   then incrementally rewrites each page ("compiler, not writer").
-3. A finalize pass rebuilds the catalog page, repairs dead links, injects
-   cross-links and syncs pages into the retrieval index (boosted 1.3× for
-   knowledge chat).
-
-Changes are visible in the catalog tree under their folders; the "摘要"
-(Summaries) tab holds per-document summary pages.
+For questions requiring precise source support, continue with [Knowledge Base Chat](/docs/application/apps/chat_knowledge). For updated external material, inspect [source synchronization](/docs/getting-started/web-ui/external-datasources) before rebuilding the Wiki.

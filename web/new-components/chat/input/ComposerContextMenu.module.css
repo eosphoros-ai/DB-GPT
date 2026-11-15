@@ -73,32 +73,39 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 268px;
-  max-width: calc(100vw - 96px);
+  width: 240px;
+  max-width: calc(100vw - 116px);
+}
+
+.identity {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .name {
   flex-shrink: 0;
-  max-width: 72%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .description {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #98999f;
   font-size: 12px;
+  display: block;
 }
 
 .check {
   flex-shrink: 0;
   margin-left: auto;
-  color: #18a447;
+  color: #457ff5;
 }
 
 :global(.dark) .trigger {

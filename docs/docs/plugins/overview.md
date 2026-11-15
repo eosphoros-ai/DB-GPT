@@ -23,4 +23,4 @@ A plugin can contain several skills. A skill can describe how to use tools. A Fl
 
 Use [official plugins](./official-plugins.md) for the five homepage scenarios. [Using plugins](./using-plugins.md) explains selection, enablement, import, and removal. [Package reference](./package-reference.md) explains how to build an importable package.
 
-The **Market** tab is currently a placeholder. **Installed** currently lists enabled plugins. Do not interpret either view as a guarantee of a hosted marketplace or completed dependency installation.
+Use the source tabs and capability filters to narrow the directory. **Installed** includes enabled, disabled, and installed-but-not-enabled plugins. **Market** shows registered marketplace plugins, with an empty state when none are available; it does not imply a hosted marketplace or automatic dependency installation.

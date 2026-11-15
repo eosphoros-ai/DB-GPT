@@ -1,3 +1,5 @@
+import { getBuiltinPresentation } from '@/new-components/suites/presentation';
+import SuiteIcon from '@/new-components/suites/SuiteIcon';
 import type { SuiteItem } from '@/types/suite';
 import { suiteDisplayName } from '@/utils/suite-routing';
 import {
@@ -87,21 +89,34 @@ export default function ComposerContextMenu({
       label: t('suite_reference_label'),
       popupClassName: styles.submenu,
       children: [
-        ...enabledSuites.map(suite => ({
-          key: `suite-${suite.name}`,
-          icon: <ExpertSuiteIcon />,
-          label: (
-            <span className={styles.option} data-testid={`composer-suite-${suite.name}`}>
-              <span className={styles.name}>{suiteDisplayName(suite, i18n.language)}</span>
-              <span className={styles.description}>
-                {(i18n.language.startsWith('en') && suite.manifest_snapshot?.description_en) ||
-                  suite.manifest_snapshot?.description}
+        ...enabledSuites.map(suite => {
+          const presentation = getBuiltinPresentation(suite);
+          return {
+            key: `suite-${suite.name}`,
+            icon: (
+              <span>
+                <SuiteIcon suite={suite} size={32} />
               </span>
-              {suite.name === selectedSuite && <CheckOutlined className={styles.check} />}
-            </span>
-          ),
-          onClick: () => onSelectSuite(suite),
-        })),
+            ),
+            label: (
+              <span className={styles.option} data-testid={`composer-suite-${suite.name}`}>
+                <span className={styles.identity}>
+                  <span className={styles.name}>
+                    {presentation ? t(presentation.title) : suiteDisplayName(suite, i18n.language)}
+                  </span>
+                  <span className={styles.description}>
+                    {presentation
+                      ? t(presentation.description)
+                      : (i18n.language.startsWith('en') && suite.manifest_snapshot?.description_en) ||
+                        suite.manifest_snapshot?.description}
+                  </span>
+                </span>
+                {suite.name === selectedSuite && <CheckOutlined className={styles.check} />}
+              </span>
+            ),
+            onClick: () => onSelectSuite(suite),
+          };
+        }),
         ...(!enabledSuites.length ? [{ key: 'empty-suites', label: t('composer_suites_empty'), disabled: true }] : []),
         { type: 'divider' as const },
         {

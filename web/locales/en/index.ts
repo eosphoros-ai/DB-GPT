@@ -4,6 +4,7 @@ import FinancialEn from './financial';
 import { FlowEn } from './flow';
 import KsEn from './knowledgeSource';
 import { ObservabilityEn } from './observability';
+import { PluginsEn } from './plugins';
 import { SemanticCenterEn } from './semanticCenter';
 import { SemanticProvenanceEn } from './semanticProvenance';
 import { TaskflowEn } from './taskflow';
@@ -20,6 +21,7 @@ const en: Record<string, unknown> = {
   ...TaskflowEn,
   ...WikiEn,
   ...KsEn,
+  ...PluginsEn,
 };
 
 export default en;

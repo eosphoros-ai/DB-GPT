@@ -1,26 +1,75 @@
-# Connections
-The connections module supports connecting to various structured, semi-structured, and unstructured data storage engines. Bring multi-dimensional data into the framework and realize the interaction between natural language and multi-dimensional data
+---
+title: 数据源
+---
 
-The list of data sources we currently support is as follows.
+# 连接数据库
 
-| DataSource                                                                      | support | Notes                                       |
-| ------------------------------------------------------------------------------  |---------| ------------------------------------------- |
-| [MySQL](https://www.mysql.com/)                                                 | Yes     |  MySQL is the world's most popular open source database.                             |
-| [PostgresSQL](https://www.postgresql.org/)                                      | Yes     |  The World's Most Advanced Open Source Relational Database                                   |
-| [Vertica](https://www.vertica.com/)                                             | Yes     |  Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built for the scale and complexity of today’s data-driven world.                                   |
-| [Spark](https://github.com/apache/spark)                                        | Yes     |  Unified Engine for large-scale data analytics                                |
-| [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes     |  DuckDB is an in-process SQL OLAP database management system                                          |
-| [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes     |                                             |
-| [MSSQL](https://github.com/microsoft/mssql-jdbc)                                | Yes     |                                             |
-| [ClickHouse](https://github.com/ClickHouse/ClickHouse)                          | Yes     |  ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.                                      |
-| [Oracle](https://github.com/oracle)                                             | No      |           TODO                              |
-| [Redis](https://github.com/redis/redis)                                         | No      |  The Multi-model NoSQL Database                              |
-| [MongoDB](https://github.com/mongodb/mongo)                                     | No      |  MongoDB is a source-available cross-platform document-oriented database program                              |
-| [HBase](https://github.com/apache/hbase)                                        | No      |  Open-source, distributed, versioned, column-oriented store modeled                              |
-| [Doris](https://github.com/apache/doris)                                        | Yes     |  Apache Doris is an easy-to-use, high performance and unified analytics database.                              |
-| [DB2](https://github.com/IBM/Db2)                                               | No      |           TODO                              |
-| [Couchbase](https://github.com/couchbase)                                       | No      |           TODO                              |
-| [Elasticsearch](https://github.com/elastic/elasticsearch)                       | No      |  Free and Open, Distributed, RESTful Search Engine                              |
-| [OceanBase](https://github.com/OceanBase)                                       | No      |  OceanBase is a distributed relational database.                               |
-| [TiDB](https://github.com/pingcap/tidb)                                         | No      |           TODO                              |
-| [StarRocks](https://github.com/StarRocks/starrocks)                             | Yes     | StarRocks is a next-gen, high-performance analytical data warehouse                               |
+数据源让 DB-GPT 连接到你希望查询、分析或检查的数据库。连接一次，之后发起数据任务时即可选择它。连接成功代表具备访问条件；“净实收”等业务定义应在[语义中心](/docs/semantic-center/overview)中准备。
+
+文档、制度和运维手册等资料请使用[知识库](/docs/getting-started/web-ui/knowledge-base)。
+
+## 连接前准备
+
+准备数据库地址、端口、数据库名称和访问凭据。按任务需要授予权限；分析场景建议先使用能读取相关表的账号。**DB-GPT 服务端**必须能够访问目标数据库。
+
+SQLite 和 DuckDB 的数据库文件需要放在服务端。只有 DB-GPT 运行在你的电脑上时，电脑上的路径才可直接使用。容器部署需要先挂载文件，再填写**容器内的路径**。
+
+## 1. 选择数据库类型
+
+从侧边栏打开**数据源**。页面提供两个视图：
+
+| 视图 | 用途 |
+|---|---|
+| **已添加连接** | 查找已有连接、修改配置或刷新元数据 |
+| **数据库目录** | 浏览数据库类型并添加连接 |
+
+![已有数据库连接](/img/data-agent/zh-CN/datasource-list.png)
+
+在**数据库目录**中，可以按名称搜索或按类别筛选。点击可用的数据库卡片，或点击**添加数据源**后选择数据库类型。
+
+![数据库目录、分类与可用状态](/img/data-agent/zh-CN/datasource-catalog.png)
+
+:::info 可用类型取决于部署环境
+可选择的类型来自服务端已注册的连接器。**当前环境未启用**表示该连接器在当前部署中不可用。请检查驱动、依赖和服务配置，不应仅凭灰色卡片判断 DB-GPT 在所有环境中都不支持该数据库。
+:::
+
+## 2. 填写连接信息
+
+表单随连接器变化。以 PostgreSQL 为例，填写主机、端口、用户名、需要时使用的密码、数据库名称和 Schema。部署需要额外连接选项时，展开**高级设置**。
+
+![填写示例值的 PostgreSQL 连接表单](/img/data-agent/zh-CN/datasource-create.png)
+
+上图只演示表单填写方式，未进行连接测试；实际使用时请替换为自己的配置。
+
+| 字段 | 填写内容 |
+|---|---|
+| 主机与端口 | DB-GPT 服务端能够访问的地址 |
+| 用户名与密码 | 具有预期访问权限的凭据 |
+| 数据库名称 / Schema | 需要检查的数据库，以及连接器支持的 Schema |
+| 文件路径 | 文件型数据库在服务进程可访问位置的路径 |
+| 描述 | 说明该连接服务于什么业务或任务 |
+
+点击**测试连接**，处理错误后再保存。然后点击**添加数据源**。保存时也会检查连接；如果修改过配置，之前的测试成功并不代表新配置一定可用。
+
+## 3. 发起数据任务
+
+返回**已添加连接**视图，确认连接已经出现。在首页新建任务并选择该数据源，先提出一个容易核验的问题，例如：“列出这个数据库中可以访问的表。”
+
+业务分析场景可以继续在[语义中心](/docs/semantic-center/overview)准备指标和关系，再选择[场景插件](/docs/plugins/overview)。使用结果作决策前，检查任务返回的 SQL 和查询结果。
+
+## 维护连接
+
+通过连接卡片上的操作入口修改配置、刷新元数据或删除连接。数据库结构发生变化后，刷新元数据以获取最新数据库信息。这与语义中心中定义的同步、审核和发布是不同的操作。
+
+删除连接会移除 DB-GPT 中的连接配置，不会删除源数据库中的表和记录。依赖该连接的任务可能需要重新选择数据源。
+
+## 常见问题
+
+| 现象 | 检查方向 |
+|---|---|
+| 超时或拒绝连接 | 服务端到数据库的网络、防火墙、主机、端口及数据库监听状态 |
+| 鉴权或权限错误 | 凭据及目标数据库、Schema 的授权 |
+| 找不到数据库文件 | 服务端路径、容器挂载和文件权限 |
+| 数据库类型不可用 | 连接器注册、所需驱动和安装依赖 |
+| 连接成功但缺少表 | 所选 Schema、账号可见范围及元数据刷新 |
+| SQL 可以执行但业务汇总不正确 | 语义中心中的指标定义、日期归属和 JOIN 基数 |

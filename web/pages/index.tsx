@@ -54,6 +54,9 @@ import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
 import ComposerContextMenu from '@/new-components/chat/input/ComposerContextMenu';
 import SuiteCommandPopover, { type SuiteCommandPopoverHandle } from '@/new-components/chat/input/SuiteCommandPopover';
 import SuiteHammerIcon from '@/new-components/chat/input/SuiteHammerIcon';
+import pluginStyles from '@/new-components/suites/HomePlugins.module.css';
+import { getBuiltinPresentation } from '@/new-components/suites/presentation';
+import SuiteIcon from '@/new-components/suites/SuiteIcon';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
@@ -4921,6 +4924,10 @@ const Playground: NextPage = () => {
     onSelectConnector: () => setIsConnectorPanelOpen(true),
     flowItems: flowMenuItems,
   };
+  const pluginName = (suite: SuiteItem) => {
+    const presentation = getBuiltinPresentation(suite);
+    return presentation ? t(presentation.title) : suiteDisplayName(suite, i18n.language);
+  };
   const suiteComposerPrefix = suiteCreationMode ? (
     <span
       data-testid='suite-creation-prefix'
@@ -4943,11 +4950,11 @@ const Playground: NextPage = () => {
       <span
         data-testid='suite-composer-prefix'
         title={t('suite_prefix_hint')}
-        className='inline-flex items-center gap-2 max-w-full flex-shrink-0 text-sm leading-7 text-[#18a447] dark:text-[#79cc94]'
+        className={pluginStyles.prefix}
       >
-        <SuiteHammerIcon className='flex-shrink-0' />
+        <SuiteIcon suite={effectiveSuite} size={24} />
         <span className='truncate'>
-          {suiteDisplayName(effectiveSuite, i18n.language)}
+          {pluginName(effectiveSuite)}
           {effectiveSuiteCommand && ` · ${effectiveSuiteCommand.display || effectiveSuiteCommand.name}`}
         </span>
         <button
@@ -4956,7 +4963,7 @@ const Playground: NextPage = () => {
           aria-label={t('suite_remove_selection')}
           title={t('suite_remove_selection')}
           onClick={clearSuiteSelection}
-          className='inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500'
+          className={pluginStyles.remove}
         >
           <CloseOutlined className='text-xs' />
         </button>
@@ -6865,14 +6872,11 @@ const Playground: NextPage = () => {
                           {/* Smart-routing chip: keyword scoring over enabled suites */}
                           {routedSuite && !suiteTabTouched && (
                             <span
-                              className={`ml-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-                                routedSuite
-                                  ? 'bg-[#eef6ff] text-[#0069fe] border-[#cfe3ff] dark:bg-[#0d1b2e] dark:border-[#1d4ed8]'
-                                  : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
-                              }`}
+                              className={pluginStyles.suggestion}
                             >
+                              <SuiteIcon suite={routedSuite} size={20} />
                               {routedSuite
-                                ? t('suite_route_hit', { name: suiteDisplayName(routedSuite, i18n.language) })
+                                ? t('suite_route_hit', { name: pluginName(routedSuite) })
                                 : t('suite_route_idle')}
                             </span>
                           )}
@@ -6931,10 +6935,11 @@ const Playground: NextPage = () => {
 
                 {/* Official home tabs; all installed suites remain available in the composer menu. */}
                 <div className='mt-8 w-full'>
-                  <div className='flex flex-wrap justify-center gap-3 mb-5' aria-label={t('suite_scenarios_header')}>
+                  <div className={pluginStyles.scenarios} aria-label={t('suite_scenarios_header')}>
                     {homeSuites.map(suite => (
                       <button
                         key={suite.name}
+                        type='button'
                         aria-pressed={activeSuiteTab === suite.name}
                         onClick={() => {
                           if (effectiveSuite?.name === suite.name) {
@@ -6943,24 +6948,10 @@ const Playground: NextPage = () => {
                           }
                           selectSuiteContext(suite);
                         }}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-medium transition-colors ${
-                          activeSuiteTab === suite.name
-                            ? 'border-[#9edab1] bg-[#f2faf5] text-[#188842] dark:bg-[#16231a] dark:border-[#3b6a48] dark:text-[#79cc94]'
-                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-400'
-                        }`}
+                        className={pluginStyles.scenario}
                       >
-                        <span className='text-[17px] text-[#18a447]' aria-hidden='true'>
-                          {suite.scenario_id === 'query' || suite.name === 'sql-optimization-expert' ? (
-                            <ConsoleSqlOutlined />
-                          ) : suite.scenario_id === 'analysis' ? (
-                            <BarChartOutlined />
-                          ) : suite.name === 'metadata-architecture-expert' ? (
-                            <ApartmentOutlined />
-                          ) : (
-                            <ThunderboltOutlined />
-                          )}
-                        </span>
-                        {suiteDisplayName(suite, i18n.language)}
+                        <SuiteIcon suite={suite} size={32} />
+                        <span>{pluginName(suite)}</span>
                       </button>
                     ))}
                   </div>
@@ -6975,11 +6966,7 @@ const Playground: NextPage = () => {
                             type='button'
                             aria-pressed={effectiveSuiteCommand?.name === command.name}
                             onClick={() => handleSelectSuiteCommand(activeSuite, command)}
-                            className={`rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
-                              effectiveSuiteCommand?.name === command.name
-                                ? 'border-green-300 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'
-                                : 'border-gray-200 text-gray-600 hover:border-green-300 dark:border-gray-700 dark:text-gray-300'
-                            }`}
+                            className={pluginStyles.command}
                           >
                             {command.display || command.name}
                           </button>
@@ -7013,12 +7000,7 @@ const Playground: NextPage = () => {
                             className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-sm hover:border-[#cfe0ff] transition-colors duration-200'
                           >
                             <div className='flex items-start gap-3'>
-                              <div
-                                aria-hidden='true'
-                                className='w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-[#e8f4ff] dark:bg-[#0d1b2e]'
-                              >
-                                {activeSuite?.icon || '🧩'}
-                              </div>
+                              <SuiteIcon suite={activeSuite} size={36} />
                               <div className='flex-1 min-w-0'>
                                 <h3 className='line-clamp-2 pr-3 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
                                   {q.title || q.text}
@@ -7032,7 +7014,7 @@ const Playground: NextPage = () => {
                             </div>
                             <div className='mt-3 flex min-w-0 items-center gap-3 text-[11px]'>
                               {q.command && (
-                                <span className='shrink-0 rounded-md bg-green-50 px-2 py-0.5 font-mono text-green-700 dark:bg-green-900/20 dark:text-green-300'>
+                                <span className={pluginStyles.commandLabel}>
                                   {activeSuite?.manifest_snapshot?.commands?.find(cmd => cmd.name === q.command)
                                     ?.display || q.command}
                                 </span>

@@ -20,7 +20,7 @@ If no published definition exists, ask the agent to identify the missing definit
 
 ## 3. Choose a scenario
 
-Open the homepage and select **Smart Data Query**. Choose a recommended question or write your own. Attach the database using the composer database control; verify the selected model before sending.
+Open the homepage and select **Data Query**. Choose a recommended question or write your own. Attach the database using the composer database control; verify the selected model before sending.
 
 ![Homepage scenario selection](/img/data-agent/en/query-entry.png)
 
@@ -43,6 +43,6 @@ An answer that only contains a SQL draft is not evidence that SQL ran. A dashboa
 
 ## 5. Expand the task
 
-Choose **Smart Data Analysis** for an investigation or dashboard. Use [Agentic Workflow](../workflow/quickstart.md) when you need repeatable stages and an independent review. Keep the first task small enough to check by hand.
+Choose **Data Analysis** for an investigation or dashboard. Use [Agentic Workflow](../workflow/quickstart.md) when you need repeatable stages and an independent review. Keep the first task small enough to check by hand.
 
 Next: [Concepts](./concepts.md) · [Showcases](../use_cases.mdx).

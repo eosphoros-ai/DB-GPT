@@ -4,6 +4,7 @@ import FinancialZh from './financial';
 import { FlowZn } from './flow';
 import KsZh from './knowledgeSource';
 import { ObservabilityZh } from './observability';
+import { PluginsZh } from './plugins';
 import { SemanticCenterZh } from './semanticCenter';
 import { SemanticProvenanceZh } from './semanticProvenance';
 import { TaskflowZh } from './taskflow';
@@ -20,6 +21,7 @@ const zh = {
   ...TaskflowZh,
   ...WikiZh,
   ...KsZh,
+  ...PluginsZh,
 };
 
 export default zh;

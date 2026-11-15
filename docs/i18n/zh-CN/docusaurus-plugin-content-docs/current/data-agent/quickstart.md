@@ -40,6 +40,6 @@ SQL 草稿不代表真实执行；看板草稿不代表所有组件校验通过�
 
 ## 5. 扩展任务
 
-调查变化或制作看板时选择**智能分析**。需要重复执行、明确阶段和独立复核时使用 [Agentic Workflow](../workflow/quickstart.md)。第一次任务保持小范围，便于人工核对。
+调查变化或制作看板时选择**智能数据分析**。需要重复执行、明确阶段和独立复核时使用 [Agentic Workflow](../workflow/quickstart.md)。第一次任务保持小范围，便于人工核对。
 
 下一步：[核心概念](./concepts.md) · [场景案例](../use_cases.mdx)。

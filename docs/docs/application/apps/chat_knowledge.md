@@ -1,107 +1,56 @@
-# Chat Knowledge Base
+---
+title: Knowledge Base Chat
+---
 
-`Chat knowledge Base` provides the ability to question and answer questions based on private domain knowledge, and can build intelligent question and answer systems, reading assistants and other products based on the `knowledge base`. `RAG` technology is also used in DB-GPT to enhance knowledge retrieval.
+# Ask questions with your knowledge base
 
+Knowledge base chat helps an agent find relevant material in your documents and use it to answer a question. It is useful for questions such as “What is the refund attribution rule?” or “What checks are required before a schema change?”
 
-## Noun explanation
+Start with a [knowledge space](/docs/getting-started/web-ui/knowledge-base) containing processed documents. Uploading a file is not enough: inspect its status and chunks before expecting an answer based on it.
 
-:::info note
+## Start a conversation
 
-`Knowledge Space`: is a document space that manages a type of knowledge. Document knowledge of the same type can be uploaded to a knowledge space.
-:::
+1. Open **Knowledge Base** and select the space you need.
+2. Open **Chat**.
+3. Confirm the knowledge space and choose an available model.
+4. Ask a question with a clear scope and request source passages.
 
+![Chat with a selected knowledge space](/img/data-agent/en/knowledge-chat.png)
 
-## Steps
-The knowledge base operation process is relatively simple and is mainly divided into the following steps.
-- 1.Create knowledge space
-- 2.Upload documents
-- 3.Wait for document vectorization
-- 4.Select Knowledge Base App
-- 5.Chat With App
+This screenshot shows the English chat entry before a question is submitted. It is not an example of a completed answer.
 
+You can also start a task from the homepage and select a knowledge base. Check the selected resources before sending the question, especially when moving between business topics.
 
-### Create knowledge space
+## Ask a question the documents can answer
 
-At first open the `Construct App` and select the `Knowledge` on the top.
+For a space containing metric governance documents:
 
-<p align="center">
-  <img src={'/img/app/knowledge_build_v0.6.jpg'} width="800px" />
-</p>
+> Explain the definition of net receipts in this knowledge base. Does it include shipping fees? How are refunds paid in the following month attributed? Cite the source passages. If the documents leave a rule undefined, say so.
 
-Select the knowledge base, click the `Create` button, and fill in the necessary information to complete the creation of the knowledge space.
+For a runbook:
 
+> According to the slow-query runbook, what evidence should I collect before recommending an index? List the checks in order and cite their source sections.
 
-<p align="center">
-  <img src={'/img/app/knowledge_space_v0.6.jpg'} width="800px" />
-</p>
+Name the business term, system, or document you mean. If several versions exist, specify the relevant date or version and check the references returned. A request to use a version does not itself enforce a persistent version lock.
 
-### Upload documents
+## Verify before using the answer
 
-Document addition currently supports multiple types, such as plain text, URL crawling, and various document types such as PDF, Word, and Markdown. Select a specific document to `upload`.
+| Check | What a usable result should show |
+|---|---|
+| Source relevance | The references concern the requested term or procedure |
+| Support for the conclusion | The cited passages actually establish the answer |
+| Coverage | Each part of the question is addressed, or a missing definition is identified |
+| Currency | The source is the applicable version rather than a superseded copy |
+| Scope | The answer distinguishes document rules from any live data or actions needed |
 
-<p align="left">
-  <img src={'/img/chat_knowledge/upload_doc.png'} width="720px" />
-</p>
+Open the references and compare the answer with the original text. Do not treat a plausible explanation or a citation label alone as proof. If no relevant source is returned, inspect indexing and retrieval before expanding the question.
 
+For a calculation from live records, connect a [datasource](/docs/modules/connections), prepare the definition in the [Semantic Layer](/docs/semantic-center/overview), and select an appropriate [plugin](/docs/plugins/overview). Knowledge documents provide context; a database result requires an executed query.
 
-Select one or more corresponding documents and click `next`.
+## Improve a weak result
 
+If the agent retrieves the wrong material, confirm the selected space, use the exact term from the source, and inspect whether the relevant text exists in its chunks. Review retrieval settings in **Arguments** only after checking the content. Increasing the number of retrieved chunks may add noise as well as coverage.
 
-<p align="left">
-  <img src={'/img/chat_knowledge/upload_doc_finish.png'} width="720px" />
-</p>
+If sources disagree, ask for a comparison with explicit references and have the document owner resolve the rule. For a broader overview, a generated [LLM-Wiki](/docs/getting-started/web-ui/llm-wiki) can help navigate concepts, but its interpretation still needs review against the source.
 
-###  Documents Segmentation
-
-Choose Document Segmentation, you can choose to segment the document by chunk size, separator, paragraph or markdown header. The default is to segment the document by chunk size.
-
-and click Process, it will take a few minutes to complete the document segmentation.
-
-<p align="left">
-  <img src={'/img/chat_knowledge/doc_segmentation.png'} width="720px" />
-</p>
-
-:::tip
-**Automatic: The document is automatically segmented according to the document type.**
-
-**Chunk size: The number of words in each segment of the document. The default is 512 words.**
-    - chunk size: The number of words in each segment of the document. The default is 512 words.
-    - chunk overlap: The number of words overlapped between each segment of the document. The default is 50 words.
-** Separator:segmentation by separator ** 
-    - separator: The separator of the document. The default is `\n`.
-    - enable_merge: Whether to merge the separator chunks according to chunk_size after splits. The default is `False`.
-** Page: page segmentation, only support .pdf and .pptx document.**
-
-** Paragraph: paragraph segmentation, only support .docx document.**
-    - separator: The paragraph separator of the document. The default is `\n`.
-
-** Markdown header: markdown header segmentation, only support .md document.**
-:::
-
-
-### Waiting for document vectorization
-
-Click on the `knowledge space` and observe the document `slicing` + `vectorization` status in the lower left corner. When the status reaches `FINISHED`, you can start a knowledge base conversation.
-
-
-<p align="left">
-  <img src={'/img/chat_knowledge/waiting_doc_vector.png'} width="720px" />
-</p>
-
-
-### Knowledge base chat
-
-Click the `Chat`button to start a conversation with the knowledge base.
-
-
-<p align="left">
-  <img src={'/img/chat_knowledge/chat.png'} width="720px" />
-</p>
-
-
-### Reading assistant
-In addition to the above capabilities, you can also upload documents directly in the knowledge base dialogue window, and the document will be summarized by default. This capability can be used as a `reading assistant` to assist document reading.
-
-<p align="left">
-  <img src={'/img/chat_knowledge/read_helper.gif'} width="720px" />
-</p>
+Model permission, quota, and connection failures must be resolved in the model service. An empty or failed conversation is not a successful knowledge-based answer.

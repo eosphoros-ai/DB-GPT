@@ -10,6 +10,7 @@ export default defineConfig({
       './utils/suite-commands.test.ts',
       './utils/suite-command-inputs.test.ts',
       './new-components/chat/input/SuiteCommandPopover.test.tsx',
+      './new-components/suites/presentation.test.ts',
     ],
     restoreMocks: true,
     clearMocks: true,
