@@ -372,9 +372,11 @@ class AIWrapper:
                     end_meta["cost"] = cost
                 metrics = model_output.metrics
                 if metrics is not None:
-                    end_meta.setdefault("prompt_tokens", metrics.prompt_tokens)
-                    end_meta.setdefault("completion_tokens", metrics.completion_tokens)
-                    end_meta.setdefault("total_tokens", metrics.total_tokens)
+                    # The keys above are always set (possibly to None), so
+                    # ``setdefault`` would never fall back to the metrics.
+                    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                        if end_meta.get(key) is None:
+                            end_meta[key] = getattr(metrics, key)
             # If an exception is in flight, record error status and re-raise path
             # handles it; here we just mark the span.
             if sys.exc_info()[1] is not None:
