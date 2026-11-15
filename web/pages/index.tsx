@@ -898,7 +898,20 @@ const Playground: NextPage = () => {
     };
   }, [i18n.language, suiteRefresh]);
 
-  const routedSuiteHit = useMemo(() => scoreSuites(query, suites), [query, suites]);
+  const [selectedDb, setSelectedDb] = useState<DataSource | null>(null);
+  const [selectedKnowledge, setSelectedKnowledge] = useState<KnowledgeSpace | null>(null);
+  const sessionFiles = useSessionFiles({ api: sessionFilesApi });
+  const hasSessionFileDrafts = sessionFiles.files.length > 0;
+  const hasLegacyFile = !!sessionFiles.legacyFile;
+  const routedSuiteHit = useMemo(
+    () =>
+      scoreSuites(query, suites, {
+        hasDatabase: !!selectedDb,
+        hasAttachments: hasSessionFileDrafts || hasLegacyFile,
+        hasKnowledge: !!selectedKnowledge,
+      }),
+    [query, suites, selectedDb, hasSessionFileDrafts, hasLegacyFile, selectedKnowledge],
+  );
   const routedSuite = useMemo(
     () => suites.find(s => s.name === routedSuiteHit?.slug) ?? null,
     [suites, routedSuiteHit],
@@ -937,20 +950,15 @@ const Playground: NextPage = () => {
   const [isKnowledgeModalOpen, setIsKnowledgeModalOpen] = useState(false);
 
   // Contexts
-  const [selectedDb, setSelectedDb] = useState<DataSource | null>(null);
-  const [selectedKnowledge, setSelectedKnowledge] = useState<KnowledgeSpace | null>(null);
   // Chat messages state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // --- Session files (Task12): rail drafts + send snapshots ---------------
-  const sessionFiles = useSessionFiles({ api: sessionFilesApi });
   const resetSessionFiles = sessionFiles.resetSession;
   const rehydrateSessionFiles = sessionFiles.rehydrateFromServer;
-  const hasSessionFileDrafts = sessionFiles.files.length > 0;
   // Legacy example file staged in the rail (legacy file_path protocol).
-  const hasLegacyFile = !!sessionFiles.legacyFile;
   // Ref mirror so pick/send callbacks always read the latest conversation id.
   const conversationIdRef = useRef<string | null>(null);
   conversationIdRef.current = conversationId;
@@ -1632,7 +1640,14 @@ const Playground: NextPage = () => {
     max_tokens: number;
     usage_percent: number;
     layer: string | null;
+    model?: string;
+    context_window?: number;
+    reserved_tokens?: number;
+    window_source?: string;
   } | null>(null);
+  useEffect(() => {
+    setContextStatus(null);
+  }, [model]);
   const [pendingQuestion, setPendingQuestion] = useState<{
     request_id: string;
     conv_id: string;
@@ -3372,6 +3387,10 @@ const Playground: NextPage = () => {
             max_tokens: budget,
             usage_percent: (payload.ratio ?? 0) * 100,
             layer: payload.compact_layer ?? null,
+            model: payload.model,
+            context_window: payload.context_window,
+            reserved_tokens: payload.reserved_tokens,
+            window_source: payload.window_source,
           });
           return;
         }
@@ -5852,13 +5871,16 @@ const Playground: NextPage = () => {
                             </div>
 
                             <div className='flex items-center gap-2.5'>
-                              {contextStatus && (
+                              {contextStatus && (!contextStatus.model || contextStatus.model === model) && (
                                 <ContextUsageBar
                                   used={contextStatus.used_tokens}
                                   budget={contextStatus.max_tokens}
                                   ratio={contextStatus.usage_percent / 100}
                                   state={contextStatus.state}
                                   compactLayer={contextStatus.layer}
+                                  contextWindow={contextStatus.context_window}
+                                  reservedTokens={contextStatus.reserved_tokens}
+                                  windowSource={contextStatus.window_source}
                                   variant='compact'
                                   className='mr-0.5'
                                 />

@@ -108,6 +108,30 @@ describe('scoreSuites', () => {
   it('returns null when no keyword matches', () => {
     expect(scoreSuites('今天天气怎么样', suites)).toBeNull();
   });
+
+  it('does not select a report suite from a negative delivery constraint', () => {
+    const report = makeSuite('report', ['报告', 'report', 'dashboard']);
+    expect(scoreSuites('读取 https://example.com/ 的网页。不需要报告。', suites)).toBeNull();
+    expect(scoreSuites('Fetch example.com. Do not generate a report or dashboard.', [report])).toBeNull();
+    expect(scoreSuites('统计订单数，不要生成报告。', suites)?.slug).toBe('db-query');
+    expect(scoreSuites('分析销售趋势，不要生成报告。', suites)?.slug).toBe('db-analysis');
+  });
+
+  it('keeps file, knowledge and web requests out of database-only automatic routes', () => {
+    const database = {
+      ...analysis,
+      manifest_snapshot: { ...analysis.manifest_snapshot, context_defaults: { datasource: 'session' } },
+    } as SuiteItem;
+    const financial = makeSuite('financial-analysis', ['年报']);
+    const context = { hasDatabase: false, hasAttachments: true, hasKnowledge: false };
+    expect(scoreSuites('分析 CSV 并生成报告', [database], context)).toBeNull();
+    expect(scoreSuites('分析年报', [database, financial], context)?.slug).toBe('financial-analysis');
+    expect(
+      scoreSuites('分析指标口径', [database], { ...context, hasAttachments: false, hasKnowledge: true }),
+    ).toBeNull();
+    expect(scoreSuites('分析 https://example.com/ 网页', [database], { ...context, hasAttachments: false })).toBeNull();
+    expect(scoreSuites('分析销售', [database], { ...context, hasDatabase: true })?.slug).toBe('db-analysis');
+  });
 });
 
 describe('suiteDisplayName', () => {

@@ -235,6 +235,14 @@ def _is_dashboard_workflow_request(
     normalized = (user_input or "").casefold()
     if any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS):
         return True
+    # A negative delivery constraint is not a request to enter the Dashboard
+    # workflow ("不要生成报告或看板", "do not create a dashboard").
+    normalized = re.sub(
+        r"(?:不要|无需|不用|不需要|不必|不得|do not|don't|without)"
+        r"[^。.;；\n]*(?:dashboard|看板|仪表盘)[^。.;；\n]*",
+        "",
+        normalized,
+    )
     # Mentioning a dashboard in an ordinary question does not select a creation
     # workflow. Keep normal chat and delegated analysis tools available.
     return any(keyword in normalized for keyword in DASHBOARD_AGENT_KEYWORDS) and bool(
@@ -355,9 +363,13 @@ def _agentic_max_new_tokens(dialogue_value: Optional[int]) -> int:
 async def _load_context_budget_config(
     llm_client: Any = None,
     model_name: Optional[str] = None,
+    max_new_tokens: int = 0,
 ) -> ContextBudgetConfig:
     """Build context budget config from app TOML and model metadata."""
+    from dbgpt.agent.core.context.budget import resolve_context_budget
+
     defaults = ContextBudgetConfig()
+    max_context_tokens = 0
 
     def _value(agent_context: Any, field_name: str, default: Any) -> Any:
         if agent_context is None:
@@ -369,10 +381,8 @@ async def _load_context_budget_config(
         app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
         web_config = getattr(getattr(app_config, "service", None), "web", None)
         agent_context = getattr(web_config, "agent_context", None)
-        max_context_tokens = _value(
-            agent_context, "max_context_tokens", defaults.max_context_tokens
-        )
-        return ContextBudgetConfig(
+        max_context_tokens = _value(agent_context, "max_context_tokens", 0)
+        config = ContextBudgetConfig(
             max_context_tokens=max_context_tokens,
             warning_threshold=_value(
                 agent_context, "warning_threshold", defaults.warning_threshold
@@ -418,7 +428,14 @@ async def _load_context_budget_config(
         logger.debug(
             "Failed to load agent context config; using defaults", exc_info=True
         )
-        return defaults
+        config = defaults
+    return await resolve_context_budget(
+        config,
+        llm_client,
+        model_name,
+        configured_limit=max_context_tokens,
+        max_new_tokens=max_new_tokens,
+    )
 
 
 def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
@@ -2617,7 +2634,11 @@ async def _react_agent_stream_impl(
             return "正在生成并渲染 HTML 报告"
         if action_lower == "todowrite":
             return "正在更新任务计划"
-        if action_lower in {"execute_skill_script", "execute_skill_script_file"}:
+        if action_lower in {
+            "execute_skill_script",
+            "execute_skill_script_file",
+            "run_skill_script",
+        }:
             return "正在执行分析脚本"
 
         return text
@@ -3420,7 +3441,14 @@ async def _react_agent_stream_impl(
         make_financial_tools,
     )
 
-    financial_tools = make_financial_tools(react_state, stream_callback=stream_callback)
+    financial_enabled = (
+        suite_binding is not None and suite_binding.name == "financial-analysis"
+    )
+    financial_tools = (
+        make_financial_tools(react_state, stream_callback=stream_callback)
+        if financial_enabled
+        else []
+    )
 
     _todo_action_history: Dict[int, List[str]] = {}
 
@@ -3499,6 +3527,7 @@ async def _react_agent_stream_impl(
             "load_skill",
             "execute_skill_script",
             "execute_skill_script_file",
+            "run_skill_script",
         }:
             if next_todo and next_todo in thought_lower:
                 return True
@@ -3800,6 +3829,11 @@ async def _react_agent_stream_impl(
     generation_event = generation_start_event(react_state)
     if generation_event:
         yield _sse_event(generation_event)
+    context_budget = await _load_context_budget_config(
+        llm_client=llm_client,
+        model_name=dialogue.model_name,
+        max_new_tokens=_agentic_max_new_tokens(dialogue.max_new_tokens),
+    )
     context = AgentContext(
         conv_id=conv_id,
         gpts_app_code="react_agent",
@@ -3808,7 +3842,7 @@ async def _react_agent_stream_impl(
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
-        max_new_tokens=_agentic_max_new_tokens(dialogue.max_new_tokens),
+        max_new_tokens=context_budget.max_output_tokens,
     )
 
     # file_ids requests use the public manifest block; legacy file_path and
@@ -4195,7 +4229,8 @@ calls in the same step.
 
 ### 4. Special Scenarios
 - For NON-financial report generation: Same as the principle above, must finally call
-`generate_report` to hand the report to the dedicated report agent.
+the available report capability: `generate_report` when the selected suite provides
+it; otherwise use `html_interpreter` for validated HTML delivery.
 
 ## Available Tools Description
 1. **load_skill**: Load skill content by skill name and file path.
@@ -4447,10 +4482,35 @@ ordering. The registered tools and backend validation remain authoritative.
 
         workflow_prompt += "\n\n" + dashboard_collaboration_skill()
 
-    # Debug: print all registered tools
-    logger.info(f"ToolPack resources: {list(tool_pack._resources.keys())}")
-    if "execute_skill_script" not in tool_pack._resources:
-        logger.error("execute_skill_script NOT in ToolPack!")
+    # Consolidate public entries before suite filtering, so manifests are
+    # checked against the canonical script runner, including historical denies.
+    from .tools.skill_tools import make_run_skill_script
+    from .tools.tool_catalog import consolidate_tools
+    from .tools.web_tools import make_web_fetch, make_web_search
+
+    tool_pack = ToolPack(
+        consolidate_tools(tool_pack.sub_resources)
+        + (
+            [make_run_skill_script(react_state), make_web_search(), make_web_fetch()]
+            if tool_mode != "knowledge" and not dashboard_agent_mode
+            else []
+        )
+    )
+    if suite_binding is not None and (
+        suite_binding.name in {"mysql-ops-expert", "db-ops"}
+        or (suite_binding.allow is not None and "system_health" in suite_binding.allow)
+    ):
+        from .tools.system_health import make_system_health
+
+        tool_pack.append(make_system_health()._tool)
+    if (
+        suite_binding is not None
+        and suite_binding.allow is not None
+        and "list_dbgpt_support_models" in suite_binding.allow
+    ):
+        for resource in ToolPack(business_tools).sub_resources:
+            if resource.name == "list_dbgpt_support_models":
+                tool_pack.append(resource)
 
     if creation_mode == "expert_suite":
         from .tools.suite_creation import (
@@ -4578,6 +4638,22 @@ After partial results, finish only missing requested deliverables, then report.
         react_state.pop("financial_suite_command", None)
         logger.warning("suite binder failed; turn continues unbound", exc_info=True)
 
+    # A failed binding must not leave its specialized functions in the general
+    # catalog or its instructions in the prompt.
+    if suite_binding is None:
+        financial_enabled = False
+        specialized_names = {
+            resource.name for resource in ToolPack(financial_tools).sub_resources
+        }
+        specialized_names.update({"system_health", "list_dbgpt_support_models"})
+        tool_pack = ToolPack(
+            [
+                resource
+                for resource in tool_pack.sub_resources
+                if resource.name not in specialized_names
+            ]
+        )
+
     if suite_binding is not None and not dashboard_agent_mode:
         from .subagent.report_agent import make_generate_report_tool
         from .tools.chart_query import make_chart_query
@@ -4627,17 +4703,71 @@ The supplied function schemas are the current authoritative tool list. Earlier
 conversation failures about missing chart/report tools do not describe this turn.
 Use chart_query(sql, display_type, thought) for native interactive charts.
 Compute derived metrics with read-only SQL; the suite's tool boundary still applies.
-After the required analysis, call generate_report(instructions) with the report
-title and required sections. The dedicated report agent binds captured SQL/chart
-evidence and renders the report. Only status=completed means the report is ready.
-For report continuation, call generate_report immediately to reuse captured evidence.
-Do not inspect suite configuration or repeat completed analysis.
-Do not write HTML or substitute a textual summary for the requested report.
+Match delivery to the user's request: query results, CSV exports, native charts,
+and ER diagrams do not require an additional HTML report.
+If the user requests a report and generate_report is supplied, call it with the
+report title and required sections. The dedicated report agent binds captured
+SQL/chart evidence; only status=completed means the report is ready.
+For a requested report continuation, reuse captured evidence with generate_report.
+Do not inspect suite configuration or repeat completed analysis. Do not write HTML
+or substitute a textual summary for a requested report.
 """
+
+    if (
+        suite_binding is None
+        and not dashboard_agent_mode
+        and creation_mode != "expert_suite"
+        and tool_mode != "knowledge"
+    ):
+        from .tools.tool_catalog import BASE_TOOLS, make_tool_search
+
+        catalog = tool_pack.sub_resources
+        initial_names = set(BASE_TOOLS)
+        if database_connector is not None:
+            initial_names.add("sql_query")
+            initial_names.update(resource.name for resource in semantic_tool_list)
+        if knowledge_space:
+            initial_names.update(
+                resource.name for resource in ToolPack(kb_tool_list).sub_resources
+            )
+        if react_state.get("session_files") or react_state.get("file_path"):
+            initial_names.update(
+                {
+                    "load_file",
+                    "code",
+                    "run_skill_script",
+                    "html_interpreter",
+                    "get_skill_resource",
+                }
+            )
+        initial_names.update(resource.name for resource in connector_tool_extras)
+        # A greeting still goes through the selected model. It does not need
+        # task planning or skill discovery in its initial request.
+        greeting = re.fullmatch(
+            r"\s*(?:hi|hello|hey|你好|您好|嗨)[!！。.\s]*", user_input, re.I
+        )
+        if greeting:
+            initial_names = {"terminate"}
+        tool_pack = ToolPack(
+            [resource for resource in catalog if resource.name in initial_names]
+        )
+        discover = make_tool_search(
+            catalog,
+            lambda: tool_pack,
+            lambda name: name in {resource.name for resource in catalog},
+            stream_callback,
+        )
+        tool_pack.append(discover._tool)
+        if greeting:
+            workflow_prompt = (
+                f"You are DB-GPT, an AI data assistant. {language_instruction}\n"
+                "Respond naturally to the greeting using the selected model. "
+                "Do not start analysis, retrieve sources, or create a task plan."
+            )
 
     workflow_prompt_template = build_react_prompt_template(
         workflow_prompt,
-        financial_enabled=tool_mode != "knowledge" and not dashboard_agent_mode,
+        financial_enabled=financial_enabled and not dashboard_agent_mode,
     )
 
     from .financial_agent import FinancialWorkflowAgent
@@ -4709,10 +4839,7 @@ Do not write HTML or substitute a textual summary for the requested report.
         await stream_queue.put({"type": "context.status", **status})
 
     agent.init_context_management(
-        config=await _load_context_budget_config(
-            llm_client=llm_client,
-            model_name=dialogue.model_name,
-        ),
+        config=context_budget,
         model_name=dialogue.model_name,
         on_status_event=_context_status_callback,
     )
@@ -4758,6 +4885,22 @@ Do not write HTML or substitute a textual summary for the requested report.
             if approval_intent_enabled()
             else None
         ),
+    )
+    from dbgpt.agent.resource.connector.manager import (
+        ConnectorManager as _ConnectorManager,
+    )
+
+    from .suite_binder import compose_gates
+    from .tools.connector_gate import make_connector_gate
+
+    _base_gate = compose_gates(
+        make_connector_gate(
+            CFG.SYSTEM_APP.get_component(
+                "connector_manager", _ConnectorManager, default_component=None
+            ),
+            {resource.name for resource in connector_tool_extras},
+        ),
+        _base_gate,
     )
     if suite_binding is not None:
         # Suite allow/deny is checked BEFORE the approval gate: a tool outside

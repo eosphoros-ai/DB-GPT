@@ -98,6 +98,14 @@ class ConversableAgent(Role, Agent):
         llm_client = self.llm_client
         object.__setattr__(
             self,
+            "_context_configured_limit",
+            config.max_context_tokens
+            if config.context_window_source == "agent_config"
+            else (self.agent_context.max_context_tokens if self.agent_context else 0),
+        )
+        object.__setattr__(self, "_context_model_key", None)
+        object.__setattr__(
+            self,
             "_context_manager",
             ContextManager(
                 config=config,
@@ -111,6 +119,56 @@ class ConversableAgent(Role, Agent):
         # op_snapshots/. Falls back to DBGPT_HOME/workspace/persisted_results/.
         self._init_tool_result_storage(config)
         logger.info("Context management enabled for agent %s", self.name)
+
+    async def _manage_model_context(
+        self, messages: List[AgentMessage], model_name: str, tools: Any = None
+    ) -> List[AgentMessage]:
+        """Budget the final request against the model actually selected."""
+        from .context.budget import resolve_context_budget
+
+        ctx = self.not_null_agent_context
+        if self._context_manager is None and ctx.enable_context_management:
+            self.init_context_management()
+        manager = self._context_manager
+        if manager is None:
+            return messages
+        key = (model_name, ctx.max_new_tokens)
+        if getattr(self, "_context_model_key", None) != key:
+            await resolve_context_budget(
+                manager.config,
+                self.llm_config.llm_client if self.llm_config else None,
+                model_name,
+                configured_limit=getattr(
+                    self, "_context_configured_limit", manager.config.max_context_tokens
+                ),
+                max_new_tokens=ctx.max_new_tokens,
+            )
+            manager.tracker.model_name = model_name
+            object.__setattr__(self, "_context_model_key", key)
+        manager.tracker.extra_tokens = (
+            manager.tracker.count_text(json.dumps(tools, ensure_ascii=False))
+            if tools
+            else 0
+        )
+        managed = await manager.manage_context(
+            messages,
+            current_round=sum(
+                (message.content or "").lstrip().startswith("Observation:")
+                for message in messages
+            ),
+        )
+        if manager.tracker.count_messages(managed) >= manager.config.effective_budget:
+            raise ValueError(
+                "Context still exceeds the model input budget after compaction. "
+                "Reduce attached context/tools or start a new conversation."
+            )
+        return managed
+
+    def _request_max_new_tokens(self) -> int:
+        """Use the resolved output cap for the same model request."""
+        if self._context_manager is not None:
+            return self._context_manager.config.max_output_tokens
+        return self.not_null_agent_context.max_new_tokens
 
     def _init_tool_result_storage(self, config: ContextBudgetConfig) -> None:
         """Initialize the ToolResultStorage bound to this agent's conversation.
@@ -865,13 +923,18 @@ class ConversableAgent(Role, Agent):
         last_err = None
         retry_count = 0
         llm_messages = [message.to_llm_message() for message in messages]
+        if prompt:
+            llm_messages = _new_system_message(prompt) + llm_messages
         # LLM inference automatically retries 3 times to reduce interruption
         # probability caused by speed limit and network stability
         while retry_count < 3:
             llm_model = await self._a_select_llm_model(last_model)
             try:
-                if prompt:
-                    llm_messages = _new_system_message(prompt) + llm_messages
+                managed = await self._manage_model_context(
+                    [AgentMessage.from_llm_message(item) for item in llm_messages],
+                    llm_model,
+                )
+                llm_messages = [item.to_llm_message() for item in managed]
 
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
@@ -879,7 +942,7 @@ class ConversableAgent(Role, Agent):
                     context=llm_messages[-1].pop("context", None),
                     messages=llm_messages,
                     llm_model=llm_model,
-                    max_new_tokens=self.not_null_agent_context.max_new_tokens,
+                    max_new_tokens=self._request_max_new_tokens(),
                     temperature=self.not_null_agent_context.temperature,
                     verbose=self.not_null_agent_context.verbose,
                     memory=self.memory.gpts_memory,
@@ -1526,15 +1589,6 @@ class ConversableAgent(Role, Agent):
         if memory_list:
             agent_messages.extend(memory_list)
 
-        # Multi-layer context management: compress if budget exceeded
-        ctx_mgr: Optional[ContextManager] = getattr(self, "_context_manager", None)
-        if ctx_mgr is not None:
-            agent_messages = await ctx_mgr.manage_context(
-                messages=agent_messages,
-                current_round=current_retry_counter or 0,
-                task_progress=task_progress,
-            )
-
         # Current user input information
         if not user_prompt and (not memory_list or not current_retry_counter):
             # The user prompt is empty, and the current retry count is 0 or the memory
@@ -1547,6 +1601,7 @@ class ConversableAgent(Role, Agent):
                     role=ModelMessageRoleType.HUMAN,
                 )
             )
+        # Manage the final payload in thinking(), after actual model selection.
         return agent_messages, resource_references
 
 

@@ -9,6 +9,8 @@ old strings, so every name comparison goes through :func:`canonical_tool`.
 TOOL_ALIASES = {
     "shell_interpreter": "bash",
     "code_interpreter": "code",
+    "execute_skill_script_file": "run_skill_script",
+    "execute_skill_script": "run_skill_script",
 }
 
 

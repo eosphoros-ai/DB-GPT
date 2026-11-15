@@ -207,6 +207,15 @@ def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
     return allowed
 
 
+def check_skill_scope(react_state: Dict[str, Any], skill_name: str) -> None:
+    """Enforce explicitly selected skills before reading or executing them."""
+    allowed = react_state.get("allowed_skills")
+    if allowed is not None and skill_name.casefold() not in {
+        name.casefold() for name in allowed
+    }:
+        raise ValueError(f"Skill '{skill_name}' is not selected for this agent")
+
+
 def make_load_skill(react_state: Dict[str, Any]):
     """Return a ``load_skill`` FunctionTool bound to the given react_state."""
 
@@ -215,10 +224,11 @@ def make_load_skill(react_state: Dict[str, Any]):
         "Returns the SKILL.md content of the specified skill. "
         '参数: {"skill_name": "技能名称", "file_path": "技能文件路径"}'
     )
-    def load_skill(skill_name: str, file_path: str) -> str:
+    def load_skill(skill_name: str, file_path: str = "") -> str:
         """Load the skill content (SKILL.md) by skill name and file path."""
         from dbgpt.agent.claude_skill import get_registry
 
+        check_skill_scope(react_state, skill_name)
         registry = get_registry()
         matched = registry.get_skill(skill_name)
 
@@ -549,3 +559,54 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
             )
 
     return execute_skill_script_file
+
+
+def make_run_skill_script(react_state: Dict[str, Any]):
+    """One model entry; keep the file executor's capture and authorization."""
+    file_runner = make_execute_skill_script_file(react_state)
+
+    @tool(
+        description="Execute a script explicitly supplied by a loaded skill. "
+        "Use script_file_name for scripts/ files, or script_name for a declared "
+        "inline script; provide exactly one. JSON args and CLI argv are "
+        "exclusive. Returns captured artifact_id; input_artifact_ids select "
+        "successful upstream results. Never use this for ordinary tool calls."
+    )
+    async def run_skill_script(
+        skill_name: str,
+        script_file_name: str | None = None,
+        args: dict | None = None,
+        input_artifact_ids: list[str] | None = None,
+        argv: list[str] | None = None,
+        script_name: str | None = None,
+    ) -> str:
+        check_skill_scope(react_state, skill_name)
+        if bool(script_file_name) == bool(script_name):
+            raise ValueError("Provide exactly one script_file_name or script_name")
+        if args is not None and argv is not None:
+            raise ValueError("Use either args or argv, not both")
+        if script_file_name:
+            return await file_runner(
+                skill_name, script_file_name, args, input_artifact_ids, argv
+            )
+        # Inline scripts remain declared skill configuration, never arbitrary
+        # model source. They cannot consume local attachment paths or CLI args.
+        if argv is not None or input_artifact_ids:
+            raise ValueError("Inline scripts support JSON args only")
+        from dbgpt._private.config import Config
+        from dbgpt.agent.skill.manage import get_skill_manager
+        from dbgpt_app.openapi.api_v1.agentic_data_api import (
+            _execute_skill_script_impl,
+        )
+
+        if any(char in skill_name for char in ("/", "\\", ":")):
+            raise ValueError("Use a registered skill name")
+        manager = get_skill_manager(Config().SYSTEM_APP)
+        if not any(
+            script.get("name") == script_name
+            for script in manager.get_skill_scripts(skill_name)
+        ):
+            raise ValueError("Inline script must be declared in skill configuration")
+        return await _execute_skill_script_impl(skill_name, script_name, args or {})
+
+    return run_skill_script

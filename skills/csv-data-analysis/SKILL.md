@@ -15,7 +15,7 @@ As an AI assistant, when a user uploads a CSV or Excel file and requests analysi
 
 ### Step 1: Extract Data Features (Execute Script)
 
-Use the `execute_skill_script_file` tool to run `csv_analyzer.py`, passing in the data file path (supports .csv, .xlsx, .xls, .tsv formats).
+Use the `run_skill_script` tool with `script_file_name="csv_analyzer.py"`, passing in the data file path (supports .csv, .xlsx, .xls, .tsv formats).
 
 **Tool call parameter example:**
 ```json

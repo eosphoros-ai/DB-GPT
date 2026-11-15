@@ -308,11 +308,33 @@ def _search_searxng(query: str, num: int) -> List[Dict[str, str]]:
     ]
 
 
+def _search_serply(query: str, num: int) -> List[Dict[str, str]]:
+    key = os.getenv("SERPLY_API_KEY")
+    if not key:
+        raise ValueError("serply provider needs SERPLY_API_KEY")
+    with httpx.Client(
+        timeout=15.0, headers={"X-Api-Key": key, "User-Agent": _UA}
+    ) as client:
+        response = client.get(
+            "https://api.serply.io/v1/search", params={"q": query, "num": num}
+        )
+        response.raise_for_status()
+        return [
+            {
+                "title": item.get("title", ""),
+                "url": item.get("link", ""),
+                "snippet": item.get("description", "")[:300],
+            }
+            for item in response.json().get("results", [])[:num]
+        ]
+
+
 _PROVIDERS = {
     "bing": _search_bing,
     "duckduckgo": _search_duckduckgo,
     "baidu": _search_baidu,
     "searxng": _search_searxng,
+    "serply": _search_serply,
 }
 #: Fallback order when the configured provider yields nothing.
 _PROVIDER_CHAIN = ("bing", "duckduckgo", "baidu")

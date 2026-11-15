@@ -763,7 +763,17 @@ class ToolCallingReActAgent(ReActAgent):
         last_model = None
         last_err = None
         retry_count = 0
-        llm_messages = [message.to_llm_message() for message in messages]
+        # Older memory records contain an empty assistant entry for calls that
+        # only returned native tool arguments. AgentMessage stores their actual
+        # execution evidence separately as observations, not in that blank
+        # entry. Omit it rather than sending invalid empty prose to the provider
+        # or inventing a tool call that cannot be reconstructed from history.
+        llm_messages = [
+            message.to_llm_message()
+            for message in messages
+            if message.role not in {"ai", "assistant"}
+            or (message.content or "").strip()
+        ]
         if prompt:
             llm_messages = _new_system_message(prompt) + llm_messages
         if llm_messages and llm_messages[0].get("role") == "system":
@@ -850,6 +860,12 @@ class ToolCallingReActAgent(ReActAgent):
                     raise ValueError(last_err) from error
                 raise
             try:
+                managed = await self._manage_model_context(
+                    [AgentMessage.from_llm_message(item) for item in llm_messages],
+                    llm_model,
+                    tools=tools,
+                )
+                llm_messages = [item.to_llm_message() for item in managed]
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
 
@@ -861,7 +877,7 @@ class ToolCallingReActAgent(ReActAgent):
                     context=llm_messages[-1].pop("context", None),
                     messages=llm_messages,
                     llm_model=llm_model,
-                    max_new_tokens=self.not_null_agent_context.max_new_tokens,
+                    max_new_tokens=self._request_max_new_tokens(),
                     temperature=self.not_null_agent_context.temperature,
                     verbose=self.not_null_agent_context.verbose,
                     memory=self.memory.gpts_memory,
@@ -879,7 +895,7 @@ class ToolCallingReActAgent(ReActAgent):
                     usage = getattr(response, "usage", None) or {}
                     state["_report_model_output"] = {
                         "model": llm_model,
-                        "max_new_tokens": self.not_null_agent_context.max_new_tokens,
+                        "max_new_tokens": self._request_max_new_tokens(),
                         "finish_reason": getattr(response, "finish_reason", None),
                         "completion_tokens": usage.get("completion_tokens"),
                     }

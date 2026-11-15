@@ -300,6 +300,45 @@ async def test_run_react_agent_end_to_end(monkeypatch):
     assert action_event.title == "sql_query"
 
 
+@pytest.mark.asyncio
+async def test_node_discovery_cannot_add_unselected_tools_or_skills(monkeypatch):
+    from dbgpt.agent.resource.tool.exceptions import ToolExecutionException
+    from dbgpt.agent.resource.tool.pack import ToolPack
+
+    monkeypatch.setattr(
+        "dbgpt.agent.expand.tool_calling_agent.ToolCallingReActAgent", _StubAgent
+    )
+    monkeypatch.setattr("dbgpt.agent.core.memory.gpts.GptsMemory", _StubGptsMemory)
+    await run_react_agent(
+        goal="test",
+        question="test",
+        tools=["code"],
+        skills=["selected-skill"],
+        llm_client=None,
+    )
+    pack = next(
+        item for item in _StubAgent.instances[-1].bound if isinstance(item, ToolPack)
+    )
+    assert set(pack._resources) == {"code", "load_skill", "terminate", "tool_search"}
+    for name in ("bash", "sql_query", "dispatch_parallel_tasks"):
+        result = await pack.async_execute(resource_name="tool_search", query=name)
+        assert json.loads(result)["tools"] == []
+    result = await pack.async_execute(
+        resource_name="tool_search", query="run_skill_script"
+    )
+    assert json.loads(result)["tools"][0]["name"] == "run_skill_script"
+    with pytest.raises(ToolExecutionException, match="not selected"):
+        await pack.async_execute(
+            resource_name="load_skill", skill_name="unselected-skill"
+        )
+    with pytest.raises(ToolExecutionException, match="not selected"):
+        await pack.async_execute(
+            resource_name="run_skill_script",
+            skill_name="unselected-skill",
+            script_file_name="script.py",
+        )
+
+
 class TestEnvelopeReadable:
     """Raw tool envelopes must never leak into the answer area as JSON."""
 

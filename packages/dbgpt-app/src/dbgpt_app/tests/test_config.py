@@ -1,11 +1,11 @@
-from dbgpt.agent.core.context.budget import DEFAULT_MAX_CONTEXT_TOKENS
 from dbgpt_app.config import AgentContextParameters
 
 
-def test_agent_context_parameters_non_positive_max_context_tokens_fall_back_to_default(  # noqa: E501
-):
+def test_agent_context_parameters_preserve_auto_detection():
+    assert AgentContextParameters().max_context_tokens == 0
     cfg = AgentContextParameters(max_context_tokens=0)
-    assert cfg.max_context_tokens == DEFAULT_MAX_CONTEXT_TOKENS
+    assert cfg.max_context_tokens == 0
 
     cfg = AgentContextParameters(max_context_tokens=-1)
-    assert cfg.max_context_tokens == DEFAULT_MAX_CONTEXT_TOKENS
+    assert cfg.max_context_tokens == 0
+    assert AgentContextParameters(max_context_tokens=32768).max_context_tokens == 32768

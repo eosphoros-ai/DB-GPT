@@ -24,7 +24,7 @@ To use this skill, you need to provide a CSV file containing Walmart sales data.
 ## Core Workflow
 
 1. **Check Uploaded File**: First, verify that a valid Walmart Sales CSV file was provided.
-2. **Execute Analysis Script**: Use the `execute_skill_script_file` tool to run the `generate_html_report.py` script. Pass the CSV file path to the `input_file` argument in the `args` parameter. 
+2. **Execute Analysis Script**: Use the `run_skill_script` tool with `script_file_name="generate_html_report.py"`. Pass the CSV file path to the `input_file` argument in the `args` parameter.
    - Example: `{"skill_name": "walmart-sales-analyzer", "script_file_name": "generate_html_report.py", "args": {"input_file": "/path/to/Walmart_Sales.csv", "output_dir": "."}}`
    - *Note: This script automatically generates all required charts (`correlation_heatmap.png`, `sales_vs_unemployment_scatter.png`, etc.) and the base report.*
 3. **Present Report**: To present the results to the user via the DB-GPT UI, you must use the `html_interpreter` tool. Provide the `template_path` (`walmart-sales-analyzer/templates/report_template.html`) and the necessary text data to render the report interactively. You MUST fill in ALL the placeholders dynamically based on your analysis (including ALL section titles, report titles, and analysis content, otherwise they will render as 'NA') and ensure they are translated to the user's language.

@@ -50,7 +50,7 @@ SUITE_TOOL_ALIASES = {
 #: Conversational + loop-control utilities every suite keeps, even under a
 #: strict allowlist.  ``terminate`` is the ReAct loop's end-of-turn tool:
 #: blocking it would leave the agent unable to finish, so it is always allowed.
-IMPLICIT_ALLOW = {"question", "todowrite", "terminate"}
+IMPLICIT_ALLOW = {"question", "todowrite", "terminate", "tool_search"}
 
 SEMANTIC_DEGRADED_WATERMARK = (
     "⚠️ 语义层未就绪：本次基于表摘要/原始 schema 取数（水位线：无指标口径 / "
@@ -65,6 +65,10 @@ _REPORT_AGENT_TOOLS = frozenset(
         "read_file",
         "request_report_calculation",
         "append_report_sections",
+        "list_report_objects",
+        "compose_report",
+        "patch_report",
+        "set_report_field",
     }
 )
 
@@ -574,11 +578,22 @@ def build_sop_block(binding: SuiteBinding) -> str:
             "只报告实际执行的操作，不能把技能加载当成任务完成。\n\n"
             f"### 知识技能 {binding.command_skill}\n{binding.command_skill_text}"
         )
-    references = "".join(
-        f"\n\n### 包内参考文件：{doc['path']}\n{doc['content']}"
-        for doc in binding.loaded_documents
-        if "content" in doc
-    )
+    # A skill can link back to the suite SOP or to another already loaded
+    # document. Keep provenance in loaded_documents, but inject each body once.
+    seen_content = {binding.sop_text.strip(), binding.command_skill_text.strip()}
+    reference_sections = []
+    for doc in binding.loaded_documents:
+        content = doc.get("content")
+        if not isinstance(content, str) or not content.strip():
+            continue
+        normalized = content.strip()
+        if normalized in seen_content:
+            continue
+        seen_content.add(normalized)
+        reference_sections.append(
+            f"\n\n### 包内参考文件：{doc['path']}\n{content}"
+        )
+    references = "".join(reference_sections)
     return header + body + command_block + references + watermark
 
 

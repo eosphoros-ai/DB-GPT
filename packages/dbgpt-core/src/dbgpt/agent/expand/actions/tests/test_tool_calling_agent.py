@@ -13,6 +13,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from dbgpt.agent import AgentContext, AgentMemory, AgentMessage, LLMConfig
+from dbgpt.agent.core.context.budget import ContextBudgetConfig
+from dbgpt.agent.core.context.manager import ContextManager
 from dbgpt.agent.expand.actions.react_action import Terminate
 from dbgpt.agent.expand.actions.tool_action import (
     ToolCallSpec,
@@ -192,6 +194,16 @@ async def test_native_public_progress_arrives_before_tool_execution(monkeypatch)
     object.__setattr__(
         agent, "llm_client", SimpleNamespace(create_with_output=create_with_output)
     )
+    context_events = []
+
+    async def context_status(event):
+        context_events.append(event)
+
+    agent.init_context_management(
+        config=ContextBudgetConfig(max_context_tokens=1000000),
+        model_name="test-model",
+        on_status_event=context_status,
+    )
     text, _ = await agent._thinking_native(
         [], prompt="Compute 1 + 2", stream_callback=callback
     )
@@ -204,12 +216,36 @@ async def test_native_public_progress_arrives_before_tool_execution(monkeypatch)
         {"action_start": True, "public_text": text, "tool_calls": calls},
     ]
     assert text == "先计算总数，再核对结果。"
+    assert context_events[-1]["tools_tokens"] > 0
+    assert context_events[-1]["used"] > context_events[-1]["tools_tokens"]
     kwargs = _act_kwargs(agent, False)
     kwargs["tool_calls"] = calls
     out = await agent.act(AgentMessage(content=text), sender=agent, **kwargs)
     assert out.is_exe_success is True
     assert out.action == "add"
     assert json.loads(out.action_input) == {"a": 1, "b": 2}
+
+
+@pytest.mark.asyncio
+async def test_native_overflow_stops_before_model_request():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    agent.agent_context.max_new_tokens = 0
+    object.__setattr__(agent, "_a_select_llm_model", AsyncMock(return_value="test"))
+    create = AsyncMock()
+    object.__setattr__(agent, "llm_client", SimpleNamespace(create_with_output=create))
+    object.__setattr__(
+        agent,
+        "_context_manager",
+        ContextManager(
+            config=ContextBudgetConfig(max_context_tokens=128, reserved_tokens=0)
+        ),
+    )
+    with pytest.raises(ValueError, match="still exceeds"):
+        await agent._thinking_native(
+            [AgentMessage(content="请保留当前请求。" * 100)], prompt="System"
+        )
+    create.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -622,6 +658,31 @@ async def test_malformed_native_arguments_never_execute_parameterless_tool(argum
 
 
 @pytest.mark.asyncio
+async def test_native_resume_omits_empty_assistant_history_keeps_observations():
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    create = AsyncMock(return_value=ModelOutput.build("Recovered"))
+    object.__setattr__(agent, "llm_client", SimpleNamespace(create_with_output=create))
+    object.__setattr__(agent, "memory", SimpleNamespace(gpts_memory=None))
+    object.__setattr__(
+        agent, "_a_select_llm_model", AsyncMock(return_value="synthetic")
+    )
+    text, _ = await agent._thinking_native(
+        [
+            AgentMessage(role="system", content="Reuse actual evidence."),
+            AgentMessage(role="ai", content=""),
+            AgentMessage(role="assistant", content=None),
+            AgentMessage(role="human", content='Observation: {"artifact_id":"sql-1"}'),
+            AgentMessage(role="human", content="Finish the report"),
+        ]
+    )
+    assert text == "Recovered"
+    messages = create.call_args.kwargs["messages"]
+    assert [message["role"] for message in messages] == ["system", "human", "human"]
+    assert messages[1]["content"] == 'Observation: {"artifact_id":"sql-1"}'
+
+
+@pytest.mark.asyncio
 async def test_protocol_repair_requests_native_function_and_keeps_arguments():
     """Require a native call during protocol repair and retain its arguments."""
     agent = _make_agent(enable_parallel=False)
@@ -701,6 +762,9 @@ async def test_built_agent_can_terminate_during_native_protocol_repair(
     llm_client = MagicMock(spec=LLMClient)
     llm_client.models = AsyncMock(
         return_value=[ModelMetadata(model="synthetic", function_calling=True)]
+    )
+    llm_client.get_model_metadata = AsyncMock(
+        return_value=ModelMetadata(model="synthetic", context_length=128000)
     )
     llm_client.generate_stream = MagicMock(side_effect=generate_stream)
     agent = (

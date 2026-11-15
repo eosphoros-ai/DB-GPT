@@ -44,6 +44,7 @@
         "chart",
         "report_export",
         "export_csv",
+        "load_dashboard_style",
         "plan_dashboard",
         "revise_dashboard_plan",
         "load_dashboard_draft",

@@ -135,6 +135,19 @@ class SuiteCommandTest(unittest.TestCase):
             )
             self.assertIn(binding.sop_text.strip(), build_sop_block(binding))
 
+    def test_query_playbook_is_injected_once_with_dependencies_preserved(self):
+        binding = self.make_binding("db-query")
+        bind_command(binding, "/nl2sql")
+        block = build_sop_block(binding)
+        self.assertEqual(block.count(binding.sop_text.strip()), 1)
+        for document in binding.loaded_documents:
+            if "content" in document:
+                self.assertIn(document["content"].strip(), block)
+        self.assertIn(
+            "prompts/query-playbook.md",
+            {doc["path"] for doc in binding.loaded_documents},
+        )
+
     def test_analysis_report_template_survives_actual_agent_prompt_rendering(self):
         binding = self.make_binding("db-analysis")
         bind_command(binding, "/analyze")
@@ -554,6 +567,22 @@ class SuiteBindingViolationTest(unittest.TestCase):
 
 
 class BuildSopBlockTest(unittest.TestCase):
+    def test_duplicate_reference_bodies_keep_only_one_copy(self):
+        binding = SuiteBinding(
+            name="sc",
+            version="1",
+            sop_text="AUTHORITATIVE SOP",
+            loaded_documents=[
+                {"path": "sop.md", "content": "\nAUTHORITATIVE SOP\n"},
+                {"path": "guard.md", "content": "READONLY GUARD"},
+                {"path": "guard-copy.md", "content": "READONLY GUARD"},
+            ],
+        )
+        block = build_sop_block(binding)
+        self.assertEqual(block.count("AUTHORITATIVE SOP"), 1)
+        self.assertEqual(block.count("READONLY GUARD"), 1)
+        self.assertEqual(len(binding.loaded_documents), 3)
+
     def test_sop_text_and_watermark_appended(self):
         binding = SuiteBinding(
             name="sc",
@@ -600,6 +629,18 @@ class GateOrderTest(unittest.TestCase):
                 loop.run_until_complete(gate("html_interpreter", {})),
                 "approval required",
             )
+            for name in (
+                "list_report_objects",
+                "compose_report",
+                "patch_report",
+                "set_report_field",
+            ):
+                self.assertEqual(
+                    loop.run_until_complete(gate(name, {})), "approval required"
+                )
+                binding.deny.add(name)
+                self.assertIn("denied", loop.run_until_complete(gate(name, {})))
+                binding.deny.remove(name)
             self.assertIn("not in suite", loop.run_until_complete(gate("code", {})))
             binding.deny.add("html_interpreter")
             self.assertIn(
@@ -615,7 +656,23 @@ class GateOrderTest(unittest.TestCase):
         self.assertIn(
             "not in suite", loop.run_until_complete(gate("html_interpreter", {}))
         )
-        self.assertEqual(calls, ["html_interpreter"])
+        for name in (
+            "list_report_objects",
+            "compose_report",
+            "patch_report",
+            "set_report_field",
+        ):
+            self.assertIn("not in suite", loop.run_until_complete(gate(name, {})))
+        self.assertEqual(
+            calls,
+            [
+                "html_interpreter",
+                "list_report_objects",
+                "compose_report",
+                "patch_report",
+                "set_report_field",
+            ],
+        )
 
     def test_suite_gate_blocks_before_inner_gate(self):
         binding = SuiteBinding(name="sc", version="1", deny={"bash"})

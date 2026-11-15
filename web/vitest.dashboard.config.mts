@@ -21,6 +21,7 @@ export default defineConfig({
       './new-components/scheduled-task/**/*.test.{ts,tsx}',
       './hooks/use-scheduled-task.test.tsx',
       './new-components/chat/content/QuestionDock.test.tsx',
+      './new-components/chat/content/ContextUsageBar.test.tsx',
       './new-components/chat/content/ArtifactCards.test.tsx',
       './new-components/chat/content/ArtifactRail.test.tsx',
       './new-components/chat/content/SuiteArtifactCard.test.tsx',

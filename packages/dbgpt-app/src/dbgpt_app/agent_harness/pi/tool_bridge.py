@@ -136,8 +136,8 @@ def _skill_tools(system_app: Any, react_state: Dict[str, Any]) -> List[Any]:
     from dbgpt.agent.claude_skill import get_registry, load_skills_from_dir
     from dbgpt.configs.model_config import SKILLS_DIR
     from dbgpt_app.openapi.api_v1.tools.skill_tools import (
-        make_execute_skill_script_file,
         make_load_skill,
+        make_run_skill_script,
     )
 
     load_skills_from_dir(SKILLS_DIR, recursive=True)
@@ -146,7 +146,7 @@ def _skill_tools(system_app: Any, react_state: Dict[str, Any]) -> List[Any]:
     return [
         make_load_skill(react_state),
         _make_get_skill_resource(system_app),
-        make_execute_skill_script_file(react_state),
+        make_run_skill_script(react_state),
     ]
 
 
@@ -348,6 +348,18 @@ def register_conv_tools(
         from dbgpt_app.openapi.api_v1.tools.er_diagram import make_generate_er_diagram
         from dbgpt_app.openapi.api_v1.tools.export_csv import make_export_csv
 
+        if binding.name == "financial-analysis":
+            from dbgpt_app.openapi.api_v1.tools.financial_tools import (
+                apply_financial_suite_context,
+                make_financial_tools,
+            )
+
+            apply_financial_suite_context(react_state, binding)
+            tool_list.extend(make_financial_tools(react_state))
+        if binding.name == "db-ops":
+            from dbgpt_app.openapi.api_v1.tools.system_health import make_system_health
+
+            tool_list.append(make_system_health())
         if binding.allow is not None and "generate_er_diagram" in binding.allow:
             tool_list.append(make_generate_er_diagram(react_state))
         if binding.violation("export_csv") is None:
@@ -377,13 +389,17 @@ def register_conv_tools(
                 )
             )
     # Skill family (load_skill / get_skill_resource /
-    # execute_skill_script_file) so pi can read and run the platform's
+    # run_skill_script) so pi can read and run the platform's
     # installed skills, same as the dbgpt engine. Mounted only when the
     # registry actually has skills.
     try:
         tool_list.extend(_skill_tools(system_app, react_state))
     except Exception as e:
         logger.warning("pi tool bridge: skill tools unavailable: %s", e)
+
+    from dbgpt_app.openapi.api_v1.tools.tool_catalog import consolidate_tools
+
+    tool_list = consolidate_tools(tool_list)
 
     if ext.get("creation_mode") == "expert_suite":
         tool_list = [

@@ -870,7 +870,7 @@ def _skills_prompt_block(preselected: Optional[str]) -> str:
     Same ``- name: description`` shape the ReAct system prompt uses;
     when a skill is pre-selected only that one is listed. Tells pi
     which tools read/run a skill (load_skill / get_skill_resource /
-    execute_skill_script_file).
+    run_skill_script).
     """
     try:
         from dbgpt.agent.claude_skill import get_registry, load_skills_from_dir
@@ -888,7 +888,7 @@ def _skills_prompt_block(preselected: Optional[str]) -> str:
         return (
             "Available DB-GPT skills (use load_skill to read a skill's full "
             "instructions, get_skill_resource for its reference files, and "
-            "execute_skill_script_file to run its scripts):\n" + lines
+            "run_skill_script to run its scripts):\n" + lines
         )
     except Exception:
         logger.exception("pi harness: failed to build skills prompt block")
@@ -1773,8 +1773,32 @@ async def run_pi_harness_turn(
         if start_event:
             yield _sse_event(start_event)
 
+    from dbgpt.component import ComponentType
+    from dbgpt.model.cluster import WorkerManagerFactory
+    from dbgpt.model.cluster.client import DefaultLLMClient
+
+    from .agentic_data_api import (
+        _agentic_max_new_tokens,
+        _load_context_budget_config,
+    )
+
+    budget_client = DefaultLLMClient(
+        CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+    pi_budget = await _load_context_budget_config(
+        budget_client,
+        _resolve_model_config(dialogue.model_name or "")["model"],
+        _agentic_max_new_tokens(getattr(dialogue, "max_new_tokens", None)),
+    )
+
     def _pi_config_factory() -> PiHarnessConfig:
         cfg = build_pi_harness_config(conv_id, model_name=dialogue.model_name)
+        cfg.model_context_window = pi_budget.max_context_tokens
+        cfg.model_max_tokens = pi_budget.max_output_tokens
+        cfg.context_reserved_tokens = pi_budget.reserved_tokens
         if (dialogue.ext_info or {}).get("creation_mode") == "expert_suite":
             cfg.excluded_tools = list(
                 dict.fromkeys([*cfg.excluded_tools, "bash", "write", "edit"])

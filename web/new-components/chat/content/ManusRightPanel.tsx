@@ -3197,12 +3197,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 {!inputCollapsed && activeStep.detail && (
                   <div
                     className={
-                      activeStep.detail.includes('Action: execute_skill_script_file')
+                      /Action: (execute_skill_script_file|run_skill_script)\b/.test(activeStep.detail)
                         ? 'flex-1 min-h-0 flex flex-col'
                         : 'px-4 pb-3'
                     }
                   >
-                    {(activeStep.detail.includes('Action: execute_skill_script_file') &&
+                    {(/Action: (execute_skill_script_file|run_skill_script)\b/.test(activeStep.detail) &&
                       (() => {
                         const parsed = parseSkillScriptDetail(activeStep.detail);
                         if (parsed) {
@@ -3262,7 +3262,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                         })()) ||
                       (activeStep.type === 'skill' &&
                         !activeStep.detail.includes('Action: get_skill_resource') &&
-                        !activeStep.detail.includes('Action: execute_skill_script_file') &&
+                        !/Action: (execute_skill_script_file|run_skill_script)\b/.test(activeStep.detail) &&
                         (() => {
                           const parsed = parseLoadSkillDetail(activeStep.detail, activeStep.title, visibleOutputs);
                           if (parsed) {
@@ -3484,7 +3484,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             {/* Divider + Outputs (hide for get_skill_resource since content is already shown above) */}
             {visibleOutputs.length > 0 &&
               !activeStep?.detail?.includes('Action: get_skill_resource') &&
-              !activeStep?.detail?.includes('Action: execute_skill_script_file') && (
+              !/Action: (execute_skill_script_file|run_skill_script)\b/.test(activeStep?.detail || '') && (
                 <>
                   <div className='border-t border-gray-100 dark:border-gray-800 shrink-0' />
                   <div

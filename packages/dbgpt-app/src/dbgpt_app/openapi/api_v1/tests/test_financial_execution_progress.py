@@ -100,7 +100,7 @@ def test_workflow_text_is_literal_while_registered_tools_remain_dynamic(
     )
     assert rendered.startswith(workflow + "\n\n")
     assert "MUST NOT REPLACE CONTENT" not in rendered
-    assert 'prepare_report({"file_id": "{{literal}}"})' in rendered
+    assert ('prepare_report({"file_id": "{{literal}}"})' in rendered) is not native
     assert "Action must be one of: [prepare_report, terminate]." in rendered
     assert ("Invoke the supplied native functions" in rendered) is native
     assert (

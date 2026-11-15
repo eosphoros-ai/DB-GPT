@@ -1,6 +1,7 @@
 """Render the conversational agent's tool inventory from its bound resources."""
 
 import json
+import re
 
 from dbgpt.core import PromptTemplate
 
@@ -21,7 +22,9 @@ execute_skill_script, execute_skill_script_file, or execute_tool.
 Only use a skill script executor for a script explicitly provided by that skill.
 Tools absent from this list are unavailable; do not invent tools or script names.
 
+{% if not native_function_calling %}
 {{ action_space }}
+{% endif %}
 
 Action must be one of: [{{ action_space_names }}].
 {% if native_function_calling %}
@@ -45,7 +48,26 @@ def build_react_prompt_template(
     A custom template must include it rather than replace it with a static list.
     Rendering descriptions as variables also preserves literal JSON/references.
     """
+    # Historical workflow prose duplicated the authoritative action-space
+    # schema. Keep task/skill/context sections, discard only the inventory.
+    workflow_prompt = re.sub(
+        r"^## Available Tools Description\n.*?(?=^## |\Z)",
+        "",
+        workflow_prompt,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    workflow_prompt = workflow_prompt.replace(
+        "execute_skill_script_file", "run_skill_script"
+    )
     sections = [workflow_prompt]
+    sections.append(
+        "Use only supplied functions. If a needed capability is absent and "
+        "tool_search is available, discover it before calling it. Discovery "
+        "is limited to this turn's authorized catalog.\n"
+        "For Python report analysis, assign computed metrics/tables to "
+        "REPORT_RESULT as JSON-compatible values; printed text is not a "
+        "data binding. Link only completed, captured artifacts."
+    )
     if financial_enabled:
         sections.append(FINANCIAL_AGENT_PROMPT)
     # The workflow already contains rendered package instructions and source

@@ -829,14 +829,17 @@ def make_react_tools(
             return await legacy_knowledge_retrieve(query=query)
         return await shared_knowledge_retrieve(query=query)
 
+    from ..tools.skill_tools import make_load_skill, make_run_skill_script
+
     return {
-        "load_skill": load_skill,
+        "load_skill": make_load_skill(react_state),
         "load_tools": load_tools,
         "knowledge_retrieve": knowledge_retrieve,
         "sql_query": shared_sql_query,
         "code": shared_code_interpreter,
         "bash": bash,
         "execute_skill_script_file": execute_skill_script_file,
+        "run_skill_script": make_run_skill_script(react_state),
         "html_interpreter": html_interpreter,
         "web_search": web_search,
         "web_fetch": web_fetch,

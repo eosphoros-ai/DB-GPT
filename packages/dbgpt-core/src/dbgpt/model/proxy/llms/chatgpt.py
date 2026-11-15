@@ -188,7 +188,7 @@ class OpenAILLMClient(ProxyLLMClient):
         proxy: Optional["ProxyTypes"] = None,
         timeout: Optional[int] = 240,
         model_alias: Optional[str] = "gpt-4o-mini",
-        context_length: Optional[int] = 8192,
+        context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
@@ -215,11 +215,14 @@ class OpenAILLMClient(ProxyLLMClient):
         self._proxies = proxies
         self._timeout = timeout
         self._model_alias = model_alias
-        self._context_length = context_length
+        self._context_length = context_length or 8192
+        self._context_length_source = (
+            "adapter_metadata" if context_length else "fallback"
+        )
         self._api_type = api_type
         self._client = openai_client
         self._openai_kwargs = openai_kwargs or {}
-        super().__init__(model_names=[model_alias], context_length=context_length)
+        super().__init__(model_names=[model_alias], context_length=self._context_length)
 
         # Prepare openai client and cache default headers
         # It will block the main thread in some cases
@@ -253,7 +256,7 @@ class OpenAILLMClient(ProxyLLMClient):
             model=model_params.real_provider_model_name,
             proxy=model_params.http_proxy,
             model_alias=model_params.real_provider_model_name,
-            context_length=max(model_params.context_length or 8192, 8192),
+            context_length=model_params.context_length,
             # full_url=model_params.proxy_server_url,
         )
 
@@ -441,6 +444,7 @@ class OpenAILLMClient(ProxyLLMClient):
         model_metadata = ModelMetadata(
             model=self._model_alias,
             context_length=await self.get_context_length(),
+            metadata={"context_length_source": self._context_length_source},
         )
         return [model_metadata]
 

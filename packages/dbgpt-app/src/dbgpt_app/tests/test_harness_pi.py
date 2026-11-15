@@ -140,6 +140,9 @@ def test_prepare_agent_dir_env_interpolation():
             model_api_base="http://127.0.0.1:5670/api/v2",
             model="glm-5.3-flash",
             api_key_env="TEST_HARNESS_KEY",
+            model_context_window=128000,
+            model_max_tokens=8192,
+            context_reserved_tokens=8192,
         )
         cfg.prepare_agent_dir()
         path = os.path.join(cfg.agent_dir, "models.json")
@@ -149,6 +152,10 @@ def test_prepare_agent_dir_env_interpolation():
         assert provider["baseUrl"] == ("http://127.0.0.1:5670/api/v2")
         # key never lands on disk
         assert provider["apiKey"] == "$TEST_HARNESS_KEY"
+        assert provider["models"][0]["contextWindow"] == 128000
+        assert provider["models"][0]["maxTokens"] == 8192
+        with open(os.path.join(cfg.agent_dir, "settings.json")) as f:
+            assert json.load(f)["compaction"]["reserveTokens"] == 8192
         assert cfg.build_env()["PI_CODING_AGENT_DIR"]
 
 

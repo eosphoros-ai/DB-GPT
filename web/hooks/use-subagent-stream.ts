@@ -35,6 +35,8 @@ const ACTION_LABELS: Record<string, string> = {
   html_interpreter: '生成报告',
   knowledge_retrieve: '检索知识库',
   execute_skill_script_file: '执行技能脚本',
+  run_skill_script: '执行技能脚本',
+  tool_search: '发现工具',
   shell_interpreter: '执行命令',
   bash: '执行命令',
   load_skill: '加载技能',
@@ -117,7 +119,7 @@ export function restoreSubAgentStates(raw: unknown): Record<string, SubAgentStat
           typeof artifact === 'object' &&
           Boolean(
             optionalString((artifact as Record<string, unknown>).url) ||
-            optionalString((artifact as Record<string, unknown>).artifact_id),
+              optionalString((artifact as Record<string, unknown>).artifact_id),
           ),
       )
       .map((artifact: Record<string, unknown>) => ({

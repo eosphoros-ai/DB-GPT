@@ -47,7 +47,7 @@ SELECTABLE_TOOLS = [
     "web_fetch",
 ] + SEMANTIC_TOOLS
 #: Factory tools attached automatically when skills are selected.
-SKILL_TOOLS = ["load_skill", "execute_skill_script_file"]
+SKILL_TOOLS = ["load_skill", "run_skill_script"]
 
 _FORBIDDEN_SQL_PREFIXES = (
     "INSERT",
@@ -120,7 +120,7 @@ def _robust_final_answer(text: str) -> str:
     """
     from ..openapi.api_v1.subagent.result import _extract_final_answer
 
-    cleaned = _extract_final_answer(text)
+    cleaned = _extract_final_answer(text) or text
     if "Action Input" not in cleaned and not cleaned.lstrip().startswith("Thought:"):
         return cleaned
     candidate = cleaned
@@ -371,27 +371,16 @@ _SYSTEM_TEMPLATE_ZH = """{persona}
 目标与材料里。
 
 ## 可用工具
-只能使用下列工具,工具名必须完全匹配。所有工具均为只读;如需写操作,
-在结论中给出建议而不是执行。
-{{{{ action_space }}}}
+通过原生函数调用使用提供的工具。tool_search 可发现本节点已选资源的辅助工具,
+不能增加未选资源。数据库查询只读;如需修改数据,在结论中给出建议。
 {skills_section}{resources_section}
 ## 规则
 - 不能再派生子任务
 - 保持上下文紧凑,结论简明自洽
 - 完成后调用 terminate 给出最终答案
 
-## 响应格式(ReAct)
-每次响应必须恰好包含一个 Action 与一个 Action Input。
-Action 必须是 [{{{{ action_space_names }}}}] 之一:
-- Thought: 分析现状并决定下一步
-- Action Intention: 本步要做什么(简短,面向用户)
-- Action: 工具名(与上方完全一致)
-- Action Input: JSON 参数(无参时为空)
-
-任务完成时严格使用:
-Thought: ...
-Action: terminate
-Action Input: {{"result": "最终答案"}}
+需要工具时调用函数,不要输出文本 Action/Action Input 协议。
+任务完成时调用 terminate,以 result 参数交付最终答案。
 """
 
 _SYSTEM_TEMPLATE_EN = """{persona}
@@ -400,27 +389,17 @@ You run independently inside one workflow node and cannot see the main
 conversation. Everything you need is in the goal and materials below.
 
 ## Available tools
-Use ONLY the tools below with EXACT names. All tools are read-only; if a
-write is needed, recommend it in your conclusion instead of executing.
-{{{{ action_space }}}}
+Use the provided native functions. Discover auxiliary tools for this node's
+selected resources via tool_search; it cannot add unselected resources.
+Database queries are read-only; recommend data changes rather than executing.
 {skills_section}{resources_section}
 ## Rules
 - No further delegation
 - Keep context tight; produce a concise, self-contained conclusion
 - Call ``terminate`` with the final result when done
 
-## Response format (ReAct)
-Every response MUST contain exactly one Action and one Action Input.
-The Action MUST be one of [{{{{ action_space_names }}}}].
-- Thought: analyze the status and decide the next step
-- Action Intention: what this step does (short, user-facing)
-- Action: the tool name (exactly as listed)
-- Action Input: JSON parameters (empty if none)
-
-When finished, use exactly:
-Thought: ...
-Action: terminate
-Action Input: {{"result": "final answer"}}
+Use function calls when needed, without a text Action/Action Input protocol.
+Finish by calling terminate with the final answer in its result parameter.
 """
 
 
@@ -442,10 +421,10 @@ def _build_skills_section(skill_names: List[str], zh: bool) -> str:
         lines = [f"- {name}" for name in skill_names]
     header = "## 可用技能\n" if zh else "## Available skills\n"
     hint = (
-        "需要时通过 load_skill 加载技能说明,execute_skill_script_file 执行其脚本。\n\n"
+        "通过 load_skill 加载技能说明,tool_search 发现 run_skill_script 执行脚本。\n\n"
         if zh
         else "Load details via load_skill; run scripts via "
-        "execute_skill_script_file.\n\n"
+        "tool_search to discover run_skill_script.\n\n"
     )
     return header + "\n".join(lines) + "\n" + hint
 
@@ -870,7 +849,6 @@ async def run_react_agent(
     from dbgpt.agent.core.memory.gpts import DefaultGptsPlansMemory, GptsMemory
     from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
-    from dbgpt.agent.resource.tool.pack import ToolPack
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.core import PromptTemplate
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
@@ -880,7 +858,14 @@ async def run_react_agent(
     system_app = system_app or CFG.SYSTEM_APP
     zh = (language or getattr(CFG, "LANGUAGE", "zh") or "zh").startswith("zh")
     profile = get_agent_profile(profile_id)
-    selected_tools = [t for t in (tools or []) if t in SELECTABLE_TOOLS]
+    from ..openapi.api_v1.tool_names import canonical_tool
+    from ..openapi.api_v1.tools.tool_catalog import make_scoped_tool_pack
+
+    selected_tools = [
+        canonical_tool(t)
+        for t in (tools or [])
+        if canonical_tool(t) in SELECTABLE_TOOLS
+    ]
     selected_skills = [s for s in (skills or []) if s]
     datasources = [d for d in (datasources or []) if d]
     knowledge = [k for k in (knowledge or []) if k]
@@ -888,7 +873,11 @@ async def run_react_agent(
     conv_id = conv_id or f"taskflow_agent_{uuid.uuid4().hex[:12]}"
 
     # ---- tools ----------------------------------------------------------
-    react_state: Dict[str, Any] = {"conv_id": conv_id, "file_path": None}
+    react_state: Dict[str, Any] = {
+        "conv_id": conv_id,
+        "file_path": None,
+        "allowed_skills": selected_skills,
+    }
     if datasources:
         # Carried into query artifacts so the edit & re-run endpoint can
         # re-resolve the connector for flow-produced artifacts as well.
@@ -930,7 +919,22 @@ async def run_react_agent(
                 tool_list.append(factory[name])
     tool_list.extend(await _load_mcp_tools(mcp or []))
     tool_list.append(Terminate())
-    tool_pack = ToolPack(tool_list)
+
+    async def catalog_event(event: str, payload: dict) -> None:
+        if on_step:
+            await on_step(
+                AgentStepEvent(
+                    kind="action",
+                    title=event,
+                    detail=json.dumps(payload, ensure_ascii=False),
+                )
+            )
+
+    tool_pack = make_scoped_tool_pack(
+        tool_list,
+        eager_names=set(selected_tools) | {"load_skill", "terminate"},
+        emit=catalog_event,
+    )
 
     # ---- prompt ---------------------------------------------------------
     persona = (_PROFILE_PROMPT_ZH if zh else _PROFILE_PROMPT_EN)[profile.profile_id]

@@ -39,11 +39,31 @@ export interface SuiteRouteHit {
  * scoring suite wins.  Explicit tab selection on the home page overrides this
  * automatic routing, so this is only the *suggestion* shown in the route chip.
  */
-export function scoreSuites(query: string, suites: SuiteItem[]): SuiteRouteHit | null {
-  const q = (query || '').toLowerCase();
+export function scoreSuites(
+  query: string,
+  suites: SuiteItem[],
+  context?: { hasDatabase: boolean; hasAttachments: boolean; hasKnowledge: boolean },
+): SuiteRouteHit | null {
+  // Negative delivery constraints must not select the very capability excluded
+  // by the user (for example, a web request ending with "不需要报告").
+  const q = (query || '')
+    .toLowerCase()
+    .replace(
+      /(?:不要|无需|不用|不需要|不必|不得|do not|don't|without)[^。.;；，,\n]*(?:报告|看板|仪表盘|report|dashboard)[^。.;；，,\n]*/g,
+      '',
+    );
   if (!q.trim() || !suites?.length) return null;
   let best: SuiteRouteHit | null = null;
   for (const suite of suites) {
+    const datasource = suite.manifest_snapshot?.context_defaults?.datasource;
+    if (
+      context &&
+      !context.hasDatabase &&
+      (context.hasAttachments || context.hasKnowledge || /https?:\/\/|web_fetch|网页/.test(q)) &&
+      (datasource === 'session' || datasource === 'required')
+    ) {
+      continue;
+    }
     const routing = suite.manifest_snapshot?.routing;
     const keywords = routing?.keywords ?? [];
     const specificity = typeof routing?.specificity === 'number' ? routing.specificity : 0.8;

@@ -23,6 +23,7 @@ _EXPECTED_TOOLS = {
     "code",
     "bash",
     "execute_skill_script_file",
+    "run_skill_script",
     "html_interpreter",
     "web_search",
     "web_fetch",

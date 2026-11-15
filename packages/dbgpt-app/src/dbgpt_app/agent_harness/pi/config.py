@@ -15,7 +15,7 @@ import os
 import shutil
 import subprocess
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,10 @@ class PiHarnessConfig:
     #: Wire API the endpoint speaks: ``openai-completions`` or
     #: ``anthropic-messages`` (see pi ``models.json`` docs).
     model_api: str = "openai-completions"
+    #: Resolved by DB-GPT's shared model budget resolver before subprocess startup.
+    model_context_window: Optional[int] = None
+    model_max_tokens: Optional[int] = None
+    context_reserved_tokens: Optional[int] = None
     #: Env var name used for ``$NAME`` interpolation inside models.json.
     api_key_env: str = "DBGPT_HARNESS_MODEL_API_KEY"
 
@@ -208,9 +212,14 @@ class PiHarnessConfig:
                 raise ValueError("model_api_base requires agent_dir or cwd to be set")
             self.agent_dir = agent_dir
         os.makedirs(agent_dir, exist_ok=True)
-        models: List[Dict[str, str]] = []
+        models: List[Dict[str, Any]] = []
         if self.model:
-            models.append({"id": self.model})
+            entry: Dict[str, Any] = {"id": self.model}
+            if self.model_context_window:
+                entry["contextWindow"] = self.model_context_window
+            if self.model_max_tokens:
+                entry["maxTokens"] = self.model_max_tokens
+            models.append(entry)
         endpoint = {
             "baseUrl": self.model_api_base,
             "api": self.model_api,
@@ -238,3 +247,11 @@ class PiHarnessConfig:
             with open(settings_path, "w", encoding="utf-8") as f:
                 json.dump({"$schema": "https://pi.dev/schemas/settings.schema.json"}, f)
             logger.info("pi harness: wrote %s", settings_path)
+        if self.context_reserved_tokens is not None:
+            with open(settings_path, encoding="utf-8") as f:
+                settings = json.load(f)
+            settings.setdefault("compaction", {})["reserveTokens"] = (
+                self.context_reserved_tokens
+            )
+            with open(settings_path, "w", encoding="utf-8") as f:
+                json.dump(settings, f, indent=2)

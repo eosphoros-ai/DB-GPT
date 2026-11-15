@@ -1,10 +1,16 @@
 """Tests for context budget tracking."""
 
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+
 from dbgpt.agent.core.context.budget import (
     DEFAULT_MAX_CONTEXT_TOKENS,
     ContextBudgetConfig,
     ContextBudgetTracker,
     TokenState,
+    resolve_context_budget,
 )
 
 
@@ -118,3 +124,90 @@ class TestContextBudgetTracker:
         tracker.record_token_count(100)
         tracker.record_token_count(200)
         assert tracker.token_history == [100, 200]
+
+    def test_tool_definitions_count_once(self):
+        tracker = self._make_tracker()
+        messages = [_FakeMsg("你好"), _FakeMsg("test")]
+        before = tracker.count_messages(messages)
+        tracker.extra_tokens = 500
+        assert tracker.count_messages(messages) == before + 500
+        assert tracker.count_messages(messages, include_extra=False) == before
+
+    def test_cjk_fallback_and_tokenizer_failure(self):
+        tracker = self._make_tracker()
+        tracker._tokenizer = SimpleNamespace(count_token=lambda *args: -1)
+        assert tracker.count_text("你好世界") == 4
+        assert tracker.count_text("hello") == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "window,cap,expected,source",
+    [
+        (1048576, 0, 1048576, "deployment_config"),
+        (32768, 120000, 32768, "deployment_config"),
+        (1048576, 64000, 64000, "agent_config"),
+        (None, 64000, 64000, "agent_config"),
+        (None, 0, 120000, "fallback"),
+        (-1, 0, 120000, "fallback"),
+        (True, 0, 120000, "fallback"),
+    ],
+)
+async def test_resolve_model_window_and_cap(window, cap, expected, source):
+    client = SimpleNamespace(
+        get_model_metadata=AsyncMock(
+            return_value=SimpleNamespace(
+                context_length=window,
+                metadata={"context_length_source": "deployment_config"},
+            )
+        )
+    )
+    config = await resolve_context_budget(
+        ContextBudgetConfig(), client, "selected", cap, max_new_tokens=16384
+    )
+    assert config.max_context_tokens == expected
+    assert config.effective_budget == expected - 16384
+    assert config.context_window_source == source
+    client.get_model_metadata.assert_awaited_once_with("selected")
+
+
+@pytest.mark.asyncio
+async def test_unknown_worker_default_is_not_a_detected_model_window():
+    client = SimpleNamespace(
+        get_model_metadata=AsyncMock(
+            return_value=SimpleNamespace(
+                context_length=4096, metadata={"context_length_source": "fallback"}
+            )
+        )
+    )
+    config = await resolve_context_budget(ContextBudgetConfig(), client, "unknown")
+    assert config.model_context_tokens is None
+    assert config.max_context_tokens == 120000
+    assert config.context_window_source == "fallback"
+
+
+@pytest.mark.asyncio
+async def test_metadata_failure_keeps_labeled_fallback():
+    client = SimpleNamespace(get_model_metadata=AsyncMock(side_effect=TimeoutError))
+    config = await resolve_context_budget(ContextBudgetConfig(), client, "offline")
+    assert config.context_window_source == "fallback"
+    assert config.effective_budget > 0
+
+
+@pytest.mark.asyncio
+async def test_output_cap_and_invalid_reservation():
+    client = SimpleNamespace(
+        get_model_metadata=AsyncMock(
+            return_value=SimpleNamespace(context_length=32768, max_output_length=8192)
+        )
+    )
+    config = await resolve_context_budget(
+        ContextBudgetConfig(), client, "small", max_new_tokens=16384
+    )
+    assert config.max_output_tokens == 8192
+    assert config.reserved_tokens == 8192
+    assert config.min_keep_tokens < config.effective_budget * config.warning_threshold
+    with pytest.raises(ValueError, match="must be smaller"):
+        await resolve_context_budget(
+            ContextBudgetConfig(), client, "small", configured_limit=4096
+        )
