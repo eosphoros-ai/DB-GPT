@@ -120,7 +120,14 @@ def serply_search(
 )
 def searchapi_search(
     query: Annotated[str, Doc("The search query.")],
-    num_results: Annotated[int, Doc("The number of search results to return.")] = 8,
+    num_results: Annotated[
+        int,
+        Doc(
+            "The number of search results to return. One request fetches one "
+            "Google results page (about 10 results), so values above that return "
+            "what the page holds."
+        ),
+    ] = 8,
 ) -> str:
     """Google search through SearchApi and return the results as a markdown string.
 
@@ -157,17 +164,22 @@ def searchapi_search(
         # Error bodies look like {"error": "Invalid API key."}; surface that
         # message instead of the bare status line.
         try:
-            message = response.json().get("error", "")
+            body = response.json()
         except ValueError:
-            message = ""
+            body = None
+        message = body.get("error", "") if isinstance(body, dict) else ""
         raise requests.HTTPError(
             f"SearchApi returned HTTP {response.status_code} for searchapi_search: "
             f"{message or response.reason}",
             response=response,
         )
 
+    payload = response.json()
+    organic_results = (
+        payload.get("organic_results", []) if isinstance(payload, dict) else []
+    )
     search_results = []
-    for result in response.json().get("organic_results", [])[:num_results]:
+    for result in organic_results[:num_results]:
         search_results.append(
             {
                 "title": result.get("title", ""),

@@ -5,6 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from dbgpt.agent.resource.tool.exceptions import ToolExecutionException
+from dbgpt.agent.resource.tool.pack import ToolPack
+
 from ..search_tool import searchapi_search, serply_search
 
 
@@ -148,3 +151,79 @@ def test_searchapi_search_api_error_without_json_body(monkeypatch, mock_requests
 
     with pytest.raises(requests.HTTPError, match="HTTP 502.*Bad Gateway"):
         searchapi_search("what is dbgpt")
+
+
+def test_searchapi_search_api_error_with_non_object_json_body(
+    monkeypatch, mock_requests_get
+):
+    monkeypatch.setenv("SEARCHAPI_API_KEY", "test_key")
+    response = MagicMock()
+    response.ok = False
+    response.status_code = 502
+    response.reason = "Bad Gateway"
+    # Valid JSON that is not an object must still end up as an HTTPError.
+    response.json.return_value = []
+    mock_requests_get.return_value = response
+
+    with pytest.raises(requests.HTTPError, match="HTTP 502 .* Bad Gateway"):
+        searchapi_search("what is dbgpt")
+
+
+def test_searchapi_search_more_results_than_the_page_holds(
+    monkeypatch, mock_requests_get
+):
+    monkeypatch.setenv("SEARCHAPI_API_KEY", "test_key")
+    mock_requests_get.return_value = _searchapi_response(10)
+
+    view = searchapi_search("what is dbgpt", num_results=20)
+
+    # One request, one page: asking for more returns what the page holds.
+    assert mock_requests_get.call_count == 1
+    assert view.count("### [") == 10
+
+
+def test_searchapi_search_non_object_success_body(monkeypatch, mock_requests_get):
+    monkeypatch.setenv("SEARCHAPI_API_KEY", "test_key")
+    response = MagicMock()
+    response.ok = True
+    response.status_code = 200
+    response.json.return_value = []
+    mock_requests_get.return_value = response
+
+    assert searchapi_search("what is dbgpt") == ""
+
+
+@pytest.mark.asyncio
+async def test_searchapi_search_through_tool_pack(monkeypatch, mock_requests_get):
+    monkeypatch.setenv("SEARCHAPI_API_KEY", "test_key")
+    mock_requests_get.return_value = _searchapi_response(10)
+    pack = ToolPack([searchapi_search._tool])
+
+    # Discovery by the registered name, then execution the way agents do it.
+    assert "searchapi_search" in pack._resources
+    view = await pack.async_execute(
+        resource_name="searchapi_search", query="what is dbgpt", num_results=8
+    )
+
+    assert view.startswith("### [Title 0](https://example.com/0)\nSnippet 0")
+    assert view.count("### [") == 8
+    _, kwargs = mock_requests_get.call_args
+    assert kwargs["headers"]["Authorization"] == "Bearer test_key"
+
+
+@pytest.mark.asyncio
+async def test_searchapi_search_error_through_tool_pack(monkeypatch, mock_requests_get):
+    monkeypatch.setenv("SEARCHAPI_API_KEY", "test_key")
+    response = MagicMock()
+    response.ok = False
+    response.status_code = 401
+    response.reason = "Unauthorized"
+    response.json.return_value = {"error": "Invalid API key."}
+    mock_requests_get.return_value = response
+    pack = ToolPack([searchapi_search._tool])
+
+    # The agent sees the API message inside the ToolExecutionException.
+    with pytest.raises(ToolExecutionException, match="Invalid API key."):
+        await pack.async_execute(
+            resource_name="searchapi_search", query="what is dbgpt"
+        )
