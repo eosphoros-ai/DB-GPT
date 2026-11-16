@@ -217,6 +217,7 @@ test_docs
 openspec/
 docs/superpowers/
 .gstack/
+.planning/
 
 # Generated Dashboard demo data and local share-token encryption key
 /output/

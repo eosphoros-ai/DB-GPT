@@ -3378,12 +3378,15 @@ async def _react_agent_stream_impl(
     # template spec inside its own analysis loop.
     from .subagent.report_agent import make_generate_report_tool
 
+    # Resolve once so the lead and dedicated report author share one budget.
+    agentic_max_new_tokens = _agentic_max_new_tokens(dialogue.max_new_tokens)
     report_tools = [
         make_generate_report_tool(
             react_state=react_state,
             skills_dir=DEFAULT_SKILLS_DIR,
             llm_client=llm_client,
             model_name=dialogue.model_name,
+            max_new_tokens=agentic_max_new_tokens,
         )
     ]
     if attachment_ctx is not None:
@@ -3488,7 +3491,7 @@ async def _react_agent_stream_impl(
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
-        max_new_tokens=_agentic_max_new_tokens(dialogue.max_new_tokens),
+        max_new_tokens=agentic_max_new_tokens,
     )
 
     # file_ids requests use the public manifest block; legacy file_path and

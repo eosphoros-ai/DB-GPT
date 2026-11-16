@@ -824,7 +824,11 @@
 
 /*! Production::    alter_table_actions : alter_table_actions "," alter_table_action */
 
-/*! Production::    alter_table_stmt : ALTER TABLE relation_factor alter_table_actions */
+/*! Production::    alter_table_factor : relation_factor */
+
+/*! Production::    alter_table_prefix : ALTER TABLE */
+
+/*! Production::    alter_table_stmt : alter_table_prefix alter_table_factor alter_table_actions */
 
 /*! Production::    alter_tablegroup_action : opt_set tablegroup_option_list_space_seperated */
 
@@ -2106,12 +2110,6 @@
 
 /*! Production::    connectionOptions : connectionOption connectionOptions */
 
-/*! Production::    consistency_level : FROZEN */
-
-/*! Production::    consistency_level : STRONG */
-
-/*! Production::    consistency_level : WEAK */
-
 /*! Production::    constant : BIT_STRING */
 
 /*! Production::    constant : MINUS decimalLiteral */
@@ -2284,11 +2282,7 @@
 
 /*! Production::    create_keystore_stmt : ADMINISTER KEY MANAGEMENT CREATE KEYSTORE relation_name IDENTIFIED BY password */
 
-/*! Production::    create_outline_stmt : CREATE opt_replace OUTLINE relation_name ON STRING_VALUE USING HINT_HINT_BEGIN hint_list_with_end */
-
 /*! Production::    create_outline_stmt : CREATE opt_replace OUTLINE relation_name ON explainable_stmt opt_outline_target */
-
-/*! Production::    create_outline_stmt : create_with_opt_hint opt_replace OUTLINE relation_name ON STRING_VALUE USING HINT_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    create_outline_stmt : create_with_opt_hint opt_replace OUTLINE relation_name ON explainable_stmt opt_outline_target */
 
@@ -2395,8 +2389,6 @@
 /*! Production::    create_view_stmt : create_with_opt_hint opt_replace opt_algorithm opt_definer opt_sql_security VIEW view_name opt_column_list opt_table_id AS view_select_stmt opt_check_option */
 
 /*! Production::    create_with_opt_hint : CREATE */
-
-/*! Production::    create_with_opt_hint : CREATE_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    cur_date_func : CURDATE "(" ")" */
 
@@ -3052,21 +3044,23 @@
 
 /*! Production::    deleteStatement : singleDeleteStatement */
 
-/*! Production::    delete_basic_stmt : delete_with_opt_hint FROM tbl_name opt_where opt_order_by opt_limit_clause */
+/*! Production::    delete_basic_stmt : delete_basic_stmt_prefix opt_where opt_order_by opt_limit_clause */
 
 /*! Production::    delete_basic_stmt : delete_with_opt_hint multi_delete_table opt_where */
 
+/*! Production::    delete_basic_stmt_prefix : delete_with_opt_hint FROM tbl_name */
+
 /*! Production::    delete_stmt : delete_basic_stmt */
 
-/*! Production::    delete_stmt : delete_with_opt_hint FROM table_factor opt_where_extension opt_returning */
+/*! Production::    delete_stmt : delete_stmt_prefix1 table_factor opt_where_extension opt_returning */
 
-/*! Production::    delete_stmt : delete_with_opt_hint table_factor opt_where opt_returning */
+/*! Production::    delete_stmt : delete_stmt_prefix2 table_factor opt_where opt_returning */
 
 /*! Production::    delete_stmt : with_clause delete_basic_stmt */
 
-/*! Production::    delete_with_opt_hint : DELETE */
+/*! Production::    delete_stmt_prefix2 : DELETE */
 
-/*! Production::    delete_with_opt_hint : DELETE_HINT_BEGIN hint_list_with_end */
+/*! Production::    delete_with_opt_hint : DELETE */
 
 /*! Production::    descKeyword : DESC */
 
@@ -3125,32 +3119,6 @@
 /*! Production::    diagnosticsStatement : GET diagnosticsScope DIAGNOSTICS variableClauseAssignNumber */
 
 /*! Production::    diagnostics_info_ref : column_name */
-
-/*! Production::    distribute_method : ALL */
-
-/*! Production::    distribute_method : BC2HOST */
-
-/*! Production::    distribute_method : BROADCAST */
-
-/*! Production::    distribute_method : HASH */
-
-/*! Production::    distribute_method : LIST */
-
-/*! Production::    distribute_method : LOCAL */
-
-/*! Production::    distribute_method : NONE */
-
-/*! Production::    distribute_method : PARTITION */
-
-/*! Production::    distribute_method : RANDOM */
-
-/*! Production::    distribute_method : RANDOM_LOCAL */
-
-/*! Production::    distribute_method : RANGE */
-
-/*! Production::    distribute_method_list : distribute_method */
-
-/*! Production::    distribute_method_list : distribute_method_list opt_comma distribute_method */
 
 /*! Production::    dmlStatement : callStatement */
 
@@ -3288,9 +3256,11 @@
 
 /*! Production::    drop_synonym_stmt : DROP opt_public SYNONYM relation_name opt_force */
 
-/*! Production::    drop_table_stmt : DROP TABLE relation_factor opt_cascade_constraints opt_purge */
+/*! Production::    drop_table_prefix : DROP TABLE */
 
 /*! Production::    drop_table_stmt : DROP opt_temporary table_or_tables opt_if_exists table_list opt_drop_behavior */
+
+/*! Production::    drop_table_stmt : drop_table_prefix relation_factor opt_cascade_constraints opt_purge */
 
 /*! Production::    drop_tablegroup_stmt : DROP TABLEGROUP opt_if_exists relation_name */
 
@@ -3308,9 +3278,13 @@
 
 /*! Production::    drop_user_stmt : DROP USER user_list opt_cascade */
 
-/*! Production::    drop_view_stmt : DROP VIEW opt_if_exists table_list opt_drop_behavior */
+/*! Production::    drop_view_prefix : DROP VIEW */
 
-/*! Production::    drop_view_stmt : DROP opt_materialized VIEW relation_factor opt_cascade_constraints */
+/*! Production::    drop_view_prefix : DROP opt_materialized VIEW */
+
+/*! Production::    drop_view_stmt : drop_view_prefix opt_if_exists table_list opt_drop_behavior */
+
+/*! Production::    drop_view_stmt : drop_view_prefix relation_factor opt_cascade_constraints */
 
 /*! Production::    dump_memory_stmt : DUMP CHUNK ALL */
 
@@ -4868,64 +4842,6 @@
 
 /*! Production::    get_statement_diagnostics_stmt : GET STACKED DIAGNOSTICS statement_information_item_list */
 
-/*! Production::    global_hint : APPEND */
-
-/*! Production::    global_hint : CURSOR_SHARING_EXACT */
-
-/*! Production::    global_hint : DIRECT "(" BOOL_VALUE "," INTNUM ")" */
-
-/*! Production::    global_hint : DISABLE_PARALLEL_DML */
-
-/*! Production::    global_hint : DOP "(" INTNUM "," INTNUM ")" */
-
-/*! Production::    global_hint : ENABLE_PARALLEL_DML */
-
-/*! Production::    global_hint : FORCE_REFRESH_LOCATION_CACHE */
-
-/*! Production::    global_hint : FROZEN_VERSION "(" INTNUM ")" */
-
-/*! Production::    global_hint : GATHER_OPTIMIZER_STATISTICS */
-
-/*! Production::    global_hint : LOAD_BATCH_SIZE "(" INTNUM ")" */
-
-/*! Production::    global_hint : LOG_LEVEL "(" NAME_OB ")" */
-
-/*! Production::    global_hint : LOG_LEVEL "(" STRING_VALUE ")" */
-
-/*! Production::    global_hint : MAX_CONCURRENT "(" INTNUM ")" */
-
-/*! Production::    global_hint : MONITOR */
-
-/*! Production::    global_hint : NO_COST_BASED_QUERY_TRANSFORMATION */
-
-/*! Production::    global_hint : NO_GATHER_OPTIMIZER_STATISTICS */
-
-/*! Production::    global_hint : NO_PARALLEL */
-
-/*! Production::    global_hint : NO_QUERY_TRANSFORMATION */
-
-/*! Production::    global_hint : OB_DDL_SCHEMA_VERSION "(" relation_factor_in_hint opt_comma INTNUM ")" */
-
-/*! Production::    global_hint : OPT_PARAM "(" trans_param_name opt_comma trans_param_value ")" */
-
-/*! Production::    global_hint : PARALLEL "(" parallel_hint ")" */
-
-/*! Production::    global_hint : QUERY_TIMEOUT "(" INTNUM ")" */
-
-/*! Production::    global_hint : READ_CONSISTENCY "(" consistency_level ")" */
-
-/*! Production::    global_hint : STAT "(" intnum_list ")" */
-
-/*! Production::    global_hint : TOPK "(" INTNUM INTNUM ")" */
-
-/*! Production::    global_hint : TRACE_LOG */
-
-/*! Production::    global_hint : TRACING "(" intnum_list ")" */
-
-/*! Production::    global_hint : TRANS_PARAM "(" trans_param_name opt_comma trans_param_value ")" */
-
-/*! Production::    global_hint : USE_PLAN_CACHE "(" use_plan_cache_type ")" */
-
 /*! Production::    global_or_session_alias : GLOBAL_ALIAS */
 
 /*! Production::    global_or_session_alias : SESSION_ALIAS */
@@ -5147,138 +5063,6 @@
 /*! Production::    hexadecimalLiteral : opt_STRING_CHARSET_NAME HEXADECIMAL_LITERAL */
 
 /*! Production::    hierarchical_function : SYS_CONNECT_BY_PATH "(" bit_expr "," bit_expr ")" */
-
-/*! Production::    hint_list_with_end : opt_hint_list HINT_END */
-
-/*! Production::    hint_option : BEGIN_OUTLINE_DATA */
-
-/*! Production::    hint_option : END_OUTLINE_DATA */
-
-/*! Production::    hint_option : END_P */
-
-/*! Production::    hint_option : FORCE_REFRESH_LOCATION_CACHE */
-
-/*! Production::    hint_option : FROZEN_VERSION "(" INTNUM ")" */
-
-/*! Production::    hint_option : FULL_HINT "(" qb_name_option relation_factor_in_hint ")" */
-
-/*! Production::    hint_option : HOTSPOT */
-
-/*! Production::    hint_option : INDEX_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    hint_option : LEADING_HINT "(" qb_name_option relation_factor_in_hint_list ")" */
-
-/*! Production::    hint_option : LEADING_HINT "(" qb_name_option relation_factor_in_leading_hint_list_entry ")" */
-
-/*! Production::    hint_option : LOAD_BATCH_SIZE "(" INTNUM ")" */
-
-/*! Production::    hint_option : LOG_LEVEL "(" "'" STRING_VALUE "'" ")" */
-
-/*! Production::    hint_option : LOG_LEVEL "(" NAME_OB ")" */
-
-/*! Production::    hint_option : MAX_CONCURRENT "(" INTNUM ")" */
-
-/*! Production::    hint_option : MERGE_HINT opt_qb_name */
-
-/*! Production::    hint_option : NAME_OB */
-
-/*! Production::    hint_option : NO_EXPAND opt_qb_name */
-
-/*! Production::    hint_option : NO_MERGE_HINT opt_qb_name */
-
-/*! Production::    hint_option : NO_PLACE_GROUP_BY opt_qb_name */
-
-/*! Production::    hint_option : NO_PRED_DEDUCE opt_qb_name */
-
-/*! Production::    hint_option : NO_REWRITE */
-
-/*! Production::    hint_option : NO_UNNEST opt_qb_name */
-
-/*! Production::    hint_option : NO_USE_BNL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : NO_USE_HASH "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : NO_USE_HASH_AGGREGATION */
-
-/*! Production::    hint_option : NO_USE_JIT */
-
-/*! Production::    hint_option : NO_USE_LATE_MATERIALIZATION */
-
-/*! Production::    hint_option : NO_USE_MERGE "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : NO_USE_NL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : NO_USE_NL_MATERIALIZATION "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : NO_USE_PX */
-
-/*! Production::    hint_option : OPTIMIZER_FEATURES_ENABLE "(" STRING_VALUE ")" */
-
-/*! Production::    hint_option : ORDERED */
-
-/*! Production::    hint_option : PARALLEL "(" INTNUM ")" */
-
-/*! Production::    hint_option : PARSER_SYNTAX_ERROR */
-
-/*! Production::    hint_option : PLACE_GROUP_BY opt_qb_name */
-
-/*! Production::    hint_option : PQ_DISTRIBUTE "(" qb_name_option relation_factor_in_pq_hint opt_comma distribute_method opt_distribute_method ")" */
-
-/*! Production::    hint_option : PX_JOIN_FILTER */
-
-/*! Production::    hint_option : QB_NAME "(" NAME_OB ")" */
-
-/*! Production::    hint_option : QB_NAME "(" qb_name_string ")" */
-
-/*! Production::    hint_option : QUERY_TIMEOUT "(" INTNUM ")" */
-
-/*! Production::    hint_option : READ_CONSISTENCY "(" consistency_level ")" */
-
-/*! Production::    hint_option : STAT "(" tracing_num_list ")" */
-
-/*! Production::    hint_option : TOPK "(" INTNUM INTNUM ")" */
-
-/*! Production::    hint_option : TRACE_LOG */
-
-/*! Production::    hint_option : TRACING "(" tracing_num_list ")" */
-
-/*! Production::    hint_option : TRANS_PARAM "(" trans_param_name opt_comma trans_param_value ")" */
-
-/*! Production::    hint_option : UNNEST opt_qb_name */
-
-/*! Production::    hint_option : USE_BNL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : USE_CONCAT opt_qb_name */
-
-/*! Production::    hint_option : USE_HASH "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : USE_HASH_AGGREGATION */
-
-/*! Production::    hint_option : USE_JIT */
-
-/*! Production::    hint_option : USE_LATE_MATERIALIZATION */
-
-/*! Production::    hint_option : USE_MERGE "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : USE_NL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : USE_NL_MATERIALIZATION "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    hint_option : USE_PLAN_CACHE "(" use_plan_cache_type ")" */
-
-/*! Production::    hint_option : USE_PX */
-
-/*! Production::    hint_option : error */
-
-/*! Production::    hint_option : global_hint */
-
-/*! Production::    hint_option : optimize_hint */
-
-/*! Production::    hint_option : transform_hint */
-
-/*! Production::    hint_options : hint_option */
-
-/*! Production::    hint_options : hint_options hint_option */
 
 /*! Production::    id_list : INTNUM */
 
@@ -5518,9 +5302,11 @@
 
 /*! Production::    insertValues : LR_BRACKET opt_expressionsWithDefaults RR_BRACKET COMMA insertValues */
 
-/*! Production::    insert_stmt : insert_with_opt_hint opt_ignore opt_into single_table_insert opt_on_duplicate_key_clause */
+/*! Production::    insert_begin : INSERT INTO */
 
-/*! Production::    insert_stmt : insert_with_opt_hint single_table_insert */
+/*! Production::    insert_stmt : insert_begin single_table_insert */
+
+/*! Production::    insert_stmt : insert_with_opt_hint opt_ignore opt_into single_table_insert opt_on_duplicate_key_clause */
 
 /*! Production::    insert_stmt : replace_with_opt_hint opt_ignore opt_into single_table_insert */
 
@@ -5551,8 +5337,6 @@
 /*! Production::    insert_vals_list : insert_vals_list "," "(" insert_vals ")" */
 
 /*! Production::    insert_with_opt_hint : INSERT */
-
-/*! Production::    insert_with_opt_hint : INSERT_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    installPlugin : INSTALL PLUGIN uid SONAME STRING_LITERAL */
 
@@ -5631,10 +5415,6 @@
 /*! Production::    intervalTypeBase : WEEK */
 
 /*! Production::    intervalValue : expression */
-
-/*! Production::    intnum_list : INTNUM */
-
-/*! Production::    intnum_list : INTNUM relation_sep_option intnum_list */
 
 /*! Production::    into_clause : BULK COLLECT INTO into_var_list */
 
@@ -5950,8 +5730,6 @@
 
 /*! Production::    load_data_with_opt_hint : LOAD DATA */
 
-/*! Production::    load_data_with_opt_hint : LOAD_DATA_HINT_BEGIN hint_list_with_end */
-
 /*! Production::    load_set_element : column_definition_ref COMP_EQ expr_or_default */
 
 /*! Production::    load_set_list : load_set_element */
@@ -6102,27 +5880,23 @@
 
 /*! Production::    merge_insert_clause : WHEN NOT MATCHED THEN INSERT opt_insert_columns VALUES "(" insert_vals ")" opt_where */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause merge_update_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause merge_update_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause merge_insert_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause merge_insert_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause merge_update_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_insert_clause merge_update_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause */
 
-/*! Production::    merge_stmt : merge_with_opt_hint INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause merge_insert_clause */
+/*! Production::    merge_stmt : MERGE INTO source_relation_factor relation_name USING source_relation_factor opt_alias ON "(" expr ")" merge_update_clause merge_insert_clause */
 
 /*! Production::    merge_update_clause : WHEN MATCHED THEN UPDATE SET update_asgn_list opt_where opt_merge_update_delete */
-
-/*! Production::    merge_with_opt_hint : MERGE */
-
-/*! Production::    merge_with_opt_hint : MERGE_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    method : for_all */
 
@@ -6167,10 +5941,6 @@
 /*! Production::    multi_delete_table : FROM relation_with_star_list USING table_references */
 
 /*! Production::    multi_delete_table : relation_with_star_list FROM table_references */
-
-/*! Production::    multi_qb_name_list : "(" qb_name_list ")" */
-
-/*! Production::    multi_qb_name_list : multi_qb_name_list "(" qb_name_list ")" */
 
 /*! Production::    multipleDeleteStatement : DELETE opt_LOW_PRIORITY opt_QUICK opt_IGNORE FROM tableWithOptStars USING tableSources opt_whereClause */
 
@@ -6684,17 +6454,17 @@
 
 /*! Production::    no_param_column_ref : relation_name "." relation_name "." mysql_reserved_keyword */
 
-/*! Production::    no_table_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt */
+/*! Production::    no_table_select : SELECT opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where */
 
-/*! Production::    no_table_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where */
+/*! Production::    no_table_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt */
 
 /*! Production::    no_table_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where opt_groupby opt_having opt_named_windows */
 
 /*! Production::    no_table_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt WHERE opt_hint_value expr opt_groupby opt_having opt_named_windows */
 
-/*! Production::    no_table_select_with_hierarchical_query : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where connect_by opt_start_with */
+/*! Production::    no_table_select_with_hierarchical_query : SELECT opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where connect_by opt_start_with */
 
-/*! Production::    no_table_select_with_hierarchical_query : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where start_with connect_by */
+/*! Production::    no_table_select_with_hierarchical_query : SELECT opt_query_expression_option_list select_expr_list into_opt FROM DUAL opt_where start_with connect_by */
 
 /*! Production::    no_table_select_with_order_and_limit : no_table_select opt_order_by limit_clause */
 
@@ -7634,10 +7404,6 @@
 
 /*! Production::    opt_distinct_or_all : UNIQUE */
 
-/*! Production::    opt_distribute_method : %epsilon */
-
-/*! Production::    opt_distribute_method : opt_comma distribute_method */
-
 /*! Production::    opt_dlink : "@" ip_port */
 
 /*! Production::    opt_dlink : %epsilon */
@@ -7917,16 +7683,6 @@
 /*! Production::    opt_havingClause : %epsilon */
 
 /*! Production::    opt_havingClause : HAVING expression */
-
-/*! Production::    opt_hint_list : %epsilon */
-
-/*! Production::    opt_hint_list : hint_options */
-
-/*! Production::    opt_hint_list : opt_hint_list "," hint_options */
-
-/*! Production::    opt_hint_value : %epsilon */
-
-/*! Production::    opt_hint_value : HINT_VALUE */
 
 /*! Production::    opt_host_name : %epsilon */
 
@@ -8436,10 +8192,6 @@
 
 /*! Production::    opt_purge : PURGE */
 
-/*! Production::    opt_qb_name : "(" qb_name_option ")" */
-
-/*! Production::    opt_qb_name : %epsilon */
-
 /*! Production::    opt_query_expression_option_list : %epsilon */
 
 /*! Production::    opt_query_expression_option_list : query_expression_option_list */
@@ -8475,12 +8227,6 @@
 /*! Production::    opt_referencing_list : %epsilon */
 
 /*! Production::    opt_referencing_list : REFERENCING referencing_list */
-
-/*! Production::    opt_relation_factor_in_hint_list : "(" relation_factor_in_hint_list ")" */
-
-/*! Production::    opt_relation_factor_in_hint_list : %epsilon */
-
-/*! Production::    opt_relation_factor_in_hint_list : relation_factor_in_hint */
 
 /*! Production::    opt_relies_on_clause : %epsilon */
 
@@ -9060,7 +8806,7 @@
 
 /*! Production::    opt_where : %epsilon */
 
-/*! Production::    opt_where : WHERE opt_hint_value expr */
+/*! Production::    opt_where : WHERE expr */
 
 /*! Production::    opt_whereClause : %epsilon */
 
@@ -9139,96 +8885,6 @@
 /*! Production::    optimizeTable : OPTIMIZE analyzeTable TABLE tables */
 
 /*! Production::    optimizeTable : OPTIMIZE analyzeTable TABLES tables */
-
-/*! Production::    optimize_hint : DISTINCT_PUSHDOWN opt_qb_name */
-
-/*! Production::    optimize_hint : FULL_HINT "(" qb_name_option relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : GBY_PUSHDOWN opt_qb_name */
-
-/*! Production::    optimize_hint : INDEX_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    optimize_hint : INDEX_SS_ASC_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    optimize_hint : INDEX_SS_DESC_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    optimize_hint : INDEX_SS_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    optimize_hint : LEADING_HINT "(" qb_name_option relation_factor_in_leading_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_DISTINCT_PUSHDOWN opt_qb_name */
-
-/*! Production::    optimize_hint : NO_GBY_PUSHDOWN opt_qb_name */
-
-/*! Production::    optimize_hint : NO_INDEX_HINT "(" qb_name_option relation_factor_in_hint NAME_OB ")" */
-
-/*! Production::    optimize_hint : NO_PX_JOIN_FILTER "(" qb_name_option relation_factor_in_hint opt_relation_factor_in_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_PX_JOIN_FILTER "(" qb_name_option relation_factor_in_hint relation_factor_in_pq_hint relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : NO_PX_PART_JOIN_FILTER "(" qb_name_option relation_factor_in_hint opt_relation_factor_in_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_PX_PART_JOIN_FILTER "(" qb_name_option relation_factor_in_hint relation_factor_in_pq_hint relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : NO_USE_DAS_HINT "(" qb_name_option relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : NO_USE_DISTRIBUTED_DML opt_qb_name */
-
-/*! Production::    optimize_hint : NO_USE_HASH "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_USE_HASH_AGGREGATION opt_qb_name */
-
-/*! Production::    optimize_hint : NO_USE_HASH_DISTINCT opt_qb_name */
-
-/*! Production::    optimize_hint : NO_USE_HASH_SET opt_qb_name */
-
-/*! Production::    optimize_hint : NO_USE_LATE_MATERIALIZATION opt_qb_name */
-
-/*! Production::    optimize_hint : NO_USE_MERGE "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_USE_NL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : NO_USE_NL_MATERIALIZATION "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : ORDERED opt_qb_name */
-
-/*! Production::    optimize_hint : PQ_DISTRIBUTE "(" qb_name_option relation_factor_in_pq_hint ")" */
-
-/*! Production::    optimize_hint : PQ_DISTRIBUTE "(" qb_name_option relation_factor_in_pq_hint opt_comma distribute_method opt_comma distribute_method ")" */
-
-/*! Production::    optimize_hint : PQ_DISTRIBUTE_WINDOW "(" qb_name_option opt_comma distribute_method_list ")" */
-
-/*! Production::    optimize_hint : PQ_MAP "(" qb_name_option relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : PQ_SET "(" pq_set_hint_desc ")" */
-
-/*! Production::    optimize_hint : PX_JOIN_FILTER "(" qb_name_option relation_factor_in_hint opt_relation_factor_in_hint_list ")" */
-
-/*! Production::    optimize_hint : PX_JOIN_FILTER "(" qb_name_option relation_factor_in_hint relation_factor_in_pq_hint relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : PX_PART_JOIN_FILTER "(" qb_name_option relation_factor_in_hint opt_relation_factor_in_hint_list ")" */
-
-/*! Production::    optimize_hint : PX_PART_JOIN_FILTER "(" qb_name_option relation_factor_in_hint relation_factor_in_pq_hint relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : USE_DAS_HINT "(" qb_name_option relation_factor_in_hint ")" */
-
-/*! Production::    optimize_hint : USE_DISTRIBUTED_DML opt_qb_name */
-
-/*! Production::    optimize_hint : USE_HASH "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : USE_HASH_AGGREGATION opt_qb_name */
-
-/*! Production::    optimize_hint : USE_HASH_DISTINCT opt_qb_name */
-
-/*! Production::    optimize_hint : USE_HASH_SET opt_qb_name */
-
-/*! Production::    optimize_hint : USE_LATE_MATERIALIZATION opt_qb_name */
-
-/*! Production::    optimize_hint : USE_MERGE "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : USE_NL "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    optimize_hint : USE_NL_MATERIALIZATION "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
 
 /*! Production::    optimize_stmt : OPTIMIZE TABLE table_list */
 
@@ -9647,10 +9303,6 @@
 /*! Production::    parallel_enable : PARALLEL_ENABLE "(" PARTITION argument BY partition_by ")" */
 
 /*! Production::    parallel_enable : PARALLEL_ENABLE */
-
-/*! Production::    parallel_hint : INTNUM */
-
-/*! Production::    parallel_hint : qb_name_option relation_factor_in_hint opt_comma INTNUM */
 
 /*! Production::    parallel_option : NOPARALLEL */
 
@@ -10180,14 +9832,6 @@
 
 /*! Production::    policy_name : POLICY opt_equal_mark STRING_VALUE */
 
-/*! Production::    pq_set_hint_desc : "@" qb_name_string */
-
-/*! Production::    pq_set_hint_desc : "@" qb_name_string distribute_method_list */
-
-/*! Production::    pq_set_hint_desc : "@" qb_name_string qb_name_string */
-
-/*! Production::    pq_set_hint_desc : "@" qb_name_string qb_name_string distribute_method_list */
-
 /*! Production::    pragma_stmt : autonomous_transaction_pragma */
 
 /*! Production::    pragma_stmt : exception_init_pragma */
@@ -10624,11 +10268,9 @@
 
 /*! Production::    projection : expr */
 
-/*! Production::    projection : expr AS column_label */
-
-/*! Production::    projection : expr column_label */
-
 /*! Production::    projection : expr opt_as STRING_VALUE */
+
+/*! Production::    projection : expr opt_as column_label */
 
 /*! Production::    purgeBinaryLogs : PURGE purgeFormat LOGS BEFORE STRING_LITERAL */
 
@@ -10649,20 +10291,6 @@
 /*! Production::    purge_stmt : PURGE database_key database_factor */
 
 /*! Production::    purge_stmt : PURGE database_key relation_name */
-
-/*! Production::    qb_name_list : qb_name_list "," qb_name_string */
-
-/*! Production::    qb_name_list : qb_name_list qb_name_string */
-
-/*! Production::    qb_name_list : qb_name_string */
-
-/*! Production::    qb_name_option : "@" NAME_OB */
-
-/*! Production::    qb_name_option : "@" qb_name_string */
-
-/*! Production::    qb_name_option : %epsilon */
-
-/*! Production::    qb_name_string : NAME_OB */
 
 /*! Production::    queryExpression : LR_BRACKET queryExpression RR_BRACKET */
 
@@ -10834,46 +10462,6 @@
 
 /*! Production::    relation_factor : normal_relation_factor */
 
-/*! Production::    relation_factor_in_hint : normal_relation_factor qb_name_option */
-
-/*! Production::    relation_factor_in_hint_list : relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_hint_list : relation_factor_in_hint_list relation_sep_option relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_leading_hint : "(" relation_factor_in_hint_list ")" */
-
-/*! Production::    relation_factor_in_leading_hint_list : "(" relation_factor_in_hint_list relation_sep_option relation_factor_in_leading_hint_list ")" */
-
-/*! Production::    relation_factor_in_leading_hint_list : "(" relation_factor_in_leading_hint_list ")" */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_leading_hint */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_leading_hint_list relation_sep_option "(" relation_factor_in_hint_list relation_sep_option relation_factor_in_leading_hint_list ")" */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_leading_hint_list relation_sep_option "(" relation_factor_in_leading_hint_list ")" */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_leading_hint_list relation_sep_option relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_leading_hint_list : relation_factor_in_leading_hint_list relation_sep_option relation_factor_in_leading_hint */
-
-/*! Production::    relation_factor_in_leading_hint_list_entry : relation_factor_in_hint_list relation_sep_option relation_factor_in_leading_hint_list */
-
-/*! Production::    relation_factor_in_leading_hint_list_entry : relation_factor_in_leading_hint_list */
-
-/*! Production::    relation_factor_in_pq_hint : "(" relation_factor_in_hint_list ")" */
-
-/*! Production::    relation_factor_in_pq_hint : relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_use_join_hint_list : "(" relation_factor_in_hint_list ")" */
-
-/*! Production::    relation_factor_in_use_join_hint_list : relation_factor_in_hint */
-
-/*! Production::    relation_factor_in_use_join_hint_list : relation_factor_in_use_join_hint_list relation_sep_option "(" relation_factor_in_hint_list ")" */
-
-/*! Production::    relation_factor_in_use_join_hint_list : relation_factor_in_use_join_hint_list relation_sep_option relation_factor_in_hint */
-
 /*! Production::    relation_factor_with_star : relation_name "." relation_name opt_with_star */
 
 /*! Production::    relation_factor_with_star : relation_name opt_with_star */
@@ -10891,10 +10479,6 @@
 /*! Production::    relation_name_or_string : STRING_VALUE */
 
 /*! Production::    relation_name_or_string : relation_name */
-
-/*! Production::    relation_sep_option : "," */
-
-/*! Production::    relation_sep_option : %epsilon */
 
 /*! Production::    relation_with_star_list : relation_factor_with_star */
 
@@ -10955,8 +10539,6 @@
 /*! Production::    replaceStatement : REPLACE opt_replacePriority opt_INTO tableName opt_partitonValueList insertStatement_value */
 
 /*! Production::    replace_with_opt_hint : REPLACE */
-
-/*! Production::    replace_with_opt_hint : REPLACE_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    replica_type : REPLICA_TYPE opt_equal_mark STRING_VALUE */
 
@@ -11155,8 +10737,6 @@
 /*! Production::    rollback_savepoint_stmt : ROLLBACK TO var_name */
 
 /*! Production::    rollback_savepoint_stmt : ROLLBACK WORK TO var_name */
-
-/*! Production::    rollback_stmt : ROLLBACK HINT_VALUE opt_work */
 
 /*! Production::    rollback_stmt : ROLLBACK opt_work */
 
@@ -11462,11 +11042,9 @@
 
 /*! Production::    select_stmt : with_select */
 
-/*! Production::    select_with_hierarchical_query : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM from_list opt_where start_with connect_by opt_groupby opt_having */
+/*! Production::    select_with_hierarchical_query : SELECT opt_query_expression_option_list select_expr_list into_opt FROM from_list opt_where start_with connect_by opt_groupby opt_having */
 
 /*! Production::    select_with_opt_hint : SELECT */
-
-/*! Production::    select_with_opt_hint : SELECT_HINT_BEGIN hint_list_with_end */
 
 /*! Production::    select_with_parens : "(" select_no_parens ")" */
 
@@ -11932,11 +11510,11 @@
 
 /*! Production::    show_stmt : SHOW opt_storage ENGINES */
 
-/*! Production::    shrink_space_stmt : ALTER TABLE relation_factor SHRINK SPACE */
-
 /*! Production::    shrink_space_stmt : ALTER TENANT ALL SHRINK SPACE */
 
 /*! Production::    shrink_space_stmt : ALTER TENANT relation_name SHRINK SPACE */
+
+/*! Production::    shrink_space_stmt : alter_table_prefix alter_table_factor SHRINK SPACE */
 
 /*! Production::    shutdownStatement : SHUTDOWN */
 
@@ -12862,7 +12440,7 @@
 
 /*! Production::    simple_num : INTNUM */
 
-/*! Production::    simple_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM from_list opt_where opt_groupby opt_having */
+/*! Production::    simple_select : SELECT opt_query_expression_option_list select_expr_list into_opt FROM from_list opt_where opt_groupby opt_having */
 
 /*! Production::    simple_select : select_with_opt_hint opt_query_expression_option_list select_expr_list into_opt FROM from_list opt_where opt_groupby opt_having opt_named_windows */
 
@@ -12898,19 +12476,23 @@
 
 /*! Production::    single_row_function : numeric_function */
 
-/*! Production::    single_table_insert : INTO insert_table_clause opt_nologging "(" ")" values_clause opt_returning */
-
-/*! Production::    single_table_insert : INTO insert_table_clause opt_nologging "(" column_list ")" values_clause opt_returning */
-
-/*! Production::    single_table_insert : INTO insert_table_clause opt_nologging values_clause opt_returning */
-
-/*! Production::    single_table_insert : dml_table_name "(" ")" values_clause */
-
-/*! Production::    single_table_insert : dml_table_name "(" column_list ")" values_clause */
-
 /*! Production::    single_table_insert : dml_table_name SET update_asgn_list */
 
-/*! Production::    single_table_insert : dml_table_name values_clause */
+/*! Production::    single_table_insert : dml_table_name single_table_insert_columns_left column_list single_table_insert_columns_right values_clause */
+
+/*! Production::    single_table_insert : dml_table_name single_table_insert_columns_left single_table_insert_columns_right values_clause */
+
+/*! Production::    single_table_insert : insert_table_clause opt_nologging single_table_insert_columns_left single_table_insert_columns single_table_insert_columns_right values_clause opt_returning */
+
+/*! Production::    single_table_insert : insert_table_clause opt_nologging single_table_insert_columns_left single_table_insert_columns_right values_clause opt_returning */
+
+/*! Production::    single_table_insert : insert_table_clause opt_nologging values_clause opt_returning */
+
+/*! Production::    single_table_insert_columns : column_list */
+
+/*! Production::    single_table_insert_columns_left : "(" */
+
+/*! Production::    single_table_insert_columns_right : ")" */
 
 /*! Production::    size_clause : SIZE AUTO */
 
@@ -14486,20 +14068,6 @@
 
 /*! Production::    tps_body : execute_section END_KEY */
 
-/*! Production::    tracing_num_list : INTNUM */
-
-/*! Production::    tracing_num_list : INTNUM relation_sep_option tracing_num_list */
-
-/*! Production::    trans_param_name : "'" STRING_VALUE "'" */
-
-/*! Production::    trans_param_name : STRING_VALUE */
-
-/*! Production::    trans_param_value : "'" STRING_VALUE "'" */
-
-/*! Production::    trans_param_value : INTNUM */
-
-/*! Production::    trans_param_value : STRING_VALUE */
-
 /*! Production::    transactionLevel : READ COMMITTED */
 
 /*! Production::    transactionLevel : READ UNCOMMITTED */
@@ -14563,134 +14131,6 @@
 /*! Production::    transaction_characteristics : transaction_access_mode "," ISOLATION LEVEL isolation_level */
 
 /*! Production::    transaction_characteristics : transaction_access_mode */
-
-/*! Production::    transform_hint : COALESCE_SQ "(" qb_name_option multi_qb_name_list ")" */
-
-/*! Production::    transform_hint : COUNT_TO_EXISTS "(" qb_name_option qb_name_list ")" */
-
-/*! Production::    transform_hint : COUNT_TO_EXISTS opt_qb_name */
-
-/*! Production::    transform_hint : ELIMINATE_JOIN "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    transform_hint : ELIMINATE_JOIN opt_qb_name */
-
-/*! Production::    transform_hint : FAST_MINMAX opt_qb_name */
-
-/*! Production::    transform_hint : INLINE opt_qb_name */
-
-/*! Production::    transform_hint : LEFT_TO_ANTI "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    transform_hint : LEFT_TO_ANTI opt_qb_name */
-
-/*! Production::    transform_hint : MATERIALIZE "(" qb_name_option multi_qb_name_list ")" */
-
-/*! Production::    transform_hint : MATERIALIZE opt_qb_name */
-
-/*! Production::    transform_hint : MERGE_HINT "(" qb_name_option COMP_GT qb_name_string ")" */
-
-/*! Production::    transform_hint : MERGE_HINT "(" qb_name_option COMP_LT qb_name_string ")" */
-
-/*! Production::    transform_hint : MERGE_HINT opt_qb_name */
-
-/*! Production::    transform_hint : NO_COALESCE_SQ opt_qb_name */
-
-/*! Production::    transform_hint : NO_COUNT_TO_EXISTS opt_qb_name */
-
-/*! Production::    transform_hint : NO_ELIMINATE_JOIN opt_qb_name */
-
-/*! Production::    transform_hint : NO_EXPAND opt_qb_name */
-
-/*! Production::    transform_hint : NO_FAST_MINMAX opt_qb_name */
-
-/*! Production::    transform_hint : NO_LEFT_TO_ANTI opt_qb_name */
-
-/*! Production::    transform_hint : NO_MERGE_HINT opt_qb_name */
-
-/*! Production::    transform_hint : NO_OUTER_TO_INNER opt_qb_name */
-
-/*! Production::    transform_hint : NO_PLACE_GROUP_BY opt_qb_name */
-
-/*! Production::    transform_hint : NO_PRED_DEDUCE opt_qb_name */
-
-/*! Production::    transform_hint : NO_PROJECT_PRUNE opt_qb_name */
-
-/*! Production::    transform_hint : NO_PULLUP_EXPR opt_qb_name */
-
-/*! Production::    transform_hint : NO_PUSH_LIMIT opt_qb_name */
-
-/*! Production::    transform_hint : NO_PUSH_PRED_CTE opt_qb_name */
-
-/*! Production::    transform_hint : NO_REPLACE_CONST opt_qb_name */
-
-/*! Production::    transform_hint : NO_REWRITE opt_qb_name */
-
-/*! Production::    transform_hint : NO_SEMI_TO_INNER opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_DISTINCT opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_EXPR opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_GROUP_BY opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_LIMIT opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_ORDER_BY opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_SET opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_SUBQUERY opt_qb_name */
-
-/*! Production::    transform_hint : NO_SIMPLIFY_WINFUNC opt_qb_name */
-
-/*! Production::    transform_hint : NO_UNNEST opt_qb_name */
-
-/*! Production::    transform_hint : NO_WIN_MAGIC opt_qb_name */
-
-/*! Production::    transform_hint : OUTER_TO_INNER opt_qb_name */
-
-/*! Production::    transform_hint : PLACE_GROUP_BY "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    transform_hint : PLACE_GROUP_BY opt_qb_name */
-
-/*! Production::    transform_hint : PRED_DEDUCE opt_qb_name */
-
-/*! Production::    transform_hint : PROJECT_PRUNE opt_qb_name */
-
-/*! Production::    transform_hint : PULLUP_EXPR opt_qb_name */
-
-/*! Production::    transform_hint : PUSH_LIMIT opt_qb_name */
-
-/*! Production::    transform_hint : PUSH_PRED_CTE opt_qb_name */
-
-/*! Production::    transform_hint : REPLACE_CONST opt_qb_name */
-
-/*! Production::    transform_hint : SEMI_TO_INNER "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    transform_hint : SIMPLIFY_DISTINCT opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_EXPR opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_GROUP_BY opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_LIMIT opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_ORDER_BY opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_SET opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_SUBQUERY opt_qb_name */
-
-/*! Production::    transform_hint : SIMPLIFY_WINFUNC opt_qb_name */
-
-/*! Production::    transform_hint : UNNEST opt_qb_name */
-
-/*! Production::    transform_hint : USE_CONCAT "(" qb_name_option STRING_VALUE ")" */
-
-/*! Production::    transform_hint : USE_CONCAT opt_qb_name */
-
-/*! Production::    transform_hint : WIN_MAGIC "(" qb_name_option relation_factor_in_use_join_hint_list ")" */
-
-/*! Production::    transform_hint : WIN_MAGIC opt_qb_name */
 
 /*! Production::    transpose_clause : PIVOT "(" pivot_aggr_clause transpose_for_clause transpose_in_clause ")" */
 
@@ -16778,19 +16218,21 @@
 
 /*! Production::    update_asgn_list : update_asgn_list "," update_asgn_factor */
 
-/*! Production::    update_basic_stmt : update_with_opt_hint opt_ignore table_references SET update_asgn_list opt_where opt_order_by opt_limit_clause */
+/*! Production::    update_basic_stmt : update_basic_stmt_prefix SET update_asgn_list opt_where opt_order_by opt_limit_clause */
+
+/*! Production::    update_basic_stmt_prefix : update_with_opt_hint opt_ignore table_references */
 
 /*! Production::    update_column_list : UPDATE OF column_list */
 
 /*! Production::    update_stmt : update_basic_stmt */
 
-/*! Production::    update_stmt : update_with_opt_hint dml_table_clause SET update_asgn_list opt_where_extension opt_returning */
+/*! Production::    update_stmt : update_stmt_prefix dml_table_clause SET update_asgn_list opt_where_extension opt_returning */
 
 /*! Production::    update_stmt : with_clause update_basic_stmt */
 
-/*! Production::    update_with_opt_hint : UPDATE */
+/*! Production::    update_stmt_prefix : UPDATE */
 
-/*! Production::    update_with_opt_hint : UPDATE_HINT_BEGIN hint_list_with_end */
+/*! Production::    update_with_opt_hint : UPDATE */
 
 /*! Production::    updatedElement : fullColumnName EQUAL_SYMBOL DEFAULT */
 
@@ -16821,10 +16263,6 @@
 /*! Production::    use_partition : PARTITION "(" name_list ")" */
 
 /*! Production::    use_partition : SUBPARTITION "(" name_list ")" */
-
-/*! Production::    use_plan_cache_type : DEFAULT */
-
-/*! Production::    use_plan_cache_type : NONE */
 
 /*! Production::    user : NAME_OB */
 
