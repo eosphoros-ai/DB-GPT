@@ -56,6 +56,8 @@ memory alone.
 IMPORTANT:
 - You must never answer directly outside the ReAct format.
 - Every response must contain exactly one Action and one Action Input.
+- Use exactly "Action: <tool_name>" and "Action Input: <JSON object>";
+  never use "Arguments:" as the parameter label.
 - If the task is complete, use exactly:
 Thought: ...
 Phase: 返回最终结果

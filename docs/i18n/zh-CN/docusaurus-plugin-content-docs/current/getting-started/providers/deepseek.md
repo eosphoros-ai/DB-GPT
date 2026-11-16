@@ -70,6 +70,14 @@ ReAct Agent 使用 `deepseek-v4-pro` 时建议保留 `thinking_enabled = false`�
 DeepSeek V4-Pro 默认开启思考模式，可能在严格的
 `Thought/Action/Action Input` 输出格式前产生推理块，导致解析失败。
 
+DeepSeek 官方接口不支持在思考模式下使用 `tool_choice="required"` 或指定工具。
+DeepSeek 提供方会在发送这类请求前自动关闭思考，保留原有工具选择，
+即使设置了 `thinking_enabled = true` 也会执行该协议适配；其他请求沿用原有思考配置。
+同一官方提供方下切换模型无需额外配置。
+
+该适配仅用于 DeepSeek 提供方且实际接口地址为 `api.deepseek.com` 的请求。
+其他提供方和第三方接口保持原行为，工具调用能力以各自接口协议为准。
+
 ## 启动服务
 
 ```bash

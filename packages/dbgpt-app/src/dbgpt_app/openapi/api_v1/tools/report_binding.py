@@ -154,6 +154,12 @@ def is_document_number(value, suffix, prefix, non_metric_prefix, *, heading=Fals
             and 1 <= int(value) <= 12
             and re.match(r"\s*月", suffix)
         )
+        # A shared month suffix is a calendar range only after an explicit year.
+        or (
+            re.fullmatch(r"(?:0?[1-9]|1[0-2])", value)
+            and re.search(rf"(?<!\d){year}\s*年\s*$", prefix)
+            and re.match(rf"\s*{separator}\s*(?:0?[1-9]|1[0-2])\s*月", suffix)
+        )
         or (
             re.fullmatch(r"\d+", value)
             and re.search(

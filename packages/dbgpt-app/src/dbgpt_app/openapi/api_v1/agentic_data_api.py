@@ -4685,6 +4685,7 @@ After partial results, finish only missing requested deliverables, then report.
                     skills_dir=DEFAULT_SKILLS_DIR,
                     llm_client=llm_client,
                     model_name=dialogue.model_name,
+                    max_new_tokens=context_budget.max_output_tokens,
                 )
             )
         tool_pack = ToolPack(

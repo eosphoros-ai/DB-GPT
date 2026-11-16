@@ -224,6 +224,7 @@ test_docs
 openspec/
 docs/superpowers/
 .gstack/
+.planning/
 
 # --- local runtime state & generated artifacts (dev machine) ---
 /harness_engine.json
