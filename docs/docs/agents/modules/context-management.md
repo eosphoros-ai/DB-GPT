@@ -21,7 +21,7 @@ system prompt + task progress + memory + recent ReAct rounds
    v
 Count tokens
 ProxyTokenizerWrapper.count_token(model_name)
-fallback: ~1 token/non-ASCII char + ~1 token/4 ASCII chars
+fallback: len(content) // 4
    |
    v
 Compute budget
@@ -274,35 +274,10 @@ the only place where exact tool output lives.
 
 Agent context management can be configured in the application TOML file:
 
-With `max_context_tokens = 0` (the default), built-in agents read the metadata
-of the model selected for the actual request. This includes Taskflow nodes,
-parallel sub-agents and report agents. Switching models or changing the output
-budget recalculates the input budget. Each agent keeps an independent manager.
-Context management is enabled by default; an explicit opt-out is respected.
-A positive value is an agent cap: the smaller of
-that cap and the model window is used. The input budget subtracts the larger
-of `reserved_tokens` and the actual requested output tokens (16,384 by default).
-If metadata supplies a maximum output length, the request is capped accordingly.
-An output reservation that consumes the entire window fails with a configuration
-error rather than silently sending an oversized request.
-
-The UI labels the source: deployment configuration, model/tokenizer configuration,
-adapter metadata, or agent cap. OpenAI-compatible APIs do not generally expose a
-context limit; adapter values are defaults, not a verification of a remote
-service's limits. If no model window is available, DB-GPT uses a labeled 120,000
-token fallback. Set `context_length` to the window supported by your deployment
-for reliable budgeting. Token usage remains an estimate; current user input,
-native tool definitions and message framing are included.
-
-The pi harness uses the same budget resolver to configure `contextWindow`,
-`maxTokens` and compaction `reserveTokens`; pi performs its own history compaction.
-Custom agents that bypass the shared thinking methods must integrate the
-budget resolver in their own model request path.
-
 ```toml
 [service.web.agent_context]
-# Auto-detect; positive values cap the detected model window.
-max_context_tokens = 0
+# Non-positive values fall back to the default context budget.
+max_context_tokens = 120000
 reserved_tokens = 4096
 warning_threshold = 0.70
 error_threshold = 0.90

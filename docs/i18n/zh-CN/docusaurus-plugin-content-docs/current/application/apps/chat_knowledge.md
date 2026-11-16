@@ -1,56 +1,107 @@
----
-title: 知识库问答
----
+# Chat Knowledge Base
 
-# 根据知识库提问
+`Chat knowledge Base` provides the ability to question and answer questions based on private domain knowledge, and can build intelligent question and answer systems, reading assistants and other products based on the `knowledge base`. `RAG` technology is also used in DB-GPT to enhance knowledge retrieval.
 
-知识库问答帮助 Agent 从文档中查找相关资料，并据此回答问题。它适合“退款应如何归属？”或“变更表结构前要做哪些检查？”等问题。
 
-先准备包含已处理文档的[知识空间](/docs/getting-started/web-ui/knowledge-base)。仅上传文件还不够，应检查文档状态和切片，再期待 Agent 根据它回答。
+## Noun explanation
 
-## 开始对话
+:::info note
 
-1. 打开**知识库**并选择需要的空间。
-2. 进入**对话**标签。
-3. 确认知识空间，选择可用的模型。
-4. 提出范围明确的问题，并要求引用原文。
+`Knowledge Space`: is a document space that manages a type of knowledge. Document knowledge of the same type can be uploaded to a knowledge space.
+:::
 
-![选择知识空间后的对话入口](/img/data-agent/zh-CN/knowledge-chat.png)
 
-截图展示中文界面中尚未发送问题的对话入口，不是已完成回答的示例。
+## Steps
+The knowledge base operation process is relatively simple and is mainly divided into the following steps.
+- 1.Create knowledge space
+- 2.Upload documents
+- 3.Wait for document vectorization
+- 4.Select Knowledge Base App
+- 5.Chat With App
 
-也可以在首页发起任务时选择知识库。切换业务主题时，尤其需要在发送问题前核对所选资源。
 
-## 提出资料能够回答的问题
+### Create knowledge space
 
-对于存放指标治理文档的空间：
+At first open the `Construct App` and select the `Knowledge` on the top.
 
-> 请解释这个知识库中的净实收定义。是否包含运费？次月支付的退款归属哪个月份？请引用原文。如果资料没有明确规定，请直接指出。
+<p align="center">
+  <img src={'/img/app/knowledge_build_v0.6.jpg'} width="800px" />
+</p>
 
-对于运维手册：
+Select the knowledge base, click the `Create` button, and fill in the necessary information to complete the creation of the knowledge space.
 
-> 根据慢查询手册，建议新增索引前应收集哪些证据？请按顺序列出检查项，并引用对应章节。
 
-明确业务术语、系统或文档名称。如果存在多个版本，指定适用日期或版本，并检查返回的引用。要求使用某个版本，并不自动形成持续生效的版本锁定。
+<p align="center">
+  <img src={'/img/app/knowledge_space_v0.6.jpg'} width="800px" />
+</p>
 
-## 使用回答前核验
+### Upload documents
 
-| 检查项 | 可用结果应体现什么 |
-|---|---|
-| 来源相关性 | 引用内容确实涉及所问术语或流程 |
-| 结论支撑 | 被引用的原文能够支持回答中的结论 |
-| 覆盖程度 | 各个问题都得到回应，或明确指出缺失定义 |
-| 时效性 | 资料版本适用，没有误用已废弃的副本 |
-| 任务范围 | 区分文档中的规则与仍需查询的实时数据或执行的操作 |
+Document addition currently supports multiple types, such as plain text, URL crawling, and various document types such as PDF, Word, and Markdown. Select a specific document to `upload`.
 
-打开引用，将回答与原文对照。解释合理或出现引用标记，都不能单独证明结论正确。没有返回相关来源时，应先检查索引和检索，再扩大问题范围。
+<p align="left">
+  <img src={'/img/chat_knowledge/upload_doc.png'} width="720px" />
+</p>
 
-需要计算实时业务数据时，连接[数据源](/docs/modules/connections)，在[语义中心](/docs/semantic-center/overview)准备定义，再选择合适的[插件](/docs/plugins/overview)。知识文档提供背景，数据库结果需要实际执行查询。
 
-## 改进不理想的结果
+Select one or more corresponding documents and click `next`.
 
-检索内容不相关时，确认所选空间，使用原文中的准确术语，并检查相关内容是否已进入切片。检查内容后，再考虑 **Arguments** 中的检索参数。增加返回切片数量可能改善覆盖，也可能引入更多噪声。
 
-资料之间存在冲突时，可以要求 Agent 列出差异和各自引用，再由文档负责人确定规则。需要整体理解时，可以通过 [LLM-Wiki](/docs/getting-started/web-ui/llm-wiki)浏览概念，但仍需根据原始资料复核其解释。
+<p align="left">
+  <img src={'/img/chat_knowledge/upload_doc_finish.png'} width="720px" />
+</p>
 
-模型权限、额度和连接错误需要在模型服务中解决。空对话或失败的对话不能视为成功的知识库回答。
+###  Documents Segmentation
+
+Choose Document Segmentation, you can choose to segment the document by chunk size, separator, paragraph or markdown header. The default is to segment the document by chunk size.
+
+and click Process, it will take a few minutes to complete the document segmentation.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/doc_segmentation.png'} width="720px" />
+</p>
+
+:::tip
+**Automatic: The document is automatically segmented according to the document type.**
+
+**Chunk size: The number of words in each segment of the document. The default is 512 words.**
+    - chunk size: The number of words in each segment of the document. The default is 512 words.
+    - chunk overlap: The number of words overlapped between each segment of the document. The default is 50 words.
+** Separator:segmentation by separator ** 
+    - separator: The separator of the document. The default is `\n`.
+    - enable_merge: Whether to merge the separator chunks according to chunk_size after splits. The default is `False`.
+** Page: page segmentation, only support .pdf and .pptx document.**
+
+** Paragraph: paragraph segmentation, only support .docx document.**
+    - separator: The paragraph separator of the document. The default is `\n`.
+
+** Markdown header: markdown header segmentation, only support .md document.**
+:::
+
+
+### Waiting for document vectorization
+
+Click on the `knowledge space` and observe the document `slicing` + `vectorization` status in the lower left corner. When the status reaches `FINISHED`, you can start a knowledge base conversation.
+
+
+<p align="left">
+  <img src={'/img/chat_knowledge/waiting_doc_vector.png'} width="720px" />
+</p>
+
+
+### Knowledge base chat
+
+Click the `Chat`button to start a conversation with the knowledge base.
+
+
+<p align="left">
+  <img src={'/img/chat_knowledge/chat.png'} width="720px" />
+</p>
+
+
+### Reading assistant
+In addition to the above capabilities, you can also upload documents directly in the knowledge base dialogue window, and the document will be summarized by default. This capability can be used as a `reading assistant` to assist document reading.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/read_helper.gif'} width="720px" />
+</p>

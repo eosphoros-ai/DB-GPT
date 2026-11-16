@@ -3,75 +3,107 @@ sidebar_position: 3
 title: External Data Sources
 ---
 
-# Keep knowledge in sync with external sources
+# External Data Sources
 
-Source bindings connect a knowledge space to an external document platform or feed. Use them when the source changes regularly and uploading a new copy by hand would leave the agent's knowledge out of date.
+Bind external platforms — Feishu Wiki, Feishu Drive, Yuque, or RSS — to a
+knowledge space. Documents from those platforms are pulled automatically
+(chunked, embedded, searchable) and kept in sync on a schedule you choose.
 
-There are three stages to check: **fetch source content → process documents → generate Wiki pages, if enabled**. A successful source sync does not certify that indexing or Wiki generation has finished.
+![Knowledge base list with Wiki-enabled spaces](/images/web-ui/llm-wiki-en/02-knowledge-list.png)
 
-## Choose a source
+> Screenshots in this guide use the **English UI**; 中文界面（`Setting → Language`）布局一致。
 
-Open a [knowledge space](/docs/getting-started/web-ui/knowledge-base), select **Sources**, and click **Bind source**. You can also choose an external source card during space creation and continue into its binding flow.
+## Supported sources
 
-![Sources tab before a binding is added](/img/data-agent/en/knowledge-sources.png)
+| Source | What it syncs | Credentials |
+|---|---|---|
+| **Feishu Wiki** | Wiki spaces → docx documents (blocks → Markdown), sheet/bitable links | App ID + App Secret |
+| **Feishu Drive** | Drive folders → docx files, other types as reference links | App ID + App Secret |
+| **Yuque** | Personal + team repos → documents (body as Markdown) | Personal Token |
+| **RSS / Atom** | Feed entries → Markdown | Feed URL |
 
-The wizard shows the connectors registered in your deployment, alongside local document and text entry points.
+Notion is coming soon (the card is already in the picker and will light up
+once the connector ships).
 
-![Source types and the four-step binding wizard](/img/data-agent/en/knowledge-binding.png)
+## Binding a source
 
-The screenshots use the English UI. Some connector descriptions and existing resource names retain their original language. No external account is bound in this example.
+### Step 1 — Create or open a knowledge space
 
-| Source | Content and access to prepare |
+You can bind a source in two places:
+
+- During **space creation** — pick a binding-style card
+  (Feishu Wiki / Yuque Wiki / RSS). After the space is created, the binding
+  wizard opens inline and pre-selects the connector for you.
+- On the **space detail page → Sources tab** — click
+  **Bind external data source**.
+
+![Create wizard with datasource cards](/images/web-ui/llm-wiki-en/03-create-wizard.png)
+
+### Step 2 — Choose the connector type
+
+The wizard walks through four steps. Pick the platform first (when entering
+from space creation this step is already answered and skipped).
+
+![Binding wizard — choose type](/images/web-ui/llm-wiki-en/10-binding-types.png)
+
+### Step 3 — Configure credentials
+
+Credentials are validated against the platform **before** anything is saved,
+then stored AES-256-GCM encrypted in the metadata DB.
+
+### Step 4 — Pick the scope
+
+The resource tree loads lazily from the platform (e.g. Feishu wiki spaces →
+node trees, Yuque personal/team repos). Check what you want to sync — rows
+never expose raw URLs.
+
+### Step 5 — Choose the sync strategy
+
+| Field | Meaning |
 |---|---|
-| **Feishu Wiki** | Wiki resources visible to the app; prepare App ID, App Secret, document permissions, and resource access |
-| **Feishu Drive** | Selected drive folders and supported documents; prepare app credentials and access to those folders |
-| **Yuque** | Documents from selected personal or team repositories; prepare a token with access to them |
-| **RSS / Atom** | Entries from a reachable feed URL |
-| **Local documents / Text snippet** | Upload or paste content directly into the space |
+| Sync schedule | Manual only, every 15/60/1440 minutes |
+| Sync mode | Incremental (cursor-based, only changed items) or Full |
+| Conflict strategy | Overwrite (update + re-chunk) or Skip unchanged |
+| Sync deletions | When ON, items removed at the source are deleted locally (full passes only) |
 
-Conversion depends on the connector and resource type. A link to a sheet or Base is not evidence that all its table data was imported. Inspect the resulting document content.
+Click **Finish** — the first fetch runs immediately and a toast reports
+created/updated counts. Documents appear in **File View**; if the space also
+has the Wiki index method enabled, wiki pages regenerate automatically.
 
-## Complete the binding
+## Managing bindings
 
-1. **Choose type.** Select the platform.
-2. **Credentials.** Enter the required fields and validate access.
-3. **Pick scope.** Select the resources to synchronize. Start with a small folder or repository and verify that the intended documents are visible.
-4. **Sync strategy.** Set the schedule, sync mode, conflict handling, and deletion behavior offered by the connector, then finish.
+![Sources tab with a binding card](/images/web-ui/llm-wiki-en/09-sources-tab.png)
 
-| Setting | Decision to make |
-|---|---|
-| Schedule | Use manual sync for the first check; choose periodic sync when the scope is verified |
-| Incremental / full | Fetch changes where supported, or scan the selected scope |
-| Conflict handling | Decide whether existing local content should be updated or skipped |
-| Source deletions | Decide whether source removals should propagate locally; check the connector's full-sync behavior |
+Each binding card shows live status (active / paused / running / error), the
+last sync time, and its error message. Available actions:
 
-:::info Finish the scope configuration
-The current wizard can save a binding after credential validation, before scope selection is complete. Closing it at that point can leave an incomplete binding. Check **Sources** afterward and finish its configuration or remove the unused binding. With no selected targets, the initial fetch can be skipped.
-:::
-
-After finishing, inspect the binding's status and sync logs. Confirm created or updated documents in **File View**, then check their chunks and processing status. If Wiki is enabled, check its generation separately.
-
-## Maintain a binding
-
-| Action | Effect |
-|---|---|
-| **Sync now** | Run synchronization for the configured scope |
-| **Pause / Resume** | Stop or resume scheduled synchronization |
-| **Sync logs** | Inspect fetched, created, updated, skipped, failed, or deleted counts and errors |
-| **Delete** | Remove the binding while keeping previously synchronized documents |
-
-A binding may be active, paused, running, or in error. Check the last successful sync and errors before assuming the local knowledge is current. Pausing or deleting a binding does not automatically retire the documents it previously imported.
+- **Sync now** — manual full/incremental run
+- **Pause / Resume** — stops or resumes scheduled runs
+- **Sync logs** — the last 50 runs with created/updated/skipped/failed/deleted counts
+- **Delete** — unbind (synced documents are kept)
 
 ## Troubleshooting
 
-| Symptom | What to check |
+| Symptom | Fix |
 |---|---|
-| Credential validation fails | App/token validity, required permissions, publication where applicable, and resource access |
-| Scope tree is empty | Whether the app or token can see the intended resources |
-| Binding exists but no documents arrive | Selected targets, sync mode, logs, and server network access |
-| Rate limit (`HTTP 429`) | Provider limits, sync frequency, and concurrent clients |
-| TLS verification fails | Configure the trusted corporate CA bundle, for example `DB_GPT_KS_CA_BUNDLE`, and check the server's certificate trust |
-| Credential encryption error | Server knowledge-source encryption configuration and persistent key availability; consult server logs |
-| Sync succeeds but chat or Wiki fails | Document processing, storage/embedding dependencies, and the language model service |
+| `knowledge source encrypt key not configured` | Since v0.7 the key is auto-provisioned; only pin `DB_GPT_KS_ENCRYPT_KEY` (or `[rag.knowledge_source] encrypt_key`) if you want DBA-level confidentiality for credentials |
+| Yuque `HTTP 429` | Rate-limited — retry in 1–2 minutes; consistent 429 means the token is throttled or shared by another script. Rotate the token |
+| `CERTIFICATE_VERIFY_FAILED` | A corporate proxy intercepts TLS. Set `DB_GPT_KS_CA_BUNDLE` to the corporate root CA (or temporarily `DB_GPT_KS_INSECURE=1`) and restart |
+| `Errno 8 nodename nor servname` | DNS failure — check the server host's network/proxy |
+| Feishu `invalid app_id/secret` | Create an enterprise self-built app with `wiki:wiki:readonly`, `docx:document:readonly`, `drive:export:readonly` scopes and publish it |
 
-For a new platform, see the repository's `docs/design/datasource-connector-dev-guide.md`. Connector registration makes a platform discoverable; its permission and synchronization behavior still need validation.
+## Community connectors
+
+New platforms follow a small contract:
+`BaseKnowledgeSourceConnector` with
+`validate / list_resources / fetch_all / fetch_incremental` methods and a
+`ConnectorMeta` that renders the credential form automatically.
+
+```toml
+[project.entry-points."dbgpt.knowledge_sources"]
+my_source = "my_pkg.connector:MyConnector"
+```
+
+After `pip install`, restart DB-GPT — the connector shows up in the wizard
+with zero frontend code. See the full developer guide:
+`docs/design/datasource-connector-dev-guide.md`.

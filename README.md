@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: Data Agents for Trusted, Controlled Data Work
+# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: Open-Source Agentic AI Data Assistant
 
 <p align="left">
   <img src="./assets/dbgpt_vision.png" width="100%" />
@@ -50,46 +50,78 @@
 
 </div>
 
-> **An open-source Data Agent platform that turns business questions into traceable queries, analysis, reports, and dashboards—with governed semantics, reusable plugins, agentic workflows, and controlled tool execution.**
+> **An open-source AI data assistant that connects to your data, writes SQL and code, runs skills in sandboxed environments, and turns analysis into reports, insights, and action.**
 
-![DB-GPT official homepage scenarios](./docs/static/img/data-agent/en/home.png)
+![welcome_page](https://github.com/user-attachments/assets/ff9beb32-7db5-487a-bd81-d4489d853ea5)
 
 ## What is DB-GPT?
 
-DB-GPT helps teams delegate data work within explicit business and execution boundaries, inspect the evidence behind the result, and reuse effective methods.
+DB-GPT is an open-source **agentic AI data assistant** for the next generation of **AI + Data** products.
 
-A schema alone cannot explain a business metric. A valid SQL query can still multiply amounts through joins. Long multi-agent tasks need visible stages and review points. DB-GPT brings these concerns into the product workflow.
+It helps users and teams:
+- connect to **databases, CSV / Excel files, warehouses, and knowledge bases**
+- ask questions in natural language and let AI **write SQL autonomously**
+- run **Python- and code-driven analysis** workflows
+- load and execute reusable **skills** for domain-specific tasks
+- generate **charts, dashboards, HTML reports, and analysis summaries**
+- execute tasks safely in **sandboxed environments**
+
+DB-GPT is also a platform for building **AI-native data agents, workflows, and applications** with agents, AWEL, RAG, and multi-model support.
 
 ## Why DB-GPT?
 
-| Foundation | Purpose | Guide |
-| --- | --- | --- |
-| Governed semantics | Review business meanings and publish metric versions agents can read and cite. | [Semantic Center](./docs/docs/semantic-center/overview.md) |
-| Scenario plugins | Reuse task methods, skills, and tool configuration. | [Plugins](./docs/docs/plugins/overview.md) |
-| Agentic Workflow | Organize agents by stages, responsibilities, deliverables, and gates. | [Flow](./docs/docs/workflow/introduction.md) |
-| Controlled execution | Configure resources, tools, approvals, and environments; inspect execution evidence. | [Execution controls](./docs/docs/data-agent/controlled-execution.md) |
+### 1. Agentic data analysis
+Plan tasks, break work into steps, call tools, and complete analysis workflows end to end.
+![csv_data_analysis_demo_en](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
 
-Trust is built through checkable definitions and execution evidence. Controls depend on the effective deployment and tool configuration; they do not guarantee every generated calculation is correct.
+### 2. Autonomous SQL + code execution
+Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.
+![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
+![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
+
+### 3. Multi-source data access
+Work across structured and unstructured sources, including databases, spreadsheets, documents, and knowledge bases.
+
+![datasource](./assets/datasources.png)
+
+### 4. Skills-driven extensibility
+Package domain knowledge, analysis methods, and execution workflows into reusable skills.
+
+
+
+
+
+![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
+
+### 5. Sandboxed execution
+Run code and tools in isolated environments for safer, more reliable analysis.
+![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
 
 
 ## What you can do with DB-GPT
 
-- **Smart Data Query** — bounded questions, executed SQL, results, and available metric references.
-- **Smart Data Analysis** — investigations, reports, and business dashboards.
-- **SQL Optimization Expert** — evidence-based diagnoses, rewrite/index candidates, and validation plans.
-- **Metadata and Architecture Expert** — dictionaries, physical ER diagrams, and schema documentation.
-- **Financial Report Analysis** — source-based analysis of supplied financial reports.
-
-See [Showcases](./docs/docs/use_cases.mdx) for inputs, steps, and evidence boundaries.
+- **Analyze CSV / Excel files** and generate visual reports
+- **Connect to databases** and produce profiling reports
+- Ask business questions in natural language and let AI **write SQL automatically**
+- Perform **financial report analysis** with code, charts, and narrative summaries
+- Create and reuse **SQL analysis skills** and domain workflows
+- Combine **code, SQL, retrieval, and tools** in a single agentic workflow
+- Build next-generation **AI + Data assistants** for your team or product
 
 ## Product Workflow
 
-Connect data → prepare published definitions → select a plugin → organize complex work with Flow → review confirmations and execution → inspect delivered results.
+### Explore data
+Connect files, databases, and knowledge bases in one workspace.
 
-Agents choose methods inside their assigned stages. Flow makes dependencies and handoffs explicit, helping reduce drift, omissions, and unverifiable outputs in complex tasks. A prompt contract is not automatic validation, and visible failure is not checkpoint recovery.
+### Plan and execute
+Let AI reason through the task, write SQL and code, and execute step by step.
 
-After installation, follow [Your first data task](./docs/docs/data-agent/quickstart.md).
+### Use skills
+Load reusable skills for repeatable business analysis workflows.
+
+### Generate reports
+Produce charts, dashboards, HTML reports, and decision-ready outputs.
 
 
 ## Quick Start
@@ -379,16 +411,24 @@ For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see
 
 ### Privacy and Security
 
-Private deployment and configured execution environments can help teams control data access. Review the effective database privileges, tool policies, and environment boundaries in your deployment.
+We protect data privacy and execution safety through private model deployment, proxy desensitization, and sandboxed execution mechanisms.
 
 ### Data Sources
 - [Datasources](http://docs.dbgpt.cn/docs/modules/connections)
 
 ## Vision
 
-Our vision is to make data work delegable, checkable, and reusable. Teams should be able to ask a business question, know which definitions and resources an agent used, inspect its execution, and intervene at meaningful decision points.
+We believe the future of data products goes beyond dashboards.
 
-DB-GPT pursues that vision through governed semantics, scenario plugins, agentic workflows, and controlled execution, with open building blocks for developers to extend.
+The next generation of **AI + Data** products will be:
+- **agentic**
+- **multi-source**
+- **skill-driven**
+- **sandboxed**
+- capable of writing **SQL and code**
+- able to turn analysis into **reports, decisions, and action**
+
+DB-GPT aims to help developers and enterprises build that future.
 
 
 ## Contribution

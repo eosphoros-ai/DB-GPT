@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT：打造可信、受控的 Data Agent
+# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT：开源 Agentic AI 数据分析智能助手
 
 <p align="left">
   <img src="./assets/dbgpt_vision.png" width="100%" />
@@ -46,48 +46,73 @@
 [![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
 [![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
 
-[**文档**](http://docs.dbgpt.cn/zh-CN/docs/overview/) | [**联系团队**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+[**文档**](http://docs.dbgpt.cn/docs/overview/) | [**联系团队**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
 
-> **面向业务数据工作的开源 Data Agent 平台，通过可治理的语义、可复用的场景插件、Agentic Workflow 和受控执行，将业务问题转化为可追溯的查询、分析、报告与看板。**
-
-![首页官方业务场景](./docs/static/img/data-agent/zh-CN/home.png)
+> **一个开源的 AI 数据分析智能助手：连接你的数据，自主编写 SQL 与代码，在沙箱环境中运行 skills，把分析转化为报告、洞察与行动。**
 
 ## DB-GPT 是什么？
 
-DB-GPT 让团队在明确的业务与执行边界内委托 Agent 完成数据工作，核验结果依据，并复用有效的方法。
+DB-GPT 是一个开源的 **Agentic AI 数据分析智能助手**，面向下一代 **AI + Data** 产品形态。
 
-数据库结构不能完整解释指标；可执行的 SQL 仍可能因 JOIN 放大金额；长程多 Agent 任务需要明确阶段和复核点。DB-GPT 将这些问题纳入产品主线。
+它可以帮助用户和团队：
+- 连接 **数据库、CSV / Excel、数仓、知识库与文档**
+- 使用自然语言提问，并让 AI **自主编写 SQL**
+- 执行 **Python 与代码驱动的数据分析流程**
+- 加载并执行可复用的 **skills**
+- 自动生成 **图表、Dashboard、HTML 报告和分析总结**
+- 在 **沙箱环境** 中安全执行分析任务
+
+DB-GPT 不只是一个助手界面，它同时也是一个平台，用于构建 **AI Native 数据智能体、工作流与应用**，底层支持 agents、AWEL、RAG 与多模型能力。
 
 ## 为什么选择 DB-GPT？
 
-| 支柱 | 用途 | 指南 |
-| --- | --- | --- |
-| 可治理的语义 | 审核业务定义，发布 Agent 可读取和引用的指标版本 | [语义中心](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/semantic-center/overview.md) |
-| 场景插件 | 复用任务方法、Skills 与工具配置 | [插件中心](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/plugins/overview.md) |
-| Agentic Workflow | 明确阶段、Agent 责任、产物与 Gate | [Flow](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/workflow/introduction.md) |
-| 受控执行 | 配置资源、工具、审批和环境，检查执行证据 | [执行控制](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/data-agent/controlled-execution.md) |
+### 1. Agentic 数据分析
+它不只是回答问题，而是会进行任务规划、步骤拆解、工具调用和迭代式分析。
+![csv-data-analysis_skill](https://github.com/user-attachments/assets/de0073f6-6b69-42f1-9fd2-5b759ca88ed8)
 
-可信来自可核验定义与执行依据；控制取决于实际部署与工具配置，不保证每个生成计算自动正确。
+### 2. 自主 SQL + 自主代码执行
+自动编写 SQL 和代码，用于查询数据、处理数据、计算指标并生成结果。
+![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
+![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
+
+### 3. 多数据源分析
+同时处理结构化与非结构化数据，包括数据库、表格文件、文档和知识库。
+![datasource](./assets/datasources.png)
+
+### 4. Skills 驱动的可扩展能力
+将领域知识、分析方法和执行流程沉淀为 skills，实现复用与扩展。
+
+![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
+
+### 5. 沙箱安全执行
+在隔离环境中运行代码和工具，让分析过程更安全、更可控。
+![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
 ## 你可以用 DB-GPT 做什么？
 
-- **智能取数**：范围明确的问题、已执行 SQL、结果和可用指标引用。
-- **智能分析**：业务调查、分析报告和经营看板。
-- **SQL 优化专家**：带依据的诊断、改写和索引候选。
-- **元数据与架构专家**：数据字典、物理 ER 和结构文档。
-- **财报分析**：基于提供文件的财务分析与来源引用。
-
-详见[场景案例](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/use_cases.mdx)的输入、步骤与证据边界。
+- **分析 CSV / Excel 文件** 并生成可视化报告
+- **连接数据库** 自动生成数据库画像与分析报告
+- 用自然语言提问，让 AI **自动写 SQL**
+- 进行 **财报深度分析**，生成图表、分析结论与总结
+- 创建和复用 **SQL 分析技能**
+- 将 **代码、SQL、检索和工具调用** 组合成完整的 agentic 分析流程
+- 构建面向团队或产品的下一代 **AI + Data 智能助手**
 
 ## 产品工作流
 
-连接数据 → 准备已发布定义 → 选择插件 → 用 Flow 组织复杂阶段 → 检查确认与执行 → 核验成果。
+### 数据探索
+连接文件、数据库和知识库，在统一入口开始分析任务。
 
-Agent 在阶段内自主完成任务，Flow 显式组织依赖和交接，减少流程偏离、遗漏与不可校验结果。提示契约不是自动验证，异常可定位不等于断点恢复。
+### 规划与执行
+让 AI 进行任务推理、生成 SQL / 代码，并逐步完成分析。
 
-安装后完成[第一次数据任务](./docs/i18n/zh-CN/docusaurus-plugin-content-docs/current/data-agent/quickstart.md)。
+### 使用 Skills
+加载可复用的业务分析技能与领域工作流。
+
+### 生成报告
+自动输出图表、Dashboard、HTML 报告和决策结论。
 
 
 ## 快速开始
@@ -403,16 +428,24 @@ dbgpt start
 
 ### 隐私安全
 
-私有部署和配置的执行环境帮助团队控制数据访问。实际边界取决于数据库权限、工具策略与执行环境，应在部署中逐项检查。
+通过私有化大模型、代理脱敏和沙箱执行等机制保障数据隐私与执行安全。
 
 ### 数据源
 - [支持数据源](https://www.yuque.com/eosphoros/dbgpt-docs/rc4r27ybmdwg9472)
 
 ## 愿景
 
-我们的愿景是让数据工作可委托、可核验、可复用。团队提出业务问题后，能够知道 Agent 使用了哪些定义与资源，检查执行依据，并在关键决策处介入。
+我们相信，未来的数据产品不应止于 Dashboard。
 
-DB-GPT 通过可治理语义、场景插件、Agentic Workflow 和受控执行推进这一愿景，同时提供开放的开发能力供团队扩展。
+下一代 **AI + Data** 产品将是：
+- **agentic**
+- **多数据源**
+- **skill-driven**
+- **sandboxed**
+- 能自主编写 **SQL 和代码**
+- 能把分析转化为 **报告、结论与行动**
+
+DB-GPT 希望帮助开发者与企业共同构建这样的未来。
 
 
 

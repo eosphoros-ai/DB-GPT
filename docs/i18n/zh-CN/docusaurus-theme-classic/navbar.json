@@ -16,19 +16,19 @@
     "description": "The alt text of navbar logo"
   },
   "item.label.Docs": {
-    "message": "文档",
+    "message": "Docs",
     "description": "Navbar item with label Docs"
   },
   "item.label.Community": {
-    "message": "社区",
+    "message": "Community",
     "description": "Navbar item with label Community"
   },
   "item.label.Blog": {
-    "message": "博客",
+    "message": "Blog",
     "description": "Navbar item with label Blog"
   },
   "item.label.Releases": {
-    "message": "版本发布",
+    "message": "Releases",
     "description": "Navbar item with label Releases"
   }
 }

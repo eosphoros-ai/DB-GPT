@@ -1,11 +1,5 @@
 # Flow
 
-> **Looking for product docs?** The visual/Python AWEL guides are retired; the product
-> surface for workflows is the TaskFlow node chain — see
-> [What is a Workflow](/docs/workflow/introduction) and
-> [Custom operators](/docs/workflow/custom-operator). This page remains the REST
-> reference for the flow service.
-
 Get started with the Flow API
 
 # Chat Flow

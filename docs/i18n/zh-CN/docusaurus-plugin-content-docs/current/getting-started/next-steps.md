@@ -17,14 +17,14 @@ read_when:
 |---|---|
 | 构建数据分析应用 | [App Development Guide](/docs/cookbook/app/data_analysis_app_develop) |
 | 创建自定义 agent | [Agent Development](/docs/agents/introduction/) |
-| 用自定义算子扩展工作流 | [自定义算子](/docs/workflow/custom-operator) |
+| 用 Python 构建 AWEL 工作流 | [AWEL Tutorial](/docs/awel/tutorial) |
 | 使用可视化 AWEL 编辑器 | [AWEL Flow](/docs/getting-started/tools/awel-flow) |
 
 ## 深入理解系统
 
 | 主题 | 资源 |
 |---|---|
-| 工作流编排模型 | [工作流是什么](/docs/workflow/introduction) |
+| AWEL 深入文档 | [AWEL Documentation](/docs/awel/) |
 | Agent 模块（memory、planning、tools） | [Agent Modules](/docs/agents/modules/profile/) |
 | RAG 高级配置 | [RAG Tutorial](/docs/application/advanced_tutorial/rag) |
 | 多模型管理（SMMF） | [SMMF Guide](/docs/application/advanced_tutorial/smmf) |

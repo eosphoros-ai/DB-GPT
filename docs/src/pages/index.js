@@ -5,157 +5,218 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 const featureGroups = [
   {
-    title: ['Start Here', '从这里开始'],
+    title: 'Start Here',
     items: [
       {
-        title: ['Overview', '产品概览'],
-        description: ['Understand the vision of trusted, controlled data agents.', '了解可信、受控 Data Agent 的愿景与产品主线。'],
+        title: 'Overview',
+        description: 'Learn what DB-GPT is and how it revolutionizes database interactions with AI.',
         link: '/docs/overview',
         icon: '📖',
       },
       {
-        title: ['Your First Data Task', '第一次数据任务'],
-        description: ['Connect data, select a scenario, and check the evidence.', '连接数据，选择场景，核验执行与结果。'],
-        link: '/docs/data-agent/quickstart',
+        title: 'Getting Started',
+        description: 'Get DB-GPT running in minutes with the one-line installer.',
+        link: '/docs/installation',
         icon: '🚀',
       },
       {
-        title: ['Showcases', '场景案例'],
-        description: ['Explore the five homepage scenarios with inputs and verification steps.', '按首页五个场景查看输入、操作和核验方法。'],
+        title: 'Show Cases',
+        description: 'Explore real-world use cases and examples powered by DB-GPT.',
         link: '/docs/use_cases',
         icon: '⚡',
       },
     ],
   },
   {
-    title: ['Build Trust and Control', '建立可信与受控的数据工作方式'],
+    title: 'Installation',
     items: [
       {
-        title: ['Semantic Center', '语义中心'],
-        description: ['Review business meanings and publish metric versions agents can cite.', '审核业务含义，发布 Agent 可读取和引用的指标版本。'],
-        link: '/docs/semantic-center/overview',
-        icon: '🗂️',
+        title: 'Source Code',
+        description: 'Install from source with full control over your deployment.',
+        link: '/docs/getting-started/deploy/source-code',
+        icon: '💻',
       },
       {
-        title: ['Scenario Plugins', '场景插件'],
-        description: ['Reuse expert methods, skills, and task configuration.', '复用专家方法、Skills 和任务配置。'],
-        link: '/docs/plugins/overview',
-        icon: '🧩',
+        title: 'CLI Quick Start',
+        description: 'Get started quickly with the DB-GPT CLI.',
+        link: '/docs/getting-started/cli-quickstart',
+        icon: '🔧',
       },
       {
-        title: ['Agentic Workflow', 'Agentic Workflow'],
-        description: ['Coordinate agent responsibilities, deliverables, dependencies, and gates.', '组织 Agent 责任、产物、依赖与 Gate。'],
-        link: '/docs/workflow/introduction',
-        icon: '🔄',
-      },
-      {
-        title: ['Controlled Execution', '受控执行'],
-        description: ['Inspect resource boundaries, approvals, and actual tool evidence.', '检查资源边界、审批与真实工具证据。'],
-        link: '/docs/data-agent/controlled-execution',
-        icon: '🛡️',
+        title: 'Docker Deployment',
+        description: 'Deploy with Docker for quick and isolated setup.',
+        link: '/docs/installation/docker',
+        icon: '🐳',
       },
     ],
   },
   {
-    title: ['Deploy and Extend', '部署与扩展'],
+    title: 'Core Concepts',
     items: [
       {
-        title: ['Installation', '安装部署'],
-        description: ['Choose an installation and configure a working model.', '选择安装方式，配置可用模型。'],
-        link: '/docs/installation',
-        icon: '💻',
+        title: 'Agents',
+        description: 'Build autonomous AI agents for complex data tasks.',
+        link: '/docs/getting-started/concepts/agents',
+        icon: '🤖',
       },
       {
-        title: ['Datasources', '数据源'],
-        description: ['Connect databases and other data resources.', '连接数据库与其他数据资源。'],
+        title: 'AWEL',
+        description: 'Agentic Workflow Expression Language for orchestration.',
+        link: '/docs/getting-started/concepts/awel',
+        icon: '🔄',
+      },
+      {
+        title: 'RAG',
+        description: 'Retrieval-Augmented Generation for knowledge-enhanced AI.',
+        link: '/docs/getting-started/concepts/rag',
+        icon: '🧠',
+      },
+      {
+        title: 'SMMF',
+        description: 'Service-oriented Multi-model Management Framework.',
+        link: '/docs/getting-started/concepts/smmf',
+        icon: '🔌',
+      },
+    ],
+  },
+  {
+    title: 'Core Components',
+    items: [
+      {
+        title: 'Skills',
+        description: 'Reusable skill packages for domain-specific tasks.',
+        link: '/docs/dbgpts/introduction',
+        icon: '🧩',
+      },
+      {
+        title: 'DataSources',
+        description: 'Connect to databases, warehouses, and data platforms.',
         link: '/docs/modules/connections',
         icon: '🔗',
       },
       {
-        title: ['Knowledge Base', '知识库'],
-        description: ['Import documents, keep sources current, and verify answers with references.', '导入文档、同步来源，并根据引用核验回答。'],
-        link: '/docs/getting-started/web-ui/knowledge-base',
+        title: 'Sandbox',
+        description: 'Secure sandboxed environments for code execution.',
+        link: '/docs/sandbox/',
+        icon: '📦',
+      },
+      {
+        title: 'Knowledge',
+        description: 'Build and manage knowledge bases for RAG.',
+        link: '/docs/modules/rag',
         icon: '📚',
       },
+    ],
+  },
+  {
+    title: 'Applications',
+    items: [
       {
-        title: ['Harness', '执行 Harness'],
-        description: ['Configure or extend the agent execution engine.', '配置或扩展 Agent 执行引擎。'],
-        link: '/docs/harness/introduction',
-        icon: '🔧',
+        title: 'Chat with Data',
+        description: 'Natural language queries to your databases.',
+        link: '/docs/application/apps/chat_data',
+        icon: '💬',
       },
       {
-        title: ['Plugin Package Reference', '插件包格式参考'],
-        description: ['Package a reusable scenario for your team.', '为团队封装可复用场景能力。'],
-        link: '/docs/plugins/package-reference',
-        icon: '📦',
+        title: 'Data Analysis',
+        description: 'AI-powered analysis of CSV, Excel, and databases.',
+        link: '/docs/cookbook/app/data_analysis_app_develop',
+        icon: '📊',
+      },
+      {
+        title: 'AWEL Flows',
+        description: 'Build and run agentic workflows visually.',
+        link: '/docs/application/awel',
+        icon: '🎯',
       },
     ],
   },
 ];
 
-function FeatureCard({ title, description, link, icon, languageIndex }) {
+const quickLinks = [
+  { title: 'GitHub', href: 'https://github.com/eosphoros-ai/DB-GPT', icon: '🔗' },
+  { title: 'Discord', href: 'https://discord.gg/erwfqcMP', icon: '💬' },
+  { title: 'HuggingFace', href: 'https://huggingface.co/eosphoros', icon: '🤗' },
+  { title: 'Community', href: 'https://github.com/eosphoros-ai/community', icon: '👥' },
+];
+
+function FeatureCard({ title, description, link, icon }) {
   return (
-    <Link to={useBaseUrl(link)} className="homepage-card">
+    <Link to={link} className="homepage-card">
       <div className="homepage-card-icon">{icon}</div>
       <div className="homepage-card-content">
-        <h3 className="homepage-card-title">{title[languageIndex]}</h3>
-        <p className="homepage-card-description">{description[languageIndex]}</p>
+        <h3 className="homepage-card-title">{title}</h3>
+        <p className="homepage-card-description">{description}</p>
       </div>
       <div className="homepage-card-arrow">→</div>
     </Link>
   );
 }
 
+function FeatureSection({ title, items }) {
+  return (
+    <div className="homepage-section">
+      <h2 className="homepage-section-title">{title}</h2>
+      <div className="homepage-cards-grid">
+        {items.map((item, idx) => (
+          <FeatureCard key={idx} {...item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickLink({ title, href, icon }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="homepage-quick-link">
+      <span className="homepage-quick-link-icon">{icon}</span>
+      <span>{title}</span>
+    </a>
+  );
+}
+
 export default function Home() {
-  const { siteConfig, i18n } = useDocusaurusContext();
-  const languageIndex = i18n.currentLocale === 'zh-CN' ? 1 : 0;
-  const isZh = languageIndex === 1;
-  const tagline = isZh
-    ? '打造可信、受控的 Data Agent'
-    : 'Data agents for trusted, controlled data work';
-  const description = isZh
-    ? '通过可治理语义、场景插件、Agentic Workflow 和受控执行，将业务问题转化为可核验的查询、分析、报告与看板。'
-    : 'Turn business questions into checkable queries, analysis, reports, and dashboards through governed semantics, scenario plugins, agentic workflows, and controlled execution.';
+  const { siteConfig } = useDocusaurusContext();
   const logoSrc = useBaseUrl('img/dbgpt_logo.svg');
-  const firstTaskUrl = useBaseUrl('/docs/data-agent/quickstart');
-  const overviewUrl = useBaseUrl('/docs/overview');
 
   return (
-    <Layout title={siteConfig.title} description={description}>
+    <Layout
+      title={siteConfig.title}
+      description="DB-GPT: Open-Source Agentic AI Data Assistant - Revolutionizing Database Interactions with Private LLM Technology"
+    >
       <main className="homepage-main">
         <div className="homepage-hero">
           <div className="homepage-hero-content">
             <img src={logoSrc} alt="DB-GPT Logo" className="homepage-hero-logo" />
-            <p className="homepage-hero-tagline">{tagline}</p>
-            <p className="homepage-hero-description">{description}</p>
+            <p className="homepage-hero-tagline">
+              Open-Source Agentic AI Data Assistant
+            </p>
+            <p className="homepage-hero-description">
+              Connect to your data, write SQL and code autonomously, run skills in sandboxed environments, 
+              and turn analysis into reports, insights, and action.
+            </p>
             <div className="homepage-hero-buttons">
-              <Link to={firstTaskUrl} className="homepage-button homepage-button-primary">
-                {isZh ? '开始第一次任务' : 'Start Your First Task'}
+              <Link to="/docs/installation" className="homepage-button homepage-button-primary">
+                Get Started
               </Link>
-              <Link to={overviewUrl} className="homepage-button homepage-button-secondary">
-                {isZh ? '了解产品' : 'Explore the Product'}
+              <Link to="/docs/overview" className="homepage-button homepage-button-secondary">
+                Learn More
               </Link>
             </div>
           </div>
         </div>
+
         <div className="homepage-content">
-          {featureGroups.map(group => (
-            <div className="homepage-section" key={group.title[0]}>
-              <h2 className="homepage-section-title">{group.title[languageIndex]}</h2>
-              <div className="homepage-cards-grid">
-                {group.items.map(item => (
-                  <FeatureCard key={item.link} {...item} languageIndex={languageIndex} />
-                ))}
-              </div>
-            </div>
+          {featureGroups.map((group, idx) => (
+            <FeatureSection key={idx} {...group} />
           ))}
+
           <div className="homepage-section homepage-quick-links-section">
-            <h2 className="homepage-section-title">{isZh ? '社区与资源' : 'Community & Resources'}</h2>
+            <h2 className="homepage-section-title">Community & Resources</h2>
             <div className="homepage-quick-links">
-              <a href="https://github.com/eosphoros-ai/DB-GPT" className="homepage-quick-link">GitHub</a>
-              <a href="https://github.com/eosphoros-ai/community" className="homepage-quick-link">
-                {isZh ? '社区' : 'Community'}
-              </a>
+              {quickLinks.map((link, idx) => (
+                <QuickLink key={idx} {...link} />
+              ))}
             </div>
           </div>
         </div>

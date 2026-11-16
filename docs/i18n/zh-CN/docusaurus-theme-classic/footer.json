@@ -40,15 +40,15 @@
     "description": "Footer copyright"
   },
   "link.title.Community": {
-    "message": "社区",
+    "message": "Community",
     "description": "The title of the footer links column with title=Community in the footer"
   },
   "link.title.Github": {
-    "message": "GitHub",
+    "message": "Github",
     "description": "The title of the footer links column with title=Github in the footer"
   },
   "link.title.More": {
-    "message": "更多",
+    "message": "More",
     "description": "The title of the footer links column with title=More in the footer"
   },
   "link.item.label.Discord": {

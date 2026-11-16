@@ -1,121 +1,133 @@
 ---
-title: Showcases
+title: Show Cases
 sidebar_position: 1
 ---
 
-# Showcases
+# Show Cases
 
-Start with the five official scenarios on the homepage. Each recipe below identifies the required inputs, a question to try, the expected delivery, and what to verify.
+DB-GPT helps teams turn data questions into SQL, code, charts, dashboards, reports, and knowledge-driven workflows.
 
-The entry screenshots show the current English UI. The query and dashboard result screenshots reopen saved artifacts; they are **historical examples**, not new live runs. Stored metric names, data values, and authored dashboard labels retain their original language. The SQL, metadata, and financial recipes below show task entry points, not completed output evidence.
+## What you can do with DB-GPT
 
-![The five official homepage scenarios](/img/data-agent/en/home.png)
+<div className="overview-cards-grid">
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">📈</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Analyze CSV / Excel files</h3>
+      <p className="overview-card-description">Upload files, inspect data, compute metrics, and generate visual reports.</p>
+    </div>
+  </div>
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">🗄️</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Connect to databases</h3>
+      <p className="overview-card-description">Explore schemas, query production-like data, and produce profiling reports.</p>
+    </div>
+  </div>
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">🧾</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Natural language to SQL</h3>
+      <p className="overview-card-description">Ask business questions and let AI generate SQL automatically.</p>
+    </div>
+  </div>
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">💹</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Financial report analysis</h3>
+      <p className="overview-card-description">Combine documents, code, charts, and summaries for decision support.</p>
+    </div>
+  </div>
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">🧰</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Build reusable skills</h3>
+      <p className="overview-card-description">Create domain workflows and reusable SQL / analysis skills for repeated tasks.</p>
+    </div>
+  </div>
+  <div className="overview-card overview-card--static">
+    <div className="overview-card-icon">🧠</div>
+    <div className="overview-card-content">
+      <h3 className="overview-card-title">Combine code, SQL, retrieval, and tools</h3>
+      <p className="overview-card-description">Build next-generation AI + Data assistants for teams and products.</p>
+    </div>
+  </div>
+</div>
 
-## 1. Smart Data Query: net receipts with a published definition
+## Featured scenarios
 
-**Question:** What are January 2026 net receipts by acquisition source, and which definition was used?
+<img
+  src="/img/agentic_data/dbgpt_playgroup.png"
+  alt="DB-GPT welcome page"
+  className="showcase-hero-image"
+/>
 
-**Prepare:** a working model, the synthetic `Semantic_Commerce_Case` database, reviewed business definitions, and a published net-receipts metric. This demo database and its semantic definitions must be prepared separately; substitute your own metric for real business work.
+## End-to-end examples
 
-Select **Data Query → Semantic Center: net receipts**, check the database attachment, and send the recommended question. Ask for event-month attribution, tenant/order eligibility, aggregation before joins, SQL, CNY amounts, and metric citations.
+### 1. Agentic data analysis
 
-![Smart Data Query entry](/img/data-agent/en/query-entry.png)
+Use DB-GPT to plan tasks, break work into steps, call tools, and complete end-to-end analysis workflows.
 
-The saved example reads metric `17@v1`, executes a channel query, and returns two rows: organic CNY 126 and ads CNY 212, total CNY 338. It also records an independent reconciliation query. These figures apply to this synthetic dataset and definition.
+<img
+  src="/img/agentic_data/csv_data_analysis.jpg"
+  alt="Agentic data analysis showcase"
+  className="showcase-hero-image"
+/>
 
-![Historical query result and published metric explanation](/img/data-agent/en/query-result.png)
+### 2. Autonomous SQL + code execution
 
-**Verify:** the executed query, result rows and truncation, metric `semantic::Semantic_Commerce_Case/metric/17@v1`, and payment/refund date filters. Inspect the definition's freight-allocation assumptions; do not generalize a fixed-month demo to installment payments spanning months.
+Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.
 
-Follow [Semantic Center quickstart](./semantic-center/quickstart.md) to reproduce the definition-first method.
+<div className="showcase-dual-grid">
+  <img
+    src="/img/agentic_data/agentic_gen_code.png"
+    alt="Agentic code generation"
+    className="showcase-hero-image"
+  />
+  <img
+    src="/img/agentic_data/agentic_sql_query.png"
+    alt="SQL query generation"
+    className="showcase-hero-image"
+  />
+</div>
 
-## 2. Smart Data Analysis: an operating dashboard
+### 3. Intelligent database insight and analysis report
 
-**Question:** How do sales evolve over time and differ across locations?
+Built on the new Agentic architecture, the engine autonomously performs data diagnostics, feature extraction, and multi-dimensional analysis, generating exclusive analysis reports with beautiful charts and deep insights that make data value crystal clear.
 
-**Prepare:** a database or suitable file, a business objective, time range, units, and comparison dimensions. The homepage Walmart example requires `Walmart_Sales`.
+<img
+  src="/img/agentic_data/agentic_db_data.jpg"
+  alt="Intelligent database insight and analysis report"
+  className="showcase-hero-image"
+/>
 
-Select **Data Analysis**, choose a dashboard question, and review the proposed components before confirming generation. For SQLite dates stored as `DD-MM-YYYY`, require normalization to ISO calendar order before monthly grouping.
+### 4. Skills-driven extensibility
 
-![Smart Data Analysis entry](/img/data-agent/en/analysis-entry.png)
+Package domain knowledge, analysis methods, and execution workflows into reusable skills.
 
-Try:
+<div className="showcase-dual-grid">
+  <img
+    src="/img/skill/import_github_skill_.png"
+    alt="Import GitHub skill"
+    className="showcase-hero-image"
+  />
+  <img
+    src="/img/agentic_data/agent_browse_use.jpg"
+    alt="Agent browse skill usage"
+    className="showcase-hero-image"
+  />
+</div>
 
-```text
-Build a sales dashboard for the selected demo database.
-Confirm the available date range, units, and table structure first.
-Include monthly sales, location contributions, and a detail table.
-Explain each widget's SQL and validate its date axis and totals.
-```
+### 5. Sandboxed execution
 
-The result image below shows a saved **Olist-shaped synthetic example**, not the Walmart task. Its draft contains five components and can be opened in the dashboard viewer. The original conversation stopped at its turn limit after saving the draft, so the screenshot does not establish a normally completed conversation.
+Run code and tools in isolated environments for safer, more reliable analysis.
 
-![Historical dashboard opened in the English viewer](/img/data-agent/en/analysis-dashboard.png)
+<img
+  src="/img/agentic_data/sanbox_running.png"
+  alt="Sandboxed execution"
+  className="showcase-hero-image"
+/>
 
-**Verify:** all widget SQL, global filters, join grain, units, date axes, and totals. This saved example still needs KPI presentation review: its combined GMV/order card displays one value with an `order` unit. Treat it as a draft to inspect, not a certified operating dashboard. A saved draft and executable SQL are insufficient acceptance criteria.
+## Outcome
 
-## 3. SQL Optimization Expert: a diagnosis you can review
-
-**Question:** Which bottleneck is supported by evidence, and how should a proposed rewrite be tested?
-
-**Prepare:** the database, engine/version, original SQL, parameters, existing indexes, and observed symptoms.
-
-Select **SQL Optimization → Diagnose this SQL and produce an evidence-based optimization report**. Add the actual SQL before sending.
-
-![SQL diagnosis entry](/img/data-agent/en/sql-entry.png)
-
-```text
-Diagnose the supplied SQL on the selected database.
-Read schema, existing indexes, and an available estimated execution plan.
-Separate observations from hypotheses. Do not run changes or EXPLAIN ANALYZE.
-Deliver the original SQL, candidate rewrites/indexes, semantic equivalence checks,
-and a validation plan. Label any performance improvement as unmeasured.
-```
-
-**Expected delivery:** diagnosis and, when requested and successfully generated, a report artifact. **Verify:** plan provenance, semantic equivalence, write/storage costs of indexes, and actual artifact completion. A candidate index is not an applied change. No completed diagnosis is demonstrated by this entry screenshot.
-
-## 4. Metadata and Architecture Expert: a physical data dictionary
-
-**Question:** What do the selected tables contain, and which relationships are declared?
-
-**Prepare:** the database, schema/table scope, and catalog access.
-
-Select **Metadata & Architecture → Generate a data dictionary for selected tables and export CSV**. Supply a specific table list.
-
-![Metadata expert entry](/img/data-agent/en/metadata-entry.png)
-
-```text
-Document the selected tables from executed catalog queries.
-Include columns, types, nullability, defaults, keys, comments, and source time.
-Keep unknown business meanings explicit. Export only complete query evidence.
-For an ER diagram, distinguish declared foreign keys from inferred associations.
-```
-
-**Expected delivery:** dictionary/CSV or a rendered ER artifact for an ER request. **Verify:** catalog coverage and truncation, composite-key column mappings, and actual file links. Inferred relationships remain explanatory and must not become real or DBML foreign-key constraints. This screenshot does not show a completed dictionary export.
-
-## 5. Financial Report Analysis: source-based annual-report reading
-
-**Question:** What changed in a company's financial performance, and where is the supporting evidence?
-
-**Prepare:** one annual-report PDF, or comparable PDFs for a comparison, with source, period, currency, and units. A database is not required for the homepage annual-report recipe.
-
-Select **Financial Analysis → Read an annual report**, attach the PDF, and review the question. For comparison, choose **Compare financial reports** and specify peer or multi-year scope.
-
-![Financial-report entry](/img/data-agent/en/financial-entry.png)
-
-```text
-Analyze the uploaded annual report. Identify the entity, period, currency,
-and units first. Explain revenue, profitability, cash flow, and material risks
-with document references. Separate reported facts from interpretations.
-List missing information and create a report only from supported figures.
-```
-
-**Expected delivery:** cited analysis and any successfully generated report. **Verify:** upload completion, document/page references, accounting scope, period comparability, and units. An entry screenshot does not demonstrate successful PDF ingestion or a completed financial report.
-
-## Extend a scenario with Agentic Workflow
-
-When the task recurs or needs separate responsibilities, use a Flow. The analysis template separates grounding and planning, parallel trend/data-quality work, combined numeric review, and reporting.
-
-![Agentic analysis template](/img/data-agent/en/workflow-editor.png)
-
-Configure each node's resources, output requirements, and budget. Add a human Gate when a scope decision matters. See [Workflow quickstart](./workflow/quickstart.md), [contracts and gates](./workflow/contracts-and-gates.md), and [failure handling](./workflow/troubleshooting.md).
+DB-GPT is designed for teams that want to go beyond simple chatbots and build practical AI + Data systems that can connect to data, reason with tools, and deliver reports, insights, and action.

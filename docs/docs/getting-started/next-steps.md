@@ -17,14 +17,14 @@ You have the basics working. Use this page to jump to the next useful docs.
 |---|---|
 | Build a data analysis app | [App Development Guide](/docs/cookbook/app/data_analysis_app_develop) |
 | Create custom agents | [Agent Development](/docs/agents/introduction/) |
-| Extend workflows with custom operators | [Custom operators](/docs/workflow/custom-operator) |
+| Build AWEL workflows in Python | [AWEL Tutorial](/docs/awel/tutorial) |
 | Use the visual AWEL editor | [AWEL Flow](/docs/getting-started/tools/awel-flow) |
 
 ## Deepen your knowledge
 
 | Topic | Resource |
 |---|---|
-| Workflow orchestration model | [What is a Workflow](/docs/workflow/introduction) |
+| AWEL language deep dive | [AWEL Documentation](/docs/awel/) |
 | Agent modules (memory, planning, tools) | [Agent Modules](/docs/agents/modules/profile/) |
 | RAG advanced configuration | [RAG Tutorial](/docs/application/advanced_tutorial/rag) |
 | Multi-model management (SMMF) | [SMMF Guide](/docs/application/advanced_tutorial/smmf) |

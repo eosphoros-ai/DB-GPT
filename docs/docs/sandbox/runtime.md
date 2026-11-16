@@ -75,7 +75,7 @@ dbgpt-sandbox-agent:latest
 ~~~
 
 The repository includes a Dockerfile for an agent image with the common data
-analysis dependencies used by code:
+analysis dependencies used by code_interpreter:
 
 ~~~bash
 cd /path/to/DB-GPT

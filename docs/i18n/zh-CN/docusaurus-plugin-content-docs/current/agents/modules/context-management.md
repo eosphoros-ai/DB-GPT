@@ -18,7 +18,7 @@ system prompt + task progress + memory + 最近 ReAct 轮次
    v
 统计 token
 ProxyTokenizerWrapper.count_token(model_name)
-兜底估算：非 ASCII 字符约 1 token/字符，ASCII 约 1 token/4 字符
+兜底估算：len(content) // 4
    |
    v
 计算预算
@@ -243,7 +243,7 @@ Observation: <observation text>
 
 ```toml
 [service.web.agent_context]
-max_context_tokens = 0
+max_context_tokens = 120000
 reserved_tokens = 4096
 warning_threshold = 0.70
 error_threshold = 0.90
@@ -255,23 +255,7 @@ min_keep_tokens = 10000
 max_compact_failures = 3
 ```
 
-`max_context_tokens = 0` 是自动模式：内置 Agent 在实际请求前读取所选模型的元数据，
-包括 Taskflow 节点、并行子 Agent 和报告 Agent。切换模型或调整输出预算时重新计算，
-每个 Agent 保持独立管理器。上下文管理默认启用，显式关闭仍有效。
-正数则作为 Agent 上限，与模型窗口取较小值。输入预算从窗口中扣除
-`reserved_tokens` 与本次请求输出 token 数的较大值（默认输出预算为 16,384）。
-如果元数据提供最大输出长度，请求也会受该上限约束。输出预留占满窗口时会明确报配置错误。
-
-界面会标明窗口来源：模型部署配置、模型 / tokenizer 配置、适配器内置值或 Agent 配置上限。
-OpenAI 兼容接口通常不提供窗口上限，适配器内置值不能证明远端服务的实际限制。
-无法识别时使用 120,000 token 的兜底预算，并标明“模型上限未知”。
-用量仍为估算值，包含当前用户输入、原生工具定义和消息封装开销。
-
-pi 引擎使用同一预算解析器配置 `contextWindow`、`maxTokens` 和压缩的
-`reserveTokens`，历史压缩由 pi 自身执行。绕过公共 thinking 方法的自定义
-Agent，需要在自己的模型请求路径接入预算解析器。
-
-为了让行为稳定，建议在每个 LLM 部署配置中显式设置 `context_length`，填入实际部署支持的窗口：
+为了让行为稳定，建议在每个 LLM 部署配置中显式设置 `context_length`，这样模型 metadata 也会反映真实的 provider 上下文窗口：
 
 ```toml
 [[models.llms]]
