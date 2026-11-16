@@ -372,11 +372,15 @@ class AIWrapper:
                     end_meta["cost"] = cost
                 metrics = model_output.metrics
                 if metrics is not None:
+                    # Outputs from remote workers are rebuilt from JSON, so
+                    # ``metrics`` can be a plain dict there.
+                    if not isinstance(metrics, dict):
+                        metrics = metrics.to_dict()
                     # The keys above are always set (possibly to None), so
                     # ``setdefault`` would never fall back to the metrics.
                     for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
                         if end_meta.get(key) is None:
-                            end_meta[key] = getattr(metrics, key)
+                            end_meta[key] = metrics.get(key)
             # If an exception is in flight, record error status and re-raise path
             # handles it; here we just mark the span.
             if sys.exc_info()[1] is not None:

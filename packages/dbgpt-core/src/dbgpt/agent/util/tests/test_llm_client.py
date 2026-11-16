@@ -1,5 +1,7 @@
 """Tests for the token metadata recorded by AIWrapper on its tracing span."""
 
+import json
+from dataclasses import asdict
 from typing import List
 
 import pytest
@@ -77,3 +79,42 @@ async def test_span_tokens_prefer_usage_over_metrics(monkeypatch):
     assert span.metadata["prompt_tokens"] == 3
     assert span.metadata["completion_tokens"] == 2
     assert span.metadata["total_tokens"] == 5
+
+
+@pytest.mark.asyncio
+async def test_span_total_tokens_from_metrics_with_partial_usage(monkeypatch):
+    from dbgpt.model.cluster.worker.default_worker import (
+        _new_metrics_from_model_output,
+    )
+
+    # Usage as sent by the Claude proxy: no total_tokens.
+    usage = {"prompt_tokens": 11, "completion_tokens": 7}
+    last_metrics = ModelInferenceMetrics.create_metrics()
+    # Start one second earlier so the speed calculation has a non-zero duration.
+    last_metrics.start_time_ms -= 1000
+    metrics = _new_metrics_from_model_output(last_metrics, True, usage)
+    output = ModelOutput.build("hi", usage=usage, metrics=metrics)
+
+    span = await _run_and_get_span(output, monkeypatch)
+
+    assert span.metadata["prompt_tokens"] == 11
+    assert span.metadata["completion_tokens"] == 7
+    assert span.metadata["total_tokens"] == 18
+
+
+@pytest.mark.asyncio
+async def test_span_tokens_from_metrics_dict_of_remote_worker(monkeypatch):
+    usage = {"prompt_tokens": 11, "completion_tokens": 7}
+    metrics = ModelInferenceMetrics(
+        prompt_tokens=11, completion_tokens=7, total_tokens=18
+    )
+    output = ModelOutput.build("hi", usage=usage, metrics=metrics)
+    # Remote workers send outputs as JSON, so ``metrics`` comes back as a dict.
+    output = ModelOutput(**json.loads(json.dumps(asdict(output))))
+    assert isinstance(output.metrics, dict)
+
+    span = await _run_and_get_span(output, monkeypatch)
+
+    assert span.metadata["prompt_tokens"] == 11
+    assert span.metadata["completion_tokens"] == 7
+    assert span.metadata["total_tokens"] == 18
