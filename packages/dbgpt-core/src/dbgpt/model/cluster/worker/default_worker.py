@@ -295,10 +295,8 @@ class DefaultModelWorker(ModelWorker):
             if self._context_length_source != "deployment_config":
                 metadata.context_length = proxy_metadata.context_length
                 metadata.metadata["context_length_source"] = (
-                    (proxy_metadata.metadata or {}).get(
-                        "context_length_source", "adapter_metadata"
-                    )
-                )
+                    proxy_metadata.metadata or {}
+                ).get("context_length_source", "adapter_metadata")
             metadata.max_output_length = proxy_metadata.max_output_length
         return metadata
 

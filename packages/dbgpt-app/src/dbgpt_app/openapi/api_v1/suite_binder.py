@@ -590,9 +590,7 @@ def build_sop_block(binding: SuiteBinding) -> str:
         if normalized in seen_content:
             continue
         seen_content.add(normalized)
-        reference_sections.append(
-            f"\n\n### 包内参考文件：{doc['path']}\n{content}"
-        )
+        reference_sections.append(f"\n\n### 包内参考文件：{doc['path']}\n{content}")
     references = "".join(reference_sections)
     return header + body + command_block + references + watermark
 
