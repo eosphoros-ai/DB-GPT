@@ -4,7 +4,7 @@ import pytest
 
 from dbgpt.core import ModelOutput
 from dbgpt.core.awel import DAG, StreamifyAbsOperator
-from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.core.interface.output_parser import BaseOutputParser, SQLListOutputParser
 
 
 def _parser() -> BaseOutputParser:
@@ -71,3 +71,16 @@ async def test_streaming_call_outputs_text():
 
     outputs = [out async for out in await parser.call_stream("input")]
     assert outputs == ["Hello", "Hello world"]
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r", "\r\n"])
+def test_sql_list_parser_preserves_raw_line_endings(newline):
+    """Lenient model output must preserve CR and CRLF as well as LF."""
+    content = "select 1" + newline + "from example"
+    response = '```json\n[{"sql":"' + content + '"}]\n```'
+
+    result = SQLListOutputParser().parse_model_nostream_resp(
+        ModelOutput(text=response, error_code=0)
+    )
+
+    assert result == [{"sql": content}]
