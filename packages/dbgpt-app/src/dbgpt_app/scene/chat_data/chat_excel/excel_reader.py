@@ -327,13 +327,16 @@ AND dc.schema_name = 'main';
         return columns, datas
 
     def get_create_table_sql(self, table_name: str) -> str:
+        def quote_identifier(identifier: str) -> str:
+            return '"' + identifier.replace('"', '""') + '"'
+
         sql = f"""SELECT comment, table_name, database_name FROM duckdb_tables() \
         where table_name = '{table_name}'"""
 
         columns, datas = self.run(sql, table_name, transform=False)
         table_comment = datas[0][0]
         cl_columns, cl_datas = self.get_columns(table_name)
-        ddl_sql = f"CREATE TABLE {table_name} (\n"
+        ddl_sql = f"CREATE TABLE {quote_identifier(table_name)} (\n"
         column_strs = []
         for cl_data in cl_datas:
             column_name = cl_data[0]
@@ -342,7 +345,7 @@ AND dc.schema_name = 'main';
             column_key = cl_data[3]
             column_default = cl_data[4]
             column_comment = cl_data[6]
-            curr_sql = f"    {column_name} {column_type}"
+            curr_sql = f"    {quote_identifier(column_name)} {column_type}"
             if column_key and column_key == "PRI":
                 curr_sql += " PRIMARY KEY"
             elif nullable and str(nullable).lower() == "no":
