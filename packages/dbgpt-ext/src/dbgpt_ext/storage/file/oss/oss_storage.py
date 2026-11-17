@@ -21,7 +21,7 @@ def does_bucket_exist(bucket):
         bucket.get_bucket_info()
     except oss2.exceptions.NoSuchBucket:
         return False
-    except:
+    except Exception:
         raise
     return True
 
