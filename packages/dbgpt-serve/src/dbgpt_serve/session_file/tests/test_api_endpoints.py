@@ -30,10 +30,12 @@ from dbgpt_serve.session_file.domain import (
 from dbgpt_serve.session_file.inspector import SessionFileInspector
 from dbgpt_serve.session_file.models.dao import SessionFileDao
 from dbgpt_serve.session_file.models.models import SessionFileEntity  # noqa: F401
+from dbgpt_serve.utils.auth import v1_auth_middleware
 
 PREFIX = "/api/v1/agent/files"
-ALICE = {"user-id": "alice"}
-BOB = {"user-id": "bob"}
+ALICE = {"Authorization": "Bearer owner-a", "user-id": "bob"}
+BOB = {"Authorization": "Bearer owner-b", "user-id": "alice"}
+OWNER_ALICE = "key-" + hashlib.sha256(b"owner-a").hexdigest()
 CSV_CONTENT = b"colA,colB\n1,2\n"
 
 
@@ -178,8 +180,11 @@ def transport(tmp_path):
         upload_spool_bytes=32,
         download_chunk_bytes=8,
         max_file_name_bytes=32,
+        api_keys="owner-a,owner-b",
     )
     app = FastAPI()
+    app.state.api_keys = ("owner-a", "owner-b")
+    app.middleware("http")(v1_auth_middleware)
     app.include_router(endpoints_module.router, prefix=PREFIX)
     endpoints_module.init_endpoints(MagicMock(), service, config)
     return TestClient(app), service
@@ -372,16 +377,16 @@ def test_upload_reads_files_in_bounded_chunks(client, monkeypatch):
     assert all(size == 8 for size in reads)
 
 
-def test_upload_with_blank_owner_falls_back_to_shared_owner(client):
+def test_upload_with_blank_owner_uses_verified_owner(client):
     response = client.post(
         PREFIX,
         data={"session_id": "conv-1"},
         files=[_csv_file()],
-        headers={"user-id": "   "},
+        headers={"Authorization": "Bearer owner-a", "user-id": "   "},
     )
 
     assert response.status_code == 200, response.text
-    shared = client.get(PREFIX, params={"session_id": "conv-1"})
+    shared = client.get(PREFIX, params={"session_id": "conv-1"}, headers=ALICE)
     assert [item["file_id"] for item in shared.json()["data"]] == [
         response.json()["data"][0]["file_id"]
     ]
@@ -429,16 +434,14 @@ def test_capabilities_expose_server_owned_limits(client):
     "suffix",
     ["", "/capabilities", "/sf_x", "/sf_x/preview", "/sf_x/download"],
 )
-def test_get_endpoints_with_blank_owner_fall_back_to_shared_owner(client, suffix):
+def test_get_endpoints_with_blank_owner_use_verified_owner(client, suffix):
     response = client.get(
         f"{PREFIX}{suffix}",
         params={"session_id": "conv-1"},
-        headers={"user-id": "  "},
+        headers={"Authorization": "Bearer owner-a", "user-id": "  "},
     )
 
-    # Anonymous mode: a blank header maps to the shared "001" owner, so
-    # capabilities/list return success and file-scoped lookups are 404-ish
-    # for files that were never stored under "001".
+    # The verified key still selects the same owner despite the blank header.
     if suffix in ("", "/capabilities"):
         assert response.status_code == 200, response.text
         assert response.json()["success"] is True
@@ -447,9 +450,10 @@ def test_get_endpoints_with_blank_owner_fall_back_to_shared_owner(client, suffix
         assert response.json()["success"] is False
 
 
-def test_delete_with_blank_owner_uses_shared_owner_scope(client):
+def test_delete_with_blank_owner_uses_verified_owner_scope(client):
     response = client.delete(
-        f"{PREFIX}/sf_x?session_id=conv-1", headers={"user-id": " "}
+        f"{PREFIX}/sf_x?session_id=conv-1",
+        headers={"Authorization": "Bearer owner-a", "user-id": " "},
     )
 
     assert response.status_code == 404, response.text
@@ -495,7 +499,7 @@ def test_task_scoped_records_are_invisible_to_session_endpoints(client):
     dao.create(
         {
             "file_id": "sf_task_owned",
-            "owner_id": "alice",
+            "owner_id": OWNER_ALICE,
             "session_id": None,
             "task_id": "task-1",
             "display_name": "frozen.csv",
@@ -525,7 +529,7 @@ def test_task_scoped_records_are_invisible_to_session_endpoints(client):
 
     listing = client.get(PREFIX, params={"session_id": "conv-1"}, headers=ALICE)
     assert listing.json()["data"] == []
-    task_scope = FileScope("alice", task_id="task-1")
+    task_scope = FileScope(OWNER_ALICE, task_id="task-1")
     assert dao.get_by_file_id("sf_task_owned", task_scope) is not None
 
 
@@ -673,6 +677,8 @@ def test_responses_never_expose_server_locations_or_hashes(client):
 def test_service_unavailable_until_initialized():
     endpoints_module._reset_endpoints()
     app = FastAPI()
+    app.state.api_keys = ("owner-a", "owner-b")
+    app.middleware("http")(v1_auth_middleware)
     app.include_router(endpoints_module.router, prefix=PREFIX)
     client = TestClient(app)
 
@@ -764,8 +770,11 @@ def _client_with_service(service) -> TestClient:
         upload_spool_bytes=32,
         download_chunk_bytes=8,
         max_file_name_bytes=32,
+        api_keys="owner-a,owner-b",
     )
     app = FastAPI()
+    app.state.api_keys = ("owner-a", "owner-b")
+    app.middleware("http")(v1_auth_middleware)
     app.include_router(endpoints_module.router, prefix=PREFIX)
     endpoints_module.init_endpoints(MagicMock(), service, config)
     return TestClient(app)

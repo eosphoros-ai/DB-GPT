@@ -25,6 +25,7 @@ from starlette.requests import Request
 
 from dbgpt.component import SystemApp
 from dbgpt_serve.core import Result
+from dbgpt_serve.utils.auth import get_v1_owner
 
 from ..config import ServeConfig
 from ..domain import SessionFilePrivateRecord, SessionFileStatus
@@ -197,18 +198,10 @@ def get_authenticated_owner(
     user_id: Optional[str] = Header(None),
     _checked_key: Optional[str] = Depends(check_api_key),
     config: ServeConfig = Depends(get_session_file_config),
+    verified_owner: Optional[str] = Depends(get_v1_owner),
 ) -> str:
-    """Resolve the owner strictly from headers; never from the client.
-
-    When the server has ``api_keys`` configured, a missing or blank
-    ``user-id`` header is always a 401 and owners are capped at the
-    persistence/materialization scope-component limit. When the server runs
-    without ``api_keys`` (anonymous lightweight deployments), a missing or
-    blank ``user-id`` header falls back to the codebase-wide shared owner
-    ``"001"``, mirroring ``get_user_from_headers`` so the module behaves
-    identically to every other serve in that mode.
-    """
-    owner = user_id.strip() if user_id else ""
+    """Resolve v1 ownership from the verified principal, retaining v2 behavior."""
+    owner = verified_owner or (user_id.strip() if user_id else "")
     if not owner:
         if config.api_keys:
             raise SessionFileApiError(
