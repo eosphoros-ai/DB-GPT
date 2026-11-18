@@ -139,6 +139,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         if owner is not None:
             request.user_name = owner
+            request.dag_id = None
         try:
             # Build DAG from request
             if request.define_type == "json":
@@ -276,9 +277,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             ServerResponse: The response
         """
         if owner is not None:
-            if not self.dao.get_one({"uid": request.uid, "user_name": owner}):
+            stored_flow = self.dao.get_one({"uid": request.uid, "user_name": owner})
+            if not stored_flow:
                 raise HTTPException(status_code=404, detail="Flow not found")
             request.user_name = owner
+            request.dag_id = stored_flow.dag_id
         new_state = State.DEPLOYED
         try:
             # Try to build the dag from the request
@@ -355,11 +358,12 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         flow = self.dao.get_one(query_request)
         if flow:
             fill_flow_panel(flow)
-            metadata = self.dag_manager.get_dag_metadata(
-                flow.dag_id, alias_name=flow.uid
-            )
-            if metadata:
-                flow.metadata = metadata.to_dict()
+            if owner is None or self._dag_is_registered_for_flow(flow):
+                metadata = self.dag_manager.get_dag_metadata(
+                    flow.dag_id, alias_name=flow.uid
+                )
+                if metadata:
+                    flow.metadata = metadata.to_dict()
         return flow
 
     def delete(self, uid: str, owner: Optional[str] = None) -> Optional[ServerResponse]:
@@ -384,13 +388,34 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             raise HTTPException(
                 status_code=404, detail=f"Running flow {uid}'s dag id not found"
             )
+        registered_for_flow = (
+            self._dag_is_registered_for_flow(inst)
+            if owner is not None and inst.dag_id
+            else False
+        )
+        if (
+            owner is not None
+            and inst.state == State.RUNNING
+            and not registered_for_flow
+        ):
+            raise HTTPException(
+                status_code=404, detail=f"Flow {uid}'s dag id not found"
+            )
         try:
-            if inst.dag_id:
+            if inst.dag_id and (owner is None or registered_for_flow):
                 self.dag_manager.unregister_dag(inst.dag_id)
         except Exception as e:
             logger.warning(f"Unregister DAG({inst.dag_id}) error: {str(e)}")
         self.dao.delete(query_request)
         return inst
+
+    def _dag_is_registered_for_flow(self, flow: ServerResponse) -> bool:
+        """Check that a stored DAG is registered under this flow's UID."""
+        return bool(
+            flow.dag_id
+            and self.dag_manager.dag_alias_map.get(flow.uid) == flow.dag_id
+            and flow.dag_id in self.dag_manager.dag_map
+        )
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
         """Get a list of Flow entities
@@ -433,11 +458,12 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             request, page, page_size, desc_order_column=ServeEntity.gmt_modified.name
         )
         for item in page_result.items:
-            metadata = self.dag_manager.get_dag_metadata(
-                item.dag_id, alias_name=item.uid
-            )
-            if metadata:
-                item.metadata = metadata.to_dict()
+            if owner is None or self._dag_is_registered_for_flow(item):
+                metadata = self.dag_manager.get_dag_metadata(
+                    item.dag_id, alias_name=item.uid
+                )
+                if metadata:
+                    item.metadata = metadata.to_dict()
         return page_result
 
     def get_flow_templates(
@@ -602,7 +628,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         if not flow:
             raise HTTPException(status_code=404, detail=f"Flow {flow_uid} not found")
         dag_id = flow.dag_id
-        if not dag_id or dag_id not in self.dag_manager.dag_map:
+        if (
+            not dag_id
+            or dag_id not in self.dag_manager.dag_map
+            or (owner is not None and not self._dag_is_registered_for_flow(flow))
+        ):
             raise HTTPException(
                 status_code=404, detail=f"Flow {flow_uid}'s dag id not found"
             )
@@ -663,6 +693,23 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         except Exception:
             return FlowCategory.COMMON
 
+    async def check_debug_flow_owner(
+        self, request: FlowDebugRequest, owner: Optional[str]
+    ) -> None:
+        """Check a persisted debug flow without blocking the event loop."""
+        if owner is None or not request.flow.uid:
+            return
+        uid = request.flow.uid
+        owned_flow = await blocking_func_to_async(
+            self._system_app, self.dao.get_one, {"uid": uid, "user_name": owner}
+        )
+        if not owned_flow:
+            existing_flow = await blocking_func_to_async(
+                self._system_app, self.dao.get_one, {"uid": uid}
+            )
+            if existing_flow:
+                raise HTTPException(status_code=404, detail="Flow not found")
+
     async def debug_flow(
         self,
         request: FlowDebugRequest,
@@ -681,9 +728,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         from dbgpt.core.awel.dag.dag_manager import _parse_metadata
 
         if owner is not None:
-            if request.flow.uid and self.dao.get_one({"uid": request.flow.uid}):
-                if not self.dao.get_one({"uid": request.flow.uid, "user_name": owner}):
-                    raise HTTPException(status_code=404, detail="Flow not found")
+            await self.check_debug_flow_owner(request, owner)
             request.flow.user_name = owner
             request.user_name = owner
         dag = await blocking_func_to_async(

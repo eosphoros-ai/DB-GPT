@@ -128,6 +128,207 @@ def test_flow_read_update_delete_and_list_are_owner_scoped(monkeypatch):
     assert service.dao.deleted == []
 
 
+def test_owned_draft_cannot_run_or_unregister_another_flows_dag(monkeypatch):
+    class Dao:
+        deleted = []
+
+        def get_one(self, query):
+            if query == {"uid": "draft", "user_name": "owner-a"}:
+                return SimpleNamespace(
+                    uid="draft",
+                    dag_id="other-dag",
+                    state=flow_module.State.INITIALIZING,
+                )
+            return None
+
+        def delete(self, query):
+            self.deleted.append(query)
+
+        def get_list_page(self, query, page, page_size, **kwargs):
+            return SimpleNamespace(items=[self.get_one({"uid": "draft", **query})])
+
+    unregistered = []
+    metadata_lookups = []
+    foreign_task = object()
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._dag_manager = SimpleNamespace(
+        dag_map={"other-dag": SimpleNamespace(leaf_nodes=[foreign_task])},
+        dag_alias_map={"other-flow": "other-dag"},
+        get_dag_metadata=lambda *args, **kwargs: metadata_lookups.append(args)
+        or SimpleNamespace(to_dict=lambda: {"foreign": True}),
+        unregister_dag=unregistered.append,
+    )
+    monkeypatch.setattr(flow_module, "fill_flow_panel", lambda flow: None)
+
+    assert not hasattr(service.get({"uid": "draft"}, owner="owner-a"), "metadata")
+    page = service.get_list_by_page({}, 1, 10, owner="owner-a")
+    assert not hasattr(page.items[0], "metadata")
+    assert metadata_lookups == []
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(service._get_callable_task("draft", owner="owner-a"))
+    assert exc.value.status_code == 404
+
+    service.delete("draft", owner="owner-a")
+    assert unregistered == []
+    assert service.dao.deleted == [{"uid": "draft", "user_name": "owner-a"}]
+
+
+def test_owned_registered_flow_can_run_and_unregister_its_dag(monkeypatch):
+    class Dao:
+        def get_one(self, query):
+            if query == {"uid": "own", "user_name": "owner-a"}:
+                return SimpleNamespace(
+                    uid="own", dag_id="own-dag", state=flow_module.State.RUNNING
+                )
+            return None
+
+        def delete(self, query):
+            pass
+
+    unregistered = []
+    own_task = object()
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._dag_manager = SimpleNamespace(
+        dag_map={"own-dag": SimpleNamespace(leaf_nodes=[own_task])},
+        dag_alias_map={"own": "own-dag"},
+        get_dag_metadata=lambda *args, **kwargs: None,
+        unregister_dag=unregistered.append,
+    )
+    monkeypatch.setattr(flow_module, "fill_flow_panel", lambda flow: None)
+
+    assert asyncio.run(service._get_callable_task("own", owner="owner-a")) is own_task
+    service.delete("own", owner="owner-a")
+    assert unregistered == ["own-dag"]
+
+
+def test_flow_create_and_update_ignore_caller_dag_identifiers():
+    class BuildStopped(Exception):
+        pass
+
+    class Factory:
+        seen = []
+
+        def build(self, request):
+            self.seen.append(request.dag_id)
+            raise BuildStopped
+
+    class Dao:
+        def get_one(self, query):
+            return SimpleNamespace(dag_id="own-dag")
+
+    service = object.__new__(flow_module.Service)
+    service._flow_factory = Factory()
+    service._dao = Dao()
+
+    create_request = FlowRequest(
+        uid="new", label="New flow", name="new", dag_id="other-dag"
+    )
+    with pytest.raises(ValueError):
+        service.create_and_save_dag(create_request, owner="owner-a")
+    assert service._flow_factory.seen == [None]
+
+    update_request = FlowRequest(
+        uid="own", label="Own flow", name="own", dag_id="other-dag"
+    )
+    with pytest.raises(BuildStopped):
+        service.update_flow(update_request, owner="owner-a")
+    assert service._flow_factory.seen == [None, "own-dag"]
+
+
+def test_builtin_variable_providers_query_only_verified_owner(monkeypatch):
+    from dbgpt_serve.flow.api import variables_provider
+
+    class Dao:
+        queries = []
+        rows = [
+            SimpleNamespace(
+                name=name,
+                label=name,
+                value=value,
+                category=category,
+                value_type="str",
+                enabled=True,
+                description=None,
+                user_name=owner,
+            )
+            for owner, category, name, value in (
+                ("owner-a", "common", "mine", "own-common"),
+                ("owner-b", "common", "other", "foreign-common"),
+                ("owner-a", "secret", "mine-secret", "own-secret"),
+                ("owner-b", "secret", "other-secret", "foreign-secret"),
+            )
+        ]
+
+        def get_list(self, query):
+            self.queries.append(query)
+            return [
+                row
+                for row in self.rows
+                if row.category == query["category"]
+                and (not query.get("user_name") or row.user_name == query["user_name"])
+            ]
+
+    service = object.__new__(VariablesService)
+    service._dao = Dao()
+    monkeypatch.setattr(variables_provider, "get_variable_service", lambda: service)
+
+    common = variables_provider.BuiltinAllVariablesProvider().get_variables(
+        "dbgpt.core.variables", user_name="owner-a"
+    )
+    secret = variables_provider.BuiltinAllSecretVariablesProvider().get_variables(
+        "dbgpt.core.secrets", user_name="owner-a"
+    )
+
+    assert [item.value for item in common] == ["own-common"]
+    assert [item.value for item in secret] == ["own-secret"]
+    assert [query["user_name"] for query in service.dao.queries] == [
+        "owner-a",
+        "owner-a",
+    ]
+
+
+def test_debug_route_rejects_foreign_owner_before_streaming():
+    class Service:
+        async def check_debug_flow_owner(self, request, owner):
+            raise HTTPException(status_code=404, detail="Flow not found")
+
+        def debug_flow(self, *args, **kwargs):
+            raise AssertionError("stream must not be created")
+
+    request = SimpleNamespace(flow=SimpleNamespace(uid="other"))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(flow_endpoints.debug_flow(request, Service(), owner="owner-a"))
+    assert exc.value.status_code == 404
+
+
+def test_debug_owner_lookup_is_offloaded(monkeypatch):
+    class Dao:
+        def get_one(self, query):
+            return SimpleNamespace(uid="other") if query == {"uid": "other"} else None
+
+    calls = []
+
+    async def offload(system_app, function, query):
+        calls.append(query)
+        return function(query)
+
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._system_app = None
+    monkeypatch.setattr(flow_module, "blocking_func_to_async", offload)
+    request = SimpleNamespace(flow=SimpleNamespace(uid="other"))
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(service.check_debug_flow_owner(request, "owner-a"))
+    assert exc.value.status_code == 404
+    assert calls == [
+        {"uid": "other", "user_name": "owner-a"},
+        {"uid": "other"},
+    ]
+
+
 def test_flow_variable_write_and_key_list_use_verified_owner(monkeypatch):
     class Dao:
         last_query = None

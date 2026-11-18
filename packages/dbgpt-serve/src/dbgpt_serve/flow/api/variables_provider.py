@@ -118,7 +118,9 @@ class BuiltinAllVariablesProvider(BuiltinVariablesProvider):
         user_name: Optional[str],
         category: Literal["common", "secret"] = "common",
     ) -> List[StorageVariables]:
-        storage_variables = get_variable_service().list_all_variables(category)
+        storage_variables = get_variable_service().list_all_variables(
+            category, user_name
+        )
         variables = []
         for var in storage_variables:
             variables.append(
