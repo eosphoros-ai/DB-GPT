@@ -82,3 +82,164 @@ def test_v1_middleware_guards_routes_without_identity_dependency():
         == 200
     )
     assert client.get("/api/v2/unguarded").status_code == 200
+
+
+def test_service_keys_are_scoped_and_global_keys_remain_valid():
+    app = FastAPI()
+    app.state.api_keys = ("global",)
+    app.middleware("http")(v1_auth_middleware)
+
+    @app.get("/api/v1/serve/awel/test")
+    def flow(user: UserRequest = Depends(get_user_from_headers)):
+        return {"owner": user.user_id}
+
+    @app.get("/api/v1/agent/files/test")
+    def files(user: UserRequest = Depends(get_user_from_headers)):
+        return {"owner": user.user_id}
+
+    @app.get("/api/v1/agent/files/download")
+    def legacy_agent_download(user: UserRequest = Depends(get_user_from_headers)):
+        return {"owner": user.user_id}
+
+    @app.get("/api/v1/chat/dialogue/scenes")
+    def legacy_chat_scenes(user: UserRequest = Depends(get_user_from_headers)):
+        return {"owner": user.user_id}
+
+    scoped = {
+        "/api/v1/serve/awel/test": ("global", "flow-key"),
+        "/api/v1/agent/files/test": ("global", "files-key"),
+    }
+    app.state.api_keys_by_route = [
+        (route.path_regex, route.methods, scoped.get(route.path, ("global",)))
+        for route in app.routes
+        if hasattr(route, "path_regex")
+    ]
+
+    client = TestClient(app)
+    flow_owner = client.get(
+        "/api/v1/serve/awel/test", headers={"Authorization": "Bearer flow-key"}
+    )
+    assert flow_owner.status_code == 200
+    assert flow_owner.json()["owner"] != "001"
+    assert (
+        client.get(
+            "/api/v1/agent/files/test", headers={"Authorization": "Bearer flow-key"}
+        ).status_code
+        == 401
+    )
+    assert (
+        client.get(
+            "/api/v1/serve/awel/test", headers={"Authorization": "Bearer global"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/api/v1/serve/awel/test", headers={"Authorization": "Bearer files-key"}
+        ).status_code
+        == 401
+    )
+    assert (
+        client.get(
+            "/api/v1/agent/files/download",
+            headers={"Authorization": "Bearer files-key"},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.get(
+            "/api/v1/agent/files/download",
+            headers={"Authorization": "Bearer global"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/api/v1/chat/dialogue/scenes",
+            headers={"Authorization": "Bearer conversation-key"},
+        ).status_code
+        == 401
+    )
+
+
+def test_public_share_methods_do_not_disable_protected_methods():
+    app = FastAPI()
+    app.state.api_keys = ("key",)
+    app.middleware("http")(v1_auth_middleware)
+
+    @app.get("/api/v1/chat/share/{token}")
+    def read_share(token: str):
+        return {"token": token}
+
+    @app.delete("/api/v1/chat/share/{token}")
+    def delete_share(token: str):
+        return {"token": token}
+
+    @app.post("/api/v1/public/dashboards/{token}/filter")
+    def filter_share(token: str):
+        return {"token": token}
+
+    client = TestClient(app)
+    assert client.get("/api/v1/chat/share/a").status_code == 200
+    assert client.post("/api/v1/public/dashboards/a/filter").status_code == 200
+    assert client.delete("/api/v1/chat/share/a").status_code == 401
+    assert (
+        client.delete(
+            "/api/v1/chat/share/a", headers={"Authorization": "Bearer key"}
+        ).status_code
+        == 200
+    )
+
+
+def test_development_fallback_keeps_distinct_markers():
+    app = FastAPI()
+    app.state.api_keys = ()
+
+    @app.get("/api/v1/identity")
+    def identity(user: UserRequest = Depends(get_user_from_headers)):
+        return user.model_dump()
+
+    user = TestClient(app).get("/api/v1/identity").json()
+    assert user["user_id"] == "001"
+    assert user["real_name"] == user["nick_name"] == "dbgpt"
+
+
+def test_service_only_keys_do_not_leave_other_v1_routes_anonymous():
+    app = FastAPI()
+    app.state.api_keys = ()
+    app.state.v1_api_keys_configured = True
+    app.middleware("http")(v1_auth_middleware)
+
+    @app.get("/api/v1/serve/awel/test")
+    def flow():
+        return {"reached": True}
+
+    @app.get("/api/v1/general")
+    def general():
+        return {"reached": True}
+
+    app.state.api_keys_by_route = [
+        (
+            route.path_regex,
+            route.methods,
+            ("flow-key",) if route.path.endswith("awel/test") else (),
+        )
+        for route in app.routes
+        if hasattr(route, "path_regex")
+    ]
+    client = TestClient(app)
+    assert client.get("/api/v1/serve/awel/test").status_code == 401
+    assert (
+        client.get(
+            "/api/v1/serve/awel/test",
+            headers={"Authorization": "Bearer flow-key"},
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/general").status_code == 401
+    assert (
+        client.get(
+            "/api/v1/general", headers={"Authorization": "Bearer flow-key"}
+        ).status_code
+        == 401
+    )

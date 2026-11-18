@@ -173,7 +173,9 @@ class VariablesService(
         """Returns the internal ServeConfig."""
         return self._serve_config
 
-    def create(self, request: VariablesRequest) -> VariablesResponse:
+    def create(
+        self, request: VariablesRequest, owner: Optional[str] = None
+    ) -> VariablesResponse:
         """Create a new entity
 
         Args:
@@ -182,6 +184,8 @@ class VariablesService(
         Returns:
             VariablesResponse: The response
         """
+        if owner is not None:
+            request.user_name = owner
         variables = StorageVariables(
             key=request.key,
             name=request.name,
@@ -208,7 +212,9 @@ class VariablesService(
         }
         return self.dao.get_one(query)
 
-    def update(self, _: int, request: VariablesRequest) -> VariablesResponse:
+    def update(
+        self, _: int, request: VariablesRequest, owner: Optional[str] = None
+    ) -> VariablesResponse:
         """Update variables.
 
         Args:
@@ -217,6 +223,8 @@ class VariablesService(
         Returns:
             VariablesResponse: The response
         """
+        if owner is not None:
+            request.user_name = owner
         variables = StorageVariables(
             key=request.key,
             name=request.name,
@@ -263,8 +271,11 @@ class VariablesService(
         user_name: Optional[str] = None,
         sys_code: Optional[str] = None,
         category: Optional[str] = None,
+        owner: Optional[str] = None,
     ) -> List[VariablesKeyResponse]:
         """List all keys."""
+        if owner is not None:
+            user_name = owner
         results = []
 
         # TODO: More high performance way to get the keys
@@ -315,8 +326,11 @@ class VariablesService(
         sys_code: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
+        owner: Optional[str] = None,
     ) -> PaginationResult[VariablesResponse]:
         """Get a list of variables by page."""
+        if owner is not None:
+            user_name = owner
         if not _is_builtin_variable(key):
             query = {
                 "key": key,
