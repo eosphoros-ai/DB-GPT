@@ -124,6 +124,31 @@ class UberLLMClient(OpenAILLMClient):
         return model
 
     @classmethod
+    def new_client(
+        cls,
+        model_params: UberLLMDeployModelParameters,
+        default_executor=None,
+    ) -> "UberLLMClient":
+        """Create a new client with the model parameters.
+
+        Overridden to pass ``context_length`` through untouched. The inherited
+        version clamps it with ``max(model_params.context_length or 8192, 8192)``,
+        so an unset window arrives as 8192 and the constructor's own 128K
+        default stops applying. ``SynthoraiLLMClient`` and ``DeepseekLLMClient``
+        override it for the same reason.
+        """
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
+        )
+
+    @classmethod
     def param_class(cls) -> Type[UberLLMDeployModelParameters]:
         return UberLLMDeployModelParameters
 

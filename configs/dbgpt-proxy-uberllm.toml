@@ -28,4 +28,5 @@ api_key = "${env:UBERLLM_API_KEY}"
 # [[models.embeddings]]
 # name = "BAAI/bge-large-zh-v1.5"
 # provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
 # path = "models/bge-large-zh-v1.5"

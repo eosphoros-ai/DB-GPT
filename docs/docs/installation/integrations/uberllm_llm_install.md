@@ -12,7 +12,7 @@
 
 ### Knowledge base (RAG)
 
-UberLLM serves chat models only, so `configs/dbgpt-proxy-uberllm.toml` registers no embedding model. Chat works as is. To index and search a knowledge base, uncomment the `[[models.embeddings]]` block at the end of that file (a local Hugging Face model) or add any other embedding provider DB-GPT supports.
+UberLLM serves chat models only, so `configs/dbgpt-proxy-uberllm.toml` registers no embedding model. Chat works as is. To index and search a knowledge base, uncomment the `[[models.embeddings]]` block at the end of that file (a local Hugging Face model) or add any other embedding provider DB-GPT supports. With `name` and `provider` only, the model is downloaded from the Hugging Face model hub on first start. Uncomment `path` as well only after you have downloaded the model to that directory.
 
 ### Or you can use docker/base/Dockerfile to run DB-GPT with UberLLM:
 
@@ -24,8 +24,15 @@ EXPOSE 5670
 CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-uberllm.toml"]
 ```
 
-Pass the key when the container starts, so it never ends up in the image:
+Build the image, then pass the key when the container starts, so it never ends up in the image. `LLM_MODEL_NAME` is optional and picks the model; the two volumes keep the SQLite metadata and the Chroma index (`pilot/meta_data` and `pilot/data` in the config) when the container is replaced:
 
 ```bash
-docker run -p 5670:5670 -e UBERLLM_API_KEY="your_uberllm_api_key" <your-image>
+bash docker/base/build_image.sh --image-name dbgpt:latest
+
+docker run -it --rm -p 5670:5670 \
+  -e UBERLLM_API_KEY="your_uberllm_api_key" \
+  -e LLM_MODEL_NAME="deepseek/deepseek-v4-flash" \
+  -v "$(pwd)/pilot/meta_data:/app/pilot/meta_data" \
+  -v "$(pwd)/pilot/data:/app/pilot/data" \
+  dbgpt:latest
 ```
