@@ -498,6 +498,7 @@ async def debug_flow(
     owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Run the flow in debug mode."""
+    await service.check_debug_flow_owner(flow_debug_request, owner)
     # Return the no-incremental stream by default
     stream_iter = service.debug_flow(
         flow_debug_request, default_incremental=False, owner=owner

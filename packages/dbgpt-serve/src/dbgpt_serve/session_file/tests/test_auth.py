@@ -1,5 +1,6 @@
 """Session file ownership follows the verified v1 principal, not headers."""
 
+import hashlib
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,6 +18,8 @@ PREFIX = "/api/v1/agent/files"
 ALICE = {"user-id": "alice"}
 GOOD_KEY = {"Authorization": "Bearer secret-key-1"}
 BAD_KEY = {"Authorization": "Bearer wrong-key"}
+OWNER_1 = "key-" + hashlib.sha256(b"secret-key-1").hexdigest()
+OWNER_2 = "key-" + hashlib.sha256(b"secret-key-2").hexdigest()
 
 
 class _EmptyListService:
@@ -89,7 +92,7 @@ def test_wrong_bearer_token_is_rejected(client):
 def test_valid_key_without_user_id_uses_verified_owner(client):
     response = client.get(PREFIX, params={"session_id": "conv-1"}, headers=GOOD_KEY)
     assert response.status_code == 200, response.text
-    assert client.app.state.spy.seen_owners[0].startswith("key-")
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_valid_key_with_blank_user_id_uses_verified_owner(client):
@@ -100,7 +103,7 @@ def test_valid_key_with_blank_user_id_uses_verified_owner(client):
     )
 
     assert response.status_code == 200, response.text
-    assert client.app.state.spy.seen_owners[0].startswith("key-")
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_valid_key_and_valid_user_id_is_accepted(client):
@@ -114,7 +117,7 @@ def test_valid_key_and_valid_user_id_is_accepted(client):
     payload = response.json()
     assert payload["success"] is True
     assert payload["data"] == []
-    assert client.app.state.spy.seen_owners[0].startswith("key-")
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_overlong_caller_header_does_not_change_verified_owner(client):
@@ -125,7 +128,7 @@ def test_overlong_caller_header_does_not_change_verified_owner(client):
     )
 
     assert response.status_code == 200, response.text
-    assert client.app.state.spy.seen_owners[0].startswith("key-")
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_raw_header_bytes_do_not_change_verified_owner(client):
@@ -139,7 +142,7 @@ def test_raw_header_bytes_do_not_change_verified_owner(client):
     )
 
     assert response.status_code == 200, response.text
-    assert client.app.state.spy.seen_owners[0].startswith("key-")
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_distinct_verified_keys_have_distinct_owners(client):
@@ -150,8 +153,7 @@ def test_distinct_verified_keys_have_distinct_owners(client):
         headers={"Authorization": "Bearer secret-key-2", **ALICE},
     )
     first, second = client.app.state.spy.seen_owners
-    assert first != second
-    assert first != "alice" and second != "alice"
+    assert (first, second) == (OWNER_1, OWNER_2)
 
 
 class _SpyListService(_EmptyListService):

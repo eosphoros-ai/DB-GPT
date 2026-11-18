@@ -258,13 +258,18 @@ class VariablesService(
         }
         return self.dao.get_one(query)
 
-    def list_all_variables(self, category: str = "common") -> List[VariablesResponse]:
+    def list_all_variables(
+        self, category: str = "common", user_name: Optional[str] = None
+    ) -> List[VariablesResponse]:
         """List all variables.
 
         Please note that this method will return all variables in the system, it may
         be a large list.
         """
-        return self.dao.get_list({"enabled": True, "category": category})
+        query = {"enabled": True, "category": category}
+        if user_name is not None:
+            query["user_name"] = user_name
+        return self.dao.get_list(query)
 
     def list_keys(
         self,
