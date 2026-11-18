@@ -8,6 +8,12 @@ import type { CSSProperties } from 'react';
 import type { DashboardThemeTokens } from './dashboard-appearance';
 import styles from './DashboardCohortMatrix.module.css';
 
+function cohortCount(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' && !(typeof raw === 'string' && raw.trim())) return undefined;
+  const count = Number(raw);
+  return Number.isFinite(count) && count >= 0 ? count : undefined;
+}
+
 export default function DashboardCohortMatrix({
   widget,
   data,
@@ -56,21 +62,23 @@ export default function DashboardCohortMatrix({
           </thead>
           <tbody>
             {cohorts.map(cohort => {
-              const first = ages.map(age => lookup.get(`${cohort}:${age}`)).find(Boolean);
+              const size = ages
+                .map(age => cohortCount(lookup.get(`${cohort}:${age}`)?.[target!]))
+                .find(count => count !== undefined);
               return (
                 <tr key={cohort}>
                   <th scope='row'>{cohort}</th>
-                  <td className={styles.size}>{Number(first?.[target!] || 0).toLocaleString(dashboardDateLocale())}</td>
+                  <td className={styles.size}>{size?.toLocaleString(dashboardDateLocale()) ?? '—'}</td>
                   {ages.map(age => {
                     const datum = lookup.get(`${cohort}:${age}`);
                     const observed = datum && Number(datum[color!]) === 1;
-                    const numerator = Number(datum?.[value!]);
-                    const denominator = Number(datum?.[target!]);
+                    const numerator = cohortCount(datum?.[value!]);
+                    const denominator = cohortCount(datum?.[target!]);
                     const valid =
                       observed &&
+                      numerator !== undefined &&
+                      denominator !== undefined &&
                       denominator > 0 &&
-                      Number.isFinite(numerator) &&
-                      numerator >= 0 &&
                       numerator <= denominator;
                     const rate = valid ? (numerator / denominator) * 100 : 0;
                     return (
