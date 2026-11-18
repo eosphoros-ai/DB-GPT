@@ -22,6 +22,7 @@ from dbgpt_serve.session_file.api import endpoints as endpoints_module
 from dbgpt_serve.session_file.config import ServeConfig
 from dbgpt_serve.session_file.models.models import SessionFileEntity  # noqa: F401
 from dbgpt_serve.session_file.serve import SessionFileServe, default_work_root
+from dbgpt_serve.utils.auth import v1_auth_middleware
 
 PREFIX = "/api/v1/agent/files"
 ALICE = {"user-id": "alice"}
@@ -67,7 +68,10 @@ def _isolate_state():
 @pytest.fixture()
 def system_app(request) -> SystemApp:
     param = getattr(request, "param", {})
-    return create_system_app(param)
+    app = create_system_app(param)
+    app.app.state.api_keys = ()
+    app.app.middleware("http")(v1_auth_middleware)
+    return app
 
 
 @pytest.fixture()
@@ -152,21 +156,21 @@ class TestServeMounting:
                         },
                     ),
                 ),
-                user_name="alice",
-                owner_id="alice",
+                user_name="001",
+                owner_id="001",
             )
             frozen = files.registry.list_task_files(
-                owner_id="alice", task_id=task.task_id
+                owner_id="001", task_id=task.task_id
             )
             assert len(frozen) == 1
             assert frozen[0].file_id != file_id
             assert task.payload.ext_info["file_ids"] == [frozen[0].file_id]
-            await tasks._service.delete_task(task.task_id, owner_id="alice")
+            await tasks._service.delete_task(task.task_id, owner_id="001")
             assert not files.registry.list_task_files(
-                owner_id="alice", task_id=task.task_id
+                owner_id="001", task_id=task.task_id
             )
             originals = files.registry.list_files(
-                owner_id="alice", session_id="schedule-session"
+                owner_id="001", session_id="schedule-session"
             )
             assert len(originals) == 1
         finally:

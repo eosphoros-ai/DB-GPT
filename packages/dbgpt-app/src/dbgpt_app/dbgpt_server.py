@@ -90,12 +90,8 @@ def mount_routers(app: FastAPI):
     app.include_router(
         examples_router, prefix="/api", tags=["Examples"], dependencies=v1_auth
     )
-    app.include_router(
-        agentic_data_api, prefix="/api", tags=["AgenticData"], dependencies=v1_auth
-    )
-    app.include_router(
-        dashboard_router, prefix="/api", tags=["Dashboards"], dependencies=v1_auth
-    )
+    app.include_router(agentic_data_api, prefix="/api", tags=["AgenticData"])
+    app.include_router(dashboard_router, prefix="/api", tags=["Dashboards"])
 
     app.include_router(
         knowledge_router, prefix="/api/v1", tags=["Knowledge"], dependencies=v1_auth

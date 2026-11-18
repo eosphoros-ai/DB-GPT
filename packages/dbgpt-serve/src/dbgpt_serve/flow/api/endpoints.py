@@ -11,6 +11,7 @@ from dbgpt.component import SystemApp
 from dbgpt.core.awel.flow.flow_factory import FlowCategory
 from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result, blocking_func_to_async
+from dbgpt_serve.utils.auth import get_v1_owner
 
 from ..config import ServeConfig
 from ..service.service import Service, _parse_flow_template_from_json
@@ -124,7 +125,9 @@ async def test_auth():
     dependencies=[Depends(check_api_key)],
 )
 async def create(
-    request: ServeRequest, service: Service = Depends(get_service)
+    request: ServeRequest,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[ServerResponse]:
     """Create a new Flow entity
 
@@ -135,7 +138,7 @@ async def create(
         ServerResponse: The response
     """
     res = await blocking_func_to_async(
-        global_system_app, service.create_and_save_dag, request
+        global_system_app, service.create_and_save_dag, request, owner=owner
     )
     return Result.succ(res)
 
@@ -146,7 +149,10 @@ async def create(
     dependencies=[Depends(check_api_key)],
 )
 async def update(
-    uid: str, request: ServeRequest, service: Service = Depends(get_service)
+    uid: str,
+    request: ServeRequest,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[ServerResponse]:
     """Update a Flow entity
 
@@ -157,18 +163,23 @@ async def update(
     Returns:
         ServerResponse: The response
     """
+    request.uid = uid
     try:
         res = await blocking_func_to_async(
-            global_system_app, service.update_flow, request
+            global_system_app, service.update_flow, request, owner=owner
         )
         return Result.succ(res)
+    except HTTPException:
+        raise
     except Exception as e:
         return Result.failed(msg=str(e))
 
 
 @router.delete("/flows/{uid}")
 async def delete(
-    uid: str, service: Service = Depends(get_service)
+    uid: str,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[ServerResponse]:
     """Delete a Flow entity
 
@@ -178,12 +189,16 @@ async def delete(
     Returns:
         Result[None]: The response
     """
-    inst = service.delete(uid)
+    inst = service.delete(uid, owner=owner)
     return Result.succ(inst)
 
 
 @router.get("/flows/{uid}")
-async def get_flows(uid: str, service: Service = Depends(get_service)):
+async def get_flows(
+    uid: str,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
+):
     """Get a Flow entity by uid
 
     Args:
@@ -193,7 +208,7 @@ async def get_flows(uid: str, service: Service = Depends(get_service)):
     Returns:
         Result[ServerResponse]: The response
     """
-    flow = service.get({"uid": uid})
+    flow = service.get({"uid": uid}, owner=owner)
     if not flow:
         raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
     return Result.succ(flow.model_dump())
@@ -212,11 +227,12 @@ async def query_chat_flows(
     name: Optional[str] = Query(default=None, description="flow name"),
     uid: Optional[str] = Query(default=None, description="flow uid"),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[PaginationResult[ServerResponse]]:
     return Result.succ(
         service.get_list_by_page(
             {
-                "user_name": user_name,
+                "user_name": owner if owner is not None else user_name,
                 "sys_code": sys_code,
                 "name": name,
                 "uid": uid,
@@ -224,6 +240,7 @@ async def query_chat_flows(
             },
             page,
             page_size,
+            owner=owner,
         )
     )
 
@@ -241,6 +258,7 @@ async def query_page(
     name: Optional[str] = Query(default=None, description="flow name"),
     uid: Optional[str] = Query(default=None, description="flow uid"),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Flow entities
 
@@ -260,6 +278,7 @@ async def query_page(
             {"user_name": user_name, "sys_code": sys_code, "name": name, "uid": uid},
             page,
             page_size,
+            owner=owner,
         )
     )
 
@@ -269,6 +288,7 @@ async def get_nodes(
     user_name: Optional[str] = Query(default=None, description="user name"),
     sys_code: Optional[str] = Query(default=None, description="system code"),
     tags: Optional[str] = Query(default=None, description="tags"),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Get the operator or resource nodes
 
@@ -294,7 +314,7 @@ async def get_nodes(
         global_system_app,
         _OPERATOR_REGISTRY.metadata_list,
         tags_dict,
-        user_name,
+        owner if owner is not None else user_name,
         sys_code,
     )
     return Result.succ(metadata_list)
@@ -329,6 +349,7 @@ async def refresh_nodes(refresh_request: RefreshNodeRequest):
 )
 async def create_variables(
     variables_request: VariablesRequest,
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[VariablesResponse]:
     """Create a new Variables entity
 
@@ -338,7 +359,10 @@ async def create_variables(
         VariablesResponse: The response
     """
     res = await blocking_func_to_async(
-        global_system_app, get_variable_service().create, variables_request
+        global_system_app,
+        get_variable_service().create,
+        variables_request,
+        owner=owner,
     )
     return Result.succ(res)
 
@@ -349,7 +373,9 @@ async def create_variables(
     dependencies=[Depends(check_api_key)],
 )
 async def update_variables(
-    v_id: int, variables_request: VariablesRequest
+    v_id: int,
+    variables_request: VariablesRequest,
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[VariablesResponse]:
     """Update a Variables entity
 
@@ -360,7 +386,11 @@ async def update_variables(
         VariablesResponse: The response
     """
     res = await blocking_func_to_async(
-        global_system_app, get_variable_service().update, v_id, variables_request
+        global_system_app,
+        get_variable_service().update,
+        v_id,
+        variables_request,
+        owner=owner,
     )
     return Result.succ(res)
 
@@ -378,6 +408,7 @@ async def get_variables_by_keys(
     sys_code: Optional[str] = Query(default=None, description="system code"),
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[PaginationResult[VariablesResponse]]:
     """Get the variables by keys
 
@@ -388,10 +419,11 @@ async def get_variables_by_keys(
         key,
         scope,
         scope_key,
-        user_name,
+        owner if owner is not None else user_name,
         sys_code,
         page,
         page_size,
+        owner=owner,
     )
     return Result.succ(res)
 
@@ -405,6 +437,7 @@ async def get_variables_keys(
     user_name: Optional[str] = Query(default=None, description="user name"),
     sys_code: Optional[str] = Query(default=None, description="system code"),
     category: Optional[str] = Query(default=None, description="category"),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[List[VariablesKeyResponse]]:
     """Get the variable keys
 
@@ -414,20 +447,25 @@ async def get_variables_keys(
     res = await blocking_func_to_async(
         global_system_app,
         get_variable_service().list_keys,
-        user_name,
+        owner if owner is not None else user_name,
         sys_code,
         category,
+        owner=owner,
     )
     return Result.succ(res)
 
 
 @router.post("/flow/debug", dependencies=[Depends(check_api_key)])
 async def debug_flow(
-    flow_debug_request: FlowDebugRequest, service: Service = Depends(get_service)
+    flow_debug_request: FlowDebugRequest,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Run the flow in debug mode."""
     # Return the no-incremental stream by default
-    stream_iter = service.debug_flow(flow_debug_request, default_incremental=False)
+    stream_iter = service.debug_flow(
+        flow_debug_request, default_incremental=False, owner=owner
+    )
 
     headers = {
         "Content-Type": "text/event-stream",
@@ -455,9 +493,12 @@ async def export_flow(
     user_name: Optional[str] = Query(default=None, description="user name"),
     sys_code: Optional[str] = Query(default=None, description="system code"),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Export the flow to a file."""
-    flow = service.get({"uid": uid, "user_name": user_name, "sys_code": sys_code})
+    flow = service.get(
+        {"uid": uid, "user_name": user_name, "sys_code": sys_code}, owner=owner
+    )
     if not flow:
         raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
     package_name = flow.name.replace("_", "-")
@@ -507,6 +548,7 @@ async def import_flow(
         False, description="Whether to save the flow after importing"
     ),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Import the flow from a file."""
     filename = file.filename
@@ -531,7 +573,7 @@ async def import_flow(
         )
     if save_flow:
         res = await blocking_func_to_async(
-            global_system_app, service.create_and_save_dag, flow
+            global_system_app, service.create_and_save_dag, flow, owner=owner
         )
         return Result.succ(res)
     else:
@@ -570,9 +612,10 @@ async def query_flow_templates(
 async def flow_file_path(
     flow_uid: str,
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[FlowInfo]:
     try:
-        return Result.succ(await service.get_flow_files(flow_uid))
+        return Result.succ(await service.get_flow_files(flow_uid, owner=owner))
     except Exception as e:
         return Result.failed(f"获取Flow文件异常！{str(e)}")
 

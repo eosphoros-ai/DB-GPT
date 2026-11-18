@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
+from fastapi import HTTPException
+
 from dbgpt.component import SystemApp
 from dbgpt.core import (
     MessageStorageItem,
@@ -123,7 +125,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         }
         return self.dao.update(query_request, update_request=request)
 
-    def get(self, request: ServeRequest) -> Optional[ServerResponse]:
+    def get(
+        self, request: ServeRequest, owner: Optional[str] = None
+    ) -> Optional[ServerResponse]:
         """Get a Conversation entity
 
         Args:
@@ -135,23 +139,35 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         # TODO: implement your own logic here
         # Build the query request from the request
         query_request = request
+        if owner is not None:
+            query_request.user_name = owner
         return self.dao.get_one(query_request)
 
-    def delete(self, request: ServeRequest) -> None:
+    def _require_owner(self, request: ServeRequest, owner: Optional[str]) -> None:
+        if owner is not None:
+            if not request.conv_uid or not self.dao.get_one(
+                ServeRequest(conv_uid=request.conv_uid, user_name=owner)
+            ):
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            request.user_name = owner
+
+    def delete(self, request: ServeRequest, owner: Optional[str] = None) -> None:
         """Delete current conversation and its messages
 
         Args:
             request (ServeRequest): The request
         """
+        self._require_owner(request, owner)
         conv: StorageConversation = self.create_storage_conv(request)
         conv.delete()
 
-    def clear(self, request: ServeRequest) -> None:
+    def clear(self, request: ServeRequest, owner: Optional[str] = None) -> None:
         """Clear current conversation and its messages
 
         Args:
             request (ServeRequest): The request
         """
+        self._require_owner(request, owner)
         conv: StorageConversation = self.create_storage_conv(request)
         conv.clear()
 
@@ -170,7 +186,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         return self.dao.get_list(query_request)
 
     def get_list_by_page(
-        self, request: ServeRequest, page: int, page_size: int
+        self,
+        request: ServeRequest,
+        page: int,
+        page_size: int,
+        owner: Optional[str] = None,
     ) -> PaginationResult[ServerResponse]:
         """Get a list of Conversation entities by page
 
@@ -182,10 +202,12 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
+        if owner is not None:
+            request.user_name = owner
         return self.dao.get_conv_by_page(request, page, page_size)
 
     def get_history_messages(
-        self, request: Union[ServeRequest, Dict[str, Any]]
+        self, request: Union[ServeRequest, Dict[str, Any]], owner: Optional[str] = None
     ) -> List[MessageVo]:
         """Get a list of Conversation entities
 
@@ -197,6 +219,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         from ...file.serve import Serve as FileServe
 
+        if isinstance(request, dict):
+            request = ServeRequest(**request)
+        self._require_owner(request, owner)
         file_serve = FileServe.get_instance(self.system_app)
 
         conv: StorageConversation = self.create_storage_conv(request)
