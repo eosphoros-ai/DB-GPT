@@ -524,23 +524,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         inst = self.get(query_request)
         if inst is None:
             raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
-        if inst.state == State.RUNNING and not inst.dag_id:
-            raise HTTPException(
-                status_code=404, detail=f"Running flow {uid}'s dag id not found"
-            )
         registered_for_flow = (
             self._dag_is_registered_for_flow(inst)
             if owner is not None and inst.dag_id
             else False
         )
-        if (
-            owner is not None
-            and inst.state == State.RUNNING
-            and not registered_for_flow
-        ):
-            raise HTTPException(
-                status_code=404, detail=f"Flow {uid}'s dag id not found"
-            )
         try:
             if inst.dag_id and (owner is None or registered_for_flow):
                 self.dag_manager.unregister_dag(inst.dag_id)

@@ -203,6 +203,37 @@ def test_owned_registered_flow_can_run_and_unregister_its_dag(monkeypatch):
     assert unregistered == ["own-dag"]
 
 
+@pytest.mark.parametrize("dag_id", [None, "stale-dag"])
+def test_owned_running_flow_without_registered_dag_can_be_deleted(monkeypatch, dag_id):
+    class Dao:
+        deleted = []
+
+        def get_one(self, query):
+            if query == {"uid": "broken", "user_name": "owner-a"}:
+                return SimpleNamespace(
+                    uid="broken", dag_id=dag_id, state=flow_module.State.RUNNING
+                )
+            return None
+
+        def delete(self, query):
+            self.deleted.append(query)
+
+    unregistered = []
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._dag_manager = SimpleNamespace(
+        dag_map={},
+        dag_alias_map={},
+        get_dag_metadata=lambda *args, **kwargs: None,
+        unregister_dag=unregistered.append,
+    )
+    monkeypatch.setattr(flow_module, "fill_flow_panel", lambda flow: None)
+
+    service.delete("broken", owner="owner-a")
+    assert service.dao.deleted == [{"uid": "broken", "user_name": "owner-a"}]
+    assert unregistered == []
+
+
 def test_flow_create_and_update_ignore_caller_dag_identifiers():
     class BuildStopped(Exception):
         pass
@@ -289,17 +320,25 @@ def test_builtin_variable_providers_query_only_verified_owner(monkeypatch):
     ]
 
 
-def test_debug_route_rejects_foreign_owner_before_streaming():
-    class Service:
-        async def check_debug_flow_owner(self, request, owner):
-            raise HTTPException(status_code=404, detail="Flow not found")
+def test_debug_route_rejects_foreign_owner_before_streaming(monkeypatch):
+    class Dao:
+        def get_one(self, query):
+            return SimpleNamespace(uid="other") if query == {"uid": "other"} else None
 
-        def debug_flow(self, *args, **kwargs):
-            raise AssertionError("stream must not be created")
+    async def offload(system_app, function, query):
+        return function(query)
 
+    def unexpected_stream(*args, **kwargs):
+        raise AssertionError("stream must not be created")
+
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._system_app = None
+    service.debug_flow = unexpected_stream
+    monkeypatch.setattr(flow_module, "blocking_func_to_async", offload)
     request = SimpleNamespace(flow=SimpleNamespace(uid="other"))
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(flow_endpoints.debug_flow(request, Service(), owner="owner-a"))
+        asyncio.run(flow_endpoints.debug_flow(request, service, owner="owner-a"))
     assert exc.value.status_code == 404
 
 
