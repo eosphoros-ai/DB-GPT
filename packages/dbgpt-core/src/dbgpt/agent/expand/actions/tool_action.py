@@ -13,7 +13,7 @@ from ...core.action.base import Action, ActionOutput
 from ...core.context.storage import get_current_storage
 from ...core.schema import Status
 from ...resource.base import AgentResource, Resource, ResourceType
-from ...resource.tool.pack import ToolPack
+from ...resource.tool.pack import ToolPack, mcp_tool_result_or_raise
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +197,9 @@ async def run_tool(
 
         try:
             tool_result = await tool_pack.async_execute(resource_name=name, **args)
+            # MCP reports a tool failure as CallToolResult(isError=true), which
+            # is a normal return value rather than an exception.
+            mcp_tool_result_or_raise(tool_result, name)
             status = Status.COMPLETE.value
             is_terminal = tool_pack.is_terminal(name)
         except Exception as e:
