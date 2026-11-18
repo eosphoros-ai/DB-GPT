@@ -40,6 +40,7 @@ from dbgpt.util.file_client import FileClient
 from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
+from dbgpt_app.openapi.api_v1.datasource_visibility import is_hidden_datasource
 from dbgpt_app.openapi.api_view_model import (
     ChatSceneVo,
     ConversationVo,
@@ -126,6 +127,8 @@ def get_db_list(user_id: str = None):
     dbs = CFG.local_db_manager.get_db_list(user_id=user_id)
     db_params = []
     for item in dbs:
+        if is_hidden_datasource(item["db_name"]):
+            continue
         params: dict = {}
         params.update({"param": item["db_name"]})
         params.update({"type": item["db_type"]})
@@ -223,11 +226,7 @@ async def db_connect_list(
     )
     # 排除部分数据库不允许用户访问
     if results and len(results):
-        results = [
-            d
-            for d in results
-            if d.get("db_name") not in ["auth", "dbgpt", "test", "public"]
-        ]
+        results = [d for d in results if not is_hidden_datasource(d.get("db_name"))]
     return Result.succ(results)
 
 

@@ -136,6 +136,35 @@ class TestDatabaseOwnership:
         )
         assert _require_database_access(manager, "shared-demo", "alice")
 
+    def test_hidden_internal_datasource_is_rejected(self):
+        def _lookup(name):
+            raise AssertionError("hidden datasource must not reach the storage lookup")
+
+        # The internal metadata row has no owner, so the ownership check alone
+        # would treat it as shared.
+        manager = SimpleNamespace(storage=SimpleNamespace(get_by_names=_lookup))
+        for name in ("dbgpt", "DBGPT", " dbgpt ", "auth", "Test", "public"):
+            try:
+                _require_database_access(manager, name, "alice")
+            except PermissionError:
+                pass
+            else:
+                raise AssertionError(f"hidden datasource {name!r} must be rejected")
+
+    def test_name_resolving_to_hidden_row_is_rejected(self):
+        # An accent-insensitive collation can match "dbĝpt" to the dbgpt row.
+        manager = SimpleNamespace(
+            storage=SimpleNamespace(
+                get_by_names=lambda name: SimpleNamespace(db_name="dbgpt", user_id="")
+            )
+        )
+        try:
+            _require_database_access(manager, "dbĝpt", "alice")
+        except PermissionError:
+            pass
+        else:
+            raise AssertionError("a name stored as dbgpt must be rejected")
+
 
 # ---------------------------------------------------------------------------
 # _select_connector_tools

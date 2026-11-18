@@ -7,9 +7,10 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from ..datasource_visibility import resolves_to_hidden_datasource
 from .anomaly_detection import attach_widget_anomalies
 from .federation import DashboardFederationService
-from .models import DashboardNotFoundError
+from .models import DashboardAccessDeniedError, DashboardNotFoundError
 from .schemas import (
     DashboardSchemaV1,
     DashboardValidationResult,
@@ -80,6 +81,10 @@ class DashboardQueryExecutor:
 
         cfg = Config()
         manager = ConnectorManager.get_instance(cfg.SYSTEM_APP)
+        if resolves_to_hidden_datasource(manager, data_source_id):
+            raise DashboardAccessDeniedError(
+                f"Data source '{data_source_id}' is not available."
+            )
         return manager.get_connector(data_source_id)
 
     @staticmethod
