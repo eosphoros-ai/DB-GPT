@@ -190,7 +190,7 @@ execution succeeded,
 ``````
 
 Let's parse the result from above output, we just focus on the last part
-(output with [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) protocol):
+(output with [GPT-Vis](https://github.com/antvis/GPT-Vis) protocol):
 ```json
 [
     {
