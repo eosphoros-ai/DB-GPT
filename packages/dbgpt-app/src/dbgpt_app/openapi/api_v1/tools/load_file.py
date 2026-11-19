@@ -2,7 +2,7 @@
 
 Session files are described by ``file_id`` + public metadata + inspection
 schema/preview + the per-turn materialized local path, so the model can run
-free-form analysis with ``code_interpreter`` without guessing paths. The
+free-form analysis with ``code`` without guessing paths. The
 path is a temporary copy valid only for the current turn; storage URIs and
 hashes never appear. Server paths are masked at the share boundary (see
 ``scrub_react_history_for_share``).
@@ -123,7 +123,7 @@ def make_load_file(react_state: Dict[str, Any]):
             "Inspect files attached to this conversation. Returns public file "
             "metadata, schema/preview summaries and the per-turn materialized "
             "local path, bounded in size. Use the returned path with "
-            "code_interpreter for free-form analysis; the path is valid only "
+            "code for free-form analysis; the path is valid only "
             "for the current turn — call load_file again in a new turn. "
             "Reference files by file_id."
             'Parameters: {"file_ids": "optional subset of file ids"}'
@@ -182,7 +182,7 @@ def make_load_file(react_state: Dict[str, Any]):
             notice = f"\n… [observation truncated — {hidden} more file(s) not shown]"
         guide = (
             "\nReference files by file_id; use the shown path with "
-            "code_interpreter for free-form analysis (this turn only)."
+            "code for free-form analysis (this turn only)."
         )
         content = "".join(body_parts) + notice + guide
         if len(content) > MAX_LOAD_FILE_CHARS:

@@ -1,0 +1,149 @@
+.scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.scenario {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid #ececf0;
+  border-radius: 14px;
+  background: #fff;
+  color: #55565e;
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background 160ms,
+    border-color 160ms;
+}
+
+.scenario:hover {
+  background: #f8f9fb;
+  border-color: #d5d9e1;
+}
+
+.scenario[aria-pressed='true'] {
+  background: #f4f6fa;
+  border-color: #b9c5d8;
+  color: #242936;
+}
+
+.prefix,
+.suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 7px 4px 5px;
+  border: 1px solid #e7eaf0;
+  border-radius: 10px;
+  background: #f7f8fa;
+  color: #444a56;
+  font-size: 13px;
+  line-height: 24px;
+}
+
+.suggestion {
+  margin-left: 4px;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 7px;
+}
+
+.remove:hover {
+  background: #e8ebf0;
+}
+
+.command {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #636872;
+  font-size: 12px;
+  transition:
+    background 160ms,
+    border-color 160ms;
+}
+
+.command:hover,
+.command[aria-pressed='true'] {
+  background: #f4f6fa;
+  border-color: #b9c5d8;
+  color: #303a4c;
+}
+
+.commandLabel {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: #f2f4f7;
+  color: #626b7a;
+}
+
+.scenario:focus-visible,
+.command:focus-visible,
+.remove:focus-visible {
+  outline: 2px solid #457ff5;
+  outline-offset: 3px;
+}
+
+:global(.dark) .scenario,
+:global(.dark) .prefix,
+:global(.dark) .suggestion {
+  background: #1d1f25;
+  border-color: #343841;
+  color: #d1d5de;
+}
+
+:global(.dark) .scenario:hover,
+:global(.dark) .scenario[aria-pressed='true'],
+:global(.dark) .command:hover,
+:global(.dark) .command[aria-pressed='true'] {
+  background: #282e3a;
+  border-color: #596982;
+  color: #eff3fa;
+}
+
+:global(.dark) .command {
+  border-color: #343841;
+  color: #c1c7d2;
+}
+
+:global(.dark) .commandLabel,
+:global(.dark) .remove:hover {
+  background: #292e38;
+  color: #c1c7d2;
+}
+
+@media (max-width: 640px) {
+  .scenarios {
+    gap: 8px;
+  }
+
+  .scenario {
+    flex: 1 1 140px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scenario,
+  .command {
+    transition: none;
+  }
+}

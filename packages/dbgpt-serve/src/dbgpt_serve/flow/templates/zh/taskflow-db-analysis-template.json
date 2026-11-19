@@ -1,0 +1,156 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB 智能分析",
+    "name": "taskflow_db_analysis_template",
+    "flow_category": "chat_flow",
+    "description": "统一语义口径与计划→趋势分析和数据质量双 Agent 并行→汇总复核→HTML 分析报告。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "模式与语义接地",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "先调用 semantic_get_metadata 获取选中数据库的表字段快照和 last_sync_at，再用 semantic_search_business 与 semantic_search_metrics 定位用户问题的业务定义和指标候选；对明确指标调用 semantic_get_metric 并锁定其发布 version 与 citation。输出结构化语义卡：conn_id、表字段、关联线索、指标ID、发布版本、引用、定义、单位、时间范围、时区、粒度和过滤条件。多个口径或关键条件不明确时列出需澄清项，不自行选择；缺少发布口径时明确标记未治理，不将字段推测当作权威定义。仅用 sql_query 做必要的有界探查，不对全部表统计行数。后续节点必须沿用本卡片口径。",
+            "tools": [
+              "semantic_get_metadata",
+              "semantic_search_business",
+              "semantic_search_metrics",
+              "semantic_get_metric",
+              "sql_query"
+            ],
+            "datasources": [],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "分析计划",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "基于上游语义卡和用户问题确定分析计划。原样传递 conn_id、metric_id、version、citation、单位、时间范围、时区、粒度和过滤条件。若上游有未解决的关键澄清项，输出 blocked=true 与问题清单，禁止开始计算。否则输出 blocked=false、最多3个趋势/对比/贡献分析问题、对比基准，以及独立的数据质量检查项（空值、重复、连接基数、时间覆盖）。两条分支读取同一份计划，不依赖彼此结论；不得重新解释已锁定的发布口径。可用 sql_query 有界探查确认可行性。",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "趋势与贡献分析",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "作为并行分支A，独立执行上游趋势/对比/贡献分析计划。若计划 blocked=true，直接返回澄清项，不查询不计算。严格沿用同一数据源、指标发布版本、单位和筛选范围；需要再读取指标时使用 semantic_get_metric 的指定版本，禁止改读最新版本。用 sql_query 取数、code 复核必要计算；输出结构化结论，每项附 citation、SQL、关键结果、单位与解释。不要等待或推测质量分支结果，不自行扩展范围。",
+            "tools": [
+              "sql_query",
+              "code",
+              "semantic_get_metric"
+            ],
+            "datasources": [],
+            "max_turns": 10,
+            "parallel_group": "db_analysis"
+          }
+        },
+        {
+          "id": "n8",
+          "kind": "agent",
+          "label": "数据质量检查",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "作为并行分支B，独立检查上游计划涉及的数据质量。若计划 blocked=true，直接返回澄清项，不查询不计算。沿用相同 conn_id、metric_id、version、citation 和时间筛选范围，检查关键字段空值、主键重复、连接一对多放大、时间覆盖与异常值；使用有界 sql_query，必要时 code 验算。每项输出检查SQL、结果、影响范围与可信度限制，保留口径引用。不依赖趋势分支的SQL或结论，不把样本比例误称为全量比例。",
+            "tools": [
+              "sql_query",
+              "code",
+              "semantic_get_metric"
+            ],
+            "datasources": [],
+            "max_turns": 8,
+            "parallel_group": "db_analysis"
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "agent",
+          "label": "汇总与数字复核",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "等待并读取趋势分析与数据质量两个分支的完整结果。若计划 blocked=true，汇总澄清项，禁止查询和生成分析数字。核对两分支的数据源、指标版本、引用、单位与范围一致性，独立检查关键数字、过滤条件和连接基数；必要时用 sql_query 按锁定口径重算，semantic_get_metric 必须指定相同版本。保持与权威定义语义等价，无需为换写法而改口径。输出逐项「确认/修正/无法确认」、最终可信数字、SQL与引用，并说明质量问题对结论的影响。",
+            "tools": [
+              "sql_query",
+              "semantic_get_metric"
+            ],
+            "datasources": [],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n6",
+          "kind": "agent",
+          "label": "分析报告",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "若上游计划 blocked=true，仅输出需要用户确认的口径或范围问题，不生成分析报告。否则将两分支和汇总复核结果组织成面向业务读者的报告：核心结论不超过3条、核验后的关键数据与单位、趋势与贡献、数据质量限制、行动建议、数据源和指标版本引用。数字以复核结果为准；无法确认的数字不得当作事实。生成自包含样式的完整HTML，调用 html_interpreter 一次渲染；成功后以不超过3句话总结，禁止原样粘贴工具JSON。",
+            "tools": [
+              "html_interpreter"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n7",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n3",
+          "n8"
+        ],
+        [
+          "n4",
+          "n5"
+        ],
+        [
+          "n8",
+          "n5"
+        ],
+        [
+          "n5",
+          "n6"
+        ],
+        [
+          "n6",
+          "n7"
+        ]
+      ]
+    }
+  }
+}

@@ -165,7 +165,17 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
                                 "Question timed out after 300 seconds."
                                 " Proceeding without user answer."
                             ),
-                        }
+                        },
+                        {
+                            "output_type": "question_recap",
+                            "content": {
+                                "pairs": [
+                                    {"question": q.get("question", ""), "answer": ""}
+                                    for q in parsed_questions
+                                ],
+                                "timed_out": True,
+                            },
+                        },
                     ]
                 },
                 ensure_ascii=False,
@@ -189,7 +199,17 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
                                 "The user dismissed the question."
                                 " Proceeding without answer."
                             ),
-                        }
+                        },
+                        {
+                            "output_type": "question_recap",
+                            "content": {
+                                "pairs": [
+                                    {"question": q.get("question", ""), "answer": ""}
+                                    for q in parsed_questions
+                                ],
+                                "rejected": True,
+                            },
+                        },
                     ]
                 },
                 ensure_ascii=False,
@@ -212,8 +232,24 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
             " You can now continue with the user's answers"
             " in mind."
         )
+        # Machine-readable recap for the conversation timeline (the text
+        # chunk above is for the model; this one renders the Q&A card).
+        pairs = [
+            {
+                "question": q.get("question", ""),
+                "answer": (
+                    ", ".join(answers[i]) if i < len(answers) and answers[i] else ""
+                ),
+            }
+            for i, q in enumerate(parsed_questions)
+        ]
         return json.dumps(
-            {"chunks": [{"output_type": "text", "content": output}]},
+            {
+                "chunks": [
+                    {"output_type": "text", "content": output},
+                    {"output_type": "question_recap", "content": {"pairs": pairs}},
+                ]
+            },
             ensure_ascii=False,
         )
 

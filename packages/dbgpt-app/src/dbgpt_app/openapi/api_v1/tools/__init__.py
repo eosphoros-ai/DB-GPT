@@ -15,6 +15,7 @@ from .read_file import make_read_file
 from .report_capability import make_traceable_report_capability
 from .report_evidence import make_report_evidence_manifest
 from .select_skill import make_select_skill
+from .semantic_tools import make_semantic_tools
 from .shell_interpreter import make_shell_interpreter
 from .skill_tools import make_execute_skill_script_file, make_load_skill
 from .sql_query import make_sql_query
@@ -36,6 +37,7 @@ __all__ = [
     "make_report_evidence_manifest",
     "make_traceable_report_capability",
     "make_select_skill",
+    "make_semantic_tools",
     "make_shell_interpreter",
     "make_execute_skill_script_file",
     "make_load_skill",

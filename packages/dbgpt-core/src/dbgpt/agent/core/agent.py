@@ -216,9 +216,9 @@ class AgentContext:
     # If None, falls back to DBGPT_HOME/workspace/op_snapshots.
     output_dir: Optional[str] = None
 
-    # Multi-layer context management (opt-in)
-    enable_context_management: bool = False
-    max_context_tokens: int = 120000
+    # Multi-layer context management (explicit opt-out supported).
+    enable_context_management: bool = True
+    max_context_tokens: int = 0  # Auto: model metadata, then explicit fallback.
     context_warning_threshold: float = 0.70
     context_error_threshold: float = 0.90
 

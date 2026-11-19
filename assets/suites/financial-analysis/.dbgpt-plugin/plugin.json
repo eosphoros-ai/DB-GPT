@@ -1,0 +1,75 @@
+{
+  "name": "financial-analysis",
+  "version": "1.0.0",
+  "displayNameCn": "财报分析",
+  "displayName": "Financial Report Analysis",
+  "descriptionZh": "上传年度报告 PDF，解读经营表现、利润质量、现金流与资产负债；支持同年多公司或同公司跨年比较。分析结果关联原文依据，保留缺失数据与未完成专题。",
+  "descriptionEn": "Upload annual-report PDFs to analyze operating performance, earnings quality, cash flow and the balance sheet, or compare peers and reporting years. Findings link to source evidence and retain data gaps and unfinished topics.",
+  "author": { "name": "@DB-GPT 官方" },
+  "category": "finance",
+  "tags": ["财报", "年报", "财务分析", "财报对比", "官方内置"],
+  "skills": [
+    "skills/annual-report",
+    "skills/compare-reports",
+    "skills/financial-workflow"
+  ],
+  "dbgpt": {
+    "icon": "📈",
+    "scenario_id": "financial",
+    "execution": "react",
+    "sop": "prompts/financial-playbook.md",
+    "context_defaults": {
+      "harness_engine": "dbgpt",
+      "datasource": "optional",
+      "semantic_model": "none"
+    },
+    "tools": {
+      "allow": [
+        "prepare_financial_report",
+        "prepare_financial_comparison",
+        "resolve_financial_comparison",
+        "get_financial_topic",
+        "save_financial_topic",
+        "review_financial_report",
+        "publish_financial_report",
+        "read_financial_report"
+      ],
+      "deny": [
+        "ddl",
+        "shell",
+        "code_interpreter",
+        "execute_skill_script",
+        "execute_skill_script_file",
+        "sql_execute",
+        "generate_report",
+        "html_interpreter"
+      ]
+    },
+    "artifacts": ["financial_report", "citation"],
+    "routing": {
+      "keywords": ["财报", "年报", "年度报告", "财报对比", "financial report", "annual report"],
+      "specificity": 1
+    },
+    "recommended_questions": [
+      {
+        "title": "解读一份年报",
+        "title_en": "Read an annual report",
+        "text": "请分析这份年度报告，说明最值得关注的经营变化、现金流和风险，并给出原文依据。",
+        "text_en": "Analyze this annual report, explain the most important operating changes, cash flow and risks, and cite the source evidence.",
+        "command": "/读年报",
+        "hint": "上传一份 PDF 年报，无需连接数据库",
+        "hint_en": "Upload one annual-report PDF; no database connection is needed"
+      },
+      {
+        "title": "比较多份财报",
+        "title_en": "Compare financial reports",
+        "text": "请比较这些年度报告的经营表现、利润质量和现金流，说明可比口径与数据缺口。",
+        "text_en": "Compare these annual reports for operating performance, earnings quality and cash flow, explaining comparability and data gaps.",
+        "command": "/财报对比",
+        "hint": "上传两到五份 PDF，说明同年多公司或同公司跨年比较",
+        "hint_en": "Upload two to five PDFs and specify peer or multi-year comparison"
+      }
+    ],
+    "output_contract": "financial_report+citations"
+  }
+}

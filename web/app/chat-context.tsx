@@ -1,4 +1,5 @@
 import { apiInterceptors, getUsableModels, queryAdminList } from '@/client/api';
+import { useConversationAttention, type ConversationAttention } from '@/hooks/use-conversation-attention';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { UserInfoResponse } from '@/types/userinfo';
 import { getUserId } from '@/utils';
@@ -6,7 +7,7 @@ import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import { MODELS_CHANGED_EVENT } from '@/utils/events';
 import { useRequest } from 'ahooks';
 import { useSearchParams } from 'next/navigation';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react';
 
 type ThemeMode = 'dark' | 'light';
 
@@ -41,6 +42,19 @@ interface IChatContext {
   setCurrentDialogInfo: (val: { chat_scene: string; app_code: string }) => void;
   adminList: UserInfoResponse[];
   refreshDialogList?: any;
+  refreshModelList?: () => void;
+  /** Conversations with an active stream in this client (sidebar badges). */
+  runningConvIds: string[];
+  setConvRunning: (id: string, running: boolean) => void;
+  /** Optimistic sidebar entries for conversations not yet persisted. */
+  optimisticConvs: DialogueListResponse;
+  addOptimisticConv: (conv: DialogueListResponse[0]) => void;
+  dialogueListVersion: number;
+  bumpDialogueList: () => void;
+  unviewedResults: ConversationAttention;
+  markConvCompleted: (id: string, resultId: string) => void;
+  markConvViewed: (id: string, resultId: string) => void;
+  clearConvAttention: (id: string) => void;
 }
 
 function getDefaultTheme(): ThemeMode {
@@ -76,9 +90,20 @@ const ChatContext = createContext<IChatContext>({
   setCurrentDialogInfo: () => {},
   adminList: [],
   refreshDialogList: () => {},
+  runningConvIds: [],
+  setConvRunning: () => {},
+  optimisticConvs: [],
+  addOptimisticConv: () => {},
+  dialogueListVersion: 0,
+  bumpDialogueList: () => {},
+  unviewedResults: {},
+  markConvCompleted: () => {},
+  markConvViewed: () => {},
+  clearConvAttention: () => {},
 });
 
 const ChatContextProvider = ({ children }: { children: React.ReactElement }) => {
+  const attention = useConversationAttention(getUserId() || '');
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
@@ -100,14 +125,15 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   });
 
   // 获取model
-  const {
-    data: modelList = [],
-    loading: modelListLoading,
-    refresh: refreshModelList,
-  } = useRequest(async () => {
-    const [, res] = await apiInterceptors(getUsableModels());
-    return res ?? [];
-  });
+  const { data: modelList = [], loading: modelListLoading, refresh: refreshModelList } = useRequest(
+    async () => {
+      const [, res] = await apiInterceptors(getUsableModels());
+      return res ?? [];
+    },
+    // Model workers register asynchronously after the server starts accepting
+    // requests; retry so an early page load still picks up the usable models.
+    { retryCount: 5, retryInterval: 3000 },
+  );
 
   // Refresh the usable model list when models are connected/disconnected or
   // enabled/disabled elsewhere (e.g. the model config page).
@@ -166,6 +192,17 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelList]);
 
+  const [runningConvIds, setRunningConvIds] = useState<string[]>([]);
+  const setConvRunning = useCallback((id: string, running: boolean) => {
+    setRunningConvIds(prev => (running ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter(x => x !== id)));
+  }, []);
+  const [optimisticConvs, setOptimisticConvs] = useState<DialogueListResponse>([]);
+  const addOptimisticConv = useCallback((conv: DialogueListResponse[0]) => {
+    setOptimisticConvs(prev => (prev.some(x => x.conv_uid === conv.conv_uid) ? prev : [conv, ...prev]));
+  }, []);
+  const [dialogueListVersion, setDialogueListVersion] = useState(0);
+  const bumpDialogueList = useCallback(() => setDialogueListVersion(v => v + 1), []);
+
   const contextValue = {
     isContract,
     isMenuExpand,
@@ -190,6 +227,14 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     currentDialogInfo,
     setCurrentDialogInfo,
     adminList,
+    refreshModelList,
+    runningConvIds,
+    setConvRunning,
+    optimisticConvs,
+    addOptimisticConv,
+    dialogueListVersion,
+    bumpDialogueList,
+    ...attention,
   };
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 };

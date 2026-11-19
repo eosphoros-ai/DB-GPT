@@ -1,6 +1,7 @@
 import webpackBundle from 'next/dist/compiled/webpack/webpack.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -22,7 +23,8 @@ for (const [dependency, entryPoint] of [
     });
     const runtime = path.join(directory, 'node_modules', dependency, 'node_modules/@babel/runtime');
     const helper = path.join(runtime, `${entryPoint}.js`);
-    fs.cpSync(path.dirname(fileURLToPath(import.meta.resolve('@babel/runtime/package.json'))), runtime, {
+    const dependencyRequire = createRequire(import.meta.resolve(dependency));
+    fs.cpSync(path.dirname(dependencyRequire.resolve('@babel/runtime/package.json')), runtime, {
       recursive: true,
     });
     const entry = path.join(directory, 'entry.cjs');

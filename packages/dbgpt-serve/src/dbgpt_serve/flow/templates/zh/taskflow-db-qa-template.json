@@ -1,0 +1,70 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB 数据库答疑",
+    "name": "taskflow_db_qa_template",
+    "flow_category": "chat_flow",
+    "description": "面向数据库模式与业务口径的答疑:先接地核实表结构与定义,再组织带来源引用的答案。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "模式与知识接地",
+          "config": {
+            "agent_profile": "react_knowledge",
+            "goal": "定位与用户问题相关的表/字段/字典定义:用 sql_query 只查元数据(表清单、字段类型与注释、枚举字段取值分布,禁止全表扫描);如配置了知识库,用 knowledge_retrieve 检索业务口径与文档定义。输出语义卡:相关表与字段、口径与字典解释、来源清单(表名/文档名)。不要回答用户问题本身。",
+            "tools": [
+              "sql_query",
+              "knowledge_retrieve"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "答案与引用组织",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "基于上游语义卡与检索来源组织答案:先给结论,再分点依据,逐条标注来源(表名/文档名);数字必须来自上游核实结果;查不到就明说,不编造。输出不超过 300 字。",
+            "tools": [],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ]
+      ]
+    }
+  }
+}

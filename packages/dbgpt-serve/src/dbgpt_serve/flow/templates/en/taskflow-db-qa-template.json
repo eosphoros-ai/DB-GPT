@@ -1,0 +1,70 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB Schema & Docs QA",
+    "name": "taskflow_db_qa_template",
+    "flow_category": "chat_flow",
+    "description": "Grounded answers about schema and business calibers: verify table structures and definitions first, then compose a cited answer.",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "Schema & Knowledge Grounding",
+          "config": {
+            "agent_profile": "react_knowledge",
+            "goal": "Locate tables/columns/dictionary definitions relevant to the user's question: use sql_query for metadata only (table list, column types and comments, value distribution of enum columns; no full scans); if knowledge spaces are configured, retrieve business calibers and doc definitions with knowledge_retrieve. Output a semantic card: relevant tables and columns, caliber and dictionary explanations, source list (table/doc names). Do not answer the question itself.",
+            "tools": [
+              "sql_query",
+              "knowledge_retrieve"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "Answer & Citation",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "Compose the answer from the upstream semantic card and retrieved sources: conclusion first, then bulleted evidence, each citing its source (table/doc name); numbers must come from upstream verification; say so when not found, never fabricate. At most 300 words.",
+            "tools": [],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ]
+      ]
+    }
+  }
+}

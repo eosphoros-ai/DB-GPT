@@ -1,0 +1,46 @@
+{
+  "name": "sql-optimization-expert",
+  "version": "1.0.0",
+  "displayNameCn": "SQL 优化专家",
+  "displayNameEn": "SQL Optimization Expert",
+  "description": "基于直连数据库的结构、索引和执行计划，交付可追溯的 SQL 诊断、查询改写、索引候选与变更评审；默认只读，收益与语义等价未经实测时明确标注。",
+  "descriptionEn": "Read-only SQL diagnosis, query rewrites, index candidates and change reviews using database metadata and execution plans, with explicit evidence and validation limits.",
+  "author": {"name": "DB-GPT"},
+  "category": "engineering",
+  "tags": ["database", "sql", "optimization", "readonly", "expert"],
+  "skills": [
+    "skills/sql-diagnosis",
+    "skills/sql-rewrite",
+    "skills/index-candidates",
+    "skills/sql-change-review"
+  ],
+  "dbgpt": {
+    "icon": "🔬",
+    "scenario_id": "expert",
+    "execution": "react",
+    "sop": "prompts/workflow.md",
+    "tools": {
+      "allow": ["sql_query", "export_csv", "generate_report"],
+      "deny": ["ddl", "analyze", "bash", "shell", "code", "execute_tool"]
+    },
+    "context_defaults": {"datasource": "required"},
+    "required_resources": ["database"],
+    "recommended_questions": [
+      {"text": "诊断这条 SQL 的性能瓶颈，输出带证据的优化报告", "text_en": "Diagnose this SQL and produce an evidence-based optimization report", "command": "/sql-diagnose"},
+      {"text": "在保留查询语义的前提下改写这条 SQL，列出验证方法", "text_en": "Rewrite this SQL and list semantic equivalence checks", "command": "/sql-rewrite"},
+      {"text": "根据这些查询和现有索引，给出索引候选及取舍", "text_en": "Recommend index candidates from these queries and existing indexes", "command": "/index-advise"},
+      {"text": "评审这份 SQL 或 DDL 变更，给出风险与上线验证清单", "text_en": "Review this SQL or DDL change and provide a rollout validation checklist", "command": "/sql-review"}
+    ],
+    "artifacts": [
+      {"type": "html", "name": "SQL 优化诊断报告"},
+      {"type": "code", "name": "SQL 改写与索引候选"},
+      {"type": "markdown", "name": "变更评审与验证清单"},
+      {"type": "query", "name": "执行计划与结构证据"}
+    ],
+    "output_contract": {
+      "completion": "按所选任务交付，不机械生成全部产物。诊断包含问题、结构与计划证据、原因假设、优化方案和验证步骤；改写包含原始与候选 SQL、语义约束和未验证项；索引包含现有索引去重、候选 DDL、读写成本和实测方案；评审包含风险、前置条件、灰度与回退方案。完整报告通过 generate_report 生成，只有 completed 状态和真实链接才算文件交付。无计划时明确静态诊断，不编造收益或执行记录。",
+      "default_output": "对话结论与可复制 SQL；完整诊断或用户要求报告时生成 HTML 文件。",
+      "validation": "区分实测事实、计划估计、推断和待验证；默认不执行业务 SQL、EXPLAIN ANALYZE 或任何变更。"
+    }
+  }
+}
