@@ -185,6 +185,7 @@ class SystemApp(LifeCycle):
         self._app_config = app_config or AppConfig()
         self._stop_event = threading.Event()
         self._stop_event.clear()
+        self._startup_task: Optional[asyncio.Task] = None
         self._build()
 
     @property
@@ -347,11 +348,19 @@ class SystemApp(LifeCycle):
                     logger.error(f"Error starting system app: {e}")
                     sys.exit(1)
 
-            asyncio.create_task(_startup_func())
+            # Keep a reference, the event loop only holds a weak one to tasks
+            self._startup_task = asyncio.create_task(_startup_func())
             self.after_start()
 
         async def shutdown_event():
             """ASGI app shutdown event handler."""
+            startup_task = self._startup_task
+            if startup_task and not startup_task.done():
+                startup_task.cancel()
+                try:
+                    await startup_task
+                except asyncio.CancelledError:
+                    pass
             await self.async_before_stop()
             self.before_stop()
 
