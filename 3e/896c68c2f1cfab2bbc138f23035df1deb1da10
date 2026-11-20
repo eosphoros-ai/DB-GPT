@@ -1,0 +1,16 @@
+.github/workflows/build-web.yml
+  h_34a7ec1e433c3e 19
+.github/workflows/code-checks.yml
+  h_34a7ec1e433c3e 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3e896c68c2f1cfab2bbc138f23035df1deb1da10",
+  "prompts": {},
+  "humans": {
+    "h_34a7ec1e433c3e": {
+      "author": "alan.cl <1165243776@qq.com>"
+    }
+  }
+}
