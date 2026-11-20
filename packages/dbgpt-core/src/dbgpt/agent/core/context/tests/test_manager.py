@@ -107,6 +107,31 @@ class TestReactiveCompact:
 
 class TestContextManagerRecordsHistory:
     @pytest.mark.asyncio
+    async def test_status_reports_window_separately_from_input_budget(self):
+        events = []
+
+        async def on_status(status):
+            events.append(status)
+
+        cfg = ContextBudgetConfig(
+            max_context_tokens=32768,
+            reserved_tokens=8192,
+            context_window_source="deployment_config",
+        )
+        mgr = ContextManager(config=cfg, model_name="small", on_status_event=on_status)
+        mgr.tracker.extra_tokens = 500
+        await mgr.manage_context([_sys("system"), _human("current input")], 0)
+        event = events[-1]
+        assert event["context_window"] == 32768
+        assert event["budget"] == 24576
+        assert event["reserved_tokens"] == 8192
+        assert event["window_source"] == "deployment_config"
+        assert event["tools_tokens"] == 500
+        assert event["used"] > 500
+        assert event["estimated"] is True
+        assert event["model"] == "small"
+
+    @pytest.mark.asyncio
     async def test_token_count_recorded(self):
         cfg = ContextBudgetConfig(max_context_tokens=1000000, reserved_tokens=0)
         mgr = ContextManager(config=cfg)

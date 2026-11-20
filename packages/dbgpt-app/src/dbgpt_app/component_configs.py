@@ -113,6 +113,11 @@ def _initialize_resource_manager(system_app: SystemApp):
     from dbgpt.agent.resource.manage import get_resource_manager, initialize_resource
     from dbgpt.agent.resource.skill_resource import SkillResource
     from dbgpt.agent.skill.manage import initialize_skill
+    from dbgpt_app.openapi.api_v1.tools.system_health import make_system_health
+    from dbgpt_app.openapi.api_v1.tools.web_tools import (
+        make_web_fetch,
+        make_web_search,
+    )
     from dbgpt_serve.agent.resource.app import GptAppResource
     from dbgpt_serve.agent.resource.datasource import DatasourceResource
     from dbgpt_serve.agent.resource.knowledge import KnowledgeSpaceRetrieverResource
@@ -128,6 +133,10 @@ def _initialize_resource_manager(system_app: SystemApp):
     rm.register_resource(PluginToolPack, resource_type=ResourceType.Tool)
     rm.register_resource(GptAppResource)
     rm.register_resource(resource_instance=Terminate())
+    # Unified selectable entries; legacy registrations below remain for saved apps.
+    rm.register_resource(resource_instance=make_web_search())
+    rm.register_resource(resource_instance=make_web_fetch())
+    rm.register_resource(resource_instance=make_system_health())
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=serply_search)

@@ -1,0 +1,205 @@
+.card {
+  --readme-text: #666;
+  --readme-heading: #202020;
+  --readme-divider: #ddd;
+  --readme-code: #ebebeb;
+  min-width: 0;
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid var(--readme-divider);
+  border-radius: 18px;
+  background: #f5f5f5;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #999;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.label :global(.anticon) {
+  font-size: 16px;
+}
+
+.content {
+  margin-top: 16px;
+  color: var(--readme-text);
+  font-size: 14px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+.content > :first-child {
+  margin-top: 0;
+}
+
+.content > :last-child {
+  margin-bottom: 0;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  color: var(--readme-heading);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.content h1 {
+  margin: 0 0 24px;
+  font-size: 22px;
+}
+
+.content h2 {
+  margin: 28px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--readme-divider);
+  font-size: 18px;
+}
+
+.content h3 {
+  margin: 24px 0 12px;
+  font-size: 16px;
+}
+
+.content h4,
+.content h5,
+.content h6 {
+  margin: 20px 0 10px;
+  font-size: 14px;
+}
+
+.content p {
+  margin: 16px 0;
+}
+
+.content strong {
+  color: var(--readme-heading);
+  font-weight: 600;
+}
+
+.content ul,
+.content ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.content ul {
+  list-style: disc;
+}
+
+.content ol {
+  list-style: decimal;
+}
+
+.content li {
+  margin: 8px 0;
+  padding-left: 2px;
+}
+
+.content li > p {
+  margin: 8px 0;
+}
+
+.content blockquote {
+  margin: 20px 0;
+  padding: 0 0 0 20px;
+  border-left: 2px solid var(--readme-divider);
+  color: var(--readme-text);
+}
+
+.content blockquote > :first-child {
+  margin-top: 0;
+}
+
+.content blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.content hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid var(--readme-divider);
+}
+
+.content a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.content a:hover {
+  color: var(--readme-heading);
+}
+
+.content code {
+  font-size: 0.95em;
+}
+
+.content pre {
+  max-width: 100%;
+  margin: 20px 0;
+  padding: 16px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--readme-code);
+  line-height: 1.7;
+}
+
+.content pre code {
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.tableScroll {
+  max-width: 100%;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+.content table {
+  width: 100%;
+  min-width: 480px;
+  table-layout: auto;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+.content th,
+.content td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--readme-divider);
+  text-align: left;
+  vertical-align: top;
+}
+
+.content th {
+  color: var(--readme-heading);
+  font-weight: 600;
+}
+
+:global(.dark) .card {
+  --readme-text: #b4b4b8;
+  --readme-heading: #f0f0f2;
+  --readme-divider: #3b3b40;
+  --readme-code: #29292e;
+  background: #222226;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .content h1 {
+    font-size: 20px;
+  }
+}

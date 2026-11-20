@@ -271,7 +271,10 @@ async def use_example_file(
         # exactly like user-uploaded session files.
         abs_path = os.path.abspath(target_path).replace("\\", "/")
         logger.info(f"Example file copied: {abs_path}")
-        return Result.succ(abs_path)
+        # The legacy chat wire format requires forward slashes on every OS.
+        # Keep native paths for file I/O, but serialize Windows paths as D:/...
+        # so the example response can be submitted unchanged as file_path.
+        return Result.succ(Path(abs_path).as_posix())
     except Exception as e:
         logger.exception(f"Failed to use example file: {e}")
         return Result.failed(msg=f"Error: {str(e)}")

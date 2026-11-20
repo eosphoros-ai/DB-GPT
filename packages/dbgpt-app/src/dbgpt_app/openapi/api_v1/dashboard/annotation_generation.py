@@ -418,7 +418,7 @@ async def generate_annotation_proposal(
             .create()
         )
         llm_client = DefaultLLMClient(manager, auto_convert_message=True)
-    model = request.model
+    model = request.model or record.schema_payload.metadata.agent.model_name
     if not model:
         models = await llm_client.models()
         if not models:

@@ -374,13 +374,43 @@ test('formats bytes into a human readable size', () => {
   assert.equal(formatBytes(2 * 1024 * 1024 * 1024), '2.00 GB');
 });
 
-test('picks an icon per file type with spreadsheet priority', () => {
-  assert.equal(fileIconKey({ name: 'sales.csv' }), 'table');
-  assert.equal(fileIconKey({ name: 'book.xlsx' }), 'table');
+test('picks distinct icons for local file extensions even without a specific MIME type', () => {
+  assert.equal(fileIconKey({ name: 'report.PDF', mediaType: 'application/octet-stream', kind: 'document' }), 'pdf');
+  assert.equal(fileIconKey({ name: 'notes.md', mediaType: 'text/plain' }), 'markdown');
+  assert.equal(fileIconKey({ name: 'notes.markdown' }), 'markdown');
+  assert.equal(fileIconKey({ name: 'sales.csv', kind: 'table' }), 'csv');
+  assert.equal(fileIconKey({ name: 'sales.tsv' }), 'csv');
+  assert.equal(fileIconKey({ name: 'book.xlsx', kind: 'table' }), 'excel');
+  assert.equal(fileIconKey({ name: 'book.xls' }), 'excel');
+  assert.equal(fileIconKey({ name: 'book.xlsm' }), 'excel');
+  assert.equal(fileIconKey({ name: 'document.docx', kind: 'document' }), 'word');
+  assert.equal(fileIconKey({ name: 'document.doc' }), 'word');
   assert.equal(fileIconKey({ name: 'plot.png' }), 'image');
   assert.equal(fileIconKey({ name: 'deck.pptx' }), 'slide');
-  assert.equal(fileIconKey({ name: 'notes.md' }), 'text');
+  assert.equal(fileIconKey({ name: 'notes.txt' }), 'text');
+  assert.equal(fileIconKey({ name: 'data.parquet' }), 'table');
   assert.equal(fileIconKey({ name: 'archive.bin', mediaType: 'application/octet-stream' }), 'file');
+});
+
+test('uses MIME types for extensionless files before broad inspector categories', () => {
+  const cases = [
+    ['APPLICATION/PDF; charset=binary', 'pdf'],
+    ['text/markdown', 'markdown'],
+    ['text/csv', 'csv'],
+    ['text/tab-separated-values', 'csv'],
+    ['application/vnd.ms-excel', 'excel'],
+    ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'excel'],
+    ['application/msword', 'word'],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'word'],
+    ['application/vnd.ms-powerpoint', 'slide'],
+    ['image/png', 'image'],
+  ] as const;
+  for (const [mediaType, expected] of cases) {
+    assert.equal(fileIconKey({ name: 'upload', mediaType, kind: 'table' }), expected);
+  }
+  assert.equal(fileIconKey({ name: 'upload', kind: 'table' }), 'table');
+  assert.equal(fileIconKey({ name: 'upload', mediaType: 'text/plain' }), 'text');
+  assert.equal(fileIconKey({ name: 'pdf' }), 'file');
 });
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,315 @@
+# =============================================================================
+# db-query 套件 · Verified Q→SQL 样例库（few-shots / eval set）
+# -----------------------------------------------------------------------------
+# 用途：
+#   ① 作为 semantic.get_examples 的返回源，命中后作 few-shot 注入 NL2SQL prompt
+#      （consumption: metric_first —— 命中样例优先于泛化生成）
+#   ② 作为本套件的评测集：推荐问题 + verified 样例 = eval set（设计 §5.8）
+# 写回闭环：
+#   👍 有帮助 → use_count + 1，沉淀为新样例（须人审 verified 后入库）
+#   ✏️ 纠错   → 生成语义提案进待审队列（semantic.proposals），不直接改本文件
+# SQL 约定（所有样例均已注入）：
+#   · 指标默认过滤 status IN (1,2,3)      —— 排除 4 取消 / 5 退款
+#   · 规则护栏     is_deleted = 0         —— 软删除过滤
+#   · 行级权限     tenant_id = :current_tenant —— 执行层按会话身份注入，不可移除
+#   · 只读 SELECT，路由 replica（只读从库），带时间过滤命中索引
+# =============================================================================
+
+suite: db-query
+suite_version: 1.0.0
+semantic_layer: mysql_prod
+consumption: metric_first
+updated_at: "2026-10-22"
+row_limit_preview: 1000
+entry_count: 8
+
+entries:
+  - id: ex_001
+    question: "上个月华东区的有效GMV是多少？"
+    question_variants: ["上月华东有效GMV", "9月华东区的GMV", "华东上个月成交金额"]
+    intent: single_metric_with_filter
+    metric_refs: ["met_007@v2"]
+    tables: ["orders"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 指标 met_007 v2「有效订单GMV」= SUM(order_amount) on orders
+      SELECT SUM(order_amount) AS valid_gmv
+      FROM orders
+      WHERE region = '华东'                     -- 口语「华东区」→ 枚举精确值
+        AND status IN (1,2,3)                   -- 指标默认过滤
+        AND is_deleted = 0                      -- 规则护栏自动注入
+        AND tenant_id = :current_tenant         -- 行级权限（执行层注入）
+        AND paid_at >= '2026-09-01'
+        AND paid_at <  '2026-10-01';            -- 命中 paid_at 索引
+    result_columns: [valid_gmv]
+    tags: [GMV, 单指标, 区域过滤, 月度]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-05"
+    use_count: 128
+
+  - id: ex_002
+    question: "上个月华东区的有效GMV是多少？按渠道拆一下，看看环比"
+    question_variants: ["华东GMV按渠道环比", "分渠道看上月GMV和上月对比"]
+    intent: metric_with_dimension_and_mom
+    metric_refs: ["met_007@v2"]
+    tables: ["orders"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 指标 met_007 v2；环比用条件聚合单次扫描，避免两次全表扫
+      SELECT
+          channel,
+          SUM(CASE WHEN paid_at >= '2026-09-01' AND paid_at < '2026-10-01'
+                   THEN order_amount END) AS valid_gmv_cur,
+          SUM(CASE WHEN paid_at >= '2026-08-01' AND paid_at < '2026-09-01'
+                   THEN order_amount END) AS valid_gmv_prev,
+          ROUND(
+            (SUM(CASE WHEN paid_at >= '2026-09-01' AND paid_at < '2026-10-01' THEN order_amount END)
+           - SUM(CASE WHEN paid_at >= '2026-08-01' AND paid_at < '2026-09-01' THEN order_amount END))
+           / NULLIF(SUM(CASE WHEN paid_at >= '2026-08-01' AND paid_at < '2026-09-01' THEN order_amount END), 0)
+           * 100, 2) AS mom_pct                 -- 单位：百分比，NULLIF 防除零
+      FROM orders
+      WHERE region = '华东'
+        AND status IN (1,2,3)                   -- 指标默认过滤
+        AND is_deleted = 0                      -- 规则护栏自动注入
+        AND tenant_id = :current_tenant         -- 行级权限
+        AND paid_at >= '2026-08-01'
+        AND paid_at <  '2026-10-01'             -- 覆盖当期 + 环比期
+      GROUP BY channel
+      ORDER BY valid_gmv_cur DESC;
+    result_columns: [channel, valid_gmv_cur, valid_gmv_prev, mom_pct]
+    tags: [GMV, 环比, 维度拆分, 渠道, 条件聚合]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-12"
+    use_count: 47
+
+  - id: ex_003
+    question: "查询上月各区域销售额"
+    question_variants: ["上月各区域GMV", "分区域看9月销售额", "各region上月成交"]
+    intent: metric_group_by_dimension
+    metric_refs: ["met_007@v2"]
+    tables: ["orders"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 指标 met_007 v2；region 枚举：华东/华南/华北/华中/西南/西北/东北
+      SELECT
+          region,
+          SUM(order_amount)   AS valid_gmv,
+          COUNT(DISTINCT order_id) AS order_count,
+          ROUND(SUM(order_amount) / NULLIF(COUNT(DISTINCT order_id), 0), 2) AS avg_order_value
+      FROM orders
+      WHERE status IN (1,2,3)                   -- 指标默认过滤
+        AND is_deleted = 0                      -- 规则护栏自动注入
+        AND tenant_id = :current_tenant         -- 行级权限
+        AND paid_at >= '2026-09-01'
+        AND paid_at <  '2026-10-01'
+      GROUP BY region
+      ORDER BY valid_gmv DESC;
+    result_columns: [region, valid_gmv, order_count, avg_order_value]
+    tags: [GMV, 区域拆分, 月度, 推荐问题]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-05"
+    use_count: 213
+
+  - id: ex_004
+    question: "统计 Top10 客户 GMV 及环比"
+    question_variants: ["GMV前10客户", "top10客户成交额和上月对比", "大客户排行"]
+    intent: top_n_with_mom
+    metric_refs: ["met_007@v2"]
+    tables: ["orders", "customers"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- join 路径来自语义层血缘：orders.customer_id = customers.customer_id
+      -- 先按当期 GMV 取 Top10，再关联环比期，避免全量笛卡尔
+      WITH cur AS (
+          SELECT customer_id, SUM(order_amount) AS gmv_cur
+          FROM orders
+          WHERE status IN (1,2,3) AND is_deleted = 0 AND tenant_id = :current_tenant
+            AND paid_at >= '2026-09-01' AND paid_at < '2026-10-01'
+          GROUP BY customer_id
+          ORDER BY gmv_cur DESC
+          LIMIT 10
+      ), prev AS (
+          SELECT customer_id, SUM(order_amount) AS gmv_prev
+          FROM orders
+          WHERE status IN (1,2,3) AND is_deleted = 0 AND tenant_id = :current_tenant
+            AND paid_at >= '2026-08-01' AND paid_at < '2026-09-01'
+          GROUP BY customer_id
+      )
+      SELECT
+          c.customer_id,
+          cu.customer_name,
+          cu.customer_level,
+          c.gmv_cur,
+          COALESCE(p.gmv_prev, 0) AS gmv_prev,
+          ROUND((c.gmv_cur - COALESCE(p.gmv_prev, 0))
+                / NULLIF(p.gmv_prev, 0) * 100, 2) AS mom_pct
+      FROM cur c
+      LEFT JOIN prev p ON p.customer_id = c.customer_id
+      INNER JOIN customers cu ON cu.customer_id = c.customer_id
+                             AND cu.is_deleted = 0
+                             AND cu.tenant_id = :current_tenant
+      ORDER BY c.gmv_cur DESC;
+    result_columns: [customer_id, customer_name, customer_level, gmv_cur, gmv_prev, mom_pct]
+    tags: [GMV, TopN, 环比, 客户维度, join血缘, 推荐问题]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-18"
+    use_count: 96
+
+  - id: ex_005
+    question: "近30天各品类客单价"
+    question_variants: ["各品类客单价", "分category看ARPU", "最近一个月品类客单价"]
+    intent: derived_metric_group_by
+    metric_refs: ["met_012@v1", "met_007@v2", "met_003@v1"]
+    tables: ["orders", "order_items", "products"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 客单价 met_012 = valid_gmv(met_007) / order_count(met_003)，派生指标须引用两个原子指标
+      -- join 路径来自语义层血缘：orders.order_id = order_items.order_id
+      --                              order_items.product_id = products.product_id
+      SELECT
+          p.category_name,
+          SUM(oi.item_amount)                    AS valid_gmv,
+          COUNT(DISTINCT o.order_id)             AS order_count,
+          COUNT(DISTINCT o.customer_id)          AS buyer_count,
+          ROUND(SUM(oi.item_amount) / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)    AS avg_order_value,
+          ROUND(SUM(oi.item_amount) / NULLIF(COUNT(DISTINCT o.customer_id), 0), 2) AS arpu_per_buyer
+      FROM orders o
+      INNER JOIN order_items oi ON oi.order_id = o.order_id
+                               AND oi.is_deleted = 0
+                               AND oi.tenant_id = :current_tenant
+      INNER JOIN products p     ON p.product_id = oi.product_id
+                               AND p.is_deleted = 0
+      WHERE o.status IN (1,2,3)                  -- 指标默认过滤
+        AND o.is_deleted = 0                     -- 规则护栏自动注入
+        AND o.tenant_id = :current_tenant        -- 行级权限
+        AND o.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND o.paid_at <  CURDATE()
+      GROUP BY p.category_name
+      ORDER BY valid_gmv DESC;
+    result_columns: [category_name, valid_gmv, order_count, buyer_count, avg_order_value, arpu_per_buyer]
+    tags: [客单价, 派生指标, 品类拆分, 近30天, 多表join, 推荐问题]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-25"
+    use_count: 74
+
+  - id: ex_006
+    question: "导出上月华东区订单明细"
+    question_variants: ["华东上月订单明细导出", "下载9月华东订单列表", "订单明细CSV"]
+    intent: detail_export
+    metric_refs: []
+    tables: ["orders", "customers"]
+    default_filters:
+      - "status IN (1,2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 明细导出：口径与聚合查询完全一致，不得为「导出全量」删掉默认过滤
+      -- 导出阶段强制脱敏 mobile（PII），order_id 按文本输出防科学计数法
+      SELECT
+          o.order_id,
+          o.order_no,
+          o.paid_at,
+          c.customer_name,
+          c.mobile,                              -- export_csv masking 强制脱敏为 138****5678
+          o.region,
+          o.channel,
+          o.order_amount,
+          o.pay_amount,
+          o.discount_amount,
+          CASE o.status WHEN 1 THEN '待付款' WHEN 2 THEN '已付款' WHEN 3 THEN '已发货' END AS status_desc
+      FROM orders o
+      INNER JOIN customers c ON c.customer_id = o.customer_id
+                            AND c.is_deleted = 0
+                            AND c.tenant_id = :current_tenant
+      WHERE o.region = '华东'
+        AND o.status IN (1,2,3)                  -- 指标默认过滤（含退款/取消则口径不同，须显式说明）
+        AND o.is_deleted = 0                     -- 规则护栏自动注入
+        AND o.tenant_id = :current_tenant        -- 行级权限
+        AND o.paid_at >= '2026-09-01'
+        AND o.paid_at <  '2026-10-01'
+      ORDER BY o.paid_at DESC
+      LIMIT 100000;                              -- 超 10 万行走 export_csv 审批 confirm
+    result_columns: [order_id, order_no, paid_at, customer_name, mobile, region, channel, order_amount, pay_amount, discount_amount, status_desc]
+    tags: [明细导出, CSV, 脱敏, PII, 行数上限, 推荐问题]
+    verified_by: "@数据平台组"
+    verified_at: "2026-09-28"
+    use_count: 58
+
+  - id: ex_007
+    question: "近7天每天的活跃用户数趋势"
+    question_variants: ["日活跃用户趋势", "最近一周DAU", "活跃用户按天"]
+    intent: time_series
+    metric_refs: ["met_021@v3"]
+    tables: ["user_events"]
+    default_filters:
+      - "event_type IN ('view','click','order','pay')"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 指标 met_021 v3「活跃用户数」= COUNT(DISTINCT user_id)，默认过滤限定有效事件类型
+      SELECT
+          DATE(event_time)                AS stat_date,
+          COUNT(DISTINCT user_id)         AS active_users,
+          COUNT(DISTINCT CASE WHEN event_type = 'order' THEN user_id END) AS ordering_users,
+          ROUND(COUNT(DISTINCT CASE WHEN event_type = 'order' THEN user_id END)
+                / NULLIF(COUNT(DISTINCT user_id), 0) * 100, 2)            AS order_conv_pct
+      FROM user_events
+      WHERE event_type IN ('view','click','order','pay')   -- 指标 met_021 默认过滤
+        AND is_deleted = 0                                 -- 规则护栏自动注入
+        AND tenant_id = :current_tenant                    -- 行级权限
+        AND event_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        AND event_time <  CURDATE()
+      GROUP BY DATE(event_time)
+      ORDER BY stat_date;
+    result_columns: [stat_date, active_users, ordering_users, order_conv_pct]
+    tags: [活跃用户, 时间序列, 日粒度, 转化率, 趋势]
+    verified_by: "@数据平台组"
+    verified_at: "2026-10-08"
+    use_count: 65
+
+  - id: ex_008
+    question: "本月各渠道订单量占比，只看已支付的"
+    question_variants: ["渠道订单占比", "各channel订单结构", "本月渠道分布"]
+    intent: composition_ratio
+    metric_refs: ["met_003@v1"]
+    tables: ["orders"]
+    default_filters:
+      - "status IN (2,3)"
+      - "is_deleted = 0"
+      - "tenant_id = :current_tenant"
+    sql: |
+      -- 用户显式收窄口径为「已支付」→ status IN (2,3)（2已付款 3已发货），
+      -- 覆盖指标默认的 (1,2,3)；此类口径变更须在 SQL 注释与引用溯源中显式说明
+      SELECT
+          channel,
+          COUNT(DISTINCT order_id) AS order_count,
+          ROUND(COUNT(DISTINCT order_id) * 100.0
+                / SUM(COUNT(DISTINCT order_id)) OVER (), 2) AS share_pct
+      FROM orders
+      WHERE status IN (2,3)                      -- 用户显式口径：仅已支付（覆盖默认过滤，已标注）
+        AND is_deleted = 0                       -- 规则护栏自动注入
+        AND tenant_id = :current_tenant          -- 行级权限
+        AND paid_at >= '2026-10-01'
+        AND paid_at <  '2026-11-01'
+      GROUP BY channel
+      ORDER BY order_count DESC;
+    result_columns: [channel, order_count, share_pct]
+    tags: [订单量, 占比, 渠道拆分, 口径收窄, 窗口函数]
+    verified_by: "@数据平台组"
+    verified_at: "2026-10-15"
+    use_count: 31

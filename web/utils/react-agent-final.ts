@@ -268,6 +268,40 @@ function splitLegacyReferences(content: string): { content: string; citations: A
   };
 }
 
+/** Dashboard agents may use the complete tool result as their final answer. */
+function decodeDashboardToolContent(content: string): string {
+  const trimmed = content.trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return content;
+  let value: unknown;
+  try {
+    value = JSON.parse(trimmed);
+  } catch {
+    return content;
+  }
+  if (!isRecord(value) || !Array.isArray(value.chunks)) return content;
+  const dashboard =
+    value.dashboard ?? value.__dashboard__ ?? value.dashboard_plan_draft ?? value.__dashboard_plan_draft__;
+  if (!isRecord(dashboard) || !optionalString(dashboard.dashboard_id, 128)) return content;
+  const plan = value.dashboard_plan ?? value.__dashboard_plan__;
+  if (dashboard.status === 'awaiting_confirmation' && isRecord(plan) && typeof plan.title === 'string') {
+    return `已保存「${plan.title}」的看板规划。请查看规划卡片，确认后生成并验证组件 SQL。`;
+  }
+
+  // The dashboard reference is rendered independently as a generation card.
+  // Keep only the tool's readable answer, without interpreting arbitrary JSON
+  // answers or promoting tool metadata to citations.
+  return value.chunks
+    .filter(
+      (chunk): chunk is UnknownRecord =>
+        isRecord(chunk) &&
+        (chunk.output_type === 'text' || chunk.output_type === 'markdown') &&
+        typeof chunk.content === 'string',
+    )
+    .map(chunk => (chunk.content as string).trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 /** Decode a live SSE `final` payload or a plain legacy final string. */
 export function decodeFinalEvent(payload: unknown): AgentFinalAnswer {
   const record = isRecord(payload) ? payload : null;
@@ -278,7 +312,7 @@ export function decodeFinalEvent(payload: unknown): AgentFinalAnswer {
   const reportRunId = optionalString(record?.report_run_id, 64);
 
   return {
-    content: legacy.content,
+    content: decodeDashboardToolContent(legacy.content),
     citations: structured.length > 0 ? structured : legacy.citations,
     ...(reportId && reportRunId && { reportId, reportRunId }),
   };

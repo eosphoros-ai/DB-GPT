@@ -686,9 +686,21 @@ class DAGContext:
         When the task is running, the current task context
         will be set to the task context.
 
-        TODO: We should support parallel task running in the future.
         """
         self._curr_task_ctx = _curr_task_ctx
+
+    def fork(self) -> "DAGContext":
+        """Isolate the active task while sharing workflow results and resources."""
+        context = DAGContext(
+            node_to_outputs=self._node_to_outputs,
+            share_data=self._share_data,
+            event_loop_task_id=self._event_loop_task_id,
+            streaming_call=self._streaming_call,
+            node_name_to_ids=self._node_name_to_ids,
+            dag_variables=self._dag_variables,
+        )
+        context._share_data_lock = self._share_data_lock
+        return context
 
     def get_task_output(self, task_name: str) -> TaskOutput:
         """Get the task output by task name.

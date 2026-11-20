@@ -8,6 +8,9 @@ const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
 const apiBaseUrl = (process.env.API_BASE_URL || "http://127.0.0.1:5670").replace(/\/+$/, "");
 
 const nextConfig = {
+  agentRules: false,
+  // Local development is also opened through the loopback IP.
+  allowedDevOrigins: ['127.0.0.1'],
   // Chart extensions require G2 from CommonJS. Bundle page dependencies so
   // they share Webpack module loading instead of racing native ESM imports.
   bundlePagesRouterDependencies: true,
@@ -20,6 +23,8 @@ const nextConfig = {
   // `next-transpile-modules` is unmaintained and does not support Next.js 16.
   // Next has had the same capability built in since 13.1.
   transpilePackages: [
+    "@ant-design/plots",
+    "@antv/ava",
     "@berryv/g2-react",
     "@antv/g2",
     "react-syntax-highlighter",
@@ -52,8 +57,32 @@ const nextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   skipTrailingSlashRedirect: true,
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Next 16's react-refresh loader appends an ESM-only snippet
+    // (import.meta.webpackHot) to every non-.cjs module, which breaks
+    // CommonJS refresh boundaries in node_modules (e.g. @babel/runtime
+    // helpers under antd) with "Cannot use 'import.meta' outside a
+    // module". Swap in a shim that picks the runtime variant by source
+    // inspection. Dev client builds only.
     if (dev && !isServer) {
+      const shim = path.join(__dirname, 'scripts/react-refresh-loader-cjs-safe.js');
+      const isRefreshLoader = u => {
+        const loader = typeof u === 'string' ? u : u && u.loader;
+        return typeof loader === 'string' && loader.replace(/\\/g, '/').includes('@next/react-refresh-utils/dist/loader');
+      };
+      const walk = rules => {
+        for (const rule of rules || []) {
+          if (!rule || typeof rule !== 'object') continue;
+          if (Array.isArray(rule.use)) {
+            rule.use = rule.use.map(u => (isRefreshLoader(u) ? (typeof u === 'string' ? shim : { ...u, loader: shim }) : u));
+          } else if (isRefreshLoader(rule.use)) {
+            rule.use = shim;
+          }
+          if (Array.isArray(rule.oneOf)) walk(rule.oneOf);
+          if (Array.isArray(rule.rules)) walk(rule.rules);
+        }
+      };
+      walk(config.module.rules);
       // Fast Refresh can reach CommonJS helpers and regenerator nested under transpiled packages.
       // Its injected import.meta needs an auto parser despite Babel's package type.
       config.module.rules.push({
@@ -71,6 +100,12 @@ const nextConfig = {
     };
     config.resolve.fallback = { fs: false };
     if (!isServer) {
+      // Fast Refresh injects import.meta into Babel's nested CommonJS runtime.
+      // Allow both module syntaxes for these client-side runtime modules.
+      config.module.rules.push({
+        test: /[\\/]@babel[\\/]runtime[\\/].*\.js$/,
+        type: 'javascript/auto',
+      });
       config.plugins.push(
         new CopyPlugin({
           patterns: [
