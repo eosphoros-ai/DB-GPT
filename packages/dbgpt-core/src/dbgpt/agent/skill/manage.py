@@ -502,8 +502,20 @@ class SkillManager(BaseComponent):
         if not skill_path:
             return None
 
-        script_path = os.path.join(skill_path, "scripts", script_file_name)
-        if os.path.exists(script_path):
+        try:
+            script_file_name = normalize_script_file_name(script_file_name)
+        except ValueError:
+            return None
+
+        scripts_dir = os.path.realpath(os.path.join(skill_path, "scripts"))
+        script_path = os.path.realpath(
+            os.path.join(scripts_dir, *script_file_name.split("/"))
+        )
+        if script_path != scripts_dir and not script_path.startswith(
+            scripts_dir + os.sep
+        ):
+            return None
+        if os.path.isfile(script_path):
             with open(script_path, "r", encoding="utf-8") as f:
                 return f.read()
 
