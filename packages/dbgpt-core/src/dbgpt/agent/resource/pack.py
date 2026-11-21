@@ -147,18 +147,19 @@ class ResourcePack(Resource[PackResourceParameters]):
                 if apply_pack_func is not None:
                     return apply_pack_func(resource)
                 resources = []
-                resource_copy = cast(ResourcePack, copy.copy(resource))
-                for resource_copy in resource_copy.sub_resources:
-                    result = _apply_func_to_resource(resource_copy)
+                pack_copy = cast(ResourcePack, copy.copy(resource))
+                for sub_resource in pack_copy.sub_resources:
+                    result = _apply_func_to_resource(sub_resource)
                     if result:
                         if isinstance(result, list):
                             resources.extend(result)
                         else:
                             resources.append(result)
                 # Replace the resources
-                resource_copy._resources = {
+                pack_copy._resources = {
                     resource.name: resource for resource in resources
                 }
+                return pack_copy
             else:
                 if apply_func is not None:
                     return apply_func(resource)
