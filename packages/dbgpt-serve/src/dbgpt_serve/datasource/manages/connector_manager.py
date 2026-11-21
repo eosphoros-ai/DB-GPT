@@ -435,7 +435,11 @@ class ConnectorManager(BaseComponent):
     )
     def delete_db(self, db_name: str):
         """Delete db connect info."""
-        return self.storage.delete_db(db_name)
+        try:
+            return self.storage.delete_db(db_name)
+        finally:
+            # Never keep serving a connector for a datasource that is gone.
+            self.invalidate_connector(db_name)
 
     @Deprecated(
         version="0.7.0",
@@ -443,19 +447,23 @@ class ConnectorManager(BaseComponent):
     )
     def edit_db(self, db_info: DBConfig):
         """Edit db connect info."""
-        return self.storage.update_db_info(
-            db_info.db_name,
-            db_info.db_type,
-            db_info.file_path,
-            db_info.db_host,
-            db_info.db_port,
-            db_info.db_user,
-            db_info.db_pwd,
-            db_info.comment,
-        )
+        try:
+            return self.storage.update_db_info(
+                db_info.db_name,
+                db_info.db_type,
+                db_info.file_path,
+                db_info.db_host,
+                db_info.db_port,
+                db_info.db_user,
+                db_info.db_pwd,
+                db_info.comment,
+            )
+        finally:
+            self.invalidate_connector(db_info.db_name)
 
     async def async_db_summary_embedding(self, db_name, db_type):
         """Async db summary embedding."""
+        self.invalidate_connector(db_name)
         executor = self.system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()  # type: ignore
@@ -496,6 +504,9 @@ class ConnectorManager(BaseComponent):
                     db_info.comment,
                     user_id,
                 )
+            # A same-name connector may still be cached from a previous
+            # registration; drop it so the new config is used.
+            self.invalidate_connector(db_info.db_name)
             # async embedding
             executor = self.system_app.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
