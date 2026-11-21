@@ -179,6 +179,7 @@ class ConnectConfigDao(BaseDao):
             session = self.get_raw_session()
             try:
                 if not db_path:
+                    effective_pwd = db_pwd if db_pwd else old_db_conf.get("db_pwd", "")
                     update_statement = text(
                         "UPDATE connect_config set db_type=:db_type, "
                         "db_host=:db_host, db_port=:db_port, db_user=:db_user, "
@@ -189,7 +190,7 @@ class ConnectConfigDao(BaseDao):
                         "db_host": db_host,
                         "db_port": db_port,
                         "db_user": db_user,
-                        "db_pwd": db_pwd,
+                        "db_pwd": effective_pwd,
                         "comment": comment,
                         "db_name": db_name,
                     }

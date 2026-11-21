@@ -221,10 +221,10 @@ async def db_connect_list(
     results = CFG.local_db_manager.get_db_list(
         db_name=db_name, user_id=user_info.user_id
     )
-    # 排除部分数据库不允许用户访问
+    # 排除部分数据库不允许用户访问，且不向接口响应暴露明文密码
     if results and len(results):
         results = [
-            d
+            {k: v for k, v in d.items() if k != "db_pwd"}
             for d in results
             if d.get("db_name") not in ["auth", "dbgpt", "test", "public"]
         ]
