@@ -236,7 +236,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         if owner is not None:
             request.user_name = owner
-            request.dag_id = None
         try:
             self._maybe_compile_taskflow(request)
             # Build DAG from request
@@ -282,7 +281,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 self.dao.update({"uid": request.uid}, request)
             else:
                 # Rollback
-                self.delete(request.uid)
+                self.delete(request.uid, owner=owner)
             raise e
         return res
 

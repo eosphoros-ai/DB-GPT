@@ -234,7 +234,9 @@ def test_owned_running_flow_without_registered_dag_can_be_deleted(monkeypatch, d
     assert unregistered == []
 
 
-def test_flow_create_and_update_ignore_caller_dag_identifiers():
+def test_flow_create_endpoint_discards_caller_dag_id_and_update_uses_stored_id(
+    monkeypatch,
+):
     class BuildStopped(Exception):
         pass
 
@@ -253,11 +255,16 @@ def test_flow_create_and_update_ignore_caller_dag_identifiers():
     service._flow_factory = Factory()
     service._dao = Dao()
 
+    async def run_blocking(_system_app, function, *args, **kwargs):
+        return function(*args, **kwargs)
+
+    monkeypatch.setattr(flow_endpoints, "blocking_func_to_async", run_blocking)
+
     create_request = FlowRequest(
         uid="new", label="New flow", name="new", dag_id="other-dag"
     )
     with pytest.raises(ValueError):
-        service.create_and_save_dag(create_request, owner="owner-a")
+        asyncio.run(flow_endpoints.create(create_request, service, owner="owner-a"))
     assert service._flow_factory.seen == [None]
 
     update_request = FlowRequest(
@@ -266,6 +273,214 @@ def test_flow_create_and_update_ignore_caller_dag_identifiers():
     with pytest.raises(BuildStopped):
         service.update_flow(update_request, owner="owner-a")
     assert service._flow_factory.seen == [None, "own-dag"]
+
+
+def test_owned_flow_rename_preserves_stored_and_registered_dag_id(monkeypatch):
+    owner = "owner-a"
+    uid = "flow-a"
+
+    class Dao:
+        def __init__(self):
+            self.rows = {}
+
+        def _key(self, query):
+            query_owner = query.get("user_name")
+            if query_owner is not None:
+                key = (query["uid"], query_owner)
+                return key if key in self.rows else None
+            return next((key for key in self.rows if key[0] == query["uid"]), None)
+
+        def get_one(self, query):
+            key = self._key(query)
+            return self.rows[key].model_copy(deep=True) if key else None
+
+        def create(self, request):
+            key = (request.uid, request.user_name)
+            self.rows[key] = request.model_copy(deep=True)
+            return self.rows[key].model_copy(deep=True)
+
+        def update(self, query, update_request):
+            key = self._key(query)
+            assert key is not None
+            self.rows[key] = update_request.model_copy(deep=True)
+            return self.rows[key].model_copy(deep=True)
+
+        def delete(self, query):
+            key = self._key(query)
+            assert key is not None
+            del self.rows[key]
+
+    class Factory:
+        def __init__(self):
+            self.seen = []
+
+        def build(self, request):
+            self.seen.append((request.name, request.dag_id))
+            dag_id = request.dag_id or f"flow_dag_{request.name}_{request.uid}"
+            return SimpleNamespace(dag_id=dag_id, trigger_nodes=[], leaf_nodes=[])
+
+    class DagManager:
+        def __init__(self):
+            self.dag_map = {}
+            self.dag_alias_map = {}
+            self.registered = []
+            self.unregistered = []
+
+        def get_dag_metadata(self, *args, **kwargs):
+            return None
+
+        def register_dag(self, dag, alias_name):
+            self.registered.append((dag.dag_id, alias_name))
+            self.dag_map[dag.dag_id] = dag
+            self.dag_alias_map[alias_name] = dag.dag_id
+
+        def unregister_dag(self, dag_id):
+            self.unregistered.append(dag_id)
+            self.dag_map.pop(dag_id, None)
+            for alias, registered_id in list(self.dag_alias_map.items()):
+                if registered_id == dag_id:
+                    del self.dag_alias_map[alias]
+
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._flow_factory = Factory()
+    service._dag_manager = DagManager()
+    monkeypatch.setattr(flow_module, "fill_flow_panel", lambda flow: None)
+
+    async def run_blocking(_system_app, function, *args, **kwargs):
+        return function(*args, **kwargs)
+
+    monkeypatch.setattr(flow_endpoints, "blocking_func_to_async", run_blocking)
+
+    create_request = FlowRequest(
+        uid=uid,
+        label="Flow alpha",
+        name="flow_alpha",
+        dag_id="caller-supplied-dag",
+        state=flow_module.State.DEPLOYED,
+    )
+    asyncio.run(flow_endpoints.create(create_request, service, owner=owner))
+    original_dag_id = f"flow_dag_flow_alpha_{uid}"
+
+    update_request = FlowRequest(
+        uid=uid,
+        label="Flow beta",
+        name="flow_beta",
+        dag_id="other-caller-dag",
+        state=flow_module.State.DEPLOYED,
+    )
+    service.update_flow(update_request, owner=owner)
+
+    stored = service.dao.get_one({"uid": uid, "user_name": owner})
+    assert stored.name == "flow_beta"
+    assert stored.dag_id == original_dag_id
+    assert service._flow_factory.seen == [
+        ("flow_alpha", None),
+        ("flow_beta", original_dag_id),
+        ("flow_beta", original_dag_id),
+    ]
+    assert service.dag_manager.registered == [
+        (original_dag_id, uid),
+        (original_dag_id, uid),
+    ]
+    assert service.dag_manager.unregistered == [original_dag_id]
+    assert service.dag_manager.dag_alias_map == {uid: original_dag_id}
+    assert original_dag_id in service.dag_manager.dag_map
+    assert f"flow_dag_flow_beta_{uid}" not in service.dag_manager.dag_map
+
+
+def test_owned_registration_failure_rollback_is_owner_scoped(monkeypatch):
+    owner_a_uid = "owner-a-flow"
+    owner_b_uid = "owner-b-flow"
+    owner_a = "owner-a"
+    owner_b = "owner-b"
+    shared_dag_id = "shared-dag"
+
+    class Dao:
+        def __init__(self):
+            owner_b_flow = FlowRequest(
+                uid=owner_b_uid,
+                label="Owner B flow",
+                name="owner_b_flow",
+                user_name=owner_b,
+                dag_id=shared_dag_id,
+                state=flow_module.State.RUNNING,
+            )
+            self.rows = {(owner_b_uid, owner_b): owner_b_flow}
+            self.delete_queries = []
+
+        def _key(self, query):
+            query_owner = query.get("user_name")
+            if query_owner is not None:
+                key = (query["uid"], query_owner)
+                return key if key in self.rows else None
+            return next((key for key in self.rows if key[0] == query["uid"]), None)
+
+        def get_one(self, query):
+            key = self._key(query)
+            return self.rows[key].model_copy(deep=True) if key else None
+
+        def create(self, request):
+            key = (request.uid, request.user_name)
+            self.rows[key] = request.model_copy(deep=True)
+            return self.rows[key].model_copy(deep=True)
+
+        def delete(self, query):
+            self.delete_queries.append(dict(query))
+            key = self._key(query)
+            assert key is not None
+            del self.rows[key]
+
+    class DagManager:
+        def __init__(self):
+            owner_b_dag = SimpleNamespace(
+                dag_id=shared_dag_id, trigger_nodes=[], leaf_nodes=[]
+            )
+            self.dag_map = {shared_dag_id: owner_b_dag}
+            self.dag_alias_map = {owner_b_uid: shared_dag_id}
+            self.registered = []
+            self.unregistered = []
+
+        def get_dag_metadata(self, *args, **kwargs):
+            return None
+
+        def register_dag(self, dag, alias_name):
+            self.registered.append((dag.dag_id, alias_name))
+            assert dag.dag_id in self.dag_map
+            raise RuntimeError("registration collision")
+
+        def unregister_dag(self, dag_id):
+            self.unregistered.append(dag_id)
+            self.dag_map.pop(dag_id, None)
+            for alias, registered_id in list(self.dag_alias_map.items()):
+                if registered_id == dag_id:
+                    del self.dag_alias_map[alias]
+
+    service = object.__new__(flow_module.Service)
+    service._dao = Dao()
+    service._dag_manager = DagManager()
+    service._flow_factory = SimpleNamespace(
+        build=lambda request: SimpleNamespace(
+            dag_id=shared_dag_id, trigger_nodes=[], leaf_nodes=[]
+        )
+    )
+    monkeypatch.setattr(flow_module, "fill_flow_panel", lambda flow: None)
+
+    request = FlowRequest(
+        uid=owner_a_uid,
+        label="Owner A flow",
+        name="owner_a_flow",
+        state=flow_module.State.DEPLOYED,
+    )
+    with pytest.raises(RuntimeError, match="registration collision"):
+        service.create_and_save_dag(request, owner=owner_a)
+
+    assert service.dao.delete_queries == [{"uid": owner_a_uid, "user_name": owner_a}]
+    assert (owner_a_uid, owner_a) not in service.dao.rows
+    assert service.dao.rows[(owner_b_uid, owner_b)].dag_id == shared_dag_id
+    assert service.dag_manager.dag_alias_map == {owner_b_uid: shared_dag_id}
+    assert shared_dag_id in service.dag_manager.dag_map
+    assert service.dag_manager.unregistered == []
 
 
 def test_builtin_variable_providers_query_only_verified_owner(monkeypatch):

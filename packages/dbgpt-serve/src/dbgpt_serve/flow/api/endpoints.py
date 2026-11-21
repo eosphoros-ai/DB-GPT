@@ -137,6 +137,8 @@ async def create(
     Returns:
         ServerResponse: The response
     """
+    if owner is not None:
+        request.dag_id = None
     res = await blocking_func_to_async(
         global_system_app, service.create_and_save_dag, request, owner=owner
     )
@@ -609,6 +611,8 @@ async def import_flow(
             status_code=400, detail=f"invalid file extension {file_extension}"
         )
     if save_flow:
+        if owner is not None:
+            flow.dag_id = None
         res = await blocking_func_to_async(
             global_system_app, service.create_and_save_dag, flow, owner=owner
         )
