@@ -32,12 +32,11 @@ class ConnectorManager(BaseComponent):
 
     name = ComponentType.CONNECTOR_MANAGER
 
-    # Default TTL for the connector cache below. The expensive part of
-    # building a connector is SQLAlchemy ``MetaData.reflect(bind=engine)``
-    # inside ``RDBMSConnector.__init__``, which on large schemas (e.g. an
-    # MSSQL database with hundreds of tables) takes tens of seconds because
-    # the dialect issues per-table reflection queries. Caching the
-    # constructed connector lets that cost amortise across many chats.
+    # Default TTL for the connector cache below. ``RDBMSConnector`` reflects
+    # table metadata lazily, per table, on first use; the reflected tables
+    # live on the connector, so caching it lets that per-table cost (slow on
+    # dialects such as MSSQL that issue several queries per table) amortise
+    # across many chats instead of being paid again by every new connector.
     _CONNECTOR_CACHE_DEFAULT_TTL = 1800  # 30 minutes
 
     def __init__(self, system_app: SystemApp):
@@ -52,7 +51,7 @@ class ConnectorManager(BaseComponent):
         self._connector_cache: Dict[str, Tuple[float, BaseConnector]] = {}
         self._connector_cache_lock = threading.Lock()
         # Per-db_name "creation" lock so that when many chats race for a
-        # cold db_name only one of them runs the expensive reflection;
+        # cold db_name only one of them builds the connector;
         # the others wait and reuse the same instance.
         self._connector_creation_locks: Dict[str, threading.Lock] = {}
         self._connector_cache_ttl = self._CONNECTOR_CACHE_DEFAULT_TTL
@@ -197,16 +196,15 @@ class ConnectorManager(BaseComponent):
         """Get or create a connection instance for ``db_name``.
 
         Constructed connectors are cached for ``_connector_cache_ttl``
-        seconds (30 min by default). The motivation is that
-        ``RDBMSConnector.__init__`` runs ``MetaData.reflect(bind=engine)``,
-        which for a SQL Server database with ~900 tables takes ~60s because
-        SQLAlchemy's MSSQL dialect reflects columns/PK/FK per table. Without
-        this cache every chat invocation paid that cost; with it, only the
-        first chat after a cold start (or after the TTL expires) is slow.
+        seconds (30 min by default). ``RDBMSConnector`` reflects table
+        metadata lazily and keeps it on the instance, and SQLAlchemy's
+        per-table reflection is slow on some dialects (MSSQL reflects
+        columns/PK/FK per table). Reusing the connector means each table is
+        reflected once per cache lifetime instead of once per chat.
 
         Concurrency: a per-``db_name`` creation lock ensures that when
         several requests race for the same cold entry only one of them
-        runs the slow reflection; the others wait and reuse it.
+        builds the connector; the others wait and reuse it.
 
         Args:
             db_name (str): database name

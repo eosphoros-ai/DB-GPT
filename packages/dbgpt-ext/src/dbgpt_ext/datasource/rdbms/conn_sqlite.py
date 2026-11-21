@@ -175,7 +175,10 @@ class SQLiteConnector(RDBMSConnector):
             table_results = set(row[0] for row in table_results)  # noqa
             view_results = set(row[0] for row in view_results)  # noqa
             self._all_tables = table_results.union(view_results)
-            self._metadata.reflect(bind=self._engine)
+            # Runtime re-syncs (e.g. after creating temp tables) must not
+            # reflect while another thread reads the metadata.
+            with self._metadata_lock:
+                self._metadata.reflect(bind=self._engine)
             return self._all_tables
 
     def _write(self, write_sql):
