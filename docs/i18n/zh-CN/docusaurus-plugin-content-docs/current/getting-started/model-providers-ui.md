@@ -26,13 +26,13 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 ## 内置提供商（已预集成）
 
-内置 27 家提供商，每家都预置了模型目录（含名称、上下文长度、函数调用支持等元数据），只需填凭证即可使用：
+内置 28 家提供商，每家都预置了模型目录（含名称、上下文长度、函数调用支持等元数据），只需填凭证即可使用：
 
 | 分组 | 提供商 |
 | --- | --- |
 | 国际模型厂商 | OpenAI、GitHub Copilot、Anthropic (Claude)、Google Gemini、xAI (Grok)、Mistral AI、NVIDIA NIM |
 | 国内模型厂商 | DeepSeek、智谱 AI (GLM)、Kimi (Moonshot)、通义千问、火山引擎 (豆包)、MiniMax、百川、零一万物 (Yi)、讯飞星火、百度千帆 (文心) |
-| 网关与聚合 | OrcaRouter (orcarouter.ai)、Vercel AI Gateway、SiliconFlow、LiteLLM、Groq、AIML API、BurnCloud、Gitee AI、无问芯穹 |
+| 网关与聚合 | OrcaRouter (orcarouter.ai)、Vercel AI Gateway、SiliconFlow、LiteLLM、Groq、AIML API、BurnCloud、Gitee AI、无问芯穹、Opper (opper.ai) |
 | 本地 | Ollama（本地模型，无需 API Key） |
 
 部分提供商说明：

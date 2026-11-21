@@ -60,6 +60,7 @@ PROVIDER_MAP = {
     "mistral": "proxy/mistral",
     "xai": "proxy/xai",
     "vercel": "proxy/vercel",
+    "opper": "proxy/opper",
 }
 
 
