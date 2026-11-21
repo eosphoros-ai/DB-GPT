@@ -58,6 +58,7 @@ const POPULAR_PROVIDERS: Array<{ id: string }> = [
   { id: 'proxy/burncloud' },
   { id: 'proxy/gitee' },
   { id: 'proxy/infiniai' },
+  { id: 'proxy/y-api' },
   { id: 'proxy/ollama' },
 ];
 
