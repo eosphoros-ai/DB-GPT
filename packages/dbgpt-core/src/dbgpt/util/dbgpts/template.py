@@ -314,18 +314,27 @@ include {mod_name}/definition/*.json
         f.write(manifest)
 
 
+def _module_dir(working_directory: str, name: str, mod_name: str) -> Path:
+    """The package directory the project's build will ship.
+
+    uv (and Poetry 2) create a src layout; the manual fallback is flat.
+    """
+    project_dir = Path(working_directory) / name
+    src_dir = project_dir / "src" / mod_name
+    module_dir = src_dir if src_dir.is_dir() else project_dir / mod_name
+    module_dir.mkdir(parents=True, exist_ok=True)
+    return module_dir
+
+
 def _write_flow_define_json_file(working_directory: str, name: str, mod_name: str):
     """Write the flow define json file"""
 
     def_file = (
-        Path(working_directory)
-        / name
-        / mod_name
+        _module_dir(working_directory, name, mod_name)
         / "definition"
         / "flow_definition.json"
     )
-    if not def_file.parent.exists():
-        def_file.parent.mkdir(parents=True)
+    def_file.parent.mkdir(exist_ok=True)
     with open(def_file, "w") as f:
         f.write("")
         print("Please write your flow json to the file: ", def_file)
@@ -334,7 +343,7 @@ def _write_flow_define_json_file(working_directory: str, name: str, mod_name: st
 def _write_flow_define_python_file(working_directory: str, name: str, mod_name: str):
     """Write the flow define python file"""
 
-    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    init_file = _module_dir(working_directory, name, mod_name) / "__init__.py"
     content = ""
 
     with open(init_file, "w") as f:
@@ -344,7 +353,7 @@ def _write_flow_define_python_file(working_directory: str, name: str, mod_name: 
 def _write_operator_init_file(working_directory: str, name: str, mod_name: str):
     """Write the operator __init__.py file"""
 
-    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    init_file = _module_dir(working_directory, name, mod_name) / "__init__.py"
     content = """
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import ViewMetadata, OperatorCategory, IOField, Parameter
@@ -399,7 +408,7 @@ class HelloWorldOperator(MapOperator[str, str]):
 def _write_agent_init_file(working_directory: str, name: str, mod_name: str):
     """Write the agent __init__.py file"""
 
-    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    init_file = _module_dir(working_directory, name, mod_name) / "__init__.py"
     content = """
 import asyncio
 from typing import Optional, Tuple
@@ -523,7 +532,7 @@ if __name__ == "__main__":
 def _write_resource_init_file(working_directory: str, name: str, mod_name: str):
     """Write the resource __init__.py file"""
 
-    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    init_file = _module_dir(working_directory, name, mod_name) / "__init__.py"
     content = """\"\"\"A custom resource module that provides a simple tool to send \
     GET requests.\"\"\"
 
