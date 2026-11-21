@@ -105,3 +105,47 @@ def test_update_db_info_preserves_password_when_omitted(tmp_path):
     )
     rotated = dao.get_db_config("prod_db")
     assert rotated["db_pwd"] == "rotated-secret"
+
+
+def test_update_db_info_empty_password_keeps_concurrent_rotation(tmp_path, monkeypatch):
+    dbm = DatabaseManager()
+    dbm.init_db(f"sqlite:///{tmp_path}/meta.db")
+    ConnectConfigEntity.__table__.create(dbm.engine)
+    dao = ConnectConfigDao(db_manager=dbm)
+    dao.add_url_db(
+        db_name="prod_db",
+        db_type="mysql",
+        db_host="10.0.0.9",
+        db_port=3306,
+        db_user="app",
+        db_pwd="old-secret",
+        comment="initial",
+        user_id="alice",
+    )
+    stale = dao.get_db_config("prod_db")
+    # Another edit rotates the password after this edit has read the row.
+    dao.update_db_info(
+        db_name="prod_db",
+        db_type="mysql",
+        db_host="10.0.0.9",
+        db_port=3306,
+        db_user="app",
+        db_pwd="new-secret",
+        comment="rotated",
+    )
+    monkeypatch.setattr(dao, "get_db_config", lambda db_name: stale)
+
+    dao.update_db_info(
+        db_name="prod_db",
+        db_type="mysql",
+        db_host="10.0.0.9",
+        db_port=3306,
+        db_user="app",
+        db_pwd="",
+        comment="comment only",
+    )
+
+    monkeypatch.undo()
+    current = dao.get_db_config("prod_db")
+    assert current["comment"] == "comment only"
+    assert current["db_pwd"] == "new-secret"

@@ -179,21 +179,25 @@ class ConnectConfigDao(BaseDao):
             session = self.get_raw_session()
             try:
                 if not db_path:
-                    effective_pwd = db_pwd if db_pwd else old_db_conf.get("db_pwd", "")
+                    # An empty password means "keep the stored one": leave the column
+                    # out of the UPDATE instead of writing back a value read earlier,
+                    # which could revert a password changed by a concurrent edit.
+                    pwd_clause = "db_pwd=:db_pwd, " if db_pwd else ""
                     update_statement = text(
                         "UPDATE connect_config set db_type=:db_type, "
                         "db_host=:db_host, db_port=:db_port, db_user=:db_user, "
-                        "db_pwd=:db_pwd, comment=:comment where db_name=:db_name"
+                        f"{pwd_clause}comment=:comment where db_name=:db_name"
                     )
                     params = {
                         "db_type": db_type,
                         "db_host": db_host,
                         "db_port": db_port,
                         "db_user": db_user,
-                        "db_pwd": effective_pwd,
                         "comment": comment,
                         "db_name": db_name,
                     }
+                    if db_pwd:
+                        params["db_pwd"] = db_pwd
                 else:
                     update_statement = text(
                         "UPDATE connect_config set db_type=:db_type, "
