@@ -103,8 +103,35 @@ def test_query_ex(db):
 
 
 def test_convert_sql_write_to_select(db):
-    # TODO
-    pass
+    assert (
+        db.convert_sql_write_to_select(
+            "INSERT INTO users (id, name) VALUES (1, 'Alice')"
+        )
+        == "SELECT * FROM users WHERE id=1 AND name='Alice'"
+    )
+    assert (
+        db.convert_sql_write_to_select(
+            "UPDATE users SET status = 'Active' WHERE name = 'Alice'"
+        )
+        == "SELECT status FROM users WHERE name = 'Alice'"
+    )
+    assert db.convert_sql_write_to_select("DELETE FROM users WHERE id = 1") == (
+        "SELECT * FROM users "
+    )
+
+
+def test_run_write_returns_written_rows(db):
+    db.run("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, status TEXT);")
+    assert db.run(
+        "INSERT INTO users (id, name, status) VALUES (1, 'Alice', 'New')"
+    ) == [
+        ("id", "name", "status"),
+        (1, "Alice", "New"),
+    ]
+    assert db.run("UPDATE users SET status = 'Active' WHERE name = 'Alice'") == [
+        ("status",),
+        ("Active",),
+    ]
 
 
 def test_get_grants(db):
