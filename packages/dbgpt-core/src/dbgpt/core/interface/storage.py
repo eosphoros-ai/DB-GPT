@@ -474,7 +474,9 @@ class InMemoryStorage(StorageInterface[T, T]):
         for serialized_data in self._data.values():
             data = cast(T, self._serializer.deserialize(serialized_data, cls))
             if all(
-                getattr(data, key) == value for key, value in spec.conditions.items()
+                getattr(data, key) == value
+                for key, value in spec.conditions.items()
+                if value is not None
             ):
                 result.append(data)
 
@@ -499,7 +501,9 @@ class InMemoryStorage(StorageInterface[T, T]):
         for serialized_data in self._data.values():
             data = self._serializer.deserialize(serialized_data, cls)
             if all(
-                getattr(data, key) == value for key, value in spec.conditions.items()
+                getattr(data, key) == value
+                for key, value in spec.conditions.items()
+                if value is not None
             ):
                 count += 1
         return count

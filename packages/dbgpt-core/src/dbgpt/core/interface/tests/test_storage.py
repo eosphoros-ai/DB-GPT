@@ -113,6 +113,15 @@ def test_count(in_memory_storage):
     assert count == 2
 
 
+def test_query_and_count_ignore_none_conditions(in_memory_storage):
+    in_memory_storage.save(MockStorageItem("1", "test_data1"))
+    in_memory_storage.save(MockStorageItem("2", "test_data2"))
+
+    query_spec = QuerySpec(conditions={"data": None})
+    assert len(in_memory_storage.query(query_spec, MockStorageItem)) == 2
+    assert in_memory_storage.count(query_spec, MockStorageItem) == 2
+
+
 def test_paginate_query(in_memory_storage):
     for i in range(10):
         resource_id = MockResourceIdentifier(str(i))
