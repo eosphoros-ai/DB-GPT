@@ -27,7 +27,7 @@ from dbgpt.util.i18n_utils import _
 
 from .chatgpt import OpenAICompatibleDeployModelParameters
 
-GEMINI_DEFAULT_MODEL = "gemini-2.0-flash"
+GEMINI_DEFAULT_MODEL = "gemini-3.6-flash"
 
 safety_settings = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
