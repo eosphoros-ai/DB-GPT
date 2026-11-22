@@ -67,7 +67,10 @@ class _CheckedDashboardTool(BaseTool):
         return self.delegate.is_async
 
     def validate_call_args(self, arguments):
-        unknown = sorted(set(arguments).difference(self.args))
+        # Native tool declarations add this public protocol field. Providers
+        # sometimes put the same arguments in a text-compatible call; it is
+        # still metadata, never an unknown business argument.
+        unknown = sorted(set(arguments).difference(self.args).difference({"intention"}))
         if unknown:
             # Report keys, never SQL, values or credentials. Do not silently
             # rewrap a malformed call and count it as first-attempt acceptance.
@@ -84,6 +87,7 @@ class _CheckedDashboardTool(BaseTool):
         self.delegate.validate_call_args(arguments)
 
     def parse_execute_args(self, **kwargs):
+        kwargs.pop("intention", None)
         return self.delegate.parse_execute_args(**kwargs)
 
     async def get_prompt(self, **kwargs):
@@ -131,6 +135,7 @@ def make_dashboard_tool_pack(
         # revision, repair and annotation capabilities require their own phase.
         allowed = {
             "sql_query",
+            "load_dashboard_style",
             "plan_dashboard",
             "load_dashboard_draft",
             "resolve_dashboard_reference",

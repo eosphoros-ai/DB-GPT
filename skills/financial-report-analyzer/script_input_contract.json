@@ -1,0 +1,4 @@
+{
+  "calculate_ratios.py": "extract_financials.py",
+  "generate_charts.py": "extract_financials.py"
+}

@@ -113,6 +113,10 @@ class QuestionManager:
     def remove(self, request_id: str) -> None:
         self._pending.pop(request_id, None)
 
+    def get(self, request_id: str) -> Optional[PendingQuestion]:
+        """Public lookup (polling-style consumers, e.g. the pi bridge)."""
+        return self._pending.get(request_id)
+
     def list_pending(self, conv_id: Optional[str] = None) -> List[dict]:
         result = []
         for pq in self._pending.values():

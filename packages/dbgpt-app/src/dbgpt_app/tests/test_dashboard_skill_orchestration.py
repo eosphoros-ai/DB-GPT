@@ -1,11 +1,24 @@
 from pathlib import Path
 
+import pytest
+
 from dbgpt.agent.claude_skill import FileBasedSkill
+from dbgpt.agent.resource import ToolPack
 from dbgpt_app.openapi.api_v1.agentic_data_api import (
     DASHBOARD_BUILDER_SKILL_NAME,
     _is_dashboard_workflow_request,
     _is_read_only_dashboard_annotation_request,
 )
+from dbgpt_app.openapi.api_v1.suite_binder import (
+    SuiteBinding,
+    bind_command,
+    canonical_suite_tool,
+    compose_gates,
+    make_suite_gate,
+)
+from dbgpt_app.openapi.api_v1.tools.dashboard import make_dashboard_planner_tools
+from dbgpt_app.openapi.api_v1.tools.dashboard_contracts import make_dashboard_tool_pack
+from dbgpt_serve.plugins.loader import load_suite_dir
 
 
 def _repository_root() -> Path:
@@ -37,6 +50,124 @@ def test_read_only_annotation_intent_is_distinct_from_modification():
         "[[dashboard-annotation:dash-1:a-3]] [修改组件] 右边那个改一下"
     )
     assert not _is_read_only_dashboard_annotation_request("请解释本月收入")
+
+
+def test_native_analysis_dashboard_command_selects_workflow_and_preloads_evidence():
+    root = _repository_root() / "assets/suites/db-analysis"
+    package = load_suite_dir(root)
+    binding = SuiteBinding(
+        name=package.name,
+        version=package.version,
+        package_path=str(root),
+        package_format=package.manifest["package_format"],
+        commands=package.manifest["commands"],
+        skills=package.manifest["skills"],
+    )
+    bind_command(binding, "/dashboard")
+    assert binding.command_skill == "build-dashboard"
+    assert not binding.command_error
+    assert _is_dashboard_workflow_request(
+        "按周监控销售与门店表现", suite_binding=binding
+    )
+    assert {item["path"] for item in binding.loaded_documents} == {
+        "skills/build-dashboard/SKILL.md",
+        "skills/build-dashboard/references/connector-readiness.md",
+        "skills/build-dashboard/references/data-quality.md",
+        "skills/build-dashboard/references/evidence-card.md",
+    }
+    bind_command(binding, "/build-dashboard")
+    assert binding.command == "/dashboard"
+    binding.command_error = "required skill missing"
+    assert not _is_dashboard_workflow_request(
+        "按周监控销售与门店表现", suite_binding=binding
+    )
+    bind_command(binding, "/analyze")
+    assert not _is_dashboard_workflow_request("生成销售分析报告", suite_binding=binding)
+
+
+def test_analysis_examples_have_explicit_valid_commands_and_dashboard_gate():
+    package = load_suite_dir(_repository_root() / "assets/suites/db-analysis")
+    commands = {command["name"] for command in package.manifest["commands"]}
+    questions = package.snapshot["recommended_questions"]
+    assert all(question.get("command") in commands for question in questions)
+    dashboard_example = next(q for q in questions if q["command"] == "/dashboard")
+    assert dashboard_example["database_name"] == "Walmart_Sales"
+    assert dashboard_example["text_en"]
+    allowed = set(package.snapshot["tools"]["allow"])
+    assert {
+        "load_dashboard_style",
+        "plan_dashboard",
+        "create_dashboard_draft",
+        "repair_dashboard_draft",
+        "revise_dashboard_plan",
+        "load_dashboard_draft",
+        "modify_dashboard_draft",
+        "propose_dashboard_change",
+    } <= allowed
+
+
+@pytest.mark.asyncio
+async def test_analysis_suite_authorizes_registered_dashboard_workflow_tools():
+    """Compare the shipped whitelist with real tools, including style discovery."""
+    package = load_suite_dir(_repository_root() / "assets/suites/db-analysis")
+    binding = SuiteBinding(
+        name=package.name,
+        version=package.version,
+        allow={
+            canonical_suite_tool(name) for name in package.snapshot["tools"]["allow"]
+        },
+        deny={canonical_suite_tool(name) for name in package.snapshot["tools"]["deny"]},
+    )
+
+    async def emit(*args):
+        pass
+
+    tools = make_dashboard_planner_tools(
+        react_state={},
+        database_connector=None,
+        database_name="Walmart_Sales",
+        owner_id=None,
+        user_prompt="构建经营看板，先让我选择模板",
+        model_name=None,
+        stream_callback=emit,
+    )
+    approval_calls = []
+
+    async def approval(name, args):
+        approval_calls.append(name)
+        return None
+
+    gate = compose_gates(make_suite_gate(binding), approval)
+    for resource in ToolPack(tools).sub_resources:
+        assert await gate(resource.name, {}) is None, resource.name
+        assert approval_calls[-1] == resource.name
+
+    # Ordinary planning cannot expose confirmed generation or annotation writes.
+    planning = make_dashboard_tool_pack(tools, "构建经营看板")
+    assert "load_dashboard_style" in planning._resources
+    assert "create_dashboard_draft" not in planning._resources
+    assert "repair_dashboard_draft" not in planning._resources
+    assert "propose_dashboard_change" not in planning._resources
+    styles = await planning.async_execute(resource_name="load_dashboard_style")
+    assert "suite guardrail" not in styles
+    assert "catalog:" in styles or "design:" in styles
+
+    for marker in (
+        "[[confirm-dashboard:dash-1]]",
+        "[[revise-dashboard-plan:dash-1]]",
+        "[[modify-dashboard:dash-1]]",
+        "[[dashboard-annotation:dash-1:annotation-1]]",
+    ):
+        phase = make_dashboard_tool_pack(tools, marker)
+        assert "load_dashboard_style" not in phase._resources
+        for resource in phase.sub_resources:
+            assert await gate(resource.name, {}) is None, resource.name
+
+    assert "denied" in await gate("bash", {})
+    binding.deny.add("load_dashboard_style")
+    before = len(approval_calls)
+    assert "denied" in await gate("load_dashboard_style", {})
+    assert len(approval_calls) == before
 
 
 def test_dashboard_builder_skill_declares_orchestration_contract():

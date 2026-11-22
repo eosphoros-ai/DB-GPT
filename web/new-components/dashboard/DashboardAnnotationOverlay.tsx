@@ -1,4 +1,5 @@
 import { statusTagStyle } from '@/lib/interface-tokens';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardAnnotationRecord, DashboardSelectionTarget } from '@/types/dashboard';
 import { CheckOutlined, CloseOutlined, CommentOutlined, DragOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Alert, Button, Input, Select, Tag } from 'antd';
@@ -34,13 +35,27 @@ interface DashboardAnnotationOverlayProps {
 }
 
 const kindLabels: Record<DashboardSelectionTarget['kind'], string> = {
-  dashboard: '整个看板',
-  widget: '整个组件',
-  filter: '当前全局筛选器',
-  chart_datum: '当前数据点',
-  chart_series: '当前系列',
-  table_column: '当前表格列',
-  table_cell: '当前单元格',
+  get dashboard() {
+    return dt('整个看板');
+  },
+  get widget() {
+    return dt('整个组件');
+  },
+  get filter() {
+    return dt('当前全局筛选器');
+  },
+  get chart_datum() {
+    return dt('当前数据点');
+  },
+  get chart_series() {
+    return dt('当前系列');
+  },
+  get table_column() {
+    return dt('当前表格列');
+  },
+  get table_cell() {
+    return dt('当前单元格');
+  },
 };
 
 const sameTarget = (left: DashboardSelectionTarget, right: DashboardSelectionTarget) =>
@@ -58,9 +73,9 @@ const makeScopeOptions = (target: DashboardSelectionTarget) => {
   ];
   if (target.kind === 'filter' || target.kind === 'dashboard') return options;
   if (target.kind === 'chart_datum' && target.series) {
-    options.push({ label: `整个系列：${target.series}`, value: 'chart_series' });
+    options.push({ label: dt('整个系列：{{value0}}', { value0: target.series }), value: 'chart_series' });
   }
-  if (target.kind !== 'widget') options.push({ label: '整个组件', value: 'widget' });
+  if (target.kind !== 'widget') options.push({ label: dt('整个组件'), value: 'widget' });
   return options;
 };
 
@@ -120,6 +135,7 @@ export default function DashboardAnnotationOverlay({
   onReject,
   onClose,
 }: DashboardAnnotationOverlayProps) {
+  useDashboardTranslation();
   const [expanded, setExpanded] = useState(
     Boolean(selection?.draftId || selection?.suggestedPrompt) ||
       !annotations.some(item => selection && sameTarget(item.target, selection.target)),
@@ -230,7 +246,7 @@ export default function DashboardAnnotationOverlay({
       onTargetChange({
         kind,
         widget_id: selection.target.widget_id,
-        label: `组件：${selection.target.widget_id}`,
+        label: dt('组件：{{value0}}', { value0: selection.target.widget_id }),
         datum_key: {},
         row_key: {},
       });
@@ -240,7 +256,7 @@ export default function DashboardAnnotationOverlay({
       onTargetChange({
         ...selection.target,
         kind,
-        label: `系列：${selection.target.series}`,
+        label: dt('系列：{{value0}}', { value0: selection.target.series }),
         datum_key: {},
         value: undefined,
       });
@@ -254,14 +270,14 @@ export default function DashboardAnnotationOverlay({
       className='fixed z-[1200] flex max-h-[calc(100vh-24px)] w-[360px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl'
       style={{ ...themeStyle, color: 'var(--app-text)', left: position.left, top: position.top }}
       role='dialog'
-      aria-label='看板批注'
+      aria-label={dt('看板批注')}
     >
       <div
         className='flex flex-none cursor-move touch-none select-none items-center gap-2 border-b border-[var(--app-border)] px-4 py-3'
         role='button'
         tabIndex={0}
-        aria-label='拖动批注窗口'
-        title='拖动批注窗口；也可使用方向键移动'
+        aria-label={dt('拖动批注窗口')}
+        title={dt('拖动批注窗口；也可使用方向键移动')}
         onPointerDown={beginDrag}
         onPointerMove={continueDrag}
         onPointerUp={endDrag}
@@ -270,10 +286,10 @@ export default function DashboardAnnotationOverlay({
       >
         <DragOutlined className='text-[var(--app-muted)]' />
         <CommentOutlined className='text-[var(--app-accent)]' />
-        <strong className='min-w-0 flex-1 truncate text-sm'>添加批注</strong>
-        <span className='hidden text-xs font-normal text-[var(--app-muted)] sm:inline'>拖动</span>
+        <strong className='min-w-0 flex-1 truncate text-sm'>{dt('添加批注')}</strong>
+        <span className='hidden text-xs font-normal text-[var(--app-muted)] sm:inline'>{dt('拖动')}</span>
         <Button
-          aria-label='关闭批注'
+          aria-label={dt('关闭批注')}
           type='text'
           size='small'
           icon={<CloseOutlined />}
@@ -288,9 +304,9 @@ export default function DashboardAnnotationOverlay({
 
         {scopeOptions.length > 1 && (
           <label className='block text-xs text-[var(--app-muted)]'>
-            批注范围
+            {dt('批注范围')}
             <Select
-              aria-label='批注修改范围'
+              aria-label={dt('批注修改范围')}
               className='mt-1 w-full'
               value={selection.target.kind}
               options={scopeOptions}
@@ -301,7 +317,7 @@ export default function DashboardAnnotationOverlay({
 
         {!expanded && !latest && (
           <Button type='primary' block icon={<CommentOutlined />} onClick={() => setExpanded(true)}>
-            添加批注
+            {dt('添加批注')}
           </Button>
         )}
 
@@ -309,12 +325,12 @@ export default function DashboardAnnotationOverlay({
           <div className={expanded ? 'block' : 'hidden'}>
             <Input.TextArea
               autoFocus
-              aria-label='批注内容'
+              aria-label={dt('批注内容')}
               value={prompt}
               autoSize={{ minRows: 3, maxRows: 7 }}
               maxLength={4000}
               showCount
-              placeholder='例如：把这个门店系列改成横向条形图，并按销售额降序。'
+              placeholder={dt('例如：把这个门店系列改成横向条形图，并按销售额降序。')}
               onChange={event => setPrompt(event.target.value)}
               onKeyDown={event => {
                 if (event.key === 'Escape') onClose();
@@ -331,7 +347,7 @@ export default function DashboardAnnotationOverlay({
               }}
             />
             <div className='mt-8 flex justify-end gap-2'>
-              <Button onClick={onClose}>取消</Button>
+              <Button onClick={onClose}>{dt('取消')}</Button>
               <Button
                 type='primary'
                 loading={creating}
@@ -342,7 +358,7 @@ export default function DashboardAnnotationOverlay({
                   setExpanded(false);
                 }}
               >
-                保存批注
+                {dt('保存批注')}
               </Button>
             </div>
           </div>
@@ -363,63 +379,63 @@ export default function DashboardAnnotationOverlay({
                 )}
               >
                 {latest.status === 'pending'
-                  ? '等待 Agent 提案'
+                  ? dt('等待 Agent 提案')
                   : latest.status === 'proposed'
-                    ? '变更待确认'
+                    ? dt('变更待确认')
                     : latest.status === 'applied'
-                      ? '已应用'
+                      ? dt('已应用')
                       : latest.status === 'rejected'
-                        ? '已放弃'
-                        : '已失效'}
+                        ? dt('已放弃')
+                        : dt('已失效')}
               </Tag>
               {latest.status === 'pending' && <LoadingOutlined className='text-[var(--app-accent)]' />}
             </div>
             <div className='rounded-lg border border-[var(--app-border)] p-3 text-sm'>
-              <div className='text-xs text-[var(--app-muted)]'>你的要求</div>
+              <div className='text-xs text-[var(--app-muted)]'>{dt('你的要求')}</div>
               <p className='mt-1 whitespace-pre-wrap'>{latest.prompt}</p>
             </div>
             {latest.proposal && (
               <div className='rounded-lg border border-[var(--app-border)] bg-[var(--app-accent-soft)] p-3'>
-                <div className='text-xs font-semibold text-[var(--app-accent)]'>Agent 变更方案</div>
+                <div className='text-xs font-semibold text-[var(--app-accent)]'>{dt('Agent 变更方案')}</div>
                 <p className='mt-1 text-sm'>{latest.proposal.summary}</p>
                 <div className='mt-3 grid grid-cols-2 gap-2 text-xs'>
                   <div className='rounded bg-[var(--app-surface)] p-2'>
-                    <div className='mb-1 font-medium text-[var(--app-muted)]'>修改前</div>
+                    <div className='mb-1 font-medium text-[var(--app-muted)]'>{dt('修改前')}</div>
                     {latest.proposal.before.length
                       ? latest.proposal.before.map(item => <div key={item}>• {item}</div>)
-                      : '以当前草稿为准'}
+                      : dt('以当前草稿为准')}
                   </div>
                   <div className='rounded bg-[var(--app-surface)] p-2'>
-                    <div className='mb-1 font-medium text-[var(--app-muted)]'>修改后</div>
+                    <div className='mb-1 font-medium text-[var(--app-muted)]'>{dt('修改后')}</div>
                     {latest.proposal.after.length
                       ? latest.proposal.after.map(item => <div key={item}>• {item}</div>)
-                      : '见方案摘要'}
+                      : dt('见方案摘要')}
                   </div>
                 </div>
                 {latest.proposal.validation.valid ? (
-                  <Alert className='mt-3' type='success' showIcon message='Schema 与受影响查询已验证' />
+                  <Alert className='mt-3' type='success' showIcon message={dt('Schema 与受影响查询已验证')} />
                 ) : (
-                  <Alert className='mt-3' type='error' showIcon message='验证未通过，不能应用' />
+                  <Alert className='mt-3' type='error' showIcon message={dt('验证未通过，不能应用')} />
                 )}
                 {latest.status === 'proposed' && (
                   <div className='mt-3 flex justify-end gap-2'>
                     <Button
-                      aria-label='放弃提案'
+                      aria-label={dt('放弃提案')}
                       icon={<CloseOutlined />}
                       disabled={!!applyingId}
                       onClick={() => void onReject(latest)}
                     >
-                      放弃
+                      {dt('放弃')}
                     </Button>
                     <Button
-                      aria-label='应用到草稿'
+                      aria-label={dt('应用到草稿')}
                       type='primary'
                       icon={<CheckOutlined />}
                       loading={applyingId === latest.id}
                       disabled={!latest.proposal.validation.valid}
                       onClick={() => void onApply(latest)}
                     >
-                      应用到草稿
+                      {dt('应用到草稿')}
                     </Button>
                   </div>
                 )}
@@ -429,13 +445,15 @@ export default function DashboardAnnotationOverlay({
               <Alert
                 type='error'
                 showIcon
-                message='数据助理未生成有效方案'
-                description='这次提案未通过 Patch 或查询校验，已停止等待。请重新提交更明确的要求，或改用手动配置。'
+                message={dt('数据助理未生成有效方案')}
+                description={dt(
+                  '这次提案未通过 Patch 或查询校验，已停止等待。请重新提交更明确的要求，或改用手动配置。',
+                )}
               />
             )}
             {latest.status !== 'pending' && latest.status !== 'proposed' && (
               <Button block onClick={() => setExpanded(true)}>
-                再写一条批注
+                {dt('再写一条批注')}
               </Button>
             )}
           </div>

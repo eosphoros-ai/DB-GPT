@@ -1,4 +1,5 @@
 import { exportDashboardProject, getDashboardArtifacts } from '@/client/api';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardArtifactBundle } from '@/types/dashboard';
 import { DownloadOutlined, FileOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import { Alert, Button, Drawer, Empty, Spin } from 'antd';
@@ -11,6 +12,7 @@ interface DashboardArtifactPanelProps {
 }
 
 export default function DashboardArtifactPanel({ dashboardId, open, onClose }: DashboardArtifactPanelProps) {
+  useDashboardTranslation();
   const [result, setResult] = useState<{
     dashboardId: string;
     bundle: DashboardArtifactBundle | null;
@@ -36,7 +38,7 @@ export default function DashboardArtifactPanel({ dashboardId, open, onClose }: D
         setResult({
           dashboardId,
           bundle: null,
-          error: reason instanceof Error ? reason.message : '加载工程文件失败',
+          error: reason instanceof Error ? reason.message : dt('加载工程文件失败'),
         });
       });
     return () => {
@@ -70,7 +72,7 @@ export default function DashboardArtifactPanel({ dashboardId, open, onClose }: D
       setResult(current => ({
         dashboardId,
         bundle: current?.dashboardId === dashboardId ? current.bundle : null,
-        error: reason instanceof Error ? reason.message : '导出工程失败',
+        error: reason instanceof Error ? reason.message : dt('导出工程失败'),
       }));
     } finally {
       setDownloading(false);
@@ -79,13 +81,13 @@ export default function DashboardArtifactPanel({ dashboardId, open, onClose }: D
 
   return (
     <Drawer
-      title='看板工程文件'
+      title={dt('看板工程文件')}
       width='min(920px, 92vw)'
       open={open}
       onClose={onClose}
       extra={
         <Button icon={<DownloadOutlined />} loading={downloading} onClick={download}>
-          ZIP 下载
+          {dt('ZIP 下载')}
         </Button>
       }
     >
@@ -131,12 +133,12 @@ export default function DashboardArtifactPanel({ dashboardId, open, onClose }: D
                 </pre>
               </>
             ) : (
-              <Empty description='没有可查看的文件' />
+              <Empty description={dt('没有可查看的文件')} />
             )}
           </main>
         </div>
       ) : (
-        <Empty description='没有工程文件' />
+        <Empty description={dt('没有工程文件')} />
       )}
     </Drawer>
   );

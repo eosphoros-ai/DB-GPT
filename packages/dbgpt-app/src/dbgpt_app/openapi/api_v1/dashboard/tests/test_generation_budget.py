@@ -63,14 +63,14 @@ async def test_late_publication_read_cannot_start_the_next_component(monkeypatch
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, 180),
+        (None, 600),
         ("60", 60),
-        ("300", 300),
-        ("0", 180),
-        ("600", 180),
-        ("-1", 180),
-        ("nan", 180),
-        ("", 180),
+        ("1000", 1000),
+        ("0", 600),
+        ("1001", 600),
+        ("-1", 600),
+        ("nan", 600),
+        ("", 600),
     ],
 )
 def test_configuration_is_finite_and_bounded(monkeypatch, value, expected):
@@ -119,7 +119,7 @@ async def test_slow_query_keeps_truthful_progress_and_cannot_save_late(
     state, pack = environment[0](
         f"[[confirm-dashboard:{dashboard_id}]] confirm revision 1"
     )
-    state["_dashboard_generation_budget"] = GenerationBudget(0.08)
+    state["_dashboard_generation_budget"] = GenerationBudget(10)
     connector = environment[2]
     original = connector.query_ex
     entered, release, finished = threading.Event(), threading.Event(), threading.Event()
@@ -130,12 +130,23 @@ async def test_slow_query_keeps_truthful_progress_and_cannot_save_late(
         if len(calls) == 2:
             entered.set()
             try:
-                release.wait(2)
+                release.wait(10)
             finally:
                 finished.set()
         return original(*args, **kwargs)
 
     monkeypatch.setattr(connector, "query_ex", delayed)
+
+    original_wait = asyncio.wait
+
+    async def expire_during_second_query(tasks, *, timeout):
+        # Cold imports and thread scheduling must not consume a fixed 80 ms
+        # before the query under test has even started. Deliver the timer
+        # expiration only after the second real driver call is blocked.
+        assert await asyncio.to_thread(entered.wait, 3)
+        return await original_wait(tasks, timeout=0.02)
+
+    monkeypatch.setattr(asyncio, "wait", expire_during_second_query)
 
     async def generate():
         return await run_tool(
@@ -148,7 +159,7 @@ async def test_slow_query_keeps_truthful_progress_and_cannot_save_late(
 
     try:
         with pytest.raises(DashboardGenerationTimeout):
-            await asyncio.wait_for(run_bounded_generation(state, generate), timeout=1)
+            await asyncio.wait_for(run_bounded_generation(state, generate), timeout=5)
         assert entered.is_set() and not finished.is_set()
         failure = generation_failure(state)
         assert failure["stage_label"] == "组件 SQL 试运行"

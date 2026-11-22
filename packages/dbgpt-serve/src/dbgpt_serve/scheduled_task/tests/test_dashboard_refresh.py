@@ -1,6 +1,7 @@
 """Deterministic tests for dashboard schedules and their safety boundaries."""
 
 import asyncio
+import importlib
 import json
 import threading
 from datetime import datetime, timedelta
@@ -107,6 +108,8 @@ class FakeDashboardService:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("phase", ["refresh", "publish"])
 async def test_timeout_waits_for_worker_exit_and_prevents_late_publication(phase):
+    # Measure cancellation of an active worker, not the first lazy schema import.
+    importlib.import_module("dbgpt_app.openapi.api_v1.dashboard.schemas")
     entered = threading.Event()
     release = threading.Event()
 

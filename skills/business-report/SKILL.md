@@ -1,6 +1,6 @@
 ---
 name: business-report
-description: This skill should be used when a user asks for an analysis report, a business review, a post-mortem, or any structured multi-section HTML deliverable over already-executed SQL/Python analysis. Trigger keywords include "分析报告", "复盘报告", "经营报告", "生成报告", "report", "analysis report", "business review", "post-mortem", "html report".
+description: Rendering contract for multi-section analysis reports (business review, post-mortem, 经营复盘, 复盘报告) over already-executed SQL/Python analysis. Used by the dedicated report agent as the default template when no analysis skill provides its own. Rendering only — it performs no data analysis and reads no files.
 ---
 
 # Traceable Business Report (template-driven)
@@ -194,10 +194,11 @@ The lead computes only that missing result with code_interpreter using the injec
 REPORT_CALCULATION_INPUTS JSON file and prints JSON for normal artifact capture.
 Resume the saved spec and bind the new Python artifact; never rerun full analysis.
 
-For an authored recommendation target, a reference node in recommendation lines
-may add `"proposal":"reduce the rate to 5%"`. The engine labels it explicitly as
-a proposed, unobserved target. The node's artifact_id and field/path still select
-the real rationale; proposal is forbidden in KPI and observed-value paragraphs.
+Recommendation lines may contain a standalone `{"proposal":"reduce the rate
+to 5%"}` or a qualitative goal. The engine labels these as proposed, unobserved
+targets. A reference node may also carry `proposal`; its artifact_id and
+field/path select the rationale. Proposal nodes are not allowed in KPI or
+observed-value paragraphs, where actual measurements still require sources.
 
 On failure, a labelled draft can preview independently validated blocks through
 the existing HTML preview. It does not create a report_id or indicate completion.

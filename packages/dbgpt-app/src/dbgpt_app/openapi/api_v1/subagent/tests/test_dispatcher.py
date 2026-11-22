@@ -118,8 +118,9 @@ def test_build_sub_prompt_includes_context():
 def test_subagent_tool_names_exclude_dispatch_and_todowrite():
     assert "dispatch_parallel_tasks" not in _SUBAGENT_FACTORY_TOOL_NAMES
     assert "todowrite" not in _SUBAGENT_FACTORY_TOOL_NAMES
-    # The 8 factory tools are all present.
-    assert len(_SUBAGENT_FACTORY_TOOL_NAMES) == 8
+    assert "load_tools" not in _SUBAGENT_FACTORY_TOOL_NAMES
+    assert "execute_skill_script_file" not in _SUBAGENT_FACTORY_TOOL_NAMES
+    assert "run_skill_script" in _SUBAGENT_FACTORY_TOOL_NAMES
 
 
 @pytest.mark.asyncio
@@ -131,7 +132,7 @@ async def test_build_sub_react_agent_isolation(monkeypatch):
     ReActAgent`` then resolves to our fake. GptsMemory.init only fills
     in-memory dicts (no DB), so it is safe to run for real.
     """
-    import dbgpt.agent.expand.react_agent as react_mod
+    import dbgpt.agent.expand.tool_calling_agent as react_mod
 
     class _FakeBuilt:
         def __init__(self, tool_pack):
@@ -152,7 +153,7 @@ async def test_build_sub_react_agent_isolation(monkeypatch):
         async def build(self):
             return _FakeBuilt(self._tool_pack)
 
-    monkeypatch.setattr(react_mod, "ReActAgent", _FakeReActAgent)
+    monkeypatch.setattr(react_mod, "ToolCallingReActAgent", _FakeReActAgent)
 
     fake_client = _make_fake_llm_client()
     agent_a, cid_a, state_a = await build_sub_react_agent(
@@ -172,6 +173,20 @@ async def test_build_sub_react_agent_isolation(monkeypatch):
     tool_names = set(agent_a.tool_pack._resources.keys())
     assert "dispatch_parallel_tasks" not in tool_names
     assert "todowrite" not in tool_names
+    assert "tool_search" in tool_names
+    assert "sql_query" not in tool_names
+    assert "knowledge_retrieve" not in tool_names
+    result = await agent_a.tool_pack.async_execute(
+        resource_name="tool_search", query="html_interpreter"
+    )
+    import json
+
+    assert json.loads(result)["tools"][0]["name"] == "html_interpreter"
+    assert "html_interpreter" not in agent_b.tool_pack._resources
+    result = await agent_a.tool_pack.async_execute(
+        resource_name="tool_search", query="dispatch_parallel_tasks"
+    )
+    assert json.loads(result)["tools"] == []
     assert any("terminate" in n.lower() for n in tool_names)
 
 
@@ -182,7 +197,7 @@ async def test_build_sub_react_agent_batch_id_isolates_conv_id(monkeypatch):
     This is the core fix for the "second dispatch overwrites first dispatch's
     sub_0" bug: batch 2's sub_0 must NOT reuse batch 1's sub_0 working dir.
     """
-    import dbgpt.agent.expand.react_agent as react_mod
+    import dbgpt.agent.expand.tool_calling_agent as react_mod
 
     class _FakeBuilt:
         def __init__(self, tool_pack):
@@ -202,7 +217,7 @@ async def test_build_sub_react_agent_batch_id_isolates_conv_id(monkeypatch):
         async def build(self):
             return _FakeBuilt(self._tool_pack)
 
-    monkeypatch.setattr(react_mod, "ReActAgent", _FakeReActAgent)
+    monkeypatch.setattr(react_mod, "ToolCallingReActAgent", _FakeReActAgent)
 
     fake_client = _make_fake_llm_client()
     _, cid_batch1_sub0, _ = await build_sub_react_agent(

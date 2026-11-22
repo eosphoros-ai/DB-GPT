@@ -11,16 +11,7 @@
  * message group so all three surfaces show identical file metaphors.
  */
 
-import {
-  CloseOutlined,
-  EyeOutlined,
-  FileExcelOutlined,
-  FileImageOutlined,
-  FileOutlined,
-  FilePptOutlined,
-  FileTextOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons';
+import { CloseOutlined, EyeOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Alert, Descriptions, Table, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useMemo } from 'react';
@@ -38,7 +29,20 @@ import {
 } from './attachment-view-model';
 import type { SessionFilePreviewSnapshot } from './types';
 
-/** Shared type-driven file icon (table/image/slide/text/generic). */
+const FILE_ICON_COLORS: Record<FileIconKey, string> = {
+  pdf: '#ff5b65',
+  markdown: '#586579',
+  csv: '#26a572',
+  excel: '#178557',
+  word: '#4385e6',
+  table: '#269b8b',
+  image: '#a16acd',
+  slide: '#ee894b',
+  text: '#7491ae',
+  file: '#98a1ad',
+};
+
+/** Filled document silhouettes share a folded corner and a white type mark. */
 export const FileKindIcon: React.FC<{
   name?: string;
   mediaType?: string;
@@ -46,18 +50,87 @@ export const FileKindIcon: React.FC<{
   className?: string;
 }> = ({ name, mediaType, kind, className }) => {
   const key: FileIconKey = fileIconKey({ name, mediaType, kind });
+  let mark: React.ReactNode;
   switch (key) {
-    case 'table':
-      return <FileExcelOutlined className={classNames('text-green-600', className)} />;
-    case 'image':
-      return <FileImageOutlined className={classNames('text-pink-500', className)} />;
+    case 'pdf':
+      mark = (
+        <path
+          d='M7 24c3-4 5.5-8 6-12 .5-3-2-3-2-.5 0 4 3.5 9 7 9 3 0 2-2 0-2-4 0-10 1.5-12 4-1.5 2 0 3 1 1.5'
+          fill='none'
+          stroke='white'
+          strokeWidth='1.4'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+      );
+      break;
+    case 'markdown':
+      mark = (
+        <path
+          d='M5 23v-8l3.5 4 3.5-4v8 M17 15v8m-2.5-2.5L17 23l2.5-2.5'
+          fill='none'
+          stroke='white'
+          strokeWidth='1.8'
+          strokeLinejoin='round'
+          strokeLinecap='round'
+        />
+      );
+      break;
+    case 'csv':
+    case 'excel':
+    case 'word':
     case 'slide':
-      return <FilePptOutlined className={classNames('text-orange-500', className)} />;
+      mark = (
+        <text
+          x='12'
+          y='23'
+          textAnchor='middle'
+          fontFamily='ui-sans-serif, sans-serif'
+          fontSize={key === 'csv' ? '7.5' : '13'}
+          fontWeight='700'
+          fill='white'
+        >
+          {key === 'csv' ? 'CSV' : key === 'excel' ? 'X' : key === 'word' ? 'W' : 'P'}
+        </text>
+      );
+      break;
+    case 'table':
+      mark = (
+        <path
+          d='M6 14h12v10H6z M6 18h12 M10 14v10 M14 14v10'
+          fill='none'
+          stroke='white'
+          strokeWidth='1.3'
+          strokeLinejoin='round'
+        />
+      );
+      break;
+    case 'image':
+      mark = (
+        <g fill='white'>
+          <circle cx='8' cy='15' r='1.6' />
+          <path d='m5 24 5-6 3 3 3-4 4 7H5Z' />
+        </g>
+      );
+      break;
     case 'text':
-      return <FileTextOutlined className={classNames('text-blue-500', className)} />;
     default:
-      return <FileOutlined className={classNames('text-gray-500', className)} />;
+      mark = <path d='M6 15h12 M6 19h12 M6 23h8' stroke='white' strokeWidth='1.5' strokeLinecap='round' />;
   }
+  return (
+    <span
+      role='img'
+      aria-label={key === 'file' ? 'file' : `file-${key === 'slide' ? 'ppt' : key}`}
+      className={classNames('inline-flex flex-shrink-0 align-middle leading-none', className)}
+      style={{ width: '0.8em', height: '1em' }}
+    >
+      <svg width='100%' height='100%' viewBox='0 0 24 30' fill='none' aria-hidden='true'>
+        <path d='M5 1h10l8 8v16a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4Z' fill={FILE_ICON_COLORS[key]} />
+        <path d='M15 1v5a3 3 0 0 0 3 3h5l-8-8Z' fill='#000' fillOpacity='.18' />
+        {mark}
+      </svg>
+    </span>
+  );
 };
 
 /** JSON-ish cell values must never reach React children raw. */
@@ -180,12 +253,12 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
     <div className={classNames('flex flex-col gap-2', className)} data-component='attachment-preview'>
       {/* File identity and the exact scope visible in this preview. */}
       <div className='flex min-w-0 flex-wrap items-center gap-2.5 rounded-lg border border-slate-200/80 bg-slate-50/65 px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.035]'>
-        <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-base shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 dark:bg-white/[0.06] dark:ring-white/10'>
+        <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center'>
           <FileKindIcon
             name={snapshot.name}
             mediaType={snapshot.media_type}
             kind={snapshot.kind}
-            className='text-base'
+            className='text-[30px]'
           />
         </div>
         <div className='flex min-w-[140px] flex-1 items-baseline gap-1.5'>

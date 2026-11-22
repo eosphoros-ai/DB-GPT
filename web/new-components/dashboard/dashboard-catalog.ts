@@ -20,8 +20,24 @@ export interface CatalogTemplate {
   style?: string;
 }
 
-// Retire gallery entries only. Existing saved dashboards and their sources remain usable.
-export const RETIRED_TEMPLATE_IDS = new Set(['cardio-journal', 'olist-orders']);
+// The active gallery is the user's eight selected templates. Keep historical
+// definitions for saved dashboards, but do not offer them as new gallery entries.
+export const TEMPLATE_GALLERY_ORDER = [
+  'design:brutal-viz-design',
+  'design:serenityspa-viz-design',
+  'voice-observatory',
+  'store-marketing',
+  'national-command',
+  'brand-revenue',
+  'northwind-revenue',
+  'retail-overview',
+];
+export const GALLERY_DESIGN_SKILL_IDS = new Set(
+  TEMPLATE_GALLERY_ORDER.filter(id => id.startsWith('design:')).map(id => id.slice(7)),
+);
+export const RETIRED_TEMPLATE_IDS = new Set(
+  definitions.filter(item => !TEMPLATE_GALLERY_ORDER.includes(item.id)).map(item => item.id),
+);
 export const CATALOG_CANDIDATES: CatalogTemplate[] = definitions.filter(item => !RETIRED_TEMPLATE_IDS.has(item.id));
 
 interface VerifiedTemplate {

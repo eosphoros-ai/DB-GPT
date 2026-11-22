@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { Alert, Input, InputNumber, Select, Space, Typography } from 'antd';
 
 const { Text } = Typography;
@@ -77,22 +78,23 @@ export const buildDashboardIntervalCron = (count: number, unit: IntervalUnit) =>
 export const describeDashboardScheduleCron = (cron: string) => {
   const parsed = parseDashboardRefreshFrequency(cron);
   const labels: Partial<Record<FrequencyMode, string>> = {
-    'every-minute': '每 1 分钟',
-    'every-5-minutes': '每 5 分钟',
-    'every-10-minutes': '每 10 分钟',
-    'every-30-minutes': '每 30 分钟',
-    hourly: '每 1 小时',
+    'every-minute': dt('每 1 分钟'),
+    'every-5-minutes': dt('每 5 分钟'),
+    'every-10-minutes': dt('每 10 分钟'),
+    'every-30-minutes': dt('每 30 分钟'),
+    hourly: dt('每 1 小时'),
   };
   if (labels[parsed.mode]) return labels[parsed.mode] as string;
-  if (parsed.mode === 'daily') return `每天 ${parsed.time}`;
+  if (parsed.mode === 'daily') return dt('每天 {{value0}}', { value0: parsed.time });
   if (parsed.mode === 'custom') {
-    const unit = parsed.unit === 'minute' ? '分钟' : parsed.unit === 'hour' ? '小时' : '天';
-    return `每 ${parsed.count} ${unit}`;
+    const unit = parsed.unit === 'minute' ? dt('分钟') : parsed.unit === 'hour' ? dt('小时') : dt('天');
+    return dt('每 {{value0}} {{value1}}', { value0: parsed.count, value1: unit });
   }
-  return `现有计划（${cron}）`;
+  return dt('现有计划（{{value0}}）', { value0: cron });
 };
 
 export default function DashboardRefreshFrequencyInput({ value, onChange }: DashboardRefreshFrequencyInputProps) {
+  useDashboardTranslation();
   const parsed = parseDashboardRefreshFrequency(value);
 
   const selectMode = (mode: FrequencyMode) => {
@@ -112,26 +114,28 @@ export default function DashboardRefreshFrequencyInput({ value, onChange }: Dash
     <div className='space-y-3' data-testid='dashboard-refresh-frequency-input'>
       <Select
         className='w-full'
-        aria-label='刷新频率'
+        aria-label={dt('刷新频率')}
         value={parsed.mode}
         options={[
-          { value: 'every-minute', label: '每 1 分钟' },
-          { value: 'every-5-minutes', label: '每 5 分钟' },
-          { value: 'every-10-minutes', label: '每 10 分钟' },
-          { value: 'every-30-minutes', label: '每 30 分钟' },
-          { value: 'hourly', label: '每 1 小时' },
-          { value: 'daily', label: '每天固定时间' },
-          { value: 'custom', label: '自定义间隔' },
-          ...(parsed.mode === 'legacy' ? [{ value: 'legacy', label: `保留现有频率：${value}` }] : []),
+          { value: 'every-minute', label: dt('每 1 分钟') },
+          { value: 'every-5-minutes', label: dt('每 5 分钟') },
+          { value: 'every-10-minutes', label: dt('每 10 分钟') },
+          { value: 'every-30-minutes', label: dt('每 30 分钟') },
+          { value: 'hourly', label: dt('每 1 小时') },
+          { value: 'daily', label: dt('每天固定时间') },
+          { value: 'custom', label: dt('自定义间隔') },
+          ...(parsed.mode === 'legacy'
+            ? [{ value: 'legacy', label: dt('保留现有频率：{{value0}}', { value0: value }) }]
+            : []),
         ]}
         onChange={selectMode}
       />
 
       {parsed.mode === 'daily' && (
         <label className='block text-xs text-gray-500'>
-          每天执行时间
+          {dt('每天执行时间')}
           <Input
-            aria-label='每天执行时间'
+            aria-label={dt('每天执行时间')}
             type='time'
             value={parsed.time}
             onChange={event => updateDailyTime(event.target.value)}
@@ -143,7 +147,7 @@ export default function DashboardRefreshFrequencyInput({ value, onChange }: Dash
         <Space.Compact block>
           <InputNumber
             className='w-full'
-            aria-label='自定义间隔数值'
+            aria-label={dt('自定义间隔数值')}
             min={1}
             max={parsed.unit === 'minute' ? 59 : parsed.unit === 'hour' ? 23 : 28}
             precision={0}
@@ -152,12 +156,12 @@ export default function DashboardRefreshFrequencyInput({ value, onChange }: Dash
           />
           <Select
             className='w-28'
-            aria-label='自定义间隔单位'
+            aria-label={dt('自定义间隔单位')}
             value={parsed.unit}
             options={[
-              { value: 'minute', label: '分钟' },
-              { value: 'hour', label: '小时' },
-              { value: 'day', label: '天' },
+              { value: 'minute', label: dt('分钟') },
+              { value: 'hour', label: dt('小时') },
+              { value: 'day', label: dt('天') },
             ]}
             onChange={unit => onChange(buildDashboardIntervalCron(parsed.count, unit))}
           />
@@ -165,10 +169,12 @@ export default function DashboardRefreshFrequencyInput({ value, onChange }: Dash
       )}
 
       {parsed.mode === 'legacy' && (
-        <Alert type='warning' showIcon message='这是旧计划的表达式，当前会原样保留；选择上方任一频率即可替换。' />
+        <Alert type='warning' showIcon message={dt('这是旧计划的表达式，当前会原样保留；选择上方任一频率即可替换。')} />
       )}
       <Text type='secondary'>
-        当前：{describeDashboardScheduleCron(value)}。最短 1 分钟；后台调度器不支持秒级执行。
+        {dt('当前：')}
+        {describeDashboardScheduleCron(value)}
+        {dt('。最短 1 分钟；后台调度器不支持秒级执行。')}
       </Text>
     </div>
   );

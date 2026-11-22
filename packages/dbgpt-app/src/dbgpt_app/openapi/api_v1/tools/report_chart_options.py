@@ -5,6 +5,7 @@ data containers are resolved from immutable SQL/Python outputs, never guessed.
 """
 
 import json
+import logging
 import re
 from time import perf_counter
 
@@ -14,10 +15,74 @@ from dbgpt.core.interface.report_capture import (
     select_artifact_result,
 )
 
+logger = logging.getLogger(__name__)
+
+
+def _validate_chart_data_shapes(option):
+    """Reject resolved row objects where ECharts expects axis/scalar values."""
+    for configuration in _option_configurations(option):
+        for axis_name in ("xAxis", "yAxis"):
+            axes = configuration.get(axis_name, [])
+            axes = axes if isinstance(axes, list) else [axes]
+            for axis in axes:
+                if not isinstance(axis, dict):
+                    continue
+                values = axis.get("data")
+                if isinstance(values, list) and any(
+                    isinstance(value, dict)
+                    and (
+                        "value" not in value or isinstance(value["value"], (dict, list))
+                    )
+                    for value in values
+                ):
+                    raise ValueError(
+                        "REPORT_CHART_DATA_SHAPE_INVALID: "
+                        f"{axis_name}.data contains full result rows; select one "
+                        "category field or use dataset with series.encode"
+                    )
+        series = configuration.get("series", [])
+        series = series if isinstance(series, list) else [series]
+        for item in series:
+            if not isinstance(item, dict) or item.get("type") not in {
+                "line",
+                "bar",
+                "scatter",
+                "effectScatter",
+                "pie",
+                "funnel",
+                "pictorialBar",
+                "heatmap",
+                "boxplot",
+                "candlestick",
+            }:
+                continue
+            values = item.get("data")
+            if isinstance(values, list) and any(
+                isinstance(value, dict) and "value" not in value for value in values
+            ):
+                raise ValueError(
+                    "REPORT_CHART_DATA_SHAPE_INVALID: series.data contains full "
+                    "result rows; select the numeric field or use dataset with "
+                    "series.encode"
+                )
+
+
+def _option_configurations(value):
+    yield value
+    if isinstance(value.get("baseOption"), dict):
+        yield from _option_configurations(value["baseOption"])
+    for frame in value.get("options", []):
+        if isinstance(frame, dict):
+            yield from _option_configurations(frame)
+    for media in value.get("media", []):
+        if isinstance(media, dict) and isinstance(media.get("option"), dict):
+            yield from _option_configurations(media["option"])
+
 
 def option_chart_spec(node, artifacts):
     by_id = {artifact.artifact_id: artifact for artifact in artifacts}
     references = []
+    dataset_dimensions = {}
 
     def read(reference):
         identifier = reference.get("artifact_id")
@@ -50,8 +115,141 @@ def option_chart_spec(node, artifacts):
             references.append(selected)
         return value, selected
 
+    def captured_columns(value, selected):
+        if isinstance(value, list):
+            selected_path = selected.get("path") or []
+            if selected_path and selected_path[-1] == "rows":
+                parent = {**selected, "path": selected_path[:-1]}
+            elif not selected_path and selected.get("field") == "rows":
+                parent = {"artifact_id": selected["artifact_id"], "path": []}
+            else:
+                return None
+            value = select_artifact_result(
+                by_id[parent["artifact_id"]],
+                {key: parent[key] for key in ("field", "path") if key in parent},
+            )
+            if isinstance(value, str):
+                value = json.loads(value)
+        columns = (
+            value.get("columns", value.get("headers"))
+            if isinstance(value, dict)
+            else None
+        )
+        if (
+            isinstance(columns, list)
+            and columns
+            and all(isinstance(column, str) for column in columns)
+        ):
+            return columns
+        return None
+
+    def read_chart_data(reference, path):
+        resolved, selected = read(reference)
+        if path[-2:] == ("dataset", "source") or (
+            len(path) >= 3
+            and path[-3] == "dataset"
+            and path[-2].isdecimal()
+            and path[-1] == "source"
+        ):
+            columns = captured_columns(resolved, selected)
+            if columns:
+                dataset_dimensions[path[:-1]] = columns
+            if isinstance(resolved, dict) and isinstance(resolved.get("rows"), list):
+                resolved = read(
+                    {**selected, "path": [*(selected.get("path") or []), "rows"]}
+                )[0]
+        return resolved
+
     def resolve(value, data=False, path=()):
         if isinstance(value, dict):
+            if data and "$ref" in value:
+                if set(value) - {"$ref", "field", "path"} or not isinstance(
+                    value["$ref"], str
+                ):
+                    raise ValueError(
+                        "REPORT_CHART_OPTION_INVALID: invalid $ref reference"
+                    )
+                producer = node.get("producer") or {}
+                ref_text = value["$ref"]
+                base_name = producer.get("field")
+                if not base_name and producer.get("path"):
+                    base_name = producer["path"][-1]
+                if (
+                    isinstance(base_name, str)
+                    and ref_text.startswith(base_name + ".")
+                    and len(value) == 1
+                ):
+                    components = ref_text[len(base_name) + 1 :].split(".")
+                    if any(
+                        not part or not part.replace("_", "a").isalnum()
+                        for part in components
+                    ):
+                        raise ValueError(
+                            "REPORT_CHART_OPTION_INVALID: invalid relative result path"
+                        )
+                    reference = {
+                        key: producer[key]
+                        for key in ("artifact_id", "field", "path")
+                        if key in producer
+                    }
+                    current = read(reference)[0]
+                    selected_path = list(reference.get("path") or [])
+                    for index, component in enumerate(components):
+                        if isinstance(current, list) and not component.isdecimal():
+                            if index != len(components) - 1 or len(current) > 5000:
+                                raise ValueError(
+                                    "REPORT_CHART_OPTION_INVALID: unsupported or "
+                                    "oversized column projection"
+                                )
+                            values = []
+                            for row_index, row in enumerate(current):
+                                if not isinstance(row, dict) or component not in row:
+                                    raise ValueError(
+                                        "REPORT_CHART_OPTION_INVALID: projection "
+                                        "field missing from captured rows"
+                                    )
+                                selected = {
+                                    **reference,
+                                    "path": [*selected_path, row_index, component],
+                                }
+                                values.append(read(selected)[0])
+                            return values
+                        key = (
+                            int(component)
+                            if isinstance(current, list) and component.isdecimal()
+                            else component
+                        )
+                        selected_path.append(key)
+                        current = read({**reference, "path": selected_path.copy()})[0]
+                    return read_chart_data({**reference, "path": selected_path}, path)
+                if value["$ref"] == "producer":
+                    if not producer.get("artifact_id") or len(value) != 1:
+                        raise ValueError(
+                            "REPORT_CHART_OPTION_INVALID: $ref producer requires "
+                            "an explicit producer and cannot override its selector"
+                        )
+                    reference = {
+                        key: producer[key]
+                        for key in ("artifact_id", "field", "path")
+                        if key in producer
+                    }
+                else:
+                    reference = {"artifact_id": value["$ref"]}
+                    reference.update(
+                        {key: value[key] for key in ("field", "path") if key in value}
+                    )
+                if (
+                    len(reference) == 1
+                    and producer.get("artifact_id") == reference["artifact_id"]
+                ):
+                    reference.update(
+                        {
+                            key: producer[key]
+                            for key in ("field", "path")
+                            if key in producer
+                        }
+                    )
+                return read_chart_data(reference, path)
             if "artifact_id" in value:
                 if set(value) - {"artifact_id", "field", "path"}:
                     raise ValueError(
@@ -62,8 +260,8 @@ def option_chart_spec(node, artifacts):
                             "path"
                         )
                     )
-                return read(value)[0]
-            return {
+                return read_chart_data(value, path)
+            resolved = {
                 key: resolve(
                     item,
                     data
@@ -79,14 +277,70 @@ def option_chart_spec(node, artifacts):
                 )
                 for key, item in value.items()
             }
+            if path in dataset_dimensions:
+                resolved.setdefault("dimensions", dataset_dimensions[path])
+            return resolved
         if isinstance(value, list):
-            return [resolve(item, data, path) for item in value]
+            # Models often repeat a captured column as literals. Recover its
+            # provenance only when the entire ordered column matches uniquely.
+            producer = node.get("producer") or {}
+            if (
+                data
+                and value
+                and producer.get("artifact_id")
+                and all(
+                    isinstance(item, (str, int, float)) and not isinstance(item, bool)
+                    for item in value
+                )
+            ):
+                source, reference = read(producer)
+                base_path = list(reference.get("path") or [])
+                if isinstance(source, dict) and isinstance(source.get("rows"), list):
+                    source = source["rows"]
+                    base_path.append("rows")
+                if isinstance(source, dict):
+                    matches = [
+                        key
+                        for key, column in source.items()
+                        if isinstance(column, list) and column == value
+                    ]
+                    if len(matches) == 1:
+                        return read({**reference, "path": [*base_path, matches[0]]})[0]
+                if isinstance(source, list) and len(source) == len(value) <= 5000:
+                    first = source[0]
+                    keys = (
+                        first.keys()
+                        if isinstance(first, dict)
+                        else (range(len(first)) if isinstance(first, list) else ())
+                    )
+                    matches = []
+                    for key in keys:
+                        try:
+                            column = [row[key] for row in source]
+                        except (IndexError, KeyError, TypeError):
+                            continue
+                        if column == value:
+                            matches.append(key)
+                    if len(matches) == 1:
+                        return [
+                            read(
+                                {**reference, "path": [*base_path, index, matches[0]]}
+                            )[0]
+                            for index in range(len(source))
+                        ]
+            return [
+                resolve(item, data, (*path, str(index)))
+                for index, item in enumerate(value)
+            ]
         if data and value is not None:
             raise ValueError(
                 (
                     "REPORT_CHART_OPTION_INVALID: data containers must use captured "
                     "result references; select an existing result or capture the "
-                    "missing calculation"
+                    "missing calculation; invalid option path: "
+                    f"{'.'.join(path)}; replace the entire data array with a "
+                    "captured result reference, or use dataset and encode. "
+                    "Do not repeat literal category labels."
                 )
             )
         return value
@@ -116,19 +370,8 @@ def option_chart_spec(node, artifacts):
         )
     dataset, primary = read(primary)
 
-    def configurations(value):
-        yield value
-        if isinstance(value.get("baseOption"), dict):
-            yield from configurations(value["baseOption"])
-        for frame in value.get("options", []):
-            if isinstance(frame, dict):
-                yield from configurations(frame)
-        for media in value.get("media", []):
-            if isinstance(media, dict) and isinstance(media.get("option"), dict):
-                yield from configurations(media["option"])
-
     configurations_with_series = []
-    for configuration in configurations(option):
+    for configuration in _option_configurations(option):
         series = configuration.get("series")
         series = [series] if isinstance(series, dict) else series
         if series is None:
@@ -166,10 +409,14 @@ def option_chart_spec(node, artifacts):
             continue
         if isinstance(dataset, dict) and isinstance(dataset.get("rows"), list):
             configuration["dataset"] = {"source": dataset["rows"]}
-            if dataset.get("columns"):
-                configuration["dataset"]["dimensions"] = dataset["columns"]
+            columns = captured_columns(dataset, primary)
+            if columns:
+                configuration["dataset"]["dimensions"] = columns
         elif isinstance(dataset, list):
             configuration["dataset"] = {"source": dataset}
+            columns = captured_columns(dataset, primary)
+            if columns:
+                configuration["dataset"]["dimensions"] = columns
         else:
             raise ValueError(
                 (
@@ -178,6 +425,7 @@ def option_chart_spec(node, artifacts):
                     "producer"
                 )
             )
+    _validate_chart_data_shapes(option)
     maps = {}
     for name, reference in (node.get("maps") or {}).items():
         geojson, _ = read(reference)
@@ -248,14 +496,33 @@ def prepared_chart_id(sink, spec, source_ids, title, started):
     return identifier
 
 
-def prepare_option_charts(spec, artifacts, sink):
+def prepare_option_charts(spec, artifacts, sink, *, unavailable=None):
     sections = []
-    for section in spec["sections"]:
+    for index, section in enumerate(spec["sections"]):
         section = dict(section)
         node = section.get("chart") or {}
         if isinstance(node.get("option"), dict):
             started = perf_counter()
-            chart_spec = option_chart_spec(node, artifacts)
+            try:
+                chart_spec = option_chart_spec(node, artifacts)
+            except (ValueError, TypeError, OSError, KeyError) as error:
+                table_fallback = str(error).startswith(
+                    "REPORT_CHART_DATA_SHAPE_INVALID:"
+                ) and section.get("table")
+                if unavailable is None and not table_fallback:
+                    raise ValueError(f"sections[{index}].chart: {error}") from error
+                if unavailable is not None:
+                    unavailable.append(
+                        {
+                            "json_path": f"$.data.REPORT_SPEC.sections[{index}].chart",
+                            "chart": node,
+                            "error": str(error),
+                        }
+                    )
+                logger.warning("Unable to render authored chart: %s", error)
+                section.pop("chart", None)
+                sections.append(section)
+                continue
             source_ids = list(
                 dict.fromkeys(
                     ref["artifact_id"] for ref in chart_spec["source_references"]

@@ -9,27 +9,70 @@
   gap: 14px;
 }
 .option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   border: 1px solid var(--app-border);
   border-radius: 14px;
   padding: 22px 18px;
   text-align: left;
   background: var(--app-surface);
   color: var(--app-text);
+  cursor: pointer;
+  box-shadow:
+    0 2px 0 var(--app-border),
+    0 5px 14px rgba(15, 23, 42, 0.1);
   transition:
     border-color 0.18s,
-    background 0.18s;
+    background 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
 }
-.option[aria-checked='true'] {
+.option:not([data-disabled='true']):hover {
+  border-color: var(--app-accent);
+  transform: translateY(-2px);
+  box-shadow:
+    0 3px 0 var(--app-border),
+    0 9px 20px rgba(15, 23, 42, 0.15);
+}
+.option[data-checked='true'] {
   border-color: var(--app-accent);
   background: var(--app-accent-soft);
-  box-shadow: inset 0 0 0 1px var(--app-accent);
+  box-shadow:
+    inset 0 0 0 1px var(--app-accent),
+    0 2px 0 var(--app-accent),
+    0 5px 14px rgba(15, 23, 42, 0.1);
 }
-.option:focus-visible {
+.option:not([data-disabled='true']):active {
+  transform: translateY(1px);
+}
+.option:has(.optionInput:focus-visible) {
   outline: 3px solid var(--app-accent);
   outline-offset: 3px;
 }
+.option[data-disabled='true'] {
+  cursor: wait;
+  opacity: 0.6;
+}
+.optionInput {
+  position: absolute;
+  top: 24px;
+  right: 18px;
+  width: 21px;
+  height: 21px;
+  margin: 0;
+  accent-color: var(--app-accent);
+  cursor: inherit;
+}
 .icon {
-  display: block;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface);
   font-size: 25px;
   color: var(--app-accent);
   margin-bottom: 16px;
@@ -46,6 +89,13 @@
 .option small {
   font-size: 11px;
   color: var(--app-muted);
+}
+.optionAction {
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-accent);
 }
 .note {
   font-size: 12px;
@@ -91,5 +141,9 @@
 @media (prefers-reduced-motion: reduce) {
   .option {
     transition: none;
+  }
+  .option:not([data-disabled='true']):hover,
+  .option:not([data-disabled='true']):active {
+    transform: none;
   }
 }

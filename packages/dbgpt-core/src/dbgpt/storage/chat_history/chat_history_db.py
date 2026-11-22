@@ -197,7 +197,11 @@ class ChatHistoryDao(BaseDao):
         return hot_apps
 
     def get_hot_app_map(self, skip_page: int = 0, top_k: int = 20):
-        """Get hot app map."""
+        """Get hot app map.
+
+        ``skip_page`` is a zero-based page index, the same contract
+        ``list_hot_apps`` above uses, so the row offset is ``skip_page * top_k``.
+        """
         with self.get_raw_session() as session:
             try:
                 result = session.execute(
@@ -206,7 +210,7 @@ class ChatHistoryDao(BaseDao):
     INNER JOIN chat_history_message b on a.conv_uid = b.conv_uid
     INNER JOIN gpts_app c ON a.app_code = c.app_code and c.published = 'true'
     GROUP BY c.app_code
-    ORDER BY sz desc  LIMIT {str(skip_page)}, {str(top_k)};"""
+    ORDER BY sz desc  LIMIT {str(skip_page * top_k)}, {str(top_k)};"""
                     )
                 )
                 keys = result.keys()

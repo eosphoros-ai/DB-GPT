@@ -1,5 +1,9 @@
-"""Tests for :class:`BaseOutputParser.parse_prompt_response`."""
+"""Tests for :class:`BaseOutputParser`."""
 
+import pytest
+
+from dbgpt.core import ModelOutput
+from dbgpt.core.awel import DAG, StreamifyAbsOperator
 from dbgpt.core.interface.output_parser import BaseOutputParser
 
 
@@ -35,3 +39,35 @@ def test_parse_prompt_response_no_fence():
     """Plain JSON without a fence is returned unchanged."""
     parser = _parser()
     assert parser.parse_prompt_response('{"a": 1}') == '{"a": 1}'
+
+
+def test_parse_model_stream_resp_ex_returns_text():
+    """A successful chunk is returned as its stripped text."""
+    parser = _parser()
+    output = ModelOutput(text="  SELECT 1  ", error_code=0)
+    assert parser.parse_model_stream_resp_ex(output) == "SELECT 1"
+
+
+def test_parse_model_stream_resp_ex_error_chunk():
+    """A failed chunk keeps its text and reports the error code."""
+    parser = _parser()
+    output = ModelOutput(text="model error", error_code=1)
+    assert parser.parse_model_stream_resp_ex(output) == "model error (error_code: 1)"
+
+
+class _ModelOutputStream(StreamifyAbsOperator[str, ModelOutput]):
+    async def streamify(self, input_value: str):
+        for text in ["Hello", "Hello world"]:
+            yield ModelOutput(text=text, error_code=0)
+
+
+@pytest.mark.asyncio
+async def test_streaming_call_outputs_text():
+    """In a streaming DAG call every chunk is parsed to its text."""
+    with DAG("test_output_parser_streaming_dag"):
+        source = _ModelOutputStream()
+        parser = BaseOutputParser()
+        source >> parser
+
+    outputs = [out async for out in await parser.call_stream("input")]
+    assert outputs == ["Hello", "Hello world"]

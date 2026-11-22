@@ -309,7 +309,13 @@ def _table_selections(spec, artifacts):
         *enumerate(spec.get("sections", [])),
     ]
     for section_index, section in scopes:
-        for source_id in chart_sources({"sections": [section]}):
+        selected_chart = (section.get("chart") or {}).get("source_table") or {}
+        source_ids = list(chart_sources({"sections": [section]}))
+        chart_source_id = selected_chart.get("artifact_id")
+        if chart_source_id in source_ids:
+            source_ids.remove(chart_source_id)
+            source_ids.insert(0, chart_source_id)
+        for source_id in source_ids:
             artifact = by_id.get(source_id)
             if (
                 artifact is None
@@ -318,6 +324,8 @@ def _table_selections(spec, artifacts):
             ):
                 continue
             candidate_groups = []
+            if selected_chart.get("artifact_id") == source_id:
+                candidate_groups.append([(selected_chart, True)])
             authored_table = section.get("table") or {}
             if authored_table.get("artifact_id") == source_id:
                 candidate_groups.append([(authored_table, True)])
@@ -428,7 +436,9 @@ def _chart_covers(artifact, source, table):
     return source.artifact_id in artifact.input_artifact_ids
 
 
-def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
+def prepare_report_charts(
+    spec: Any, artifacts, sink, language: str = "zh", *, unavailable=None
+):
     """Add executable, immutable charts for selected tabular evidence."""
     if (
         sink is None
@@ -438,11 +448,11 @@ def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
         return spec
     from .report_chart_options import prepare_option_charts, prepared_chart_id
 
-    spec = prepare_option_charts(spec, artifacts, sink)
+    spec = prepare_option_charts(spec, artifacts, sink, unavailable=unavailable)
     artifacts = list(sink.snapshot())
     sections = [dict(section) for section in spec["sections"]]
     by_id = {a.artifact_id: a for a in artifacts}
-    additions, prepared = [], {}
+    additions, prepared = {}, {}
     for section_index, artifact, table, identity in _table_selections(spec, artifacts):
         section = sections[section_index] if section_index is not None else None
         current = (section or {}).get("chart") or {}
@@ -495,10 +505,16 @@ def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
         ):
             section["chart"] = node
         else:
-            suffix = " · Charts" if language == "en" else " · 数据图表"
-            additions.append({"heading": title + suffix, "chart": node})
+            # Keep supplementary visuals beside their source section. Their
+            # figure caption identifies the chart without repeating a numbered
+            # section heading after the conclusion.
+            additions.setdefault(section_index, []).append({"chart": node})
         prepared[identity] = node
-    return {**spec, "sections": [*sections, *additions]}
+    ordered = list(additions.get(None, []))
+    for index, section in enumerate(sections):
+        ordered.append(section)
+        ordered.extend(additions.get(index, []))
+    return {**spec, "sections": ordered}
 
 
 def selected_chart_gaps(spec, artifacts, html):

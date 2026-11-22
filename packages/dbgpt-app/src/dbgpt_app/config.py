@@ -3,7 +3,6 @@ import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dbgpt.agent.core.context.budget import DEFAULT_MAX_CONTEXT_TOKENS
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.model.parameter import (
     ModelsDeployParameters,
@@ -267,11 +266,12 @@ class AgentContextParameters(BaseParameters):
     __cfg_type__ = "service"
 
     max_context_tokens: Optional[int] = field(
-        default=DEFAULT_MAX_CONTEXT_TOKENS,
+        default=0,
         metadata={
             "help": _(
                 "Maximum context-window tokens for agent calls. "
-                "Non-positive values fall back to the default context budget."
+                "Non-positive values detect the model window automatically. "
+                "Positive values cap the detected window."
             )
         },
     )
@@ -322,10 +322,20 @@ class AgentContextParameters(BaseParameters):
             )
         },
     )
+    max_new_tokens: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Per-LLM-call completion budget (max_tokens) for the agentic "
+                "ReAct flow. The DBGPT_AGENTIC_MAX_NEW_TOKENS environment "
+                "variable overrides this value."
+            )
+        },
+    )
 
     def __post_init__(self):
         if self.max_context_tokens is None or self.max_context_tokens <= 0:
-            self.max_context_tokens = DEFAULT_MAX_CONTEXT_TOKENS
+            self.max_context_tokens = 0
 
         env_value = os.getenv(_MAX_PARALLEL_SUBAGENTS_ENV_VAR)
         if env_value is not None:

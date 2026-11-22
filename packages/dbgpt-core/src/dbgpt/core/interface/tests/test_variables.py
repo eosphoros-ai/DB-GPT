@@ -86,6 +86,14 @@ def test_storage_variables_provider_bool_value():
         )
         assert provider.get(full_key) is expected
 
+    for i, (int_value, expected) in enumerate([(1, True), (0, False)]):
+        full_key = f"${{int_key{i}:name@global}}"
+        id = VariablesIdentifier.from_str_identifier(full_key)
+        provider.save(
+            StorageVariables.from_identifier(id, int_value, "bool", "test_label")
+        )
+        assert provider.get(full_key) is expected
+
 
 def test_variables_identifier():
     full_key = "${key:name@global:scope_key#sys_code%user_name}"

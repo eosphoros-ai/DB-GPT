@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardFilter } from '@/types/dashboard';
 import { EditOutlined, UndoOutlined } from '@ant-design/icons';
 import { Button, DatePicker, Input, InputNumber, Select, Tooltip } from 'antd';
@@ -23,7 +24,7 @@ export default function DashboardFilters({
   filters,
   values,
   disabled,
-  emptyOptionText = '尚未配置可选值，请在编辑器右侧选择数据字段或手动输入选项',
+  emptyOptionText = dt('尚未配置可选值，请在编辑器右侧选择数据字段或手动输入选项'),
   scopeByFilter = {},
   showReset = true,
   variant = 'card',
@@ -32,6 +33,7 @@ export default function DashboardFilters({
   onChange,
   onReset,
 }: DashboardFiltersProps) {
+  useDashboardTranslation();
   // RangePicker resets pending input when its controlled value changes identity.
   // Unrelated editor updates must not discard a half-entered date range.
   const dateRanges = useMemo(() => {
@@ -65,14 +67,22 @@ export default function DashboardFilters({
         return (
           <div key={filter.id} className={styles.filterItem} data-filter-type={filter.type}>
             <span className={styles.filterItemHeader}>
-              <Tooltip title={scope.length ? `${filter.label} · 影响：${scope.join('、')}` : filter.label}>
+              <Tooltip
+                title={
+                  scope.length
+                    ? dt('{{value0}} · 影响：{{value1}}', { value0: filter.label, value1: scope.join('、') })
+                    : filter.label
+                }
+              >
                 <span className={styles.filterLabel}>{filter.label}</span>
               </Tooltip>
               <span className='flex min-w-0 items-center gap-1'>
                 {variant !== 'bar' && Object.prototype.hasOwnProperty.call(scopeByFilter, filter.id) && (
-                  <Tooltip title={scope.length ? `影响：${scope.join('、')}` : '尚未绑定任何组件'}>
+                  <Tooltip
+                    title={scope.length ? dt('影响：{{value0}}', { value0: scope.join('、') }) : dt('尚未绑定任何组件')}
+                  >
                     <span className={`${styles.filterScope} ${scope.length ? '' : '!text-[var(--app-warning)]'}`}>
-                      {scope.length ? `影响 ${scope.length} 个组件` : '未绑定'}
+                      {scope.length ? dt('影响 {{value0}} 个组件', { value0: scope.length }) : dt('未绑定')}
                     </span>
                   </Tooltip>
                 )}
@@ -80,8 +90,8 @@ export default function DashboardFilters({
                   <Button
                     type='link'
                     size='small'
-                    aria-label={`编辑${filter.label}筛选器`}
-                    title={`编辑${filter.label}筛选器`}
+                    aria-label={dt('编辑{{value0}}筛选器', { value0: filter.label })}
+                    title={dt('编辑{{value0}}筛选器', { value0: filter.label })}
                     icon={variant === 'bar' ? <EditOutlined /> : undefined}
                     className={styles.editFilterButton}
                     onClick={event => {
@@ -90,7 +100,7 @@ export default function DashboardFilters({
                       onEditFilter(filter.id);
                     }}
                   >
-                    {variant === 'bar' ? null : '编辑'}
+                    {variant === 'bar' ? null : dt('编辑')}
                   </Button>
                 )}
               </span>
@@ -99,7 +109,7 @@ export default function DashboardFilters({
               {filter.type === 'date_range' ? (
                 <DatePicker.RangePicker
                   size='small'
-                  aria-label={`${filter.label}筛选`}
+                  aria-label={dt('{{value0}}筛选', { value0: filter.label })}
                   allowClear
                   disabled={disabled}
                   value={dateRanges[filter.id]}
@@ -110,37 +120,37 @@ export default function DashboardFilters({
               ) : filter.type === 'text' ? (
                 <Input
                   size='small'
-                  aria-label={`${filter.label}筛选`}
+                  aria-label={dt('{{value0}}筛选', { value0: filter.label })}
                   allowClear
                   disabled={disabled}
                   value={typeof value === 'string' ? value : undefined}
-                  placeholder='输入关键词；清空表示全部'
+                  placeholder={dt('输入关键词；清空表示全部')}
                   onChange={event => update(filter.id, event.target.value || null)}
                 />
               ) : filter.type === 'number_range' ? (
                 <div className='flex items-center gap-2'>
                   <InputNumber
                     size='small'
-                    aria-label={`${filter.label}最小值`}
+                    aria-label={dt('{{value0}}最小值', { value0: filter.label })}
                     disabled={disabled}
                     value={Array.isArray(value) && typeof value[0] === 'number' ? value[0] : null}
-                    placeholder='最小值'
+                    placeholder={dt('最小值')}
                     onChange={next => update(filter.id, [next, Array.isArray(value) ? (value[1] ?? null) : null])}
                   />
                   <span>—</span>
                   <InputNumber
                     size='small'
-                    aria-label={`${filter.label}最大值`}
+                    aria-label={dt('{{value0}}最大值', { value0: filter.label })}
                     disabled={disabled}
                     value={Array.isArray(value) && typeof value[1] === 'number' ? value[1] : null}
-                    placeholder='最大值'
+                    placeholder={dt('最大值')}
                     onChange={next => update(filter.id, [Array.isArray(value) ? (value[0] ?? null) : null, next])}
                   />
                 </div>
               ) : (
                 <Select
                   size='small'
-                  aria-label={`${filter.label}筛选`}
+                  aria-label={dt('{{value0}}筛选', { value0: filter.label })}
                   allowClear
                   disabled={disabled}
                   showSearch
@@ -148,7 +158,7 @@ export default function DashboardFilters({
                   maxTagCount='responsive'
                   mode={filter.type === 'multi_select' ? 'multiple' : undefined}
                   value={value as string | number | (string | number)[] | undefined}
-                  placeholder={filter.type === 'multi_select' ? '可选择多个值；清空表示全部' : '请选择一个值'}
+                  placeholder={filter.type === 'multi_select' ? dt('可选择多个值；清空表示全部') : dt('请选择一个值')}
                   notFoundContent={<span className='text-xs text-[var(--app-muted)]'>{emptyOptionText}</span>}
                   options={filter.options.map(option => ({
                     label: option.label,
@@ -163,13 +173,13 @@ export default function DashboardFilters({
       })}
       {showReset && (
         <Button
-          aria-label='恢复默认筛选并刷新'
+          aria-label={dt('恢复默认筛选并刷新')}
           className={styles.filterReset}
           disabled={disabled || isAtDefaults}
           icon={<UndoOutlined />}
           onClick={() => (onReset || onChange)?.(resetValues)}
         >
-          恢复默认
+          {dt('恢复默认')}
         </Button>
       )}
     </div>

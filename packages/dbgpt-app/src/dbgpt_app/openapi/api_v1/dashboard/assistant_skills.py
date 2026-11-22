@@ -3,19 +3,23 @@
 from functools import lru_cache
 from pathlib import Path
 
-from dbgpt.configs.model_config import SKILLS_DIR
 from dbgpt_app.initialization.package_resources import bundled_resource_dir
 
 
-def _skill_text(name: str) -> str:
+def dashboard_internal_skill_root(name: str) -> Path:
+    """Resolve private resources in a wheel, editable install or checkout."""
+    from dbgpt.configs.model_config import SKILLS_DIR
+
+    relative = Path("dashboard-builder") / "internal" / name
     packaged = bundled_resource_dir("_builtin_skills")
-    root = (
-        packaged
-        if packaged is not None and (packaged / name / "SKILL.md").is_file()
-        else Path(SKILLS_DIR)
-    )
+    if packaged is not None and (packaged / relative / "SKILL.md").is_file():
+        return packaged / relative
+    return Path(SKILLS_DIR) / relative
+
+
+def _skill_text(name: str) -> str:
     return (
-        (root / name / "SKILL.md")
+        (dashboard_internal_skill_root(name) / "SKILL.md")
         .read_text(encoding="utf-8")
         .split("---", 2)[-1]
         .strip()

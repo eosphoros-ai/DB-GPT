@@ -1,4 +1,4 @@
-"""code_interpreter tool — execute Python via the configured sandbox runtime.
+"""code tool — execute Python via the configured sandbox runtime.
 
 Execution boundary: file locations (``FILE_PATH``/``FILES_JSON``/``PLOT_DIR``)
 travel only through the subprocess environment; the generated Python source
@@ -122,17 +122,31 @@ def build_execution_env(
     env["PLOT_DIR"] = work_dir
     sink = artifact_sink or get_current_artifact_sink()
     inputs, input_ids = snapshot_execution_files(
-        {"file_path": file_path, "files_json_path": files_json_path},
+        {"file_path": file_path},
         sink,
         action="execution.input",
         # These paths are supplied by the server's materialized session state,
         # not by the model's Python source or skill arguments.
-        allowed_paths=[path for path in (file_path, files_json_path) if path],
+        allowed_paths=[path for path in (file_path,) if path],
     )
-    file_path, files_json_path = inputs["file_path"], inputs["files_json_path"]
+    file_path = inputs["file_path"]
     if files_json_path:
+        if sink:
+            manifest_path = Path(files_json_path)
+            if os.path.normcase(
+                str(manifest_path.resolve(strict=True))
+            ) != os.path.normcase(os.path.abspath(files_json_path)):
+                raise ValueError("FILE_INPUT_NOT_AUTHORIZED: symbolic file input")
+            before = manifest_path.stat()
         with open(files_json_path, encoding="utf-8") as stream:
             manifest = json.load(stream)
+        if sink:
+            after = manifest_path.stat()
+            if (before.st_size, before.st_mtime_ns) != (
+                after.st_size,
+                after.st_mtime_ns,
+            ):
+                raise ValueError("FILE_CHANGED_DURING_CAPTURE: retry the file snapshot")
         if selected_file_ids is not None:
             manifest = {
                 key: value
@@ -211,7 +225,7 @@ def make_code_interpreter(
             'Parameters: {{"code": "python code string"}}'
         )
     )
-    async def code_interpreter(code: str) -> str:
+    async def code(code: str) -> str:
         """Execute arbitrary Python code and return stdout/stderr.
 
         CRITICAL: Each call is completely independent — variables do NOT
@@ -289,12 +303,12 @@ def make_code_interpreter(
         started = time.perf_counter()
 
         try:
-            compile(full_code, "<code_interpreter>", "exec")
+            compile(full_code, "<code>", "exec")
         except SyntaxError as se:
             repaired = _try_repair_truncated_code(full_code)
             if repaired is not None:
                 logger.warning(
-                    "code_interpreter: auto-repaired truncated code "
+                    "code: auto-repaired truncated code "
                     "(original SyntaxError: %s line %s)",
                     se.msg,
                     se.lineno,
@@ -484,7 +498,11 @@ def make_code_interpreter(
             status = "succeeded"
             artifact_error = None
 
-        captured_images = publish_generated_images(image_paths)
+        # A script can write a chart and then fail. Such a partial output has no
+        # successful producer and must not be advertised for report use.
+        captured_images = (
+            publish_generated_images(image_paths) if status == "succeeded" else []
+        )
         for image in captured_images:
             chunks.append({"output_type": "image", "content": image["uri"]})
             react_state.setdefault("generated_images", []).append(image["uri"])
@@ -520,6 +538,27 @@ def make_code_interpreter(
             input_artifact_ids=list(dict.fromkeys(sql_input_artifact_ids)),
             artifact_sink=react_state.get("_report_artifact_sink"),
         )
+        sink = react_state.get("_report_artifact_sink")
+        if (
+            status == "succeeded"
+            and sink
+            and python_artifact_id
+            and any(
+                item.artifact_id == python_artifact_id and item.result is None
+                for item in sink.snapshot()
+            )
+        ):
+            chunks.append(
+                {
+                    "output_type": "text",
+                    "content": (
+                        "PYTHON_STRUCTURED_RESULT_MISSING: Execution succeeded but "
+                        "no structured result was captured. Text output is not a "
+                        "selectable result; capture the needed calculation as "
+                        "REPORT_RESULT before referencing its fields."
+                    ),
+                }
+            )
         if (
             missing_calculation
             and not missing_calculation.get("result_artifact_id")
@@ -562,4 +601,4 @@ def make_code_interpreter(
             {"chunks": chunks, "artifact_id": python_artifact_id}, ensure_ascii=False
         )
 
-    return code_interpreter
+    return code

@@ -5,6 +5,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { useWidgetContentSize } from './use-widget-content-size';
 
 describe('dashboard chart content-box sizing', () => {
+  it('spaces dense date labels while preserving every weekly data point', () => {
+    const data = Array.from({ length: 143 }, (_, index) => ({
+      day: new Date(Date.UTC(2010, 1, 5 + index * 7)).toISOString().slice(0, 10),
+      value: index,
+    }));
+    const config = getDashboardAxisConfig({
+      chartType: 'line',
+      dashboardSurface: true,
+      width: 760,
+      data,
+      xField: 'day',
+      yField: 'value',
+    });
+    const ticks = data.filter((row, index) => config.axis.x.tickFilter(row.day, index));
+    expect(ticks.length).toBeLessThanOrEqual(8);
+    expect(ticks[0]).toBe(data[0]);
+    expect(ticks.at(-1)).toBe(data.at(-1));
+    expect(config.axis.x.labelTransform).toBeUndefined();
+    expect(data).toHaveLength(143);
+  });
   it('keeps horizontal category names level and reserves readable label width', () => {
     const config = getDashboardAxisConfig({
       chartType: 'bar',
@@ -80,5 +100,35 @@ describe('dashboard chart content-box sizing', () => {
     expect(config.axis.x.labelFormatter(2024)).toBe('2024');
     expect(config.axis.y.tick).toBe(true);
     expect(config.axis.y.label).toBe(true);
+  });
+
+  it('spaces long time-series labels while retaining both endpoints and every data point', () => {
+    const dates = Array.from({ length: 143 }, (_, i) =>
+      new Date(Date.UTC(2023, 0, 1 + i * 7)).toISOString().slice(0, 10),
+    );
+    const data = dates.flatMap(date => [
+      { date, series: 'A', value: 1 },
+      { date, series: 'B', value: 2 },
+    ]);
+    const axesAt = (width: number) =>
+      getDashboardAxisConfig({
+        chartType: 'line',
+        dashboardSurface: true,
+        width,
+        data,
+        xField: 'date',
+        yField: 'value',
+        seriesField: 'series',
+      }).axis.x;
+    const narrow = axesAt(500);
+    const ticks = dates.filter(narrow.tickFilter);
+    expect(ticks.length).toBeGreaterThanOrEqual(2);
+    expect(ticks.length).toBeLessThanOrEqual(5);
+    expect(ticks[0]).toBe(dates[0]);
+    expect(ticks.at(-1)).toBe(dates.at(-1));
+    expect(dates.filter(axesAt(1000).tickFilter).length).toBeGreaterThan(ticks.length);
+    expect(narrow.labelTransform).toBeUndefined();
+    expect(narrow.labelFormatter(dates[0])).toBe(dates[0]);
+    expect(data).toHaveLength(286);
   });
 });

@@ -44,6 +44,7 @@ class DefaultModelWorker(ModelWorker):
         self._support_async = False
         self._support_generate_func = False
         self.context_len = 4096
+        self._context_length_source = "fallback"
         self._device = get_device()
         # Use tiktoken to count token if model doesn't support
         self._tiktoken = TiktokenProxyTokenizer()
@@ -91,6 +92,7 @@ class DefaultModelWorker(ModelWorker):
         )
         # Default model context len
         self.context_len = 4096
+        self._context_length_source = "fallback"
 
     def model_param_class(self) -> Type[LLMDeployModelParameters]:
         return self._param_cls
@@ -134,16 +136,20 @@ class DefaultModelWorker(ModelWorker):
             ):
                 # Use context length from model params
                 self.context_len = self._model_params.context_length
+                self._context_length_source = "deployment_config"
             elif parsed_model_max_length:
                 logger.info(
                     f"Parse model max length {parsed_model_max_length} from model "
                     f"{self.model_name}."
                 )
                 self.context_len = parsed_model_max_length
+                self._context_length_source = "model_config"
             elif hasattr(self._model_params, "max_context_size"):
                 self.context_len = self._model_params.max_context_size
+                self._context_length_source = "deployment_config"
             elif hasattr(self._model_params, "model_max_length"):
                 self.context_len = self._model_params.model_max_length
+                self._context_length_source = "deployment_config"
 
     def stop(self) -> None:
         if not self.model:
@@ -274,10 +280,25 @@ class DefaultModelWorker(ModelWorker):
             model=self.model_name,
             context_length=self.context_len,
             ext_metadata=ext_metadata,
+            metadata={"context_length_source": self._context_length_source},
         )
 
     async def async_get_model_metadata(self, params: Dict) -> ModelMetadata:
-        return self.get_model_metadata(params)
+        metadata = self.get_model_metadata(params)
+        proxy_client = getattr(self.model, "proxy_llm_client", None)
+        if proxy_client is not None:
+            # ProxyModel has no HF config/tokenizer window. Ask its adapter
+            # instead of advertising the worker's arbitrary 4096 default.
+            proxy_metadata = await proxy_client.get_model_metadata(
+                proxy_client.default_model
+            )
+            if self._context_length_source != "deployment_config":
+                metadata.context_length = proxy_metadata.context_length
+                metadata.metadata["context_length_source"] = (
+                    proxy_metadata.metadata or {}
+                ).get("context_length_source", "adapter_metadata")
+            metadata.max_output_length = proxy_metadata.max_output_length
+        return metadata
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         raise NotImplementedError
