@@ -55,6 +55,9 @@ class ConnectorManager(BaseComponent):
         # cold db_name only one of them runs the expensive reflection;
         # the others wait and reuse the same instance.
         self._connector_creation_locks: Dict[str, threading.Lock] = {}
+        # Per-db_name generation, bumped on every invalidation. A build that
+        # started before an invalidation must not publish its (stale) result.
+        self._connector_generations: Dict[str, int] = {}
         self._connector_cache_ttl = self._CONNECTOR_CACHE_DEFAULT_TTL
 
         super().__init__(system_app)
@@ -225,10 +228,14 @@ class ConnectorManager(BaseComponent):
                 cached = self._connector_cache.get(db_name)
                 if cached and time.time() - cached[0] < self._connector_cache_ttl:
                     return cached[1]
+                generation = self._connector_generations.get(db_name, 0)
 
             connector = self._build_connector(db_name)
             with self._connector_cache_lock:
-                self._connector_cache[db_name] = (time.time(), connector)
+                # The registration changed while we were building; serve this
+                # request but don't cache a connector built from the old row.
+                if self._connector_generations.get(db_name, 0) == generation:
+                    self._connector_cache[db_name] = (time.time(), connector)
             return connector
 
     def invalidate_connector(self, db_name: str) -> None:
@@ -242,6 +249,9 @@ class ConnectorManager(BaseComponent):
         """
         with self._connector_cache_lock:
             cached = self._connector_cache.pop(db_name, None)
+            self._connector_generations[db_name] = (
+                self._connector_generations.get(db_name, 0) + 1
+            )
         if cached is not None:
             _, connector = cached
             self._dispose_connector(connector)

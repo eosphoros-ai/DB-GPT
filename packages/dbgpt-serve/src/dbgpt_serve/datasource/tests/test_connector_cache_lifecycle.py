@@ -72,3 +72,30 @@ def test_edit_drops_cached_connector(env):
 
     manager.edit_db(_sqlite(db_b))
     assert _query(manager.get_connector("poc")) == "B_MARKER"
+
+
+@pytest.mark.parametrize("mutation", ["delete", "edit"])
+def test_build_racing_a_mutation_is_not_cached(env, mutation):
+    manager, db_a, db_b = env
+    manager.add_db(_sqlite(db_a))
+    real_build = manager._build_connector
+
+    def build_then_mutate(db_name):
+        # The registry row is read, then the mutation commits and evicts
+        # before this build gets to publish.
+        connector = real_build(db_name)
+        if mutation == "delete":
+            manager.delete_db(db_name)
+        else:
+            manager.edit_db(_sqlite(db_b))
+        return connector
+
+    manager._build_connector = build_then_mutate
+    assert _query(manager.get_connector("poc")) == "A_MARKER"
+    manager._build_connector = real_build
+
+    if mutation == "delete":
+        with pytest.raises(ValueError, match="not found"):
+            manager.get_connector("poc")
+    else:
+        assert _query(manager.get_connector("poc")) == "B_MARKER"
