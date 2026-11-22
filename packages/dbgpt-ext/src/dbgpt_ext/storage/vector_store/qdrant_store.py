@@ -243,9 +243,7 @@ class QdrantStore(VectorStoreBase):
         if self._client.collection_exists(collection_name):
             # Score conversion must follow the metric the collection was
             # created with, not the current config, which may have changed.
-            vectors = self._client.get_collection(
-                collection_name
-            ).config.params.vectors
+            vectors = self._client.get_collection(collection_name).config.params.vectors
             if isinstance(vectors, VectorParams):
                 self._distance = vectors.distance
         else:
