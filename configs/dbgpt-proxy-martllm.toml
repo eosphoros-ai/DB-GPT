@@ -19,10 +19,10 @@ persist_path = "pilot/data"
 [models]
 [[models.llms]]
 name = "${env:LLM_MODEL_NAME:-openai/gpt-4o}"
-provider = "proxy/uberllm"
-api_key = "${env:UBERLLM_API_KEY}"
+provider = "proxy/martllm"
+api_key = "${env:MARTLLM_API_KEY}"
 
-# UberLLM serves chat models only. Chat works without an embedding model.
+# MartLLM serves chat models only. Chat works without an embedding model.
 # For knowledge-base (RAG) indexing and retrieval, uncomment an embedding model,
 # for example a local Hugging Face model:
 # [[models.embeddings]]

@@ -25,51 +25,51 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 
-_UBERLLM_DEFAULT_MODEL = "openai/gpt-4o"
+_MARTLLM_DEFAULT_MODEL = "openai/gpt-4o"
 
 
 @auto_register_resource(
-    label=_("UberLLM Proxy LLM"),
+    label=_("MartLLM Proxy LLM"),
     category=ResourceCategory.LLM_CLIENT,
     tags={"order": TAGS_ORDER_HIGH},
-    description=_("UberLLM proxy LLM configuration."),
-    documentation_url="https://uberllm.dev/docs/quickstart",
+    description=_("MartLLM proxy LLM configuration."),
+    documentation_url="https://martllm.com/docs/quickstart",
     show_in_ui=False,
 )
 @dataclass
-class UberLLMDeployModelParameters(OpenAICompatibleDeployModelParameters):
-    """Deploy model parameters for UberLLM."""
+class MartLLMDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for MartLLM."""
 
-    provider: str = "proxy/uberllm"
+    provider: str = "proxy/martllm"
 
     api_base: Optional[str] = field(
-        default="${env:UBERLLM_API_BASE:-https://api.uberllm.dev/v1}",
-        metadata={"help": _("The base url of the UberLLM API.")},
+        default="${env:MARTLLM_API_BASE:-https://api.martllm.com/v1}",
+        metadata={"help": _("The base url of the MartLLM API.")},
     )
 
     api_key: Optional[str] = field(
-        default="${env:UBERLLM_API_KEY}",
-        metadata={"help": _("The API key of the UberLLM API."), "tags": "privacy"},
+        default="${env:MARTLLM_API_KEY}",
+        metadata={"help": _("The API key of the MartLLM API."), "tags": "privacy"},
     )
 
 
-async def uberllm_generate_stream(
+async def martllm_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    client: UberLLMClient = model.proxy_llm_client
+    client: MartLLMClient = model.proxy_llm_client
     request = parse_model_request(params, client.default_model, stream=True)
     async for r in client.generate_stream(request):
         yield r
 
 
-class UberLLMClient(OpenAILLMClient):
-    """UberLLM LLM Client using OpenAI-compatible endpoints.
+class MartLLMClient(OpenAILLMClient):
+    """MartLLM LLM Client using OpenAI-compatible endpoints.
 
-    UberLLM serves chat models from OpenAI, Anthropic, Google, DeepSeek, Qwen,
+    MartLLM serves chat models from OpenAI, Anthropic, Google, DeepSeek, Qwen,
     Z.ai and others behind one OpenAI compatible endpoint and one prepaid API
     key. Model ids keep their vendor prefix, for example ``openai/gpt-4o``,
     ``anthropic/claude-sonnet-4.6`` or ``deepseek/deepseek-v4-flash``; the live
-    list is at https://api.uberllm.dev/v1/models.
+    list is at https://api.martllm.com/v1/models.
     """
 
     def __init__(
@@ -78,26 +78,26 @@ class UberLLMClient(OpenAILLMClient):
         api_base: Optional[str] = None,
         api_type: Optional[str] = None,
         api_version: Optional[str] = None,
-        model: Optional[str] = _UBERLLM_DEFAULT_MODEL,
+        model: Optional[str] = _MARTLLM_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = _UBERLLM_DEFAULT_MODEL,
+        model_alias: Optional[str] = _MARTLLM_DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         api_base = (
-            api_base or os.getenv("UBERLLM_API_BASE") or "https://api.uberllm.dev/v1"
+            api_base or os.getenv("MARTLLM_API_BASE") or "https://api.martllm.com/v1"
         )
-        api_key = api_key or os.getenv("UBERLLM_API_KEY")
-        model = model or _UBERLLM_DEFAULT_MODEL
+        api_key = api_key or os.getenv("MARTLLM_API_KEY")
+        model = model or _MARTLLM_DEFAULT_MODEL
         if not context_length:
             context_length = 128 * 1024
 
         if not api_key:
             raise ValueError(
-                "UberLLM API key is required, please set 'UBERLLM_API_KEY' "
+                "MartLLM API key is required, please set 'MARTLLM_API_KEY' "
                 "in environment or pass it as an argument."
             )
 
@@ -120,15 +120,15 @@ class UberLLMClient(OpenAILLMClient):
     def default_model(self) -> str:
         model = self._model
         if not model:
-            model = _UBERLLM_DEFAULT_MODEL
+            model = _MARTLLM_DEFAULT_MODEL
         return model
 
     @classmethod
     def new_client(
         cls,
-        model_params: UberLLMDeployModelParameters,
+        model_params: MartLLMDeployModelParameters,
         default_executor=None,
-    ) -> "UberLLMClient":
+    ) -> "MartLLMClient":
         """Create a new client with the model parameters.
 
         Overridden to pass ``context_length`` through untouched. The inherited
@@ -149,33 +149,33 @@ class UberLLMClient(OpenAILLMClient):
         )
 
     @classmethod
-    def param_class(cls) -> Type[UberLLMDeployModelParameters]:
-        return UberLLMDeployModelParameters
+    def param_class(cls) -> Type[MartLLMDeployModelParameters]:
+        return MartLLMDeployModelParameters
 
     @classmethod
     def generate_stream_function(
         cls,
     ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
-        return uberllm_generate_stream
+        return martllm_generate_stream
 
 
 register_proxy_model_adapter(
-    UberLLMClient,
+    MartLLMClient,
     supported_models=[
         ModelMetadata(
             model=["openai/gpt-4o", "openai/gpt-4o-mini"],
             context_length=128_000,
             max_output_length=16_384,
-            description="OpenAI GPT-4o family models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="OpenAI GPT-4o family models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
             model=["openai/gpt-5.5", "openai/gpt-5.4", "openai/gpt-5.4-mini"],
             context_length=400_000,
             max_output_length=128_000,
-            description="OpenAI GPT-5 family models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="OpenAI GPT-5 family models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
@@ -186,8 +186,8 @@ register_proxy_model_adapter(
             ],
             context_length=200_000,
             max_output_length=64_000,
-            description="Anthropic Claude family models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="Anthropic Claude family models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
@@ -198,8 +198,8 @@ register_proxy_model_adapter(
             ],
             context_length=1_000_000,
             max_output_length=128_000,
-            description="DeepSeek models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="DeepSeek models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
@@ -210,24 +210,24 @@ register_proxy_model_adapter(
             ],
             context_length=1_000_000,
             max_output_length=65_535,
-            description="Google Gemini family models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="Google Gemini family models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
             model=["qwen/qwen3.7-max", "qwen/qwen3.7-flash"],
             context_length=256_000,
             max_output_length=32_768,
-            description="Qwen models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="Qwen models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
             model=["z-ai/glm-5.2", "z-ai/glm-4.7"],
             context_length=128_000,
             max_output_length=32_768,
-            description="GLM models via UberLLM",
-            link="https://uberllm.dev/models",
+            description="GLM models via MartLLM",
+            link="https://martllm.com/models",
             function_calling=True,
         ),
     ],

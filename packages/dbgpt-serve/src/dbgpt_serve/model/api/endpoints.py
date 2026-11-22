@@ -179,7 +179,7 @@ _PROVIDER_NAME_OVERRIDES = {
     "tongyi": "Tongyi Qwen",
     "zhipu": "Zhipu AI",
     "orcarouter": "OrcaRouter",
-    "uberllm": "UberLLM",
+    "martllm": "MartLLM",
 }
 
 
