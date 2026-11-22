@@ -199,8 +199,14 @@ class TestSplitJoinedAction:
         assert [s.name for s in specs] == ["add", "multiply", "multiply"]
 
     def test_non_dict_items_become_empty_args(self):
-        specs = split_joined_action("add", ["oops"])
-        assert specs is not None and specs[0].args == {}
+        specs = split_joined_action("add, multiply", ["oops", {"a": 1}])
+        assert specs is not None
+        assert specs[0].args == {}
+        assert specs[1].args == {"a": 1}
+
+    def test_singleton_array_left_to_tool_parser(self):
+        assert split_joined_action("add", [{"a": 1}]) is None
+        assert split_joined_action("add", ["oops"]) is None
 
     def test_non_list_args_untouched(self):
         assert split_joined_action("add", {"a": 1, "b": 2}) is None
