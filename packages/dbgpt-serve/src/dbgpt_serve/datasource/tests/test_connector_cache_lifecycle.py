@@ -4,7 +4,10 @@ A cached connector must not outlive a delete, edit or same-name
 re-registration made through ConnectorManager's own methods.
 """
 
+import asyncio
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock
 
 import pytest
@@ -99,3 +102,41 @@ def test_build_racing_a_mutation_is_not_cached(env, mutation):
             manager.get_connector("poc")
     else:
         assert _query(manager.get_connector("poc")) == "B_MARKER"
+
+
+def test_refresh_invalidates_off_the_event_loop(env):
+    manager, db_a, _ = env
+    manager.add_db(_sqlite(db_a))
+    cached = manager.get_connector("poc")
+    events = []
+
+    class RecordingExecutor(ThreadPoolExecutor):
+        def submit(self, fn, *args, **kwargs):
+            if fn is manager.db_summary_client.db_summary_embedding:
+                events.append(("embed", None))
+                return None
+            return super().submit(fn, *args, **kwargs)
+
+    real_dispose = manager._dispose_connector
+
+    def recording_dispose(connector):
+        events.append(("dispose", threading.get_ident()))
+        real_dispose(connector)
+
+    manager._dispose_connector = recording_dispose
+    executor = RecordingExecutor(max_workers=1)
+    manager.system_app.get_component.return_value.create.return_value = executor
+
+    async def refresh():
+        assert await manager.async_db_summary_embedding("poc", "sqlite")
+        return threading.get_ident()
+
+    try:
+        loop_thread = asyncio.run(refresh())
+    finally:
+        executor.shutdown()
+
+    # Evicted before the embedding job is queued, and not on the loop thread.
+    assert [name for name, _ in events] == ["dispose", "embed"]
+    assert events[0][1] != loop_thread
+    assert manager.get_connector("poc") is not cached

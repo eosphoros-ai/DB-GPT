@@ -11,7 +11,7 @@ from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
 from dbgpt.util.annotations import Deprecated
 from dbgpt.util.configure.manager import _resolve_env_vars
-from dbgpt.util.executor_utils import ExecutorFactory
+from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
 from dbgpt_serve.core import ResourceParameters, ResourceTypes
@@ -473,10 +473,11 @@ class ConnectorManager(BaseComponent):
 
     async def async_db_summary_embedding(self, db_name, db_type):
         """Async db summary embedding."""
-        self.invalidate_connector(db_name)
         executor = self.system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()  # type: ignore
+        # Disposing the cached engine can block; keep it off the event loop.
+        await blocking_func_to_async(executor, self.invalidate_connector, db_name)
         executor.submit(self.db_summary_client.db_summary_embedding, db_name, db_type)
         return True
 
