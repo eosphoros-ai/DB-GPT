@@ -97,7 +97,9 @@ def _get_local_client(path: str) -> Any:
             str,
             description=_(
                 "Local folder to run Qdrant embedded, without a server. "
-                "Overrides url, host and port."
+                "Overrides url, host and port. "
+                "Intended for development or single-process use; "
+                "use url or host/port for concurrent access."
             ),
             optional=True,
             default=None,
@@ -176,7 +178,9 @@ class QdrantVectorConfig(VectorStoreConfig):
         metadata={
             "help": _(
                 "Local folder to run Qdrant embedded, without a server. "
-                "Overrides url, host and port."
+                "Overrides url, host and port. "
+                "Intended for development or single-process use; "
+                "use url or host/port for concurrent access."
             )
         },
     )
