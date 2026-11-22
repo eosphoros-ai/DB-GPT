@@ -214,16 +214,21 @@ class QdrantStore(VectorStoreBase):
         """Create a Qdrant collection."""
         from qdrant_client.models import VectorParams
 
+        self._distance = self._resolve_distance(self._vector_store_config.distance)
         if self._client.collection_exists(collection_name):
+            # Score conversion must follow the metric the collection was
+            # created with, not the current config, which may have changed.
+            vectors = self._client.get_collection(
+                collection_name
+            ).config.params.vectors
+            if isinstance(vectors, VectorParams):
+                self._distance = vectors.distance
             return
 
         dim = len(self.embeddings.embed_query("probe"))
         self._client.create_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=dim,
-                distance=self._resolve_distance(self._vector_store_config.distance),
-            ),
+            vectors_config=VectorParams(size=dim, distance=self._distance),
         )
 
     @staticmethod
@@ -278,10 +283,7 @@ class QdrantStore(VectorStoreBase):
         qdrant_filter = self.convert_metadata_filters(filters) if filters else None
         # Euclid and Manhattan return a distance (lower is better), so the
         # threshold is applied after converting it to a similarity score.
-        is_distance = self._resolve_distance(self._vector_store_config.distance) in (
-            Distance.EUCLID,
-            Distance.MANHATTAN,
-        )
+        is_distance = self._distance in (Distance.EUCLID, Distance.MANHATTAN)
         response = self._client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
