@@ -27,10 +27,12 @@ def test_default_model_is_in_the_gemini_catalog():
     assert GEMINI_DEFAULT_MODEL in models
 
 
-def test_client_built_without_a_model_names_no_shut_down_model():
-    pytest.importorskip("google.generativeai")
+def test_client_built_without_a_model_names_no_shut_down_model(monkeypatch):
+    genai = pytest.importorskip("google.generativeai")
     from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
 
+    # configure() replaces the SDK's process-global client config; keep it out.
+    monkeypatch.setattr(genai, "configure", lambda **kwargs: None)
     client = GeminiLLMClient(api_key="test-key")
     assert not SHUT_DOWN.intersection(client.model_names)
     assert client.model_names == [GEMINI_DEFAULT_MODEL]
