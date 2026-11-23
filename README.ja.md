@@ -238,6 +238,16 @@ Development directions include semantic consistency, task evaluation, execution 
 
 Contribute reproducible cases, fixes, documentation, Skills, and workflows. Include the version, configuration method, and a minimal reproduction when reporting a problem; remove secrets and sensitive data from logs.
 
+## Contribution
+
+For detailed guidelines, see [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md). Contributions to code, documentation, Skills, workflows, and reproducible examples are welcome.
+
+### Contributors Wall
+
+<a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT contributors" />
+</a>
+
 ## License and disclaimer
 
 DB-GPT is distributed under the [MIT License](LICENSE). Read the [disclaimer](DISCKAIMER.md).
@@ -276,3 +286,7 @@ The following papers introduce the project and related research. They do not des
 ```
 
 </details>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

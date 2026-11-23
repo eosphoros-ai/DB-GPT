@@ -238,6 +238,16 @@ dbgpt start
 
 欢迎提交可复现的案例、问题修复、文档、Skills 与工作流。报告问题时请附版本、配置方式与最小复现步骤，并移除日志中的密钥和敏感数据。
 
+## 贡献
+
+更加详细的贡献指南请参考[如何贡献](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)。欢迎参与代码、文档、Skills、工作流与可复现案例的建设。
+
+### 贡献者榜单
+
+<a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT 贡献者榜单" />
+</a>
+
 ## 许可证与免责声明
 
 项目采用 [MIT 许可证](LICENSE)。请同时阅读[免责声明](DISCKAIMER.md)。
@@ -276,3 +286,7 @@ dbgpt start
 ```
 
 </details>
+
+## Star 增长趋势
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
