@@ -58,3 +58,38 @@ async def test_sync_document_routes_check_api_key(client, service, path, body):
     )
     assert response.status_code == 200
     service.sync_document.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path, body", _SYNC_ROUTES)
+async def test_sync_document_routes_default_chunk_parameters(
+    client, service, path, body
+):
+    # Service.sync_document dereferences chunk_parameters, so every route must
+    # fill in the same default as the per-document route when it is omitted.
+    response = await client.post(path, json=body)
+
+    assert response.status_code == 200
+    requests = service.sync_document.await_args.args[0]
+    assert [r.chunk_parameters.chunk_strategy for r in requests] == ["Automatic"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path, body", _SYNC_ROUTES)
+async def test_sync_document_routes_keep_explicit_chunk_parameters(
+    client, service, path, body
+):
+    chunk_parameters = {"chunk_strategy": "CHUNK_BY_SIZE", "chunk_size": 100}
+    if isinstance(body, list):
+        body = [{**item, "chunk_parameters": chunk_parameters} for item in body]
+    else:
+        body = {**body, "chunk_parameters": chunk_parameters}
+
+    response = await client.post(path, json=body)
+
+    assert response.status_code == 200
+    requests = service.sync_document.await_args.args[0]
+    assert [
+        (r.chunk_parameters.chunk_strategy, r.chunk_parameters.chunk_size)
+        for r in requests
+    ] == [("CHUNK_BY_SIZE", 100)]
