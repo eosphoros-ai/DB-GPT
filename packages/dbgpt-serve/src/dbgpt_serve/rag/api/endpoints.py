@@ -323,7 +323,7 @@ async def sync_documents(
     return Result.succ(await service.sync_document(requests))
 
 
-@router.post("/documents/batch_sync")
+@router.post("/documents/batch_sync", dependencies=[Depends(check_api_key)])
 async def sync_documents(
     requests: List[KnowledgeSyncRequest],
     service: Service = Depends(get_service),
@@ -339,7 +339,7 @@ async def sync_documents(
     return Result.succ(await service.sync_document(requests))
 
 
-@router.post("/documents/{document_id}/sync")
+@router.post("/documents/{document_id}/sync", dependencies=[Depends(check_api_key)])
 async def sync_document(
     document_id: int,
     request: KnowledgeSyncRequest,
