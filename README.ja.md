@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: データベースとの対話を革新するプライベートLLM技術
+# <img src="./assets/LOGO_SMALL.png" alt="DB-GPT Logo" height="24" /> DB-GPT: 制御可能なデータエージェントのオープンソース基盤
 
 
 <p align="left">
@@ -42,14 +42,48 @@
     </a>
   </p>
 
-[![英語](https://img.shields.io/badge/英語-d9d9d9?style=flat-square)](README.md)
-[![中国語](https://img.shields.io/badge/中国語-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [हिन्दी](README.hi.md) · [മലയാളം](README.ma.md) · [தமிழ்](README.ta.md)
 
 [**ドキュメント**](http://docs.dbgpt.cn/docs/overview/) | [**チームに連絡します**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**コミュニティ**](https://github.com/eosphoros-ai/community) | [**論文**](https://arxiv.org/pdf/2312.17449.pdf)
 
 
 </div>
+
+> **データを接続し、業務の定義を確認し、明示的なツールと実行環境の境界内で SQL とコードを実行。再利用可能なレポートとダッシュボードを届けます。**
+
+## DB-GPT の実際の動作を見る
+
+[![4K 製品デモを見る](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+
+[**▶ 4K 製品デモを見る**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+
+約97秒の英語デモ。主要モジュール、ダッシュボードのテンプレート、実際の /dashboard ケースと Preview への切り替えを紹介します。
+
+<sub>待機区間は短縮しています。テンプレートの例と実データのケースは別で、一部のカバー画像には中国語が残っています。すべての機能を実行したことを示すものではありません。</sub>
+
+## DB-GPTとは？
+
+Agents、Skills、AWEL、RAG、多モデル管理を組み合わせ、データの質問から再利用可能な成果物までを一つのプラットフォームで支援します。
+
+## 主要モジュール
+
+- **Datasources** — データベース接続と検索対象の管理。
+- **Semantic Center** — メタデータ、業務定義、公開済みの指標バージョン。
+- **Plugins / Skills** — データ取得、分析、SQL 最適化などの再利用可能な専門手法。
+- **Workflow** — 直列・並列の Agent ステップを明示的に構成。
+- **Dashboards / Reports** — テンプレート、編集可能な看板、クエリに基づく分析結果。
+- **Knowledge / Connectors / Management** — 文書の文脈、設定済み MCP ツール、モデルと実行環境。
+
+## データ作業の流れ
+
+**接続 → 定義確認 → 計画 → 実行 → レビュー → 再利用**
+
+## 制御と実行の境界
+
+可用性はモデル、データソース、設定、実行環境に依存します。最小権限の認証情報と適切な隔離を設定し、重要な結果を確認してください。ローカル実行はコンテナ隔離と同じではなく、完全な安全性を保証しません。
+
+<details>
+<summary>従来のアーキテクチャ・モデル参考</summary>
 
 ## DB-GPTとは何か？
 
@@ -154,6 +188,7 @@ SQLとコードを生成してデータをクエリし、データセットを�
 分離された環境でコードとツールを実行して、より安全で可靠性の高い分析を実現します。
 ![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
+</details>
 
 ## インストール
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -173,6 +208,9 @@ SQLとコードを生成してデータをクエリし、データセットを�
   - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
   - [ファインチューニング](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
   - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
+
+<details>
+<summary>追加機能の参考</summary>
 
 ## 特徴
 
@@ -315,6 +353,8 @@ SQLとコードを生成してデータをクエリし、データセットを�
 
 ## 画像
 🌐 [AutoDLイメージ](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
+
+</details>
 
 ## 貢献
 

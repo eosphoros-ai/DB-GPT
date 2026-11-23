@@ -1,4 +1,4 @@
-<img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: AI Native Data App Development framework with AWEL and Agents
+# <img src="./assets/LOGO_SMALL.png" alt="DB-GPT Logo" height="24" /> DB-GPT: नियंत्रित डेटा एजेंटों के लिए ओपन-सोर्स प्लेटफ़ॉर्म
 
 <p align="left">
   <img src="./assets/dbgpt_vision.png" width="100%" />
@@ -42,13 +42,47 @@
   </p>
 
 
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [हिन्दी](README.hi.md) · [മലയാളം](README.ma.md) · [தமிழ்](README.ta.md)
 
 [**दस्तावेज़**](http://docs.dbgpt.cn/docs/overview/) | [**हमसे संपर्क करें**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**समुदाय**](https://github.com/eosphoros-ai/community) | [**पेपर**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
+
+> **डेटा कनेक्ट करें, व्यावसायिक परिभाषाओं से प्रश्नों को स्पष्ट करें, तय टूल और रनटाइम सीमाओं में SQL तथा कोड चलाएँ, और पुन: उपयोग योग्य रिपोर्ट व डैशबोर्ड बनाएँ।**
+
+## DB-GPT को काम करते देखें
+
+[![4K उत्पाद डेमो देखें](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+
+[**▶ 4K उत्पाद डेमो देखें**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+
+लगभग 97 सेकंड का अंग्रेज़ी डेमो: मुख्य मॉड्यूल, डैशबोर्ड टेम्प्लेट, वास्तविक /dashboard केस और Preview बोर्ड दृश्य।
+
+<sub>प्रतीक्षा वाले हिस्से तेज़ किए गए हैं। टेम्प्लेट उदाहरण और वास्तविक डेटा केस अलग हैं; कुछ कवर में चीनी लेबल हैं। हर मॉड्यूल का दिखना उसके निष्पादन का प्रमाण नहीं है।</sub>
+
+## DB-GPT क्या है?
+
+Agents, Skills, AWEL, RAG और मल्टी-मॉडल प्रबंधन को एक साथ लाकर, DB-GPT प्रश्न से पुन: उपयोग योग्य विश्लेषण परिणाम तक का कार्यप्रवाह देता है।
+
+## मुख्य मॉड्यूल
+
+- **Datasources** — डेटाबेस कनेक्शन और खोज का दायरा।
+- **Semantic Center** — मेटाडेटा, व्यावसायिक परिभाषाएँ और प्रकाशित मेट्रिक संस्करण।
+- **Plugins / Skills** — क्वेरी, विश्लेषण और SQL अनुकूलन की पुन: उपयोग योग्य विधियाँ।
+- **Workflow** — क्रमिक और समानांतर Agent चरणों का स्पष्ट संयोजन।
+- **Dashboards / Reports** — टेम्प्लेट, संपादन योग्य बोर्ड और क्वेरी-आधारित परिणाम।
+- **Knowledge / Connectors / Management** — दस्तावेज़ संदर्भ, कॉन्फ़िगर किए गए MCP टूल तथा मॉडल और रनटाइम।
+
+## डेटा कार्य का प्रवाह
+
+**कनेक्ट → परिभाषा → योजना → निष्पादन → समीक्षा → पुन: उपयोग**
+
+## नियंत्रण और निष्पादन की सीमाएँ
+
+उपलब्धता मॉडल, डेटा स्रोत, कॉन्फ़िगरेशन और रनटाइम पर निर्भर है। न्यूनतम अधिकार वाले क्रेडेंशियल और उचित अलगाव का उपयोग करें, तथा महत्वपूर्ण परिणामों की समीक्षा करें। स्थानीय निष्पादन कंटेनर अलगाव के बराबर नहीं है और पूर्ण सुरक्षा की गारंटी नहीं है।
+
+<details>
+<summary>पुरानी संरचना और मॉडल संदर्भ</summary>
 
 ## DB-GPT क्या है?
 
@@ -152,6 +186,7 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
 सुरक्षित, अधिक विश्वसनीय विश्लेषण के लिए अलग-थलग वातावरण में कोड और टूल्स चलाएं।
 ![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
+</details>
 
 ## इंस्टॉलेशन / क्विक स्टार्ट 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -173,6 +208,9 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
   - [फाइनट्यून](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
   - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
 
+
+<details>
+<summary>अतिरिक्त सुविधा संदर्भ</summary>
 
 ## विशेषताएं
 
@@ -317,7 +355,7 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
 ## छवि
 🌐 [AutoDL छवि](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
-
+</details>
 
 ## योगदान
 
@@ -370,7 +408,7 @@ MIT लाइसेंस (MIT)
 DB-GPT में योगदान करने वाले सभी लोगों को धन्यवाद! आपकी विचार, कोड, टिप्पणियां, और यहां तक कि घटनाओं और सोशल प्लेटफार्मों पर उन्हें साझा करना DB-GPT को बेहतर बना सकता है।
 हम एक समुदाय बनाने पर काम कर रहे हैं, यदि आपके पास समुदाय बनाने के लिए कोई विचार हैं, तो कृपया हमसे संपर्क करें।  
 
-- [GitHub मुद्दे](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: GB-DPT का उपयोग करने के बारे में प्रश्नों के लिए, CONTRIBUTING देखें।  
+- [GitHub मुद्दे](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: DB-GPT का उपयोग करने के बारे में प्रश्नों के लिए, CONTRIBUTING देखें।
 - [GitHub चर्चाएं](https://github.com/orgs/eosphoros-ai/discussions) ⭐️: अपना अनुभव या अद्वितीय ऐप्स साझा करें।  
 - [ट्विटर](https://x.com/DBGPT_AI) ⭐️: कृपया हमसे बात करने के लिए स्वतंत्र महसूस करें।  
 

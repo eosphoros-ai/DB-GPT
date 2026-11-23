@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: Open-Source Agentic AI Data Assistant
+# <img src="./assets/LOGO_SMALL.png" alt="DB-GPT Logo" height="24" /> DB-GPT: Open-Source Platform for Controlled Data Agents
 
 <p align="left">
   <img src="./assets/dbgpt_vision.png" width="100%" />
@@ -42,89 +42,146 @@
   </p>
 
 
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [हिन्दी](README.hi.md) · [മലയാളം](README.ma.md) · [தமிழ்](README.ta.md)
 
 [**Documents**](http://docs.dbgpt.cn/docs/overview/) | [**Contact Us**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
 
-> **An open-source AI data assistant that connects to your data, writes SQL and code, runs skills in sandboxed environments, and turns analysis into reports, insights, and action.**
+> **Connect your data, ground questions in business context, execute SQL and code within explicit tool and runtime boundaries, and deliver reusable reports and dashboards.**
 
-![welcome_page](https://github.com/user-attachments/assets/ff9beb32-7db5-487a-bd81-d4489d853ea5)
+## Watch DB-GPT in action
+
+[![Watch the 4K product film](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+
+[**▶ Watch the 4K product film**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+
+A 97-second English product tour: data sources, semantics, experts and skills, workflow, dashboard templates, and a real /dashboard case ending in Preview board view.
+
+<sub>Waiting intervals are accelerated. Template illustrations and the live case are shown separately; some built-in covers retain Chinese labels. Module overviews are not claims that every feature was executed.</sub>
+
+[Why DB-GPT?](#why-db-gpt) · [Quick start](#quick-start) · [Core capabilities](#core-capabilities) · [Vision and roadmap](#vision)
+
+<details>
+<summary>Explore the interface screenshots</summary>
+
+## Showcases
+
+<table>
+<tr>
+<td width="100%">
+<img src="assets/showcase-home-en.png" alt="DB-GPT home">
+<br>
+<sub><b>One place to start.</b> Ask in natural language, drop in a CSV, or pick an analysis agent—Data Query, Data Analysis, SQL Optimization, Metadata &amp; Architecture, Financial Analysis—and run on the model you choose.</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-dashboard-view-en.png" alt="DB-GPT dashboard preview">
+<br>
+<sub><b>Dashboards are artifacts, not screenshots.</b> A generated board keeps its KPI, trend, ranking and detail table live and filterable; layout is locked in preview and query-backed widgets refresh on demand.</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-datasources-en.png" alt="DB-GPT data sources">
+<br>
+<sub><b>Start from a trusted connection.</b> Connections, discovery scope and the database catalog live in one place; queries, analysis and dashboards all draw from the same source inventory.</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-semantic-en.png" alt="DB-GPT Semantic Center">
+<br>
+<sub><b>Definitions before SQL.</b> Metric formulas, published versions and review state are read as authoritative context instead of being re-guessed per question.</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-suites-en.png" alt="DB-GPT expert suites">
+<br>
+<sub><b>Expertise you can install.</b> Five official expert plugins ship their own skills and methods—6 for analysis, 5 for query, plus finance, metadata and SQL tuning—each enabled per task with its datasource and knowledge context.</sub>
+</td>
+</tr>
+</table>
+
+
+</details>
 
 ## What is DB-GPT?
 
-DB-GPT is an open-source **agentic AI data assistant** for the next generation of **AI + Data** products.
+**DB-GPT is an open-source platform for controlled data agents: connect data, establish business context, execute SQL and code within explicit tool and runtime boundaries, and deliver reusable analytical outputs.**
 
-It helps users and teams:
-- connect to **databases, CSV / Excel files, warehouses, and knowledge bases**
-- ask questions in natural language and let AI **write SQL autonomously**
-- run **Python- and code-driven analysis** workflows
-- load and execute reusable **skills** for domain-specific tasks
-- generate **charts, dashboards, HTML reports, and analysis summaries**
-- execute tasks safely in **sandboxed environments**
+It combines a ready-to-use assistant with the infrastructure developers need to build AI-native data applications: agents, AWEL workflows, reusable Skills, RAG, model management, and configurable execution environments.
 
-DB-GPT is also a platform for building **AI-native data agents, workflows, and applications** with agents, AWEL, RAG, and multi-model support.
+**Go beyond answers. Get data work done—with business context, reusable expertise, and traceable results.**
+
+### Why a data agent, not just Text-to-SQL?
+
+A useful answer requires more than a valid query. It requires the right source, an agreed metric definition, an appropriate analytical method, and evidence that explains the result. DB-GPT brings these concerns into one workflow instead of leaving users to connect separate tools manually.
 
 ## Why DB-GPT?
 
-### 1. Agentic data analysis
-Plan tasks, break work into steps, call tools, and complete analysis workflows end to end.
-![csv_data_analysis_demo_en](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
+### 1. Business context before SQL
 
-### 2. Autonomous SQL + code execution
-Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.
+The **Semantic Center** organizes metadata, business definitions, metric definitions, examples, relationships, and rules around each database connection. Published metric snapshots let agents resolve a specific definition and version instead of treating a mutable draft as authoritative.
+
+### 2. SQL, code, and retrieval in one workflow
+
+Agents can plan steps, query databases, run code-based analysis, and retrieve knowledge. AWEL provides explicit orchestration when a repeatable workflow is preferable to open-ended planning.
+
 ![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
 ![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
 
-### 3. Multi-source data access
-Work across structured and unstructured sources, including databases, spreadsheets, documents, and knowledge bases.
+### 3. Reusable expertise through Skills and suites
 
-![datasource](./assets/datasources.png)
-
-### 4. Skills-driven extensibility
-Package domain knowledge, analysis methods, and execution workflows into reusable skills.
-
-
-
-
+Package domain instructions, scripts, and workflows as Skills; use suites to organize capabilities and permitted tools for a task. Reuse analytical methods rather than rebuilding every assistant from scratch.
 
 ![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
 
-### 5. Sandboxed execution
-Run code and tools in isolated environments for safer, more reliable analysis.
+### 4. Results that live beyond the conversation
+
+Produce analytical summaries, charts, HTML reports, and editable dashboards. Dedicated financial-analysis workflows support report analysis and multi-report comparison, subject to configuration and schema prerequisites.
+
+![csv_data_analysis_demo_en](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
+
+### 5. Model choice and configurable execution
+
+Choose model providers and local or container-backed execution environments. Isolation depends on the selected runtime and deployment configuration; local execution is not equivalent to container isolation.
+
 ![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
+## What you can build
 
+- **Database assistants** that use published business definitions and metrics before generating SQL.
+- **File-analysis assistants** that combine data inspection, code, charts, and narrative reports.
+- **Reusable analytical applications** built with Skills, suites, agents, and AWEL.
+- **Editable dashboards** with drafts, published snapshots, sharing, and refresh workflows.
+- **Financial-report workflows** for single-report analysis and configured multi-report comparison.
+- **Recurring data tasks** using scheduled conversation replay or dashboard refresh.
 
-## What you can do with DB-GPT
-
-- **Analyze CSV / Excel files** and generate visual reports
-- **Connect to databases** and produce profiling reports
-- Ask business questions in natural language and let AI **write SQL automatically**
-- Perform **financial report analysis** with code, charts, and narrative summaries
-- Create and reuse **SQL analysis skills** and domain workflows
-- Combine **code, SQL, retrieval, and tools** in a single agentic workflow
-- Build next-generation **AI + Data assistants** for your team or product
+These capabilities are implemented in this branch. Availability depends on the model, connectors, runtime, feature configuration, and required database migrations—not merely on the presence of a UI entry.
 
 ## Product Workflow
 
-### Explore data
-Connect files, databases, and knowledge bases in one workspace.
+**Connect → Ground → Plan → Execute → Review → Reuse**
 
-### Plan and execute
-Let AI reason through the task, write SQL and code, and execute step by step.
-
-### Use skills
-Load reusable skills for repeatable business analysis workflows.
-
-### Generate reports
-Produce charts, dashboards, HTML reports, and decision-ready outputs.
-
+1. **Connect** databases, files, and knowledge bases.
+2. **Ground** the question in metadata, published business definitions, and metric versions.
+3. **Plan** with agents or an explicit AWEL workflow; select relevant Skills and tools.
+4. **Execute** queries, code, and retrieval in the configured environment.
+5. **Review** results, supporting artifacts, and semantic provenance.
+6. **Reuse** the workflow as an application, dashboard, or scheduled task.
 
 ## Quick Start
+
+> **Working from a feature branch?** Use the existing checkout and a configuration matching that branch. A fresh `main` clone or PyPI release may not include the capabilities described here.
+>
+> With dependencies already installed, run the backend from the repository root:
+> ```bash
+> .venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
+> ```
+> For frontend development, run `npm run dev -- --hostname 127.0.0.1 --port 3000` from `web/`. The frontend proxies API requests to `127.0.0.1:5670` by default. Configure the model provider before using agent analysis; serving the UI does not prove inference is available.
 
 Get DB-GPT running in minutes with the one-line installer (macOS & Linux):
 
@@ -244,41 +301,45 @@ For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see
 
 ## Core Capabilities
 
-### Agentic Analysis
-- task planning
-- step-by-step execution
-- tool use
-- iterative reasoning
+### Semantic Center: business meaning as a maintained asset
 
-### SQL + Code Execution
-- natural language to SQL
-- Python-based analysis and transformation
-- metric calculation
-- chart generation
+- **Metadata catalog**: synchronize table/column snapshots, types, comments, key flags, and enumerated values.
+- **Business definitions**: generate candidate annotations, maintain synonyms and definitions, and review entries before publication.
+- **Metric lifecycle**: maintain formulas, dimensions, and dependencies; publishing records a version snapshot and change note.
+- **Agent-facing reads**: connection-bound tools read metadata, published business definitions, and published metric versions. Missing definitions do not silently fall back to drafts.
+- **Provenance**: metric results carry a version reference; the UI can resolve the cited published version.
+- **Context management**: manage query examples, relations, rules, and coverage from the Semantic Center.
 
-### Multi-Source Data Access
-- relational databases
-- CSV / Excel
-- documents
-- knowledge bases
-- mixed-source workflows
+**Current boundary:** the authoritative read path uses structured records and keyword matching. The managed vector-index adapter is not yet wired and falls back to an in-memory sink. Catalog whitelist/sensitivity flags are descriptive metadata, not row/column-level authorization enforcement.
 
-### Skills and Agents
-- reusable skills
-- domain workflows
-- agent orchestration
-- customizable execution flows
+Implementation: [Semantic Center](packages/dbgpt-serve/src/dbgpt_serve/semantic) · [Agent tools](packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/semantic_tools.py).
 
-### Reporting and Decision Support
-- database profiling reports
-- financial analysis reports
-- visual reports and dashboards
-- summaries and business insights
+### Agents, Skills, and AWEL
 
-### Safe Execution
-- sandboxed code execution
-- controlled tool use
-- reproducible outputs and artifacts
+Use agent planning and tool calls for exploratory tasks, or explicit AWEL workflows for repeatable applications. Skills load instructions and run associated scripts; suites organize task-specific capabilities and tool allowlists. Execution behavior depends on the selected harness and runtime.
+
+### Data access and knowledge retrieval
+
+Combine relational databases, CSV/Excel files, documents, and knowledge bases. Use RAG and GraphRAG for knowledge-grounded applications; structured semantic reads are distinct from ordinary knowledge-base retrieval.
+
+### SQL, code, and execution environments
+
+Generate SQL and code for querying, transformation, metric calculation, and visualization. The sandbox package includes local and container runtime implementations. Configure runtime dependencies, file access, resource boundaries, and credentials for your deployment.
+
+### Reports, dashboards, and financial analysis
+
+Generate reports and visual artifacts. Dashboard implementations include an agent-plan-to-draft bridge, editable drafts, published snapshots, sharing, and refresh tasks. Financial analysis includes single-report workflows and multi-report comparison with extraction state and resume support; comparison requires the explicit schema migration documented by its implementation.
+
+### Scheduled tasks
+
+Run recurring conversation replays and dashboard refreshes, with task management and execution history. Automatic runs require the scheduler to be running and the task's model, files, and data sources to remain available. This is not a guarantee of an always-on managed service.
+
+### Model ecosystem
+
+Use multi-model management and private deployment options. Supported providers and fine-tuning targets vary by release; see the documentation and DB-GPT-Hub rather than treating a historical model list as a compatibility guarantee.
+
+<details>
+<summary>Model and fine-tuning reference lists</summary>
 
 #### Text2SQL Finetune
 
@@ -409,27 +470,48 @@ For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see
 
   - [More Supported LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
 
+</details>
+
 ### Privacy and Security
 
-We protect data privacy and execution safety through private model deployment, proxy desensitization, and sandboxed execution mechanisms.
+Private model deployment, desensitization, and configurable execution runtimes can help reduce risk; they do not constitute a comprehensive security guarantee. Use least-privilege database credentials, choose an appropriate isolation runtime, protect secrets, and independently review high-impact results. Semantic publication is a content lifecycle—not a substitute for deployment-level authorization.
 
 ### Data Sources
 - [Datasources](http://docs.dbgpt.cn/docs/modules/connections)
 
 ## Vision
 
-We believe the future of data products goes beyond dashboards.
+**Make trustworthy data work an open capability.**
 
-The next generation of **AI + Data** products will be:
-- **agentic**
-- **multi-source**
-- **skill-driven**
-- **sandboxed**
-- capable of writing **SQL and code**
-- able to turn analysis into **reports, decisions, and action**
+We believe the next generation of data products will go beyond dashboards and isolated answers. They will combine business context, reusable expertise, and controlled execution to help people complete data work—not merely generate queries.
 
-DB-GPT aims to help developers and enterprises build that future.
+DB-GPT aims to provide an open, composable foundation for that future: a practical assistant for users and an extensible platform for developers, on their own data and with their choice of models.
 
+Our principles are **context before generation**, **published definitions before assumptions**, **evidence before conclusions**, and **human control over consequential actions**.
+
+## Roadmap
+
+> Proposed development directions for community discussion, not approved delivery dates or claims of shipped features. Existing Semantic Center, Skills, scheduling, and dashboard capabilities are described above; the roadmap focuses on deepening them.
+
+### Near term — strengthen the existing foundation
+
+- Complete the Semantic Center's persistent vector-index integration and improve semantic discovery without weakening published-only metric reads.
+- Expand task-level evaluation for SQL, code analysis, semantic consistency, and report evidence.
+- Improve connector onboarding, execution diagnostics, and configuration checks.
+
+### Next — make expertise portable and maintainable
+
+- Improve versioned Skills, workflow templates, and business-context import/export.
+- Extend metric provenance across analytical outputs and strengthen schema-change handling.
+- Explore standard tool interoperability, including MCP, with explicit permission boundaries.
+
+### Longer term — sustained, supervised data work
+
+- Build on existing scheduling with richer event triggers, recovery, and operational visibility.
+- Explore parallel specialized-agent execution with explicit resource and authorization boundaries.
+- Expand reusable applications and connectors around real, reproducible use cases.
+
+Priorities should be tracked through [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) and [Discussions](https://github.com/orgs/eosphoros-ai/discussions).
 
 ## Contribution
 
@@ -444,8 +526,8 @@ DB-GPT aims to help developers and enterprises build that future.
 ## Licence
 The MIT License (MIT)
 
-## DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+## Disclaimer
+- [Disclaimer](./DISCKAIMER.md)
 
 ## Citation
 If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">Paper</a> and <a href="https://arxiv.org/abs/2404.10209" target="_blank">Paper</a>
@@ -482,7 +564,7 @@ If you want to learn about using DB-GPT for Agent development, please cite the <
 Thanks to everyone who has contributed to DB-GPT! Your ideas, code, comments, and even sharing them at events and on social platforms can make DB-GPT better.
 We are working on building a community, if you have any ideas for building the community, feel free to contact us.  
 
-- [Github Issues](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️：For questions about using GB-DPT, see the CONTRIBUTING.  
+- [Github Issues](https://github.com/eosphoros-ai/DB-GPT/issues): For questions about using DB-GPT, see CONTRIBUTING.
 - [Github Discussions](https://github.com/orgs/eosphoros-ai/discussions) ⭐️：Share your experience or unique apps.  
 - [Twitter](https://x.com/DBGPT_AI) ⭐️：Please feel free to talk to us.  
 

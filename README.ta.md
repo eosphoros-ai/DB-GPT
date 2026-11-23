@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="லோகோ" ஸ்டைல்="செங்குத்து-சீரமைப்பு: நடு; உயரம்: 24px;" /> DB-GPT: AWEL மற்றும் முகவர்களுடன் AI நேட்டிவ் டேட்டா ஆப் டெவலப்மென்ட் கட்டமைப்பு
+# <img src="./assets/LOGO_SMALL.png" alt="DB-GPT Logo" height="24" /> DB-GPT: கட்டுப்படுத்தப்பட்ட தரவு முகவர்களுக்கான திறந்த மூலத் தளம்
 
 <p align="left">
 
@@ -27,7 +27,7 @@
 <img alt="திறந்த சிக்கல்கள்" src="https://img.shields.io/github/issues-raw/eosphoros-ai/db-gpt?style=flat&labelColor=66666&color=33333" />
 </a>
 <a href="https://x.com/DBGPT_AI">
-<img alt="X (முன்னர் ட்விட்டர்) "பின்தொடருங்கள்" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
+<img alt="X (முன்னர் ட்விட்டர்) பின்தொடருங்கள்" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
 </a>
 
 <a href="https://medium.com/@dbgpt0506">
@@ -43,13 +43,48 @@
 <img alt="GitHub Codespaces இல் திறக்கவும்" src="https://github.com/codespaces/badge.svg" />
 </a>
 </p>
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [हिन्दी](README.hi.md) · [മലയാളം](README.ma.md) · [தமிழ்](README.ta.md)
 
 [**ஆவணங்கள்**](http://docs.dbgpt.cn/docs/overview/) | [**எங்களைத் தொடர்பு கொள்ளவும்**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**சமூகம்**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
+
+> **தரவை இணைக்கவும், வணிக வரையறைகளுடன் கேள்விகளைத் தெளிவுபடுத்தவும், குறிப்பிட்ட கருவி மற்றும் இயக்கச் சூழல் எல்லைகளுக்குள் SQL மற்றும் குறியீட்டை இயக்கவும், மீண்டும் பயன்படுத்தக்கூடிய அறிக்கைகள் மற்றும் டாஷ்போர்டுகளை உருவாக்கவும்.**
+
+## DB-GPT செயல்படுவதைப் பாருங்கள்
+
+[![4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+
+[**▶ 4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+
+சுமார் 97 விநாடி ஆங்கில விளக்கம்: முக்கிய தொகுதிகள், டாஷ்போர்டு வார்ப்புருக்கள், உண்மையான /dashboard நிகழ்வு மற்றும் Preview பலகைக் காட்சி.
+
+<sub>காத்திருப்பு பகுதிகள் வேகப்படுத்தப்பட்டுள்ளன. வார்ப்புரு மாதிரிகளும் உண்மையான தரவு நிகழ்வும் தனித்தனியாக உள்ளன; சில அட்டைகளில் சீனச் சொற்கள் உள்ளன. எல்லா அம்சங்களும் இயக்கப்பட்டதாக இது பொருளல்ல.</sub>
+
+## DB-GPT என்றால் என்ன?
+
+Agents, Skills, AWEL, RAG மற்றும் பல மாதிரி மேலாண்மையை இணைத்து, கேள்வியிலிருந்து மீண்டும் பயன்படுத்தக்கூடிய பகுப்பாய்வு முடிவு வரையிலான பணிப்பாய்வை DB-GPT வழங்குகிறது.
+
+## முக்கிய தொகுதிகள்
+
+- **Datasources** — தரவுத்தள இணைப்புகள் மற்றும் தேடல் வரம்பு.
+- **Semantic Center** — மெட்டாடேட்டா, வணிக வரையறைகள், வெளியிடப்பட்ட அளவீட்டு பதிப்புகள்.
+- **Plugins / Skills** — வினவல், பகுப்பாய்வு மற்றும் SQL மேம்பாட்டிற்கான மறுபயன்பாட்டு முறைகள்.
+- **Workflow** — தொடர்ச்சியான மற்றும் இணையான Agent படிகளின் அமைப்பு.
+- **Dashboards / Reports** — வார்ப்புருக்கள், திருத்தக்கூடிய பலகைகள், வினவல் சார்ந்த முடிவுகள்.
+- **Knowledge / Connectors / Management** — ஆவணச் சூழல், கட்டமைக்கப்பட்ட MCP கருவிகள், மாதிரிகள் மற்றும் இயக்கச் சூழல்.
+
+## தரவு பணிப்பாய்வு
+
+**இணைப்பு → வரையறை → திட்டம் → இயக்கம் → மதிப்பாய்வு → மறுபயன்பாடு**
+
+## கட்டுப்பாடு மற்றும் இயக்க எல்லைகள்
+
+கிடைக்கும் திறன்கள் மாதிரி, தரவு மூலம், கட்டமைப்பு மற்றும் இயக்கச் சூழலைச் சார்ந்தவை. குறைந்தபட்ச அனுமதியுள்ள சான்றுகளையும் பொருத்தமான தனிமைப்படுத்தலையும் பயன்படுத்தி முக்கிய முடிவுகளை மதிப்பாய்வு செய்யவும். உள்ளூர் இயக்கம் கண்டெய்னர் தனிமைப்படுத்தலுக்கு இணையானதல்ல; முழுமையான பாதுகாப்பு உறுதியும் அல்ல.
+
+<details>
+<summary>பழைய கட்டமைப்பு மற்றும் மாதிரி குறிப்புகள்</summary>
+
 ## DB-GPT என்றால் என்ன?
 
 🤖 **DB-GPT என்பது AWEL (Agentic Workflow Expression Language) மற்றும் முகவர்கள்** ஆகியவற்றைக் கொண்ட ஒரு திறந்த மூல AI நேட்டிவ் டேட்டா ஆப் டெவலப்மென்ட் கட்டமைப்பாகும். 
@@ -154,6 +189,7 @@ DB-GPT இன் கட்டமைப்பு பின்வரும் ப�
 பாதுகாப்பான, மிகவும் நம்பகமான பகுப்பாய்வுக்காகத் தனிமைப்படுத்தப்பட்ட சூழலில் குறியீடு மற்றும் கருவிகளை இயக்குங்கள்.
 ![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
+</details>
 
 ## Installation / Quick Start 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -175,7 +211,10 @@ DB-GPT இன் கட்டமைப்பு பின்வரும் ப�
   - [Finetune](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
   - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
 
-  ## அம்சங்கள்
+<details>
+<summary>கூடுதல் அம்சக் குறிப்புகள்</summary>
+
+## அம்சங்கள்
 
 தற்போது, ​​எங்கள் தற்போதைய திறன்களை வெளிப்படுத்த பல முக்கிய அம்சங்களை அறிமுகப்படுத்தியுள்ளோம்:
 - **தனியார் டொமைன் கேள்வி பதில் & தரவு செயலாக்கம்**
@@ -316,6 +355,7 @@ LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu மற்றும் ப
 - ஆதரவு தரவுமூலங்கள்
 - [தரவுமூலங்கள்](http://docs.dbgpt.cn/docs/modules/connections)
 
+</details>
 
 ## பங்களிப்பு
 
@@ -367,7 +407,7 @@ DB-GPT இன் ஒட்டுமொத்த கட்டமைப்பை�
 DB-GPT-க்கு பங்களித்த அனைவருக்கும் நன்றி! உங்கள் யோசனைகள், குறியீடு, கருத்துகள் மற்றும் நிகழ்வுகளிலும் சமூக தளங்களிலும் அவற்றைப் பகிர்வது கூட DB-GPT-ஐ மேம்படுத்தும்.
 நாங்கள் ஒரு சமூகத்தை உருவாக்குவதில் பணியாற்றி வருகிறோம், சமூகத்தை உருவாக்குவதற்கான ஏதேனும் யோசனைகள் உங்களிடம் இருந்தால், எங்களைத் தொடர்பு கொள்ள தயங்க வேண்டாம்.
 
-- [Github சிக்கல்கள்](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: GB-DPT ஐப் பயன்படுத்துவது பற்றிய கேள்விகளுக்கு, பங்களிப்பைப் பார்க்கவும். 
+- [Github சிக்கல்கள்](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: DB-GPT ஐப் பயன்படுத்துவது பற்றிய கேள்விகளுக்கு, பங்களிப்பைப் பார்க்கவும்.
 - [Github விவாதங்கள்](https://github.com/orgs/eosphoros-ai/discussions) ⭐️: உங்கள் அனுபவத்தை அல்லது தனித்துவமான பயன்பாடுகளைப் பகிரவும். 
 - [Twitter](https://x.com/DBGPT_AI) ⭐️: தயவுசெய்து எங்களுடன் பேச தயங்க வேண்டாம். 
 

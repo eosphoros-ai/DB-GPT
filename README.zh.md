@@ -1,4 +1,4 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT：开源 Agentic AI 数据分析智能助手
+# <img src="./assets/LOGO_SMALL.png" alt="DB-GPT Logo" height="24" /> DB-GPT: 安全受控的开源数据智能体平台
 
 <p align="left">
   <img src="./assets/dbgpt_vision.png" width="100%" />
@@ -42,80 +42,146 @@
     </a>
   </p>
 
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+[English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [हिन्दी](README.hi.md) · [മലയാളം](README.ma.md) · [தமிழ்](README.ta.md)
 
 [**文档**](http://docs.dbgpt.cn/docs/overview/) | [**联系团队**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
 
-> **一个开源的 AI 数据分析智能助手：连接你的数据，自主编写 SQL 与代码，在沙箱环境中运行 skills，把分析转化为报告、洞察与行动。**
+> **连接数据、建立业务上下文，在明确的工具与运行边界内执行 SQL 和代码，交付可复用的分析报告与看板。**
+
+## 看 DB-GPT 真正跑起来
+
+[![观看 4K 产品演示](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+
+[**▶ 观看 4K 产品演示**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+
+约 97 秒英文产品演示：数据源、语义中心、专家与技能、工作流、看板模板，以及实际进入 Preview 完整看板视角的 /dashboard 案例。
+
+<sub>等待区间经过加速剪辑。模板示例与真实数据案例分别展示，部分内置封面仍保留中文；模块概览不代表所有功能均已执行。</sub>
+
+[为什么选择 DB-GPT？](#为什么选择-db-gpt) · [快速开始](#快速开始) · [核心能力](#核心能力) · [愿景与路线](#愿景)
+
+<details>
+<summary>展开查看界面截图</summary>
+
+## 场景一览
+
+<table>
+<tr>
+<td width="100%">
+<img src="assets/showcase-home.png" alt="DB-GPT 首页">
+<br>
+<sub><b>一切从这里开始。</b>自然语言提问、上传 CSV，或直接选择智能取数、智能数据分析、SQL 优化、元数据与架构、财报分析等智能体，用你自己选的模型跑。</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-dashboard-view.png" alt="DB-GPT 看板预览">
+<br>
+<sub><b>看板是产物，不是截图。</b>生成后的看板保留 KPI、趋势、排行与明细表，预览态布局锁定、筛选联动，每个组件按需重新查询。</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-datasources.png" alt="DB-GPT 数据源">
+<br>
+<sub><b>从可信连接开始。</b>连接、取数范围与 数据库目录集中管理，查询、分析与看板都基于同一份数据源目录。</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-semantic.png" alt="DB-GPT 语义中心">
+<br>
+<sub><b>先定口径，再写 SQL。</b>指标公式、已发布版本与审核状态作为权威上下文被读取，而不是每个问题重新猜测。</sub>
+</td>
+</tr>
+<tr>
+<td width="100%">
+<img src="assets/showcase-suites.png" alt="DB-GPT 专家套件">
+<br>
+<sub><b>专业能力可安装、可复用。</b>5 个官方专家插件各自带技能与方法：数据分析 6 个、智能取数 5 个，另有财报分析、元数据与架构、SQL 优化，按任务启用并绑定数据源与知识库上下文。</sub>
+</td>
+</tr>
+</table>
+
+
+</details>
 
 ## DB-GPT 是什么？
 
-DB-GPT 是一个开源的 **Agentic AI 数据分析智能助手**，面向下一代 **AI + Data** 产品形态。
+**DB-GPT 是一个安全受控的开源数据智能体平台：连接数据、建立业务上下文，在明确的工具与执行边界内运行 SQL 与代码，并交付可复用的分析结果。**
 
-它可以帮助用户和团队：
-- 连接 **数据库、CSV / Excel、数仓、知识库与文档**
-- 使用自然语言提问，并让 AI **自主编写 SQL**
-- 执行 **Python 与代码驱动的数据分析流程**
-- 加载并执行可复用的 **skills**
-- 自动生成 **图表、Dashboard、HTML 报告和分析总结**
-- 在 **沙箱环境** 中安全执行分析任务
+它既提供可直接使用的智能助手，也提供构建 AI 原生数据应用的基础设施：Agents、AWEL 工作流、可复用 Skills、RAG、多模型管理与可配置的执行环境。
 
-DB-GPT 不只是一个助手界面，它同时也是一个平台，用于构建 **AI Native 数据智能体、工作流与应用**，底层支持 agents、AWEL、RAG 与多模型能力。
+**让数据不止于回答，让智能体基于业务上下文、可复用的方法和可追溯的结果完成数据工作。**
+
+### 为什么是 Data Agent，而不只是 Text-to-SQL？
+
+一个有用的答案，需要的不只是正确的 SQL，还包括正确的数据源、经过确认的指标口径、适合的分析方法，以及能够解释结果的证据。DB-GPT 将这些能力组织进同一工作流，而不是让用户手动衔接多个工具。
 
 ## 为什么选择 DB-GPT？
 
-### 1. Agentic 数据分析
-它不只是回答问题，而是会进行任务规划、步骤拆解、工具调用和迭代式分析。
-![csv-data-analysis_skill](https://github.com/user-attachments/assets/de0073f6-6b69-42f1-9fd2-5b759ca88ed8)
+### 1. 先理解业务，再生成 SQL
 
-### 2. 自主 SQL + 自主代码执行
-自动编写 SQL 和代码，用于查询数据、处理数据、计算指标并生成结果。
+**语义中心（Semantic Center）**围绕数据库连接管理元数据、业务定义、指标口径、查询样例、关联关系与规则。已发布的指标快照允许智能体读取明确的定义与版本，而不是将可变的草稿当成权威口径。
+
+### 2. SQL、代码与检索协同执行
+
+智能体可以规划步骤、查询数据库、执行代码分析并检索知识。对于需要重复执行的确定性流程，可以使用 AWEL 显式编排，而不必全部依赖开放式规划。
+
 ![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
 ![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
 
-### 3. 多数据源分析
-同时处理结构化与非结构化数据，包括数据库、表格文件、文档和知识库。
-![datasource](./assets/datasources.png)
+### 3. 用 Skills 与套件沉淀分析经验
 
-### 4. Skills 驱动的可扩展能力
-将领域知识、分析方法和执行流程沉淀为 skills，实现复用与扩展。
+将领域指令、脚本和流程封装为 Skills，通过套件组织任务能力与允许使用的工具，复用分析方法，而不是为每个助手从零搭建。
 
 ![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
 
-### 5. 沙箱安全执行
-在隔离环境中运行代码和工具，让分析过程更安全、更可控。
+### 4. 让结果走出对话框
+
+生成分析摘要、图表、HTML 报告和可编辑 Dashboard。独立财报分析流程支持单财报分析与多财报对比，具体可用范围取决于配置和数据库结构前置条件。
+
+![csv-data-analysis_skill](https://github.com/user-attachments/assets/de0073f6-6b69-42f1-9fd2-5b759ca88ed8)
+
+### 5. 自由选择模型与执行方式
+
+选择不同模型服务，以及本地或容器执行环境。隔离程度取决于所选运行时与部署配置；本地执行不等同于容器隔离。
+
 ![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
 
-## 你可以用 DB-GPT 做什么？
+## 你可以构建什么？
 
-- **分析 CSV / Excel 文件** 并生成可视化报告
-- **连接数据库** 自动生成数据库画像与分析报告
-- 用自然语言提问，让 AI **自动写 SQL**
-- 进行 **财报深度分析**，生成图表、分析结论与总结
-- 创建和复用 **SQL 分析技能**
-- 将 **代码、SQL、检索和工具调用** 组合成完整的 agentic 分析流程
-- 构建面向团队或产品的下一代 **AI + Data 智能助手**
+- **数据库分析助手**：先读取已发布的业务定义与指标，再生成 SQL。
+- **文件分析助手**：组合数据检查、代码分析、图表和叙事报告。
+- **可复用分析应用**：基于 Skills、套件、Agents 和 AWEL 构建业务流程。
+- **可编辑 Dashboard**：管理草稿、发布快照、分享与刷新流程。
+- **财报分析工作流**：单财报分析，以及配置完成后的多财报对比。
+- **周期性数据任务**：定时重放分析对话，或刷新 Dashboard。
+
+这些能力已有当前分支实现。实际可用性取决于模型、连接器、运行时、功能配置和所需数据库迁移，不能仅凭界面入口判断。
 
 ## 产品工作流
 
-### 数据探索
-连接文件、数据库和知识库，在统一入口开始分析任务。
+**连接 → 理解 → 规划 → 执行 → 复核 → 复用**
 
-### 规划与执行
-让 AI 进行任务推理、生成 SQL / 代码，并逐步完成分析。
-
-### 使用 Skills
-加载可复用的业务分析技能与领域工作流。
-
-### 生成报告
-自动输出图表、Dashboard、HTML 报告和决策结论。
-
+1. **连接**数据库、文件与知识库。
+2. **理解**元数据、已发布业务定义与指标版本。
+3. **规划**智能体或 AWEL 流程，选择相关 Skills 和工具。
+4. **执行**查询、代码分析与检索，使用已配置的运行环境。
+5. **复核**结果、分析产物与语义来源。
+6. **复用**为应用、Dashboard 或定时任务。
 
 ## 快速开始
+
+> **测试功能分支时**，请复用当前仓库和对应配置。重新克隆 `main` 或安装 PyPI 发布版，不保证包含本分支能力。
+>
+> 已安装依赖时，在仓库根目录启动后端：
+> ```bash
+> .venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
+> ```
+> 前端开发在 `web/` 执行 `npm run dev -- --hostname 127.0.0.1 --port 3000`，默认将 API 请求代理到 `127.0.0.1:5670`。使用智能体分析前需配置模型服务；界面启动不等于推理服务可用。
 
 你可以通过一键安装脚本在几分钟内启动 DB-GPT（macOS / Linux）：
 
@@ -243,42 +309,45 @@ dbgpt start
 
 ## 核心能力
 
-### Agentic 数据分析
-- 任务规划
-- 分步执行
-- 工具调用
-- 迭代式推理
+### 语义中心：让业务含义成为可维护的资产
 
-### SQL + 代码执行
-- 自然语言转 SQL
-- Python 数据分析与处理
-- 指标计算
-- 图表生成
+- **元数据目录**：同步表与字段快照、类型、注释、键标记和枚举值。
+- **业务定义**：生成候选注释，维护同义词和业务含义，审核后发布。
+- **指标生命周期**：管理公式、维度与依赖，发布时保存版本快照和变更说明。
+- **智能体读取**：工具绑定当前数据库连接，读取元数据、已发布业务定义与指标版本；缺失定义时不会自动回退到草稿。
+- **来源追溯**：指标返回版本引用，界面支持定位被引用的已发布版本。
+- **上下文管理**：统一查看查询样例、关联关系、规则与覆盖率。
 
-### 多数据源访问
-- 关系型数据库
-- CSV / Excel
-- 文档
-- 知识库
-- 多源混合分析
+**当前边界**：权威读取路径基于结构化记录与关键词匹配；托管向量索引适配器尚未接线，目前回退为内存 sink。目录中的白名单与敏感性标记属于描述性元数据，不等同于行列级权限强制执行。
 
-### Skills 与 Agents
-- 可复用 skills
-- 领域分析工作流
-- agent 编排
-- 可定制执行流程
+实现入口：[语义中心](packages/dbgpt-serve/src/dbgpt_serve/semantic) · [智能体工具](packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/semantic_tools.py)。
 
-### 报告与决策支持
-- 数据库画像报告
-- 财报分析报告
-- 可视化报告与 dashboard
-- 分析总结与业务洞察
+### Agents、Skills 与 AWEL
 
-### 安全执行环境
-- 沙箱代码执行
-- 可控工具调用
-- 可复现的分析产物与 artifacts
+探索性任务使用智能体规划与工具调用，可重复应用使用显式 AWEL 流程。Skills 支持加载指令与执行关联脚本，套件组织任务能力与工具白名单。执行行为取决于选择的智能体运行框架和运行时。
 
+### 数据访问与知识检索
+
+组合关系型数据库、CSV/Excel、文档与知识库，使用 RAG 和 GraphRAG 构建知识增强应用。结构化语义读取与普通知识库检索是不同的能力路径。
+
+### SQL、代码与执行环境
+
+生成 SQL 与代码用于查询、转换、指标计算和可视化。沙箱包包含本地及容器运行时实现；部署时需配置运行依赖、文件访问、资源边界与凭证。
+
+### 报告、Dashboard 与财报分析
+
+生成报告与可视化产物。Dashboard 实现包括智能体计划到草稿的转换、草稿编辑、发布快照、分享和刷新任务。财报分析包含单财报流程，以及支持抽取状态保存与恢复的多财报对比；对比功能需要按实现要求显式迁移数据库结构。
+
+### 定时任务
+
+周期性重放分析对话或刷新 Dashboard，并管理任务与执行历史。自动运行要求调度器处于运行状态，且任务所需模型、文件与数据源持续可用；不等同于托管服务的常驻可用性保证。
+
+### 模型生态
+
+提供多模型管理与私有化部署选项。模型服务和微调目标以具体版本为准，请查阅文档与 DB-GPT-Hub，不将历史模型清单视为兼容性保证。
+
+<details>
+<summary>模型与微调参考清单</summary>
 
 #### DeepWiki
 - [DB-GPT](https://deepwiki.com/eosphoros-ai/DB-GPT)
@@ -426,28 +495,48 @@ dbgpt start
     - [x] [Google·Bard](https://bard.google.com/)
     - [x] [Google·Gemini](https://makersuite.google.com/app/apikey)
 
+</details>
+
 ### 隐私安全
 
-通过私有化大模型、代理脱敏和沙箱执行等机制保障数据隐私与执行安全。
+私有模型部署、脱敏与可配置执行环境有助于降低风险，但不构成完整安全保证。应配置最小权限数据库凭证、合适的隔离运行时与密钥保护，并独立复核高影响结果。语义发布属于内容生命周期管理，不能替代部署层面的身份与访问控制。
 
 ### 数据源
 - [支持数据源](https://www.yuque.com/eosphoros/dbgpt-docs/rc4r27ybmdwg9472)
 
 ## 愿景
 
-我们相信，未来的数据产品不应止于 Dashboard。
+**让可信的数据工作成为开放能力。**
 
-下一代 **AI + Data** 产品将是：
-- **agentic**
-- **多数据源**
-- **skill-driven**
-- **sandboxed**
-- 能自主编写 **SQL 和代码**
-- 能把分析转化为 **报告、结论与行动**
+我们相信，下一代数据产品将超越 Dashboard 与一次性的问答，通过业务上下文、可复用的分析经验和可控执行，帮助人与智能体共同完成数据任务，而不只是生成查询。
 
-DB-GPT 希望帮助开发者与企业共同构建这样的未来。
+DB-GPT 希望成为这一未来的开放、可组合基础：为用户提供实用助手，为开发者提供可扩展平台，让团队基于自己的数据和自主选择的模型构建应用。
 
+我们坚持：**先理解上下文，再生成内容；先读取已发布定义，再作假设；先有证据，再得结论；有实际影响的动作，保留人的控制。**
 
+## Roadmap
+
+> 以下为面向社区讨论的路线建议，不是已批准的交付日期或已上线功能声明。语义中心、Skills、定时与 Dashboard 的已有能力见上文；路线重点是深化这些能力。
+
+### 近期：夯实已有基础
+
+- 完成语义中心的持久化向量索引接线，在保留已发布指标读取边界的前提下改进语义发现。
+- 扩展任务级评测，覆盖 SQL、代码分析、语义一致性与报告证据。
+- 改善连接器配置、执行诊断与环境检查。
+
+### 下一阶段：让分析经验可迁移、可维护
+
+- 深化版本化 Skills、工作流模板与业务上下文导入导出。
+- 扩展分析产物中的指标来源追溯，强化结构变更处理。
+- 探索包含 MCP 在内的标准工具互操作，并明确权限边界。
+
+### 长期：持续、可监督的数据工作
+
+- 在已有定时能力上扩展事件触发、任务恢复与运行可见性。
+- 探索专业智能体的并行执行，明确资源与授权边界。
+- 围绕真实、可复现的场景扩展应用与连接器生态。
+
+具体优先级应通过 [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) 与 [Discussions](https://github.com/orgs/eosphoros-ai/discussions) 跟踪。
 
 ## Image
 
