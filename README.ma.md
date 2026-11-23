@@ -2,7 +2,7 @@
   <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<h1 align="center">DB-GPT: Open-Source Platform for Controlled Data Agents</h1>
+<h1 align="center">DB-GPT: Open-Source Product for Controlled Data Agents</h1>
 
 <p align="center">
   From a data question to verifiable queries, analytical reports, and reusable dashboards.

@@ -2,7 +2,7 @@
   <img src="assets/readme-zh/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<h1 align="center">DB-GPT：安全受控的开源数据智能体平台</h1>
+<h1 align="center">DB-GPT：安全受控的开源数据智能体产品</h1>
 
 <p align="center">
   从一个数据问题，到可复核的 SQL、分析报告和可复用看板。
