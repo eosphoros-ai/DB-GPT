@@ -52,9 +52,9 @@
 
 ## Watch DB-GPT in action
 
-[![Watch the 4K product film](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![Watch the 4K product film](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
 
-[**▶ Watch the 4K product film**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ Watch the 4K product film**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 
 A 97-second English product tour: data sources, semantics, experts and skills, workflow, dashboard templates, and a real /dashboard case ending in Preview board view.
 

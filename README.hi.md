@@ -52,9 +52,9 @@
 
 ## DB-GPT को काम करते देखें
 
-[![4K उत्पाद डेमो देखें](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![4K उत्पाद डेमो देखें](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
 
-[**▶ 4K उत्पाद डेमो देखें**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ 4K उत्पाद डेमो देखें**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 
 लगभग 97 सेकंड का अंग्रेज़ी डेमो: मुख्य मॉड्यूल, डैशबोर्ड टेम्प्लेट, वास्तविक /dashboard केस और Preview बोर्ड दृश्य।
 

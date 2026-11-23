@@ -53,9 +53,9 @@
 
 ## DB-GPT の実際の動作を見る
 
-[![4K 製品デモを見る](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![4K 製品デモを見る](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
 
-[**▶ 4K 製品デモを見る**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ 4K 製品デモを見る**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 
 約97秒の英語デモ。主要モジュール、ダッシュボードのテンプレート、実際の /dashboard ケースと Preview への切り替えを紹介します。
 

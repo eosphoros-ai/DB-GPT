@@ -53,9 +53,9 @@
 
 ## DB-GPT செயல்படுவதைப் பாருங்கள்
 
-[![4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
 
-[**▶ 4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ 4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 
 சுமார் 97 விநாடி ஆங்கில விளக்கம்: முக்கிய தொகுதிகள், டாஷ்போர்டு வார்ப்புருக்கள், உண்மையான /dashboard நிகழ்வு மற்றும் Preview பலகைக் காட்சி.
 

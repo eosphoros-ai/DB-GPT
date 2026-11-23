@@ -54,9 +54,9 @@
 
 ## DB-GPT പ്രവർത്തിക്കുന്നത് കാണുക
 
-[![4K ഉൽപ്പന്ന ഡെമോ കാണുക](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![4K ഉൽപ്പന്ന ഡെമോ കാണുക](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
 
-[**▶ 4K ഉൽപ്പന്ന ഡെമോ കാണുക**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ 4K ഉൽപ്പന്ന ഡെമോ കാണുക**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 
 ഏകദേശം 97 സെക്കൻഡുള്ള ഇംഗ്ലീഷ് ഡെമോ: പ്രധാന മൊഡ്യൂളുകൾ, ഡാഷ്ബോർഡ് ടെംപ്ലേറ്റുകൾ, യഥാർത്ഥ /dashboard കേസ്, Preview ബോർഡ് കാഴ്ച.
 

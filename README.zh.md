@@ -52,9 +52,9 @@
 
 ## 看 DB-GPT 真正跑起来
 
-[![观看 4K 产品演示](docs/static/img/db-gpt-product-film-poster.jpg)](docs/static/video/db-gpt-product-film-4k.mp4)
+[![观看 4K 产品演示](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.bilibili.com/video/BV1zPyJz7EdU/)
 
-[**▶ 观看 4K 产品演示**](docs/static/video/db-gpt-product-film-4k.mp4) · 3840 × 2160 · 30 fps
+[**▶ 观看 4K 产品演示**](https://www.bilibili.com/video/BV1zPyJz7EdU/) · 哔哩哔哩 · 3840 × 2160 · 30 fps
 
 约 97 秒英文产品演示：数据源、语义中心、专家与技能、工作流、看板模板，以及实际进入 Preview 完整看板视角的 /dashboard 案例。
 
