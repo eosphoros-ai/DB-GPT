@@ -52,7 +52,9 @@
 
 ## Watch DB-GPT in action
 
-[![Watch the 4K product film](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
+
+*Play directly above · 1080p · 97 seconds · sound included.*
 
 [**▶ Watch the 4K product film**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 

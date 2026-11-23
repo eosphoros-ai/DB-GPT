@@ -53,7 +53,9 @@
 
 ## DB-GPT செயல்படுவதைப் பாருங்கள்
 
-[![4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
+
+*மேலே நேரடியாக இயக்கவும் · 1080p · சுமார் 97 விநாடிகள் · ஒலியுடன்.*
 
 [**▶ 4K தயாரிப்பு விளக்கத்தைப் பார்க்கவும்**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 

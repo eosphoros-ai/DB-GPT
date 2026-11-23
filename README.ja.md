@@ -53,7 +53,9 @@
 
 ## DB-GPT の実際の動作を見る
 
-[![4K 製品デモを見る](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
+
+*上のプレーヤーで直接再生 · 1080p · 約97秒 · 音声付き。*
 
 [**▶ 4K 製品デモを見る**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 

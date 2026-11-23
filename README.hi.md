@@ -52,7 +52,9 @@
 
 ## DB-GPT को काम करते देखें
 
-[![4K उत्पाद डेमो देखें](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.youtube.com/watch?v=tZeYgy8nuhQ)
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
+
+*ऊपर सीधे चलाएँ · 1080p · लगभग 97 सेकंड · ध्वनि सहित।*
 
 [**▶ 4K उत्पाद डेमो देखें**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · YouTube · 3840 × 2160 · 30 fps
 

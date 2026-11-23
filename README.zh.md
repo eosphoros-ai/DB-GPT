@@ -52,7 +52,9 @@
 
 ## 看 DB-GPT 真正跑起来
 
-[![观看 4K 产品演示](docs/static/img/db-gpt-product-film-poster.jpg)](https://www.bilibili.com/video/BV1zPyJz7EdU/)
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
+
+*点击上方播放器即可直接观看 · 1080p · 约97秒 · 含声音。*
 
 [**▶ 观看 4K 产品演示**](https://www.bilibili.com/video/BV1zPyJz7EdU/) · 哔哩哔哩 · 3840 × 2160 · 30 fps
 
