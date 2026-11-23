@@ -133,7 +133,7 @@ class GeminiLLMClient(ProxyLLMClient):
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
-        model_alias: Optional[str] = "gemini-2.0-flash",
+        model_alias: Optional[str] = GEMINI_DEFAULT_MODEL,
         context_length: Optional[int] = 8192,
         executor: Optional[Executor] = None,
     ):
@@ -170,7 +170,7 @@ class GeminiLLMClient(ProxyLLMClient):
         else:
             genai.configure(api_key=self._api_key)
         super().__init__(
-            model_names=[model, model_alias],
+            model_names=list(dict.fromkeys([model, model_alias])),
             context_length=context_length,
             executor=executor,
         )
