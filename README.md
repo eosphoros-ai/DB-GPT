@@ -32,14 +32,6 @@ DB-GPT goes beyond translating natural language into SQL. It brings **data conne
 
 https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-*Play directly in the GitHub README. Full 97-second demo, 1080p, with sound.*
-
-[**Watch the 4K version on YouTube**](https://www.youtube.com/watch?v=tZeYgy8nuhQ) · 3840 × 2160 · 30 fps · English demo
-
-The film covers the product modules, dashboard templates, and a real Walmart `/dashboard` case: load skills, inspect fields and SQL, confirm the plan, generate the board, and actually switch to **Preview**.
-
-<sub>Waiting intervals are accelerated. Template illustrations and the query-backed case are shown separately; some built-in template covers retain Chinese labels. Showing a module does not mean every connector, retrieval path, or scheduled task was executed.</sub>
-
 ## Why DB-GPT?
 
 ### Business context before queries

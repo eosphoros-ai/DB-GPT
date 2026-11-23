@@ -32,14 +32,6 @@ DB-GPT 不只是将一句话翻译成 SQL。它把**数据连接、业务语义�
 
 https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-*点击上方播放器即可在 GitHub README 内直接观看。完整约 97 秒，1080p，含声音。*
-
-[**在 B站观看 4K 完整版**](https://www.bilibili.com/video/BV1zPyJz7EdU/) · 3840 × 2160 · 30 fps · 英文演示
-
-视频展示主要模块、Dashboard 模板，以及真实 Walmart `/dashboard` 案例：读取技能、检查字段与 SQL、确认计划、生成看板，最后实际进入 **Preview 看板视角**。
-
-<sub>等待区间经过加速剪辑。模板展示与真实查询案例分别呈现，部分内置封面仍保留中文。模块入口的展示不代表所有连接器、知识检索与定时任务均已在本次演示中运行。</sub>
-
 ## 为什么选择 DB-GPT？
 
 ### 先理解业务，再查询数据
