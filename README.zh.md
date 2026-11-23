@@ -95,7 +95,7 @@ https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
 ![完整数据库目录：展示全部27个类型并保留环境可用状态](assets/readme-en/datasource-catalog-full.png)
 
-上图展示完整目录，而不只是已添加的连接。截图中 **18 个类型可用**：TuGraph、Neo4j、Spark、SQLite、ClickHouse、Apache Doris、DuckDB、GaussDB、Hive、MaxCompute、MSSQL、MySQL、OceanBase、Oracle、PostgreSQL、StarRocks、Vertica、openGauss。另有 9 个目录项以灰色标为该环境不可用：Access、MongoDB、DB2、HBase、Redis、Cassandra、Couchbase、Omc、Space。实际可用范围可能随部署变化。
+支持 MySQL、PostgreSQL、SQLite、DuckDB、ClickHouse、Apache Doris、StarRocks、Oracle、MSSQL、Neo4j、TuGraph 等数据源。
 
 - 查看和配置数据库连接。
 - 选择任务使用的数据源，结合元数据确定查询范围。

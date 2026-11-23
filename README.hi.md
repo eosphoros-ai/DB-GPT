@@ -95,7 +95,7 @@ Manage database connections and select the source for each task. Queries, analys
 
 ![Full English database catalog: all 27 types, with environment availability preserved](assets/readme-en/datasource-catalog-full.png)
 
-The full catalog is shown above, not just saved connections. The capture marks **18 types as available**: TuGraph, Neo4j, Spark, SQLite, ClickHouse, Apache Doris, DuckDB, GaussDB, Hive, MaxCompute, MSSQL, MySQL, OceanBase, Oracle, PostgreSQL, StarRocks, Vertica, and openGauss. The other 9 catalog entries—Access, MongoDB, DB2, HBase, Redis, Cassandra, Couchbase, Omc, and Space—are gray and marked unavailable in that environment. Availability may differ by deployment.
+Supports data sources including MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j, and TuGraph.
 
 - Configure and inspect database connections.
 - Bind a task to the relevant source and confirm its scope.
