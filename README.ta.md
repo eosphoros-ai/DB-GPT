@@ -1,374 +1,296 @@
-# <img src="./assets/LOGO_SMALL.png" alt="லோகோ" ஸ்டைல்="செங்குத்து-சீரமைப்பு: நடு; உயரம்: 24px;" /> DB-GPT: AWEL மற்றும் முகவர்களுடன் AI நேட்டிவ் டேட்டா ஆப் டெவலப்மென்ட் கட்டமைப்பு
-
-<p align="left">
-
-<img src="./assets/dbgpt_vision.png" width="100%" />
+<p align="center">
+  <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<div align="center">
-<p>
-
-<a href="https://github.com/eosphoros-ai/DB-GPT">
-<img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
-</a>
-<a href="https://github.com/eosphoros-ai/DB-GPT">
-<img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
-</a>
-<a href="http://dbgpt.cn/">
-<img alt="அதிகாரப்பூர்வ வலைத்தளம்" src="https://img.shields.io/badge/Official%20website-DB--GPT-blue?style=flat&labelColor=3366CC" />
-</a>
-<a href="https://opensource.org/licenses/MIT">
-<img alt="உரிமம்: MIT" src="https://img.shields.io/github/license/eosphoros-ai/db-gpt?style=flat&labelColor=009966&color=009933" />
-</a>
-<a href="https://github.com/eosphoros-ai/DB-GPT/releases">
-<img alt="வெளியீட்டு குறிப்புகள்" src="https://img.shields.io/github/v/release/eosphoros-ai/db-gpt?style=flat&labelColor=FF9933&color=FF6633" />
-</a>
-<a href="https://github.com/eosphoros-ai/DB-GPT/issues">
-<img alt="திறந்த சிக்கல்கள்" src="https://img.shields.io/github/issues-raw/eosphoros-ai/db-gpt?style=flat&labelColor=66666&color=33333" />
-</a>
-<a href="https://x.com/DBGPT_AI">
-<img alt="X (முன்னர் ட்விட்டர்) "பின்தொடருங்கள்" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
-</a>
-
-<a href="https://medium.com/@dbgpt0506">
-<img alt="நடுத்தர பின்தொடருங்கள்" src="https://badgen.net/badge/Medium/DB-GPT/333333?icon=medium&labelColor=66666" />
-</a>
-<a href="https://space.bilibili.com/3537113070963392">
-<img alt="பிலிபிலி ஸ்பேஸ்" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Frelation%2Fstat%3Fvmid%3D3537113070963392&query=data.follower&style=flat&logo=bilibili&logoColor=white&label=Bilibili%20Fans&labelColor=F37697&color=6495ED" />
-</a>
-<a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
-<img alt="Slack" src="https://img.shields.io/badge/Slack-Join%20us-5d6b98?style=flat&logo=slack&labelColor=7d89b0" />
-</a>
-<a href="https://codespaces.new/eosphoros-ai/DB-GPT">
-<img alt="GitHub Codespaces இல் திறக்கவும்" src="https://github.com/codespaces/badge.svg" />
-</a>
-</p>
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
-
-[**ஆவணங்கள்**](http://docs.dbgpt.cn/docs/overview/) | [**எங்களைத் தொடர்பு கொள்ளவும்**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**சமூகம்**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
-
-</div>
-## DB-GPT என்றால் என்ன?
-
-🤖 **DB-GPT என்பது AWEL (Agentic Workflow Expression Language) மற்றும் முகவர்கள்** ஆகியவற்றைக் கொண்ட ஒரு திறந்த மூல AI நேட்டிவ் டேட்டா ஆப் டெவலப்மென்ட் கட்டமைப்பாகும். 
-
-மல்டி-மாடல் மேனேஜ்மென்ட் (SMMF), Text2SQL எஃபெக்ட் ஆப்டிமைசேஷன், RAG ஃப்ரேம்வொர்க் மற்றும் ஆப்டிமைசேஷன், மல்டி-ஏஜென்ட்ஸ் ஃப்ரேம்வொர்க் ஒத்துழைப்பு, AWEL (ஏஜென்ட் வொர்க்ஃப்ளோ ஆர்கெஸ்ட்ரேஷன்) போன்ற பல தொழில்நுட்ப திறன்களை மேம்படுத்துவதன் மூலம், பெரிய மாடல்களின் துறையில் உள்கட்டமைப்பை உருவாக்குவதே இதன் நோக்கமாகும். இது டேட்டாவுடன் கூடிய பெரிய மாடல் பயன்பாடுகளை எளிமையாகவும் வசதியாகவும் ஆக்குகிறது.
-
-🚀 **டேட்டா 3.0 சகாப்தத்தில், மாதிரிகள் மற்றும் தரவுத்தளங்களின் அடிப்படையில், நிறுவனங்கள் மற்றும் டெவலப்பர்கள் குறைந்த குறியீட்டைக் கொண்டு தங்கள் சொந்த தனிப்பயனாக்கப்பட்ட பயன்பாடுகளை உருவாக்க முடியும்.**
-### அறிமுகம் 
-
-DB-GPT இன் கட்டமைப்பு பின்வரும் படத்தில் காட்டப்பட்டுள்ளது:
+<h1 align="center">DB-GPT: கட்டுப்படுத்தப்பட்ட தரவு முகவர்களுக்கான திறந்த மூலத் தயாரிப்பு</h1>
 
 <p align="center">
-<img src="./assets/dbgpt.png" width="800" />
+  தரவு குறித்த கேள்வியிலிருந்து சரிபார்க்கக்கூடிய வினவல்கள், பகுப்பாய்வு அறிக்கைகள் மற்றும் மீண்டும் பயன்படுத்தக்கூடிய டாஷ்போர்டுகள் வரை.
 </p>
 
-முக்கிய திறன்களில் பின்வரும் பகுதிகள் அடங்கும்:
+<p align="center">
+  <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
+  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="சமீபத்திய வெளியீடு" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT உரிமம்" /></a>
+</p>
 
-- **RAG (மீட்டெடுப்பு ஆக்மென்டட் ஜெனரேஷன்)**: RAG தற்போது மிகவும் நடைமுறையில் செயல்படுத்தப்பட்ட மற்றும் அவசரமாகத் தேவைப்படும் டொமைன் ஆகும். DB-GPT ஏற்கனவே RAG அடிப்படையிலான ஒரு கட்டமைப்பை செயல்படுத்தியுள்ளது, இது பயனர்கள் DB-GPT இன் RAG திறன்களைப் பயன்படுத்தி அறிவு சார்ந்த பயன்பாடுகளை உருவாக்க அனுமதிக்கிறது.
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ma.md">മലയാളം</a> · <a href="README.ta.md">தமிழ்</a>
+</p>
 
-- **GBI (ஜெனரேட்டிவ் பிசினஸ் இன்டலிஜென்ஸ்)**: ஜெனரேட்டிவ் BI என்பது DB-GPT திட்டத்தின் முக்கிய திறன்களில் ஒன்றாகும், இது நிறுவன அறிக்கை பகுப்பாய்வு மற்றும் வணிக நுண்ணறிவுகளை உருவாக்குவதற்கான அடிப்படை தரவு நுண்ணறிவு தொழில்நுட்பத்தை வழங்குகிறது.
+<p align="center">
+  <a href="http://docs.dbgpt.cn/docs/overview/">ஆவணங்கள்</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">வெளியீடுகள்</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">சமூகம்</a> · <a href="#quick-start">விரைவான தொடக்கம்</a>
+</p>
 
-- **ஃபைன்-ட்யூனிங் ஃப்ரேம்வொர்க்**: மாடல் ஃபைன்-ட்யூனிங் என்பது எந்தவொரு நிறுவனமும் செங்குத்து மற்றும் முக்கிய டொமைன்களில் செயல்படுத்த ஒரு தவிர்க்க முடியாத திறனாகும். DB-GPT, DB-GPT திட்டத்துடன் தடையின்றி ஒருங்கிணைக்கும் ஒரு முழுமையான ஃபைன்-ட்யூனிங் கட்டமைப்பை வழங்குகிறது. சமீபத்திய ஃபைன்-ட்யூனிங் முயற்சிகளில், ஸ்பைடர் தரவுத்தொகுப்பை அடிப்படையாகக் கொண்ட துல்லிய விகிதம் 82.5% ஆக அடையப்பட்டுள்ளது.
+> **உங்கள் தரவை இணைக்கவும், வணிக வரையறைகளை அமைக்கவும், நிபுணத்துவ முறைகளைத் தேர்ந்தெடுக்கவும், கட்டமைக்கப்பட்ட கருவிகள் மற்றும் இயக்கச்சூழல் எல்லைகளுக்குள் செயல்படவும். முடிவுகளைச் சரிபார்த்து, திருத்தி, மீண்டும் பயன்படுத்தலாம்.**
 
-- **டேட்டா-டிரைவன் மல்டி-ஏஜென்ட்ஸ் ஃப்ரேம்வொர்க்**: DB-GPT தரவு-இயக்கப்படும் சுய-வளர்ச்சியடைந்த மல்டி-ஏஜென்ட்ஸ் ஃப்ரேம்வொர்க்கை வழங்குகிறது, இது தொடர்ந்து முடிவுகளை எடுத்து தரவுகளின் அடிப்படையில் செயல்படுத்துவதை நோக்கமாகக் கொண்டுள்ளது.
+DB-GPT இயல்பான மொழியை SQL ஆக மாற்றுவதோடு நிற்கவில்லை. **தரவு இணைப்புகள், வணிகப் பொருள், நிபுணத்துவத் திறன்கள், பணி ஒருங்கிணைப்பு மற்றும் பகுப்பாய்வு விளைவுகள்** ஆகியவற்றை ஒரே பணிப்பாய்வில் இணைக்கிறது. பயனர்களுக்கு நடைமுறை உதவியாளராகவும், AI சார்ந்த தரவுப் பயன்பாடுகளை உருவாக்கும் மேம்பாட்டாளர்களுக்கு விரிவாக்கக்கூடிய அடித்தளமாகவும் செயல்படுகிறது.
 
-- **தரவு தொழிற்சாலை**: பெரிய மாதிரிகளின் சகாப்தத்தில் நம்பகமான அறிவு மற்றும் தரவை சுத்தம் செய்தல் மற்றும் செயலாக்குவது பற்றியது தரவு தொழிற்சாலை.
+[தயாரிப்பு செயல்விளக்கம்](#product-demo) · [DB-GPT ஏன்](#why-db-gpt) · [தயாரிப்பு தொகுதிகள்](#product-modules) · [பாதுகாப்பு மற்றும் செயலாக்க எல்லைகள்](#safety-and-execution-boundaries) · [விரைவான தொடக்கம்](#quick-start) · [சமூகம்](#community)
 
-- **தரவு மூலங்கள்**: உற்பத்தி வணிகத் தரவை DB-GPT இன் முக்கிய திறன்களுடன் தடையின்றி இணைக்க பல்வேறு தரவு மூலங்களை ஒருங்கிணைத்தல்.
+<a id="product-demo"></a>
 
-#### துணை தொகுதி
-- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) பெரிய மொழி மாதிரிகளில் (LLMs) மேற்பார்வையிடப்பட்ட ஃபைன்-ட்யூனிங் (SFT) ஐப் பயன்படுத்துவதன் மூலம் உயர் செயல்திறனுடன் உரையிலிருந்து SQL பணிப்பாய்வு.
+## தயாரிப்பு செயல்விளக்கம்
 
-- [dbgpts](https://github.com/eosphoros-ai/dbgpts) dbgpts என்பது DB-GPT-ஐ அடிப்படையாகக் கொண்ட சில தரவு பயன்பாடுகள், AWEL ஆபரேட்டர்கள், AWEL பணிப்பாய்வு டெம்ப்ளேட்கள் மற்றும் முகவர்களைக் கொண்ட அதிகாரப்பூர்வ களஞ்சியமாகும்.
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-#### DeepWiki
-- [DB-GPT](https://deepwiki.com/eosphoros-ai/DB-GPT)
-- [DB-GPT-HUB](https://deepwiki.com/eosphoros-ai/DB-GPT-Hub)
-- [dbgpts](https://deepwiki.com/eosphoros-ai/dbgpts)
+<a id="why-db-gpt"></a>
 
-#### Text2SQL Finetune
+## DB-GPT ஏன்
 
-  |     LLM     |  Supported  | 
-  |:-----------:|:-----------:|
-  |    LLaMA    |      ✅     |
-  |   LLaMA-2   |      ✅     | 
-  |    BLOOM    |      ✅     | 
-  |   BLOOMZ    |      ✅     | 
-  |   Falcon    |      ✅     | 
-  |  Baichuan   |      ✅     | 
-  |  Baichuan2  |      ✅     | 
-  |  InternLM   |      ✅     |
-  |    Qwen     |      ✅     | 
-  |   XVERSE    |      ✅     | 
-  |  ChatGLM2   |      ✅     |
+### வினவலுக்கு முன் வணிகச் சூழல்
 
-  [Text2SQL finetune பற்றிய கூடுதல் தகவல்கள்](https://github.com/eosphoros-ai/DB-GPT-Hub)
+‘வருவாய்’ என்பதன் பொருள் தேதி ஒதுக்கீடு, பணத்திருப்பத்தின் கையாளுதல் மற்றும் கணக்கீட்டு எல்லையைப் பொறுத்து மாறலாம். செமான்டிக் மையம் தரவுக்கட்டமைப்பு மெட்டாடேட்டா, வணிக அர்த்தங்கள், அளவீட்டுச் சூத்திரங்கள் மற்றும் வெளியிடப்பட்ட பதிப்புகளை ஒழுங்குபடுத்துகிறது. இதனால் முகவர் ஒவ்வொரு கேள்விக்கும் ஊகிப்பதற்குப் பதிலாக தெளிவான வரையறைகளின் அடிப்படையில் செயல்பட முடியும்.
 
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) தானியங்கு-GPT செருகுநிரலை நேரடியாக இயக்கக்கூடிய DB-GPT செருகுநிரல்கள்
-- [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) காட்சிப்படுத்தல் நெறிமுறை
+### பதில்கள் மட்டுமல்ல, நிபுணத்துவ முறைகளும்
 
-### AI-நேட்டிவ் டேட்டா ஆப் 
----
+வினவல், பகுப்பாய்வு, SQL மேம்படுத்தல், மெட்டாடேட்டா மற்றும் கட்டமைப்பு, நிதிப் பகுப்பாய்வு ஆகியவற்றிற்கான சிறப்பு செருகுநிரல்களைப் பயன்படுத்தவும். Skills மீண்டும் பயன்படுத்தக்கூடிய வழிமுறைகளையும் ஸ்கிரிப்ட்களையும் தொகுக்கின்றன; பணிப்பாய்வுகள் படிகள், சார்புகள் மற்றும் கருவிக் கட்டமைப்பைத் தெளிவாக்குகின்றன.
 
-- 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
-  - [Support MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
-  - [Support DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
-  - [Support QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
-  - [Refactor the basic modules]()
-    - [dbgpt-app](./packages/dbgpt-app)
-    - [dbgpt-core](./packages/dbgpt-core)
-    - [dbgpt-serve](./packages/dbgpt-serve)
-    - [dbgpt-client](./packages/dbgpt-client)
-    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
-    - [dbgpt-ext](./packages/dbgpt-ext)
----
+### மீண்டும் பயன்படுத்தக்கூடிய முடிவுகள்
 
-![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
----
+அரட்டைச் செய்திகளை மட்டும் அல்லாமல் வினவல் அட்டவணைகள், வரைபடங்கள், பகுப்பாய்வு அறிக்கைகள் மற்றும் திருத்தக்கூடிய டாஷ்போர்டுகளை உருவாக்கவும். செயலாக்கத்தையும் முடிவையும் ஆய்வு செய்து, மாற்றங்களைக் கோரி, அடுத்த பணிக்காக விளைவுகளைச் சேமிக்கலாம்.
 
-## ஏன் DB-GPT?
+### முக்கிய செயல்களில் மனிதக் கட்டுப்பாடு
 
-### 1. முகவர் அடிப்படையான தரவு பகுப்பாய்வு
-பணிகளைத் திட்டமிடுங்கள், வேலையைப் படிகளாகப் பிரிங்கள், கருவிகளை அழைக்கவும், முழுமையான பகுப்பாய்வு பணிப்பாய்வுகளை முடிக்கவும்.
-![csv_data_analysis_demo](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
+மாதிரிகள், கருவிகள், தரவு மூலங்கள் மற்றும் இயக்கச்சூழல் அணுகல் ஆகியவை நிறுவல் மற்றும் பணிக் கட்டமைப்பைப் பொறுத்தவை. டாஷ்போர்டு திட்டங்களையும் முன்மொழியப்பட்ட மாற்றங்களையும் செயல்படுத்தும் முன் ஆய்வு செய்யலாம். **கட்டுப்படுத்தப்பட்ட செயலாக்கம் முழுமையான பாதுகாப்பை உறுதி செய்யாது**: குறைந்தபட்ச அனுமதியுள்ள சான்றுகள், பொருத்தமான தனிமைப்படுத்தல் மற்றும் சுயாதீனச் சரிபார்ப்பைப் பயன்படுத்தவும்.
 
-### 2. தானியங்கி SQL + குறியீடு செயல்படுத்தல்
-தரவைக் கேட்க, தரவுத் தொகுப்புகளை சுத்தம் செய்ய, மெட்ரிக்கைக் கணக்கிட்டு, வெளியீடுகளை உருவாக்க SQL மற்றும் குறியீட்டை உருவாக்குங்கள்.
-![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
-![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
+<a id="product-modules"></a>
 
-### 3. பல-மூல தரவு அணுகல்
-கட்டமைக்கப்பட்ட மற்றும் கட்டமைக்கப்படாத மூலங்கள் உட்பட, தரவுத்தளங்கள், spreadsheetகள், ஆவணங்கள் மற்றும் அறிவு தளங்கள் முழுவதும் வேலை செய்யுங்கள்.
+## தயாரிப்பு தொகுதிகள்
 
-### 4. திறன்கள்-இயக்கப்படும் நீட்சி
-துறை அறிவு, பகுப்பாய்வு முறைகள் மற்றும் செயல்படுத்தும் பணிப்பாய்வுகளை மீண்டும் பயன்படுத்தக்கூடிய திறன்களாகத் தொகுக்கவும்.
+### பணிகளுக்கான பொதுவான தொடக்க இடம்
 
-![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
+![தற்போதைய DB-GPT முகப்புத் திரை: இயல்பான மொழி உள்ளீடு, மாதிரி தேர்வு மற்றும் நிபுணர் அணுகல்](assets/readme-en/home.png)
 
-![agent_browse_use](https://github.com/user-attachments/assets/21864e9f-2179-4f6f-910f-18463ec2b46e)
+கேள்வி, கோப்பு அல்லது தரவுத்தளத்திலிருந்து தொடங்கவும். மாதிரியையும் பொருத்தமான நிபுணரையும் தேர்ந்தெடுத்து, இலக்கைத் தெளிவாக்கி, வினவல், பகுப்பாய்வு அல்லது டாஷ்போர்டு பணிக்குச் செல்லவும்.
 
-### 5. சாண்ட்பாக்ஸ் செயல்படுத்தல்
-பாதுகாப்பான, மிகவும் நம்பகமான பகுப்பாய்வுக்காகத் தனிமைப்படுத்தப்பட்ட சூழலில் குறியீடு மற்றும் கருவிகளை இயக்குங்கள்.
-![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
+### 1. டாஷ்போர்டுகள்: திட்டத்திலிருந்து முழுப் பலகைக் காட்சிக்கு
 
+திட்டம் அல்லது வார்ப்புருவிலிருந்து வரைவை உருவாக்கி, விட்ஜெட்டுகளையும் வினவல்களையும் திருத்தவும். முழுப் பலகையைக் காட்ட Preview திறக்கவும்.
 
-## Installation / Quick Start 
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Preview காட்சியில் உருவாக்கப்பட்ட Walmart டாஷ்போர்டு: மொத்த விற்பனை, செயல்படும் கடைகள், வாராந்திரப் போக்கு மற்றும் முதல் 10 கடைகள்](assets/readme-en/generated-dashboard.png)
 
-[**Usage Tutorial**](http://docs.dbgpt.cn/docs/overview)
-- [**Install**](http://docs.dbgpt.cn/docs/installation)
-  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [Source Code](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
-- [**Quickstart**](http://docs.dbgpt.cn/docs/overview)
-- [**Application**](http://docs.dbgpt.cn/docs/use_cases)
-  - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
-  - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
-- [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
-- [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
-  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
-  - [Finetune](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
+*இது தயாரிப்பு செயல்விளக்கத்தின் போது உண்மையில் உருவாக்கிச் சேமிக்கப்பட்ட Walmart டாஷ்போர்டின் Preview காட்சி. நான்கு விட்ஜெட்டுகள் விற்பனை மற்றும் கடை எண்ணிக்கைக்கான KPI-கள், வாராந்திரப் போக்கு மற்றும் முதல் 10 தரவரிசையை வழங்குகின்றன. இது சேமிக்கப்பட்ட வரைவு; பொதுவாக வெளியிடப்பட்ட பலகை அல்ல.*
 
-  ## அம்சங்கள்
+- உருவாக்கும் முன் அளவீடுகள், வரைபடங்கள் மற்றும் வடிப்பான்களை வரையறுக்கவும்.
+- விட்ஜெட்டுகள், அமைப்பு, வினவல் கட்டமைப்பு மற்றும் வடிப்பான்களை மாற்றவும்.
+- AI உதவியாளருடன் மாற்றங்களை விவாதித்து, செயல்படுத்தும் முன் முன்மொழிவுகளை ஆய்வு செய்யவும்.
+- வரைவுகளைச் சேமிக்கவும்; முடிவும் அணுகல் எல்லையும் தயாரான பிறகே வெளியிடவும் அல்லது பகிரவும்.
 
-தற்போது, ​​எங்கள் தற்போதைய திறன்களை வெளிப்படுத்த பல முக்கிய அம்சங்களை அறிமுகப்படுத்தியுள்ளோம்:
-- **தனியார் டொமைன் கேள்வி பதில் & தரவு செயலாக்கம்**
+இந்த Walmart பலகை எடுத்துக்காட்டு தரவுத்தொகுப்பைப் பயன்படுத்துகிறது. எண்கள் இந்த நிகழ்வை விளக்குகின்றன; நிறுவனத்தின் தற்போதைய செயல்திறனைக் குறிக்கவில்லை.
 
-DB-GPT திட்டம் அறிவுத் தளக் கட்டமைப்பை மேம்படுத்தவும், கட்டமைக்கப்பட்ட மற்றும் கட்டமைக்கப்படாத தரவு இரண்டையும் திறம்படச் சேமித்து மீட்டெடுக்கவும் வடிவமைக்கப்பட்ட பல்வேறு செயல்பாடுகளை வழங்குகிறது. இந்த செயல்பாடுகளில் பல கோப்பு வடிவங்களைப் பதிவேற்றுவதற்கான உள்ளமைக்கப்பட்ட ஆதரவு, தனிப்பயன் தரவு பிரித்தெடுக்கும் செருகுநிரல்களை ஒருங்கிணைக்கும் திறன் மற்றும் பெரிய அளவிலான தகவல்களை திறம்பட நிர்வகிப்பதற்கான ஒருங்கிணைந்த திசையன் சேமிப்பு மற்றும் மீட்டெடுப்பு திறன்கள் ஆகியவை அடங்கும்.
+### 2. செருகுநிரல்கள் மற்றும் Skills: நிபுணத்துவத்தை மீண்டும் பயன்படுத்துதல்
 
-- **மல்டி-டேட்டா சோர்ஸ் & ஜிபிஐ (ஜெனரேட்டிவ் பிசினஸ் இன்டலிஜென்ஸ்)**
+பணிக்கான நிபுணர் செருகுநிரலைத் தேர்ந்தெடுத்து, அதன் தரவு, அறிவுச் சூழல் மற்றும் அனுமதிக்கப்பட்ட கருவிகளை இணைக்கவும். Skills துறைசார் வழிமுறைகள், முறைகள் மற்றும் ஸ்கிரிப்ட்களைத் தொகுக்கின்றன.
 
-டிபி-ஜிபிடி திட்டம் எக்செல், தரவுத்தளங்கள் மற்றும் தரவுக் கிடங்குகள் உள்ளிட்ட பல்வேறு தரவு மூலங்களுடன் தடையற்ற இயற்கை மொழி தொடர்புகளை எளிதாக்குகிறது. இந்த மூலங்களிலிருந்து தகவல்களை வினவுதல் மற்றும் மீட்டெடுப்பது போன்ற செயல்முறையை இது எளிதாக்குகிறது, பயனர்கள் உள்ளுணர்வு உரையாடல்களில் ஈடுபடவும் நுண்ணறிவுகளைப் பெறவும் அதிகாரம் அளிக்கிறது. மேலும், டிபி-ஜிபிடி பகுப்பாய்வு அறிக்கைகளை உருவாக்குவதை ஆதரிக்கிறது, பயனர்களுக்கு மதிப்புமிக்க தரவு சுருக்கங்கள் மற்றும் விளக்கங்களை வழங்குகிறது.
+![ஐந்து தரவு நிபுணர் பிரிவுகளைக் கொண்ட ஆங்கில செருகுநிரல் திரை](assets/readme-en/plugins.png)
 
-- **மல்டி-ஏஜெண்ட்ஸ் & செருகுநிரல்கள்**
+| நிபுணத்துவம் | வழக்கமான பணி |
+| --- | --- |
+| தரவு வினவல் | கேள்வியையும் அளவீட்டையும் தெளிவாக்குதல், SQL சரிபார்த்து இயக்குதல், முடிவுகளை ஏற்றுமதி செய்தல் |
+| தரவுப் பகுப்பாய்வு | தரவை ஆய்வு செய்தல், போக்குகளையும் அமைப்பையும் பகுப்பாய்வு செய்தல், அறிக்கைகள் மற்றும் டாஷ்போர்டுகள் தயாரித்தல் |
+| SQL மேம்படுத்தல் | SQL மற்றும் செயலாக்கத் திட்டத்தை ஆய்வு செய்து மாற்றங்களை மதிப்பாய்விற்கு முன்மொழிதல் |
+| மெட்டாடேட்டா மற்றும் கட்டமைப்பு | தரவு அகராதி, தொடர்புகள் மற்றும் மாதிரியாக்கப் பரிந்துரைகளை ஒழுங்குபடுத்துதல் |
+| நிதிப் பகுப்பாய்வு | தேவையான கட்டமைப்பும் தரவும் கிடைக்கும்போது நிதி ஆவணங்களைப் படித்து ஒப்பீடுகளை அமைத்தல் |
 
-இது பல்வேறு பணிகளைச் செய்ய தனிப்பயன் செருகுநிரல்களுக்கான ஆதரவை வழங்குகிறது மற்றும் தானியங்கி-GPT செருகுநிரல் மாதிரியை இயல்பாக ஒருங்கிணைக்கிறது. முகவர்கள் நெறிமுறை முகவர் நெறிமுறை தரநிலைக்கு இணங்குகிறது.
+செருகுநிரல்கள் முறைகளை வழங்குகின்றன; தரவு அனுமதிகளை வழங்குவதில்லை. நிறுவும் முன் மூன்றாம் தரப்பு வழிமுறைகள், ஸ்கிரிப்ட்கள், சார்புகள் மற்றும் கருவி அணுகலை ஆய்வு செய்யவும்.
 
-- **தானியங்கி ஃபைன்-ட்யூனிங் text2SQL**
+### 3. தரவு மூலங்கள்: நம்பகமான இணைப்புகள்
 
-பெரிய மொழி மாதிரிகள் (LLMகள்), Text2SQL தரவுத்தொகுப்புகள், LoRA/QLoRA/Pturning மற்றும் பிற ஃபைன்-ட்யூனிங் முறைகளை மையமாகக் கொண்ட தானியங்கி ஃபைன்-ட்யூனிங் இலகுரக கட்டமைப்பையும் நாங்கள் உருவாக்கியுள்ளோம். இந்த கட்டமைப்பு உரையிலிருந்து SQL ஃபைன்-ட்யூனிங்கை எளிதாக்குகிறது, இது ஒரு அசெம்பிளி லைன் செயல்முறையைப் போலவே நேரடியானதாக ஆக்குகிறது. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+தரவுத்தள இணைப்புகளை நிர்வகித்து ஒவ்வொரு பணிக்கும் மூலத்தைத் தேர்ந்தெடுக்கவும். வினவல்கள், பகுப்பாய்வு மற்றும் டாஷ்போர்டுகள் ஒரே இணைப்புப் பட்டியலையும் மெட்டாடேட்டா சூழலையும் பயன்படுத்தலாம்.
 
-- **SMMF(சேவை சார்ந்த பல-மாதிரி மேலாண்மை கட்டமைப்பு)**
+![முழு ஆங்கில தரவுத்தளப் பட்டியல்: 27 வகைகள் மற்றும் சூழலில் கிடைக்கும் நிலை](assets/readme-en/datasource-catalog-full.png)
 
-LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu மற்றும் பல போன்ற திறந்த மூல மற்றும் API முகவர்களிடமிருந்து டஜன் கணக்கான பெரிய மொழி மாதிரிகள் (LLMகள்) உட்பட விரிவான மாதிரி ஆதரவை நாங்கள் வழங்குகிறோம். 
+MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j, TuGraph போன்ற தரவு மூலங்கள் ஆதரிக்கப்படுகின்றன.
 
-- செய்திகள்
+- தரவுத்தள இணைப்புகளை அமைத்துச் சரிபார்க்கவும்.
+- பணியைப் பொருத்தமான மூலத்துடன் இணைத்து அதன் எல்லையை உறுதிப்படுத்தவும்.
+- பட்டியல் பதிவு அல்லது இணைப்பு வார்ப்புரு செயல்படும் இணைப்புக்கான சான்றல்ல. இயக்கிகள், பிணைய அணுகல் மற்றும் சான்றுகள் கிடைக்க வேண்டும்.
 
-<table>
-      <thead>
-        <tr>
-          <th>Provider</th>
-          <th>Supported</th>
-          <th>Models</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td align="center" valign="middle">DeepSeek</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">DeepSeek-R1-0528</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">DeepSeek-R1</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3">DeepSeek-V3</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B">DeepSeek-R1-Distill-Llama-70B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B">DeepSeek-R1-Distill-Qwen-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct">DeepSeek-Coder-V2-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Qwen</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-235B-A22B">Qwen3-235B-A22B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-30B-A3B">Qwen3-30B-A3B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-32B">Qwen3-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/QwQ-32B">QwQ-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct">Qwen2.5-Coder-32B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct">Qwen2.5-Coder-14B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-32B-Instruct">Qwen2.5-32B-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">GLM</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-Z1-32B-0414">GLM-Z1-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-4-32B-0414">GLM-4-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/glm-4-9b-chat">Glm-4-9b-chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Llama</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-405B-Instruct">Meta-Llama-3.1-405B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct">Meta-Llama-3.1-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct">Meta-Llama-3.1-8B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct">Meta-Llama-3-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct">Meta-Llama-3-8B-Instruct</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Gemma</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-27b-it">gemma-2-27b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-9b-it">gemma-2-9b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-7b-it">gemma-7b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2b-it">gemma-2b-it</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Yi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-34B-Chat">Yi-1.5-34B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-9B-Chat">Yi-1.5-9B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-6B-Chat">Yi-1.5-6B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-34B-Chat">Yi-34B-Chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Starling</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Nexusflow/Starling-LM-7B-beta">Starling-LM-7B-beta</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">SOLAR</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0">SOLAR-10.7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Mixtral</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral-8x7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Phi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/collections/microsoft/phi-3-6626e15e9585a200d2d761e3">Phi-3</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+### 4. செமான்டிக் மையம்: அளவீட்டு வரையறைகளின் பராமரிப்பு
 
-- [மேலும் ஆதரிக்கப்படும் LLMகள்](http://docs.dbgpt.cn/docs/modules/smmf)
+ஒரு மூலத்தின் மெட்டாடேட்டா, வணிக வரையறைகள், அளவீடுகள், வினவல் எடுத்துக்காட்டுகள், தொடர்புகள் மற்றும் விதிகளை ஒழுங்குபடுத்தவும். வெளியிடப்பட்ட வரையறைகள் பதிப்புகளைச் சேமிக்கின்றன; அவற்றை வினவல் முடிவுடன் இணைக்கலாம்.
 
-- **தனியுரிமை மற்றும் பாதுகாப்பு**
+![வெளியிடப்பட்ட அளவீட்டுச் சூத்திரங்களும் பதிப்புகளும் கொண்ட செமான்டிக் மையம்](assets/readme-en/semantic.png)
 
-தனியார்மயமாக்கப்பட்ட பெரிய மாதிரிகள் மற்றும் ப்ராக்ஸி உணர்திறன் நீக்கம் உள்ளிட்ட பல்வேறு தொழில்நுட்பங்களை செயல்படுத்துவதன் மூலம் தரவின் தனியுரிமை மற்றும் பாதுகாப்பை நாங்கள் உறுதி செய்கிறோம்.
+- அட்டவணை மற்றும் நெடுவரிசை அர்த்தங்கள், குறிப்புகள் மற்றும் இணைச்சொற்களைப் பராமரிக்கவும்.
+- அடிப்படை மற்றும் பெறப்பட்ட அளவீடுகள், சூத்திரங்கள் மற்றும் சார்புகளை வரையறுக்கவும்.
+- வரையறைகளை ஆய்வு செய்து வெளியிடவும்; வெளியிடப்பட்டவற்றை மட்டும் படிக்கும் போது வெளியிடப்படாத வரைவை அதிகாரப்பூர்வமாகக் கருத வேண்டாம்.
 
-- ஆதரவு தரவுமூலங்கள்
-- [தரவுமூலங்கள்](http://docs.dbgpt.cn/docs/modules/connections)
+### 5. பணிப்பாய்வு: தெளிவான படிகளும் ஒத்துழைப்பும்
 
+காட்சி எடிட்டரில் Agent முனைகள், உள்ளீடுகள், வெளியீடுகள், தொடர் படிகள் மற்றும் இணையான கிளைகளை அமைக்கவும். மீண்டும் செயல்படுத்த வேண்டிய பணிகளுக்கு தெளிவான பணிப்பாய்வைப் பயன்படுத்தவும்.
+
+![அர்த்தச் சூழல் தயாரிப்பு, திட்டமிடல், இணைப் பகுப்பாய்வு மற்றும் ஒருங்கிணைந்த ஆய்வு கொண்ட ஆங்கில பணிப்பாய்வு வார்ப்புரு](assets/readme-en/workflow.png)
+
+இது வார்ப்புரு திருத்தும் காட்சி; பணிப்பாய்வு பிழைதிருத்தப்பட்டதற்கோ வெளியிடப்பட்டதற்கோ சான்றல்ல. இயக்கும் முன் தரவு மூலம், மாதிரி மற்றும் கருவிகளை அமைக்கவும்.
+
+### 6. அறிவு, இணைப்பிகள் மற்றும் இயக்கச்சூழல் நிர்வாகம்
+
+- **அறிவுக் களஞ்சியங்கள்** மீட்டெடுப்பிற்கான ஆவணச் சூழலை வழங்குகின்றன. பாகுபடுத்தல், பிரித்தல், குறியீட்டாக்கம் மற்றும் மீட்டெடுப்பு அமைப்பு கிடைக்கும் நிலையையும் தரத்தையும் பாதிக்கும்.
+- **இணைப்பிகள்** கட்டமைக்கப்பட்ட MCP சேவைகள் மூலம் வெளிப்புறக் கருவிகளை இணைக்கின்றன. வார்ப்புருக்களைப் பயன்படுத்தும் முன் செயல்படுத்தலும் அனுமதியும் தேவை.
+- **மாதிரிகளும் இயக்கச்சூழல்களும்** சார்புகள் மற்றும் கருவி அணுகலை அமைத்து வழங்குநர்கள், உள்ளூர் அல்லது கண்டெய்னர் செயலாக்கத்தைத் தேர்ந்தெடுக்க அனுமதிக்கின்றன.
+- **திட்டமிடப்பட்ட பணிகள்** வேலையை மீண்டும் இயக்குகின்றன அல்லது விளைவுகளைப் புதுப்பிக்கின்றன. திட்டமிடுபவர், மாதிரிகள், கோப்புகள் மற்றும் மூலங்கள் தொடர்ந்து கிடைக்க வேண்டும்.
+
+## கேள்வியிலிருந்து முடிவுக்கு
+
+**இணைத்தல் → சூழலை உறுதிப்படுத்துதல் → திட்டமிடல் → செயலாக்கம் → ஆய்வு → மறுபயன்பாடு**
+
+1. மூலத்தைத் தேர்ந்தெடுத்து இலக்கு, காலவரம்பு மற்றும் அளவீட்டு எல்லையைத் தெளிவாக்கவும்.
+2. புலங்கள், தரவுத் தரம், வணிக வரையறைகள் மற்றும் அளவீட்டு பதிப்புகளை ஆய்வு செய்யவும்.
+3. நிபுணரையும் Skills-ஐயும் தேர்ந்தெடுத்து, மீண்டும் செய்யும் பணிகளுக்குப் பணிப்பாய்வை அமைக்கவும்.
+4. அனுமதிக்கப்பட்ட கருவிகள் மற்றும் இயக்கச்சூழலில் SQL, குறியீடு அல்லது மீட்டெடுப்பை இயக்கவும்.
+5. திட்டம், கணக்கீடுகள், மூலங்கள், விளைவுகள் மற்றும் முன்மொழியப்பட்ட மாற்றங்களை ஆய்வு செய்யவும்.
+6. அறிக்கை அல்லது டாஷ்போர்டைச் சேமிக்கவும்; தேவையான இயக்க ஆதரவு இருந்தால் மட்டுமே கால அட்டவணையை அமைக்கவும்.
+
+<a id="safety-and-execution-boundaries"></a>
+
+## பாதுகாப்பு மற்றும் செயலாக்க எல்லைகள்
+
+DB-GPT அமைத்துக்கொள்ளக்கூடிய செயலாக்க மற்றும் ஆய்வு முறைகளை வழங்குகிறது. பயனுள்ள பாதுகாப்பு நிறுவலைப் பொறுத்தது:
+
+- **தரவு அணுகல்:** படிக்க மட்டும் மற்றும் குறைந்தபட்ச அனுமதியுள்ள சான்றுகளைப் பயன்படுத்தவும். பட்டியலின் விளக்கக் குறிகள் வரிசை அல்லது நெடுவரிசை அளவிலான அணுகல் கட்டுப்பாடு அல்ல.
+- **தனிமைப்படுத்தல்:** உள்ளூர் செயலாக்கம் கண்டெய்னர் தனிமைப்படுத்தல் அல்ல. கோப்பு அணுகல், வள வரம்புகள் மற்றும் பிணைய எல்லைகளை அமைக்கவும்.
+- **ரகசியங்கள்:** API விசைகள், தரவுத்தளக் கடவுச்சொற்கள் மற்றும் உணர்திறன் மிக்க தரவை கமிட்டுகள், திரைப்பிடிப்புகள் அல்லது பகிரப்பட்ட விளைவுகளில் சேர்க்க வேண்டாம்.
+- **ஆய்வு:** முக்கிய அளவீடுகள், கணக்கீடுகள், SQL மற்றும் வெளிப்புற முடிவுகளைச் சுயாதீனமாகச் சரிபார்க்கவும். மாதிரி முடிவுகள் தொழில்முறை ஆய்வுக்கு மாற்றாகாது.
+- **வெளியீடும் திட்டமிடலும்:** வரைவுகள், வெளியிடப்பட்ட நிலைப்படங்கள், பகிர்வு மற்றும் தொடர்ச்சியான செயல்பாடு வெவ்வேறு நிலைகள். நிறுவும் முன் அணுகலையும் கிடைக்கும் நிலையையும் உறுதிப்படுத்தவும்.
+
+> திறன்கள் வெளியீடு, கட்டமைப்பு, தரவுக்கட்டமைப்பு மாற்றங்கள் மற்றும் மாதிரியின் நடத்தையைப் பொறுத்தவை. உங்கள் பதிப்பின் குறியீடு மற்றும் ஆவணங்களைப் பயன்படுத்தவும்; UI அணுகல் அல்லது பழைய செயல்விளக்கம் தயாரிப்பு பயன்பாட்டிற்கான உறுதி அல்ல.
+
+<a id="quick-start"></a>
+
+## விரைவான தொடக்கம்
+
+### முறை 1: macOS மற்றும் Linux நிறுவி
+
+இயக்கும் முன் ஸ்கிரிப்டைப் பதிவிறக்கி ஆய்வு செய்யவும்:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
+less install.sh
+bash install.sh
+```
+
+வழிகாட்டியில் சுயவிவரத்தைத் தேர்ந்தெடுத்து மாதிரி வழங்குநரை அமைக்கவும். பின்னர் நிறுவி காட்டும் அடைவையும் தொடக்கக் கட்டளையையும் பயன்படுத்தவும்:
+
+```bash
+cd ~/.dbgpt/DB-GPT
+uv run dbgpt start webserver --profile <profile>
+```
+
+`<profile>`-ஐ அமைக்கப்பட்ட சுயவிவரத்தால் மாற்றி [http://localhost:5670](http://localhost:5670) திறக்கவும்.
+
+<details>
+<summary>ஏற்கனவே உள்ள மூலக் குறியீடு: தற்போதைய கிளையை வைத்திருக்கவும்</summary>
+
+ரிப்போசிட்டரியின் மூல அடைவிலிருந்து:
+
+```bash
+bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)"
+uv run dbgpt start webserver --profile openai
+```
+
+`--repo-dir` நகலெடுக்கவோ கிளையை மாற்றவோ செய்யாமல் தற்போதைய மூலத்தை மீண்டும் பயன்படுத்துகிறது. வழங்குநர் சான்றுகளும் தேவையான சேவைகளும் இன்னும் அமைக்கப்பட வேண்டும்.
+
+சார்புகளை நிறுவி பொருத்தமான TOML கட்டமைப்பைத் தயாரித்தால் பின்புறச் சேவையை நேரடியாகவும் தொடங்கலாம்:
+
+```bash
+.venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
+```
+
+முன்புற மேம்பாட்டிற்கு `web/`-இல் `npm run dev -- --hostname 127.0.0.1 --port 3000` இயக்கவும். UI இயங்குவது மாதிரி கணிப்போ தரவு அணுகலோ தயாராக இருப்பதற்கான சான்றல்ல.
+
+</details>
+
+### முறை 2: PyPI
+
+Python 3.10 அல்லது புதிய பதிப்பைப் பயன்படுத்தவும்:
+
+```bash
+pip install dbgpt-app
+dbgpt start
+```
+
+திரையைப் பயன்படுத்தும் முன் வழங்குநர் அமைப்பை முடிக்கவும். PyPI வெளியீடுகள், `main` மற்றும் அம்சக் கிளைகள் வேறுபடலாம்; கிளைக்குரிய திறன்களைச் சோதிக்க தொடர்புடைய மூலக் குறியீட்டைப் பயன்படுத்தவும்.
+
+மேலும் நிறுவல் மற்றும் கட்டமைப்பு வழிகளுக்கு [ஆவணங்களை](http://docs.dbgpt.cn/docs/overview/) பார்க்கவும்.
+
+## மேம்பாட்டாளர் சூழல்
+
+- **DB-GPT:** தரவு முகவர்கள், கருவிகள், செயலாக்கம் மற்றும் பகுப்பாய்வு பயன்பாடுகளுக்கான அடித்தளம்.
+- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL பயிற்சி மற்றும் மதிப்பீட்டு வளங்கள்.
+- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** பயன்பாடுகள், முகவர்கள் மற்றும் பணிப்பாய்வுகளின் சூழல்.
+- **[பங்களிப்பு வழிகாட்டி](CONTRIBUTING.md):** மேம்பாடு, சோதனை மற்றும் பங்களிப்பு வழிமுறைகள்.
+
+வழங்குநர் ஆதரவு, இயக்கிகள் மற்றும் சார்புகளுக்கு தற்போதைய ஆவணங்களைப் பார்க்கவும்; பழைய மாதிரிப் பட்டியல்களைத் தொடர்ந்த இணக்கத்திற்கான உறுதியாகக் கருத வேண்டாம்.
+
+## நோக்கமும் வளர்ச்சியும்
+
+நம்பகமான தரவுப் பணியைத் திறந்ததாகவும் இணைத்துப் பயன்படுத்தக்கூடியதாகவும் ஆக்குதல்: பயனர்கள் பகுப்பாய்வை முடிக்கவும், குழுக்கள் வணிகச் சூழல், மறுபயன்பாட்டு முறைகள் மற்றும் பகுப்பாய்வு விளைவுகளைச் சேமிக்கவும் உதவுதல்.
+
+அர்த்த ஒருமைப்பாடு, பணி மதிப்பீடு, செயலாக்கக் கண்டறிதல், இடமாற்றக்கூடிய Skills மற்றும் பணிப்பாய்வுகள், கண்காணிக்கப்படும் தொடர்ச்சியான பணிகள் ஆகியவை வளர்ச்சித் திசைகள். [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) மற்றும் [Discussions](https://github.com/orgs/eosphoros-ai/discussions) மூலம் முன்மொழிவுகளையும் முன்னுரிமைகளையும் பின்தொடரவும்; உறுதிப்படுத்தப்படாத வெளியீட்டு தேதிகளை முன்கூட்டியே கருத வேண்டாம்.
+
+<a id="community"></a>
+
+## சமூகம்
+
+- [பிரச்சினையைப் புகாரளிக்கவும் அல்லது அம்சம் பரிந்துரைக்கவும்](https://github.com/eosphoros-ai/DB-GPT/issues)
+- [பயன்பாடு மற்றும் வடிவமைப்பு பற்றி விவாதிக்கவும்](https://github.com/orgs/eosphoros-ai/discussions)
+- [சமூகத் திட்டங்களைப் பார்க்கவும்](https://github.com/eosphoros-ai/community)
+- [Slack-இல் இணையவும்](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
+- [பங்களிப்பாளர்களைப் பார்க்கவும்](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
+
+மீண்டும் உருவாக்கக்கூடிய நிகழ்வுகள், திருத்தங்கள், ஆவணங்கள், Skills மற்றும் பணிப்பாய்வுகளில் பங்களிக்கவும். பிரச்சினையைப் புகாரளிக்கும் போது பதிப்பு, கட்டமைப்பு முறை மற்றும் குறைந்தபட்ச மறுஉருவாக்கப் படிகளைத் தரவும்; பதிவுகளில் இருந்து ரகசியங்களையும் உணர்திறன் மிக்க தரவையும் நீக்கவும்.
 
 ## பங்களிப்பு
 
-- புதிய பங்களிப்புகளுக்கான விரிவான வழிகாட்டுதல்களைச் சரிபார்க்க, [பங்களிப்பது எப்படி] (https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md) ஐப் பார்க்கவும்.
+விரிவான வழிமுறைகளுக்கு [எவ்வாறு பங்களிப்பது](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md) பார்க்கவும். குறியீடு, ஆவணங்கள், Skills, பணிப்பாய்வுகள் மற்றும் மீண்டும் உருவாக்கக்கூடிய எடுத்துக்காட்டுகளில் பங்களிப்புகள் வரவேற்கப்படுகின்றன.
 
-### பங்களிப்பாளர்கள் சுவர்
+### பங்களிப்பாளர் பட்டியல்
+
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT பங்களிப்பாளர்கள்" />
 </a>
 
-## உரிமம்
-MIT உரிமம் (MIT)
+## உரிமம் மற்றும் பொறுப்புத் துறப்பு
 
-## DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+DB-GPT [MIT உரிமத்தின்](LICENSE) கீழ் வழங்கப்படுகிறது. [பொறுப்புத் துறப்பையும்](DISCKAIMER.md) படிக்கவும்.
 
-## மேற்கோள்
-DB-GPT இன் ஒட்டுமொத்த கட்டமைப்பைப் புரிந்து கொள்ள விரும்பினால், <a href="https://arxiv.org/abs/2312.17449" target="_blank">காகிதம்</a> மற்றும் <a href="https://arxiv.org/abs/2404.10209" target="_blank">காகிதம்</a> ஆகியவற்றை மேற்கோள் காட்டுங்கள்.
+## கல்வியியல் மேற்கோள்கள்
 
-முகவர் மேம்பாட்டிற்கு DB-GPT ஐப் பயன்படுத்துவது பற்றி அறிய விரும்பினால், தயவுசெய்து <a href="https://arxiv.org/abs/2412.13520" target="_blank">Paper</a>
+பின்வரும் ஆய்வுக் கட்டுரைகள் திட்டத்தையும் தொடர்புடைய ஆய்வையும் அறிமுகப்படுத்துகின்றன. தற்போதைய ஒவ்வொரு UI அம்சத்தின் இணக்கத்தையும் அவை விளக்குவதில்லை.
+
+<details>
+<summary>BibTeX மேற்கோள்கள்</summary>
+
 ```bibtex
 @article{xue2023dbgpt,
-      title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
+      title={DB-GPT: Empowering Database Interactions with Private Large Language Models},
       author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
       year={2023},
       journal={arXiv preprint arXiv:2312.17449},
       url={https://arxiv.org/abs/2312.17449}
 }
 @misc{huang2024romasrolebasedmultiagentdatabase,
-      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning}, 
+      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning},
       author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidong Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
       year={2024},
       eprint={2412.13520},
       archivePrefix={arXiv},
       primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2412.13520}, 
+      url={https://arxiv.org/abs/2412.13520}
 }
 @inproceedings{xue2024demonstration,
-      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models},
       author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
       year={2024},
-      booktitle = "Proceedings of the VLDB Endowment",
+      booktitle={Proceedings of the VLDB Endowment},
       url={https://arxiv.org/abs/2404.10209}
 }
 ```
 
+</details>
 
-## தொடர்புத் தகவல்
-DB-GPT-க்கு பங்களித்த அனைவருக்கும் நன்றி! உங்கள் யோசனைகள், குறியீடு, கருத்துகள் மற்றும் நிகழ்வுகளிலும் சமூக தளங்களிலும் அவற்றைப் பகிர்வது கூட DB-GPT-ஐ மேம்படுத்தும்.
-நாங்கள் ஒரு சமூகத்தை உருவாக்குவதில் பணியாற்றி வருகிறோம், சமூகத்தை உருவாக்குவதற்கான ஏதேனும் யோசனைகள் உங்களிடம் இருந்தால், எங்களைத் தொடர்பு கொள்ள தயங்க வேண்டாம்.
+## Star வளர்ச்சி வரலாறு
 
-- [Github சிக்கல்கள்](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: GB-DPT ஐப் பயன்படுத்துவது பற்றிய கேள்விகளுக்கு, பங்களிப்பைப் பார்க்கவும். 
-- [Github விவாதங்கள்](https://github.com/orgs/eosphoros-ai/discussions) ⭐️: உங்கள் அனுபவத்தை அல்லது தனித்துவமான பயன்பாடுகளைப் பகிரவும். 
-- [Twitter](https://x.com/DBGPT_AI) ⭐️: தயவுசெய்து எங்களுடன் பேச தயங்க வேண்டாம். 
-
-[![நட்சத்திர வரலாற்று விளக்கப்படம்](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star வரலாற்று வரைபடம்](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
