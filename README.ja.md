@@ -2,158 +2,168 @@
   <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<h1 align="center">DB-GPT: Open-Source Product for Controlled Data Agents</h1>
+<h1 align="center">DB-GPT：制御可能なデータエージェントのオープンソース製品</h1>
 
 <p align="center">
-  From a data question to verifiable queries, analytical reports, and reusable dashboards.
+  データに関する問いから、検証可能なクエリ、分析レポート、再利用可能なダッシュボードへ。
 </p>
 
 <p align="center">
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
-  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="Latest release" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
+  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="最新リリース" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT ライセンス" /></a>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh.md">Simplified Chinese</a>
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ma.md">മലയാളം</a> · <a href="README.ta.md">தமிழ்</a>
 </p>
 
 <p align="center">
-  <a href="http://docs.dbgpt.cn/docs/overview/">Documentation</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a> · <a href="#quick-start">Quick start</a>
+  <a href="http://docs.dbgpt.cn/docs/overview/">ドキュメント</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">リリース</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">コミュニティ</a> · <a href="#quick-start">クイックスタート</a>
 </p>
 
-> **Connect your data, establish business definitions, choose expert methods, execute within configured tool and runtime boundaries, and deliver results you can inspect, edit, and reuse.**
+> **データを接続し、業務定義を整え、専門的な手法を選択し、設定済みのツールと実行環境の範囲内で処理を行います。結果は確認・編集・再利用できます。**
 
-DB-GPT goes beyond translating natural language into SQL. It brings **data connections, business semantics, expert skills, task orchestration, and analytical artifacts** into one workflow: a practical assistant for users and an extensible foundation for developers building AI-native data applications.
+DB-GPT は自然言語を SQL に変換するだけではありません。**データ接続、業務セマンティクス、専門スキル、タスクのオーケストレーション、分析成果物**を一つのワークフローにまとめ、ユーザーには実用的なアシスタントを、開発者には AI ネイティブなデータアプリケーションを構築するための拡張可能な基盤を提供します。
 
-[Product demo](#product-demo) · [Why DB-GPT?](#why-db-gpt) · [Product modules](#product-modules) · [Safety and execution boundaries](#safety-and-execution-boundaries) · [Quick start](#quick-start) · [Community](#community)
+[製品デモ](#product-demo) · [DB-GPT を選ぶ理由](#why-db-gpt) · [製品モジュール](#product-modules) · [安全性と実行の境界](#safety-and-execution-boundaries) · [クイックスタート](#quick-start) · [コミュニティ](#community)
 
-## Product demo
+<a id="product-demo"></a>
+
+## 製品デモ
 
 https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-## Why DB-GPT?
+<a id="why-db-gpt"></a>
 
-### Business context before queries
+## DB-GPT を選ぶ理由
 
-“Revenue” can mean different date attribution, refund treatment, and scope. The Semantic Center organizes schema metadata, business meanings, metric formulas, and published versions so an agent can work from explicit definitions rather than guess them again for each question.
+### クエリの前に業務の文脈を理解する
 
-### Expert methods, not just answers
+「収益」は、日付の帰属、返金の扱い、集計範囲によって意味が異なります。セマンティックセンターは、スキーマのメタデータ、業務上の意味、指標の計算式、公開済みバージョンを整理し、エージェントが毎回推測するのではなく明確な定義に基づいて処理できるようにします。
 
-Use specialized plugins for queries, analysis, SQL optimization, metadata and architecture, or financial analysis. Skills package reusable instructions and scripts; workflows make steps, dependencies, and tool configuration explicit.
+### 回答だけでなく専門的な手法を提供する
 
-### Reusable results
+クエリ、分析、SQL 最適化、メタデータとアーキテクチャ、財務分析には専用プラグインを利用できます。Skills は再利用可能な指示とスクリプトをまとめ、ワークフローは手順、依存関係、ツール設定を明示します。
 
-Deliver query tables, charts, analytical reports, and editable dashboards—not only chat messages. Inspect the execution, review the result, request changes, and retain the artifact for the next task.
+### 再利用可能な成果物
 
-### Human control over consequential actions
+チャットの回答だけでなく、クエリ結果の表、グラフ、分析レポート、編集可能なダッシュボードを生成します。実行内容と結果を確認し、変更を依頼して、次のタスクのために成果物を保存できます。
 
-Models, tools, data sources, and runtime access depend on deployment and task configuration. Dashboard plans and proposed edits can be reviewed before application. **Controlled execution is not a guarantee of absolute safety**: use least-privilege credentials, appropriate isolation, and independent review.
+### 重要な操作を人が制御する
 
-## Product modules
+モデル、ツール、データソース、実行環境へのアクセスは、デプロイとタスク設定に依存します。ダッシュボードの計画や変更案は、適用前に確認できます。**制御された実行は絶対的な安全性を保証するものではありません**。最小権限の認証情報、適切な分離、独立した検証を使用してください。
 
-### A shared starting point
+<a id="product-modules"></a>
 
-![The current DB-GPT home interface: natural-language input, model selection, and expert entry points](assets/readme-en/home.png)
+## 製品モジュール
 
-Start with a question, a file, or a database. Choose a model and the relevant expert, clarify the objective, and move into a query, analysis, or dashboard task.
+### 共通のタスク入口
 
-### 1. Dashboards: from plan to board view
+![現在の DB-GPT ホーム画面：自然言語入力、モデル選択、専門エージェントへの入口](assets/readme-en/home.png)
 
-Start with a plan or template, generate a draft, edit widgets and queries, and enter Preview to present the full board.
+質問、ファイル、データベースから始めます。モデルと適切な専門エージェントを選び、目的を明確にして、クエリ、分析、ダッシュボードのタスクに進みます。
 
-![The generated Walmart dashboard in Preview: total sales, active stores, weekly trend, and Top 10 stores](assets/readme-en/generated-dashboard.png)
+### 1. ダッシュボード：計画からボード表示へ
 
-*This is the actual Walmart dashboard generated and saved during the product demo, shown in Preview board view. Its four widgets include sales and store KPIs, a weekly trend, and a Top 10 ranking. It is a saved draft, not a publicly published board.*
+計画またはテンプレートから草稿を生成し、ウィジェットとクエリを編集します。Preview に切り替えてボード全体を表示します。
 
-- Define metrics, charts, and filters before generation.
-- Adjust widgets, layout, query configuration, and filtering.
-- Discuss changes with the AI assistant and review proposals before applying them.
-- Save drafts; publish or share only when the result and access scope are ready.
+![Preview に表示された Walmart ダッシュボード：総売上、店舗数、週次推移、上位 10 店舗](assets/readme-en/generated-dashboard.png)
 
-The featured Walmart board uses an example dataset. Its values illustrate this case, not current company performance.
+*これは製品デモで実際に生成・保存した Walmart ダッシュボードの Preview 表示です。4 つのウィジェットは売上と店舗数の KPI、週次推移、上位 10 店舗のランキングを示します。保存済みの草稿であり、一般公開されたボードではありません。*
 
-### 2. Plugins and Skills: reusable expertise
+- 生成前に指標、グラフ、フィルターを定義します。
+- ウィジェット、レイアウト、クエリ設定、フィルターを調整します。
+- AI アシスタントと変更を相談し、適用前に提案を確認します。
+- 草稿を保存し、結果とアクセス範囲を確認してから公開・共有します。
 
-Select an expert plugin for the task and bind its data, knowledge context, and permitted tools. Skills package domain instructions, methods, and scripts.
+この Walmart ボードにはサンプルデータを使用しています。数値はこの事例を説明するもので、現在の企業業績を示すものではありません。
 
-![The English plugin interface with five data-expert categories](assets/readme-en/plugins.png)
+### 2. プラグインと Skills：専門知識を再利用する
 
-| Expert | Typical work |
+タスクに応じた専門プラグインを選び、データ、知識の文脈、許可されたツールを紐付けます。Skills は分野別の指示、手法、スクリプトをまとめます。
+
+![5 種類のデータ専門カテゴリを備えた英語版プラグイン画面](assets/readme-en/plugins.png)
+
+| 専門分野 | 主な作業 |
 | --- | --- |
-| Data Query | Clarify the question and metric, inspect and execute SQL, export results |
-| Data Analysis | Inspect data, analyze trends and composition, prepare reports and dashboards |
-| SQL Optimization | Inspect SQL and execution plans, propose changes for review |
-| Metadata & Architecture | Organize data dictionaries, relationships, and modeling recommendations |
-| Financial Analysis | Read financial materials and structure comparisons, subject to configuration and data prerequisites |
+| データクエリ | 質問と指標を明確化し、SQL を確認・実行して結果を出力 |
+| データ分析 | データを確認し、傾向と構成を分析してレポートやダッシュボードを作成 |
+| SQL 最適化 | SQL と実行計画を確認し、レビュー可能な改善案を提示 |
+| メタデータとアーキテクチャ | データ辞書、関係、モデリングの提案を整理 |
+| 財務分析 | 設定とデータの前提を満たしたうえで財務資料を読み、比較を構造化 |
 
-Plugins provide methods, not data permissions. Review third-party instructions, scripts, dependencies, and tool access before installing them.
+プラグインが提供するのは手法であり、データへのアクセス権限ではありません。導入前に第三者の指示、スクリプト、依存関係、ツールへのアクセス範囲を確認してください。
 
-### 3. Data sources: reliable connections
+### 3. データソース：信頼できる接続
 
-Manage database connections and select the source for each task. Queries, analysis, and dashboards can work from the same connection inventory and metadata context.
+データベース接続を管理し、タスクごとに使用するソースを選択します。クエリ、分析、ダッシュボードは共通の接続一覧とメタデータの文脈を利用できます。
 
-![Full English database catalog: all 27 types, with environment availability preserved](assets/readme-en/datasource-catalog-full.png)
+![全 27 種類を表示した英語版データベースカタログ：環境内の利用可能状態を保持](assets/readme-en/datasource-catalog-full.png)
 
-Supports data sources including MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j, and TuGraph.
+MySQL、PostgreSQL、SQLite、DuckDB、ClickHouse、Apache Doris、StarRocks、Oracle、MSSQL、Neo4j、TuGraph などのデータソースに対応しています。
 
-- Configure and inspect database connections.
-- Bind a task to the relevant source and confirm its scope.
-- A database catalog entry or connection template is not proof of a working connection. Drivers, network access, and credentials must be available.
+- データベース接続を設定・確認します。
+- タスクを適切なソースに紐付け、対象範囲を確認します。
+- カタログ項目や接続テンプレートがあるだけでは接続成功の証明にはなりません。ドライバー、ネットワーク、認証情報が必要です。
 
-### 4. Semantic Center: maintained metric definitions
+### 4. セマンティックセンター：指標定義を維持する
 
-Organize metadata, business definitions, metrics, query examples, relationships, and rules around a source. Published definitions preserve versions that can be associated with a query result.
+ソースごとにメタデータ、業務定義、指標、クエリ例、関係、ルールを整理します。公開済み定義にはバージョンが保存され、クエリ結果と関連付けられます。
 
-![The Semantic Center with published metric formulas and versions](assets/readme-en/semantic.png)
+![公開済みの指標式とバージョンを表示するセマンティックセンター](assets/readme-en/semantic.png)
 
-- Maintain table and column meanings, annotations, and synonyms.
-- Define base and derived metrics, formulas, and dependencies.
-- Review and publish definitions; a published-only read must not treat an unpublished draft as authoritative.
+- 表と列の意味、注釈、同義語を維持します。
+- 基本指標、派生指標、計算式、依存関係を定義します。
+- 定義を確認・公開します。公開済み定義のみを読み取る場合、未公開の草稿を正式な定義として扱わないでください。
 
-### 5. Workflow: explicit steps and collaboration
+### 5. ワークフロー：手順と連携を明示する
 
-Use the visual editor to organize Agent nodes, inputs, outputs, serial steps, and parallel branches. Prefer explicit workflows when a task should be repeatable.
+ビジュアルエディターで Agent ノード、入出力、直列処理、並列分岐を構成します。繰り返し実行するタスクには明示的なワークフローが適しています。
 
-![An English workflow template with semantic grounding, planning, parallel analysis, and combined review](assets/readme-en/workflow.png)
+![セマンティクスの準備、計画、並列分析、統合レビューを含む英語版ワークフローテンプレート](assets/readme-en/workflow.png)
 
-This is a template editing view, not evidence that the workflow has been debugged or published. Configure its data source, model, and tools before running it.
+これはテンプレート編集画面であり、ワークフローのデバッグや公開が完了した証拠ではありません。実行前にデータソース、モデル、ツールを設定してください。
 
-### 6. Knowledge, connectors, and runtime management
+### 6. ナレッジ、コネクター、実行環境の管理
 
-- **Knowledge bases** provide document context for retrieval. Parsing, chunking, indexing, and retrieval configuration affect availability and quality.
-- **Connectors** integrate external tools through configured MCP services. Templates need activation and authorization before use.
-- **Models and runtimes** let you select providers and local or container execution, with configured dependencies and tool access.
-- **Scheduled tasks** replay work or refresh artifacts. The scheduler, models, files, and sources must remain available.
+- **ナレッジベース**は検索のための文書の文脈を提供します。解析、分割、インデックス、検索設定が利用可能性と品質に影響します。
+- **コネクター**は設定済みの MCP サービスを通じて外部ツールを統合します。テンプレートは使用前に有効化と認可が必要です。
+- **モデルと実行環境**では、依存関係とツールアクセスを設定し、プロバイダーやローカル・コンテナ実行を選択できます。
+- **スケジュールタスク**は処理を再実行したり成果物を更新したりします。スケジューラー、モデル、ファイル、データソースが継続して利用できる必要があります。
 
-## From question to result
+## 質問から結果まで
 
-**Connect → Ground → Plan → Execute → Review → Reuse**
+**接続 → 文脈の確認 → 計画 → 実行 → レビュー → 再利用**
 
-1. Select the source and clarify the objective, time range, and metric scope.
-2. Inspect fields, data quality, business definitions, and metric versions.
-3. Select an expert and Skills; configure a workflow for repeatable tasks.
-4. Execute SQL, code, or retrieval within permitted tools and runtimes.
-5. Review the plan, calculations, sources, artifacts, and proposed changes.
-6. Retain the report or dashboard; configure scheduling only with the required operational support.
+1. ソースを選び、目的、期間、指標の範囲を明確にします。
+2. フィールド、データ品質、業務定義、指標バージョンを確認します。
+3. 専門エージェントと Skills を選び、繰り返し処理にはワークフローを設定します。
+4. 許可されたツールと実行環境で SQL、コード、検索を実行します。
+5. 計画、計算、出典、成果物、変更案を確認します。
+6. レポートやダッシュボードを保存します。必要な運用支援がある場合にのみスケジュールを設定します。
 
-## Safety and execution boundaries
+<a id="safety-and-execution-boundaries"></a>
 
-DB-GPT provides configurable execution and review mechanisms. Effective safety depends on deployment:
+## 安全性と実行の境界
 
-- **Data access:** prefer read-only, least-privilege credentials. Descriptive catalog flags are not row- or column-level authorization enforcement.
-- **Isolation:** local execution is not container isolation. Configure file access, resource limits, and network boundaries.
-- **Secrets:** keep API keys, database passwords, and sensitive data out of commits, screenshots, and shared artifacts.
-- **Review:** independently verify important metrics, calculations, SQL, and external outputs. Model results do not replace professional review.
-- **Publication and scheduling:** drafts, published snapshots, sharing, and continuous operation are different states. Confirm access and availability before deployment.
+DB-GPT は設定可能な実行・レビュー機構を提供します。実際の安全性はデプロイに依存します。
 
-> Capabilities depend on the release, configuration, schema migrations, and model behavior. Use the code and documentation for your version; a UI entry or historical demo is not a production-readiness guarantee.
+- **データアクセス：** 読み取り専用かつ最小権限の認証情報を推奨します。カタログの説明用フラグは行・列単位の権限制御ではありません。
+- **分離：** ローカル実行はコンテナ分離とは異なります。ファイルアクセス、リソース制限、ネットワーク境界を設定してください。
+- **秘密情報：** API キー、データベースパスワード、機密データをコミット、スクリーンショット、共有成果物に含めないでください。
+- **レビュー：** 重要な指標、計算、SQL、外部出力を独立して検証してください。モデルの結果は専門的なレビューに代わるものではありません。
+- **公開とスケジュール：** 草稿、公開スナップショット、共有、継続運用は異なる状態です。デプロイ前にアクセスと利用可能性を確認してください。
 
-## Quick start
+> 機能はリリース、設定、スキーマ移行、モデルの動作に依存します。使用中のバージョンのコードとドキュメントを参照してください。画面の入口や過去のデモは本番利用の準備完了を保証しません。
 
-### Option 1: installer for macOS and Linux
+<a id="quick-start"></a>
 
-Download and review the script before running it:
+## クイックスタート
+
+### 方法 1：macOS・Linux 用インストーラー
+
+実行前にスクリプトをダウンロードし、内容を確認してください。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
@@ -161,95 +171,97 @@ less install.sh
 bash install.sh
 ```
 
-Follow the wizard to choose a profile and configure a model provider. Then use the directory and startup command printed by the installer:
+ウィザードに従ってプロファイルを選び、モデルプロバイダーを設定します。その後、インストーラーが表示するディレクトリと起動コマンドを使用してください。
 
 ```bash
 cd ~/.dbgpt/DB-GPT
 uv run dbgpt start webserver --profile <profile>
 ```
 
-Replace `<profile>` with your configured profile and open [http://localhost:5670](http://localhost:5670).
+`<profile>` を設定済みプロファイルに置き換え、[http://localhost:5670](http://localhost:5670) を開きます。
 
 <details>
-<summary>Existing source checkout: keep your current branch</summary>
+<summary>既存のソースチェックアウト：現在のブランチを維持する</summary>
 
-From the repository root:
+リポジトリのルートから実行します。
 
 ```bash
 bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)"
 uv run dbgpt start webserver --profile openai
 ```
 
-`--repo-dir` reuses the current checkout instead of cloning or switching branches. Provider credentials and required services still need configuration.
+`--repo-dir` はクローンやブランチ切り替えを行わず、現在のチェックアウトを再利用します。プロバイダーの認証情報と必要なサービスの設定は別途必要です。
 
-With dependencies installed and an appropriate TOML configuration, the backend can also be started directly:
+依存関係をインストールし、適切な TOML 設定を用意すれば、バックエンドを直接起動することもできます。
 
 ```bash
 .venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
 ```
 
-For frontend development, run `npm run dev -- --hostname 127.0.0.1 --port 3000` inside `web/`. A running UI does not prove model inference or data access is ready.
+フロントエンド開発では `web/` 内で `npm run dev -- --hostname 127.0.0.1 --port 3000` を実行します。UI が起動しても、モデル推論やデータアクセスの準備ができているとは限りません。
 
 </details>
 
-### Option 2: PyPI
+### 方法 2：PyPI
 
-Use Python 3.10 or newer:
+Python 3.10 以降を使用してください。
 
 ```bash
 pip install dbgpt-app
 dbgpt start
 ```
 
-Complete provider setup before using the interface. PyPI releases, `main`, and feature branches may differ; use the corresponding source checkout to test branch-specific features.
+画面を使用する前にプロバイダーを設定してください。PyPI リリース、`main`、機能ブランチは異なる場合があります。ブランチ固有の機能を試す際は、対応するソースを使用してください。
 
-See the [documentation](http://docs.dbgpt.cn/docs/overview/) for additional installation and configuration options.
+その他のインストール・設定方法は[ドキュメント](http://docs.dbgpt.cn/docs/overview/)を参照してください。
 
-## Developer ecosystem
+## 開発者エコシステム
 
-- **DB-GPT:** the platform for data agents, tools, execution, and analytical applications.
-- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL training and evaluation resources.
-- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** applications, agents, and workflow ecosystem.
-- **[Contributing](CONTRIBUTING.md):** development, testing, and contribution guidelines.
+- **DB-GPT：** データエージェント、ツール、実行、分析アプリケーションの基盤。
+- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)：** Text-to-SQL の学習・評価用リソース。
+- **[dbgpts](https://github.com/eosphoros-ai/dbgpts)：** アプリケーション、エージェント、ワークフローのエコシステム。
+- **[貢献ガイド](CONTRIBUTING.md)：** 開発、テスト、貢献の指針。
 
-Consult current documentation for provider support, drivers, and dependencies instead of treating historical model lists as compatibility guarantees.
+プロバイダー、ドライバー、依存関係の対応状況は最新のドキュメントを参照し、過去のモデル一覧を互換性の保証として扱わないでください。
 
-## Vision and evolution
+## ビジョンと進化
 
-Make trustworthy data work open and composable: help users complete an analysis while enabling teams to retain business context, reusable methods, and analytical artifacts.
+信頼できるデータ作業をオープンで組み合わせ可能にします。ユーザーの分析を支援し、チームが業務の文脈、再利用可能な手法、分析成果物を蓄積できるようにします。
 
-Development directions include semantic consistency, task evaluation, execution diagnostics, portable Skills and workflows, and supervised recurring tasks. Track proposals and priorities through [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) and [Discussions](https://github.com/orgs/eosphoros-ai/discussions), without assuming unconfirmed release dates.
+開発では、セマンティクスの一貫性、タスク評価、実行診断、移植可能な Skills とワークフロー、監督可能な継続タスクに注力します。[Issues](https://github.com/eosphoros-ai/DB-GPT/issues) と [Discussions](https://github.com/orgs/eosphoros-ai/discussions) で提案と優先順位を確認してください。未確定のリリース日程は前提にしません。
 
-## Community
+<a id="community"></a>
 
-- [Report an issue or suggest a feature](https://github.com/eosphoros-ai/DB-GPT/issues)
-- [Discuss usage and design](https://github.com/orgs/eosphoros-ai/discussions)
-- [Explore community projects](https://github.com/eosphoros-ai/community)
-- [Join Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
-- [Meet the contributors](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
+## コミュニティ
 
-Contribute reproducible cases, fixes, documentation, Skills, and workflows. Include the version, configuration method, and a minimal reproduction when reporting a problem; remove secrets and sensitive data from logs.
+- [問題の報告・機能提案](https://github.com/eosphoros-ai/DB-GPT/issues)
+- [使い方と設計の議論](https://github.com/orgs/eosphoros-ai/discussions)
+- [コミュニティのプロジェクト](https://github.com/eosphoros-ai/community)
+- [Slack に参加](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
+- [貢献者を見る](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
-## Contribution
+再現可能な事例、修正、ドキュメント、Skills、ワークフローを歓迎します。問題を報告する際はバージョン、設定方法、最小限の再現手順を記載し、ログから秘密情報と機密データを除去してください。
 
-For detailed guidelines, see [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md). Contributions to code, documentation, Skills, workflows, and reproducible examples are welcome.
+## 貢献
 
-### Contributors Wall
+詳しくは[貢献方法](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)を参照してください。コード、ドキュメント、Skills、ワークフロー、再現可能な事例への貢献を歓迎します。
+
+### 貢献者一覧
 
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT contributors" />
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT の貢献者" />
 </a>
 
-## License and disclaimer
+## ライセンスと免責事項
 
-DB-GPT is distributed under the [MIT License](LICENSE). Read the [disclaimer](DISCKAIMER.md).
+DB-GPT は [MIT ライセンス](LICENSE)で配布されています。[免責事項](DISCKAIMER.md)もお読みください。
 
-## Academic citations
+## 学術引用
 
-The following papers introduce the project and related research. They do not describe the compatibility of every current UI feature.
+以下の論文はプロジェクトと関連研究を紹介しています。現在のすべての UI 機能の互換性を説明するものではありません。
 
 <details>
-<summary>BibTeX references</summary>
+<summary>BibTeX 引用情報</summary>
 
 ```bibtex
 @article{xue2023dbgpt,
@@ -279,6 +291,6 @@ The following papers introduce the project and related research. They do not des
 
 </details>
 
-## Star History
+## Star の推移
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star 履歴グラフ](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

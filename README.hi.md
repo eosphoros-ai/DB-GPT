@@ -2,158 +2,168 @@
   <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<h1 align="center">DB-GPT: Open-Source Product for Controlled Data Agents</h1>
+<h1 align="center">DB-GPT: नियंत्रित डेटा एजेंटों के लिए ओपन-सोर्स उत्पाद</h1>
 
 <p align="center">
-  From a data question to verifiable queries, analytical reports, and reusable dashboards.
+  डेटा से जुड़े प्रश्न से सत्यापन योग्य क्वेरी, विश्लेषण रिपोर्ट और पुनः उपयोग योग्य डैशबोर्ड तक।
 </p>
 
 <p align="center">
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
-  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="Latest release" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
+  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="नवीनतम रिलीज़" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT लाइसेंस" /></a>
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh.md">Simplified Chinese</a>
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ma.md">മലയാളം</a> · <a href="README.ta.md">தமிழ்</a>
 </p>
 
 <p align="center">
-  <a href="http://docs.dbgpt.cn/docs/overview/">Documentation</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a> · <a href="#quick-start">Quick start</a>
+  <a href="http://docs.dbgpt.cn/docs/overview/">दस्तावेज़</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">रिलीज़</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">समुदाय</a> · <a href="#quick-start">त्वरित शुरुआत</a>
 </p>
 
-> **Connect your data, establish business definitions, choose expert methods, execute within configured tool and runtime boundaries, and deliver results you can inspect, edit, and reuse.**
+> **अपने डेटा को जोड़ें, व्यावसायिक परिभाषाएँ तय करें, विशेषज्ञ विधियाँ चुनें और कॉन्फ़िगर किए गए टूल तथा रनटाइम की सीमाओं में काम करें। परिणामों की जाँच करें, उन्हें संपादित करें और दोबारा उपयोग करें।**
 
-DB-GPT goes beyond translating natural language into SQL. It brings **data connections, business semantics, expert skills, task orchestration, and analytical artifacts** into one workflow: a practical assistant for users and an extensible foundation for developers building AI-native data applications.
+DB-GPT केवल प्राकृतिक भाषा को SQL में नहीं बदलता। यह **डेटा कनेक्शन, व्यावसायिक अर्थ, विशेषज्ञ कौशल, कार्य समन्वय और विश्लेषण से बनी सामग्री** को एक कार्यप्रवाह में जोड़ता है। यह उपयोगकर्ताओं के लिए व्यावहारिक सहायक और डेवलपरों के लिए AI-आधारित डेटा अनुप्रयोग बनाने का विस्तार योग्य आधार है।
 
-[Product demo](#product-demo) · [Why DB-GPT?](#why-db-gpt) · [Product modules](#product-modules) · [Safety and execution boundaries](#safety-and-execution-boundaries) · [Quick start](#quick-start) · [Community](#community)
+[उत्पाद डेमो](#product-demo) · [DB-GPT क्यों चुनें](#why-db-gpt) · [उत्पाद मॉड्यूल](#product-modules) · [सुरक्षा और निष्पादन सीमाएँ](#safety-and-execution-boundaries) · [त्वरित शुरुआत](#quick-start) · [समुदाय](#community)
 
-## Product demo
+<a id="product-demo"></a>
+
+## उत्पाद डेमो
 
 https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-## Why DB-GPT?
+<a id="why-db-gpt"></a>
 
-### Business context before queries
+## DB-GPT क्यों चुनें
 
-“Revenue” can mean different date attribution, refund treatment, and scope. The Semantic Center organizes schema metadata, business meanings, metric formulas, and published versions so an agent can work from explicit definitions rather than guess them again for each question.
+### क्वेरी से पहले व्यावसायिक संदर्भ
 
-### Expert methods, not just answers
+‘राजस्व’ का अर्थ तारीख के निर्धारण, रिफ़ंड के व्यवहार और गणना के दायरे के अनुसार बदल सकता है। सेमांटिक सेंटर स्कीमा मेटाडेटा, व्यावसायिक अर्थ, मीट्रिक सूत्र और प्रकाशित संस्करण व्यवस्थित करता है, ताकि एजेंट हर प्रश्न पर अनुमान लगाने के बजाय स्पष्ट परिभाषाओं से काम करे।
 
-Use specialized plugins for queries, analysis, SQL optimization, metadata and architecture, or financial analysis. Skills package reusable instructions and scripts; workflows make steps, dependencies, and tool configuration explicit.
+### केवल उत्तर नहीं, विशेषज्ञ विधियाँ
 
-### Reusable results
+क्वेरी, विश्लेषण, SQL अनुकूलन, मेटाडेटा और आर्किटेक्चर तथा वित्तीय विश्लेषण के लिए विशेष प्लगइन चुनें। Skills दोबारा उपयोग योग्य निर्देश और स्क्रिप्ट देते हैं; कार्यप्रवाह चरणों, निर्भरताओं और टूल कॉन्फ़िगरेशन को स्पष्ट करते हैं।
 
-Deliver query tables, charts, analytical reports, and editable dashboards—not only chat messages. Inspect the execution, review the result, request changes, and retain the artifact for the next task.
+### पुनः उपयोग योग्य परिणाम
 
-### Human control over consequential actions
+केवल चैट संदेशों के बजाय क्वेरी तालिकाएँ, चार्ट, विश्लेषण रिपोर्ट और संपादन योग्य डैशबोर्ड बनाएँ। निष्पादन और परिणाम की समीक्षा करें, बदलाव माँगें और अगली गतिविधि के लिए सामग्री सहेजें।
 
-Models, tools, data sources, and runtime access depend on deployment and task configuration. Dashboard plans and proposed edits can be reviewed before application. **Controlled execution is not a guarantee of absolute safety**: use least-privilege credentials, appropriate isolation, and independent review.
+### महत्वपूर्ण कार्रवाइयों पर मानवीय नियंत्रण
 
-## Product modules
+मॉडल, टूल, डेटा स्रोत और रनटाइम का उपयोग परिनियोजन तथा कार्य कॉन्फ़िगरेशन पर निर्भर करता है। डैशबोर्ड योजना और प्रस्तावित बदलाव लागू करने से पहले जाँचे जा सकते हैं। **नियंत्रित निष्पादन पूर्ण सुरक्षा की गारंटी नहीं है**: न्यूनतम अधिकार वाले क्रेडेंशियल, उचित अलगाव और स्वतंत्र समीक्षा अपनाएँ।
 
-### A shared starting point
+<a id="product-modules"></a>
 
-![The current DB-GPT home interface: natural-language input, model selection, and expert entry points](assets/readme-en/home.png)
+## उत्पाद मॉड्यूल
 
-Start with a question, a file, or a database. Choose a model and the relevant expert, clarify the objective, and move into a query, analysis, or dashboard task.
+### कार्य शुरू करने का साझा स्थान
 
-### 1. Dashboards: from plan to board view
+![वर्तमान DB-GPT होम इंटरफ़ेस: प्राकृतिक भाषा इनपुट, मॉडल चयन और विशेषज्ञ प्रवेश बिंदु](assets/readme-en/home.png)
 
-Start with a plan or template, generate a draft, edit widgets and queries, and enter Preview to present the full board.
+प्रश्न, फ़ाइल या डेटाबेस से शुरू करें। मॉडल और उपयुक्त विशेषज्ञ चुनें, उद्देश्य स्पष्ट करें और क्वेरी, विश्लेषण या डैशबोर्ड कार्य में आगे बढ़ें।
 
-![The generated Walmart dashboard in Preview: total sales, active stores, weekly trend, and Top 10 stores](assets/readme-en/generated-dashboard.png)
+### 1. डैशबोर्ड: योजना से बोर्ड दृश्य तक
 
-*This is the actual Walmart dashboard generated and saved during the product demo, shown in Preview board view. Its four widgets include sales and store KPIs, a weekly trend, and a Top 10 ranking. It is a saved draft, not a publicly published board.*
+योजना या टेम्पलेट से शुरू करें, ड्राफ़्ट बनाएँ, विजेट और क्वेरी संपादित करें तथा पूरा बोर्ड दिखाने के लिए Preview खोलें।
 
-- Define metrics, charts, and filters before generation.
-- Adjust widgets, layout, query configuration, and filtering.
-- Discuss changes with the AI assistant and review proposals before applying them.
-- Save drafts; publish or share only when the result and access scope are ready.
+![Preview में तैयार Walmart डैशबोर्ड: कुल बिक्री, सक्रिय स्टोर, साप्ताहिक रुझान और शीर्ष 10 स्टोर](assets/readme-en/generated-dashboard.png)
 
-The featured Walmart board uses an example dataset. Its values illustrate this case, not current company performance.
+*यह उत्पाद डेमो के दौरान वास्तव में बनाया और सहेजा गया Walmart डैशबोर्ड है, जिसे Preview बोर्ड दृश्य में दिखाया गया है। इसके चार विजेट बिक्री और स्टोर के KPI, साप्ताहिक रुझान और शीर्ष 10 की रैंकिंग दिखाते हैं। यह सहेजा हुआ ड्राफ़्ट है, सार्वजनिक रूप से प्रकाशित बोर्ड नहीं।*
 
-### 2. Plugins and Skills: reusable expertise
+- बनाने से पहले मीट्रिक, चार्ट और फ़िल्टर तय करें।
+- विजेट, लेआउट, क्वेरी कॉन्फ़िगरेशन और फ़िल्टर समायोजित करें।
+- AI सहायक के साथ बदलावों पर चर्चा करें और लागू करने से पहले प्रस्तावों की समीक्षा करें।
+- ड्राफ़्ट सहेजें; परिणाम और पहुँच का दायरा तैयार होने पर ही प्रकाशित या साझा करें।
 
-Select an expert plugin for the task and bind its data, knowledge context, and permitted tools. Skills package domain instructions, methods, and scripts.
+Walmart बोर्ड में उदाहरण डेटासेट का उपयोग किया गया है। इसकी संख्याएँ इस मामले को समझाती हैं, कंपनी के वर्तमान प्रदर्शन को नहीं।
 
-![The English plugin interface with five data-expert categories](assets/readme-en/plugins.png)
+### 2. प्लगइन और Skills: विशेषज्ञता का पुनः उपयोग
 
-| Expert | Typical work |
+कार्य के लिए विशेषज्ञ प्लगइन चुनें और उसके डेटा, ज्ञान संदर्भ तथा अनुमत टूल जोड़ें। Skills में विषय-विशिष्ट निर्देश, विधियाँ और स्क्रिप्ट शामिल होते हैं।
+
+![पाँच डेटा-विशेषज्ञ श्रेणियों वाला अंग्रेज़ी प्लगइन इंटरफ़ेस](assets/readme-en/plugins.png)
+
+| विशेषज्ञता | सामान्य कार्य |
 | --- | --- |
-| Data Query | Clarify the question and metric, inspect and execute SQL, export results |
-| Data Analysis | Inspect data, analyze trends and composition, prepare reports and dashboards |
-| SQL Optimization | Inspect SQL and execution plans, propose changes for review |
-| Metadata & Architecture | Organize data dictionaries, relationships, and modeling recommendations |
-| Financial Analysis | Read financial materials and structure comparisons, subject to configuration and data prerequisites |
+| डेटा क्वेरी | प्रश्न और मीट्रिक स्पष्ट करना, SQL जाँचना व चलाना और परिणाम निर्यात करना |
+| डेटा विश्लेषण | डेटा जाँचना, रुझान व संरचना का विश्लेषण और रिपोर्ट व डैशबोर्ड बनाना |
+| SQL अनुकूलन | SQL और निष्पादन योजना जाँचना और समीक्षा के लिए सुधार सुझाना |
+| मेटाडेटा और आर्किटेक्चर | डेटा शब्दकोश, संबंध और मॉडलिंग सुझाव व्यवस्थित करना |
+| वित्तीय विश्लेषण | आवश्यक कॉन्फ़िगरेशन व डेटा उपलब्ध होने पर वित्तीय सामग्री पढ़ना और तुलनाएँ व्यवस्थित करना |
 
-Plugins provide methods, not data permissions. Review third-party instructions, scripts, dependencies, and tool access before installing them.
+प्लगइन विधियाँ देते हैं, डेटा अनुमति नहीं। इंस्टॉल करने से पहले तीसरे पक्ष के निर्देश, स्क्रिप्ट, निर्भरताएँ और टूल पहुँच की समीक्षा करें।
 
-### 3. Data sources: reliable connections
+### 3. डेटा स्रोत: विश्वसनीय कनेक्शन
 
-Manage database connections and select the source for each task. Queries, analysis, and dashboards can work from the same connection inventory and metadata context.
+डेटाबेस कनेक्शन प्रबंधित करें और हर कार्य के लिए स्रोत चुनें। क्वेरी, विश्लेषण और डैशबोर्ड समान कनेक्शन सूची तथा मेटाडेटा संदर्भ का उपयोग कर सकते हैं।
 
-![Full English database catalog: all 27 types, with environment availability preserved](assets/readme-en/datasource-catalog-full.png)
+![पूरा अंग्रेज़ी डेटाबेस कैटलॉग: सभी 27 प्रकार और उस परिवेश की उपलब्धता स्थिति](assets/readme-en/datasource-catalog-full.png)
 
-Supports data sources including MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j, and TuGraph.
+MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j और TuGraph सहित विभिन्न डेटा स्रोत समर्थित हैं।
 
-- Configure and inspect database connections.
-- Bind a task to the relevant source and confirm its scope.
-- A database catalog entry or connection template is not proof of a working connection. Drivers, network access, and credentials must be available.
+- डेटाबेस कनेक्शन कॉन्फ़िगर करें और जाँचें।
+- कार्य को सही स्रोत से जोड़ें और उसका दायरा सुनिश्चित करें।
+- कैटलॉग प्रविष्टि या कनेक्शन टेम्पलेट कार्यरत कनेक्शन का प्रमाण नहीं है। ड्राइवर, नेटवर्क पहुँच और क्रेडेंशियल उपलब्ध होने चाहिए।
 
-### 4. Semantic Center: maintained metric definitions
+### 4. सेमांटिक सेंटर: मीट्रिक परिभाषाओं का रखरखाव
 
-Organize metadata, business definitions, metrics, query examples, relationships, and rules around a source. Published definitions preserve versions that can be associated with a query result.
+स्रोत के आसपास मेटाडेटा, व्यावसायिक परिभाषाएँ, मीट्रिक, क्वेरी उदाहरण, संबंध और नियम व्यवस्थित करें। प्रकाशित परिभाषाओं के संस्करण सुरक्षित रहते हैं और क्वेरी परिणाम से जोड़े जा सकते हैं।
 
-![The Semantic Center with published metric formulas and versions](assets/readme-en/semantic.png)
+![प्रकाशित मीट्रिक सूत्र और संस्करण वाला सेमांटिक सेंटर](assets/readme-en/semantic.png)
 
-- Maintain table and column meanings, annotations, and synonyms.
-- Define base and derived metrics, formulas, and dependencies.
-- Review and publish definitions; a published-only read must not treat an unpublished draft as authoritative.
+- तालिका व कॉलम के अर्थ, टिप्पणियाँ और पर्यायवाची बनाए रखें।
+- मूल और व्युत्पन्न मीट्रिक, सूत्र और निर्भरताएँ परिभाषित करें।
+- परिभाषाओं की समीक्षा करके प्रकाशित करें; केवल प्रकाशित परिभाषाएँ पढ़ते समय अप्रकाशित ड्राफ़्ट को प्रामाणिक न मानें।
 
-### 5. Workflow: explicit steps and collaboration
+### 5. कार्यप्रवाह: स्पष्ट चरण और सहयोग
 
-Use the visual editor to organize Agent nodes, inputs, outputs, serial steps, and parallel branches. Prefer explicit workflows when a task should be repeatable.
+विज़ुअल एडिटर से Agent नोड, इनपुट, आउटपुट, क्रमिक चरण और समानांतर शाखाएँ व्यवस्थित करें। दोहराए जाने वाले कार्यों के लिए स्पष्ट कार्यप्रवाह अपनाएँ।
 
-![An English workflow template with semantic grounding, planning, parallel analysis, and combined review](assets/readme-en/workflow.png)
+![अर्थ-संदर्भ तैयार करने, योजना, समानांतर विश्लेषण और संयुक्त समीक्षा वाला अंग्रेज़ी कार्यप्रवाह टेम्पलेट](assets/readme-en/workflow.png)
 
-This is a template editing view, not evidence that the workflow has been debugged or published. Configure its data source, model, and tools before running it.
+यह टेम्पलेट संपादन दृश्य है, कार्यप्रवाह के डिबग या प्रकाशित होने का प्रमाण नहीं। चलाने से पहले डेटा स्रोत, मॉडल और टूल कॉन्फ़िगर करें।
 
-### 6. Knowledge, connectors, and runtime management
+### 6. ज्ञान, कनेक्टर और रनटाइम प्रबंधन
 
-- **Knowledge bases** provide document context for retrieval. Parsing, chunking, indexing, and retrieval configuration affect availability and quality.
-- **Connectors** integrate external tools through configured MCP services. Templates need activation and authorization before use.
-- **Models and runtimes** let you select providers and local or container execution, with configured dependencies and tool access.
-- **Scheduled tasks** replay work or refresh artifacts. The scheduler, models, files, and sources must remain available.
+- **ज्ञान भंडार** खोज के लिए दस्तावेज़ संदर्भ देते हैं। पार्सिंग, विभाजन, इंडेक्सिंग और खोज कॉन्फ़िगरेशन उपलब्धता व गुणवत्ता को प्रभावित करते हैं।
+- **कनेक्टर** कॉन्फ़िगर किए गए MCP सेवाओं से बाहरी टूल जोड़ते हैं। टेम्पलेट इस्तेमाल करने से पहले सक्रिय करना और अनुमति देना आवश्यक है।
+- **मॉडल और रनटाइम** निर्भरताएँ व टूल पहुँच कॉन्फ़िगर करके प्रदाता और स्थानीय या कंटेनर निष्पादन चुनने देते हैं।
+- **निर्धारित कार्य** काम दोहराते या सामग्री ताज़ा करते हैं। शेड्यूलर, मॉडल, फ़ाइल और स्रोत उपलब्ध रहने चाहिए।
 
-## From question to result
+## प्रश्न से परिणाम तक
 
-**Connect → Ground → Plan → Execute → Review → Reuse**
+**कनेक्ट करें → संदर्भ तय करें → योजना बनाएँ → निष्पादित करें → समीक्षा करें → पुनः उपयोग करें**
 
-1. Select the source and clarify the objective, time range, and metric scope.
-2. Inspect fields, data quality, business definitions, and metric versions.
-3. Select an expert and Skills; configure a workflow for repeatable tasks.
-4. Execute SQL, code, or retrieval within permitted tools and runtimes.
-5. Review the plan, calculations, sources, artifacts, and proposed changes.
-6. Retain the report or dashboard; configure scheduling only with the required operational support.
+1. स्रोत चुनें और उद्देश्य, समय सीमा तथा मीट्रिक दायरा स्पष्ट करें।
+2. फ़ील्ड, डेटा गुणवत्ता, व्यावसायिक परिभाषाएँ और मीट्रिक संस्करण जाँचें।
+3. विशेषज्ञ और Skills चुनें; दोहराने योग्य कार्यों के लिए कार्यप्रवाह कॉन्फ़िगर करें।
+4. अनुमत टूल और रनटाइम में SQL, कोड या खोज चलाएँ।
+5. योजना, गणना, स्रोत, सामग्री और प्रस्तावित बदलावों की समीक्षा करें।
+6. रिपोर्ट या डैशबोर्ड सहेजें; आवश्यक संचालन समर्थन होने पर ही शेड्यूलिंग कॉन्फ़िगर करें।
 
-## Safety and execution boundaries
+<a id="safety-and-execution-boundaries"></a>
 
-DB-GPT provides configurable execution and review mechanisms. Effective safety depends on deployment:
+## सुरक्षा और निष्पादन सीमाएँ
 
-- **Data access:** prefer read-only, least-privilege credentials. Descriptive catalog flags are not row- or column-level authorization enforcement.
-- **Isolation:** local execution is not container isolation. Configure file access, resource limits, and network boundaries.
-- **Secrets:** keep API keys, database passwords, and sensitive data out of commits, screenshots, and shared artifacts.
-- **Review:** independently verify important metrics, calculations, SQL, and external outputs. Model results do not replace professional review.
-- **Publication and scheduling:** drafts, published snapshots, sharing, and continuous operation are different states. Confirm access and availability before deployment.
+DB-GPT कॉन्फ़िगर किए जा सकने वाले निष्पादन और समीक्षा तंत्र देता है। प्रभावी सुरक्षा परिनियोजन पर निर्भर करती है:
 
-> Capabilities depend on the release, configuration, schema migrations, and model behavior. Use the code and documentation for your version; a UI entry or historical demo is not a production-readiness guarantee.
+- **डेटा पहुँच:** केवल पढ़ने और न्यूनतम अधिकार वाले क्रेडेंशियल चुनें। कैटलॉग के विवरणात्मक फ़्लैग पंक्ति या कॉलम स्तर का अधिकार नियंत्रण नहीं हैं।
+- **अलगाव:** स्थानीय निष्पादन कंटेनर अलगाव नहीं है। फ़ाइल पहुँच, संसाधन सीमाएँ और नेटवर्क सीमाएँ कॉन्फ़िगर करें।
+- **गोपनीय जानकारी:** API कुंजियाँ, डेटाबेस पासवर्ड और संवेदनशील डेटा कमिट, स्क्रीनशॉट या साझा सामग्री में न रखें।
+- **समीक्षा:** महत्वपूर्ण मीट्रिक, गणना, SQL और बाहरी परिणामों का स्वतंत्र सत्यापन करें। मॉडल के परिणाम पेशेवर समीक्षा का विकल्प नहीं हैं।
+- **प्रकाशन और शेड्यूलिंग:** ड्राफ़्ट, प्रकाशित स्नैपशॉट, साझा करना और निरंतर संचालन अलग अवस्थाएँ हैं। परिनियोजन से पहले पहुँच और उपलब्धता सुनिश्चित करें।
 
-## Quick start
+> क्षमताएँ रिलीज़, कॉन्फ़िगरेशन, स्कीमा माइग्रेशन और मॉडल व्यवहार पर निर्भर हैं। अपने संस्करण के कोड और दस्तावेज़ देखें; UI में विकल्प या पुराना डेमो उत्पादन-तत्परता की गारंटी नहीं है।
 
-### Option 1: installer for macOS and Linux
+<a id="quick-start"></a>
 
-Download and review the script before running it:
+## त्वरित शुरुआत
+
+### विकल्प 1: macOS और Linux के लिए इंस्टॉलर
+
+चलाने से पहले स्क्रिप्ट डाउनलोड करके उसकी समीक्षा करें:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
@@ -161,95 +171,97 @@ less install.sh
 bash install.sh
 ```
 
-Follow the wizard to choose a profile and configure a model provider. Then use the directory and startup command printed by the installer:
+विज़ार्ड से प्रोफ़ाइल चुनें और मॉडल प्रदाता कॉन्फ़िगर करें। फिर इंस्टॉलर द्वारा बताए गए स्थान और स्टार्टअप कमांड का उपयोग करें:
 
 ```bash
 cd ~/.dbgpt/DB-GPT
 uv run dbgpt start webserver --profile <profile>
 ```
 
-Replace `<profile>` with your configured profile and open [http://localhost:5670](http://localhost:5670).
+`<profile>` को कॉन्फ़िगर की गई प्रोफ़ाइल से बदलें और [http://localhost:5670](http://localhost:5670) खोलें।
 
 <details>
-<summary>Existing source checkout: keep your current branch</summary>
+<summary>मौजूदा सोर्स चेकआउट: वर्तमान ब्रांच बनाए रखें</summary>
 
-From the repository root:
+रिपॉज़िटरी के मूल फ़ोल्डर से:
 
 ```bash
 bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)"
 uv run dbgpt start webserver --profile openai
 ```
 
-`--repo-dir` reuses the current checkout instead of cloning or switching branches. Provider credentials and required services still need configuration.
+`--repo-dir` क्लोन या ब्रांच बदले बिना मौजूदा चेकआउट का उपयोग करता है। प्रदाता क्रेडेंशियल और आवश्यक सेवाएँ फिर भी कॉन्फ़िगर करनी होंगी।
 
-With dependencies installed and an appropriate TOML configuration, the backend can also be started directly:
+निर्भरताएँ इंस्टॉल होने और उपयुक्त TOML कॉन्फ़िगरेशन उपलब्ध होने पर बैकएंड सीधे भी शुरू किया जा सकता है:
 
 ```bash
 .venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
 ```
 
-For frontend development, run `npm run dev -- --hostname 127.0.0.1 --port 3000` inside `web/`. A running UI does not prove model inference or data access is ready.
+फ़्रंटएंड विकास के लिए `web/` में `npm run dev -- --hostname 127.0.0.1 --port 3000` चलाएँ। UI चलना मॉडल अनुमान या डेटा पहुँच तैयार होने का प्रमाण नहीं है।
 
 </details>
 
-### Option 2: PyPI
+### विकल्प 2: PyPI
 
-Use Python 3.10 or newer:
+Python 3.10 या नया संस्करण उपयोग करें:
 
 ```bash
 pip install dbgpt-app
 dbgpt start
 ```
 
-Complete provider setup before using the interface. PyPI releases, `main`, and feature branches may differ; use the corresponding source checkout to test branch-specific features.
+इंटरफ़ेस इस्तेमाल करने से पहले प्रदाता सेटअप पूरा करें। PyPI रिलीज़, `main` और फ़ीचर ब्रांच अलग हो सकते हैं; ब्रांच-विशिष्ट सुविधाएँ जाँचने के लिए संबंधित सोर्स चेकआउट उपयोग करें।
 
-See the [documentation](http://docs.dbgpt.cn/docs/overview/) for additional installation and configuration options.
+अन्य इंस्टॉलेशन और कॉन्फ़िगरेशन विकल्पों के लिए [दस्तावेज़](http://docs.dbgpt.cn/docs/overview/) देखें।
 
-## Developer ecosystem
+## डेवलपर इकोसिस्टम
 
-- **DB-GPT:** the platform for data agents, tools, execution, and analytical applications.
-- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL training and evaluation resources.
-- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** applications, agents, and workflow ecosystem.
-- **[Contributing](CONTRIBUTING.md):** development, testing, and contribution guidelines.
+- **DB-GPT:** डेटा एजेंट, टूल, निष्पादन और विश्लेषण अनुप्रयोगों का आधार।
+- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL प्रशिक्षण और मूल्यांकन संसाधन।
+- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** अनुप्रयोग, एजेंट और कार्यप्रवाह इकोसिस्टम।
+- **[योगदान](CONTRIBUTING.md):** विकास, परीक्षण और योगदान संबंधी दिशानिर्देश।
 
-Consult current documentation for provider support, drivers, and dependencies instead of treating historical model lists as compatibility guarantees.
+प्रदाता समर्थन, ड्राइवर और निर्भरताओं के लिए वर्तमान दस्तावेज़ देखें; पुराने मॉडल की सूचियों को संगतता की गारंटी न मानें।
 
-## Vision and evolution
+## दृष्टि और विकास
 
-Make trustworthy data work open and composable: help users complete an analysis while enabling teams to retain business context, reusable methods, and analytical artifacts.
+विश्वसनीय डेटा कार्य को खुला और संयोजनीय बनाएँ: उपयोगकर्ताओं को विश्लेषण पूरा करने में मदद दें और टीमों को व्यावसायिक संदर्भ, पुनः उपयोग योग्य विधियाँ तथा विश्लेषण सामग्री सहेजने दें।
 
-Development directions include semantic consistency, task evaluation, execution diagnostics, portable Skills and workflows, and supervised recurring tasks. Track proposals and priorities through [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) and [Discussions](https://github.com/orgs/eosphoros-ai/discussions), without assuming unconfirmed release dates.
+विकास की दिशाओं में अर्थ की संगति, कार्य मूल्यांकन, निष्पादन निदान, पोर्टेबल Skills और कार्यप्रवाह तथा निगरानी योग्य आवर्ती कार्य शामिल हैं। प्रस्ताव और प्राथमिकताएँ [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) और [Discussions](https://github.com/orgs/eosphoros-ai/discussions) में देखें; अपुष्ट रिलीज़ तारीखें न मानें।
 
-## Community
+<a id="community"></a>
 
-- [Report an issue or suggest a feature](https://github.com/eosphoros-ai/DB-GPT/issues)
-- [Discuss usage and design](https://github.com/orgs/eosphoros-ai/discussions)
-- [Explore community projects](https://github.com/eosphoros-ai/community)
-- [Join Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
-- [Meet the contributors](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
+## समुदाय
 
-Contribute reproducible cases, fixes, documentation, Skills, and workflows. Include the version, configuration method, and a minimal reproduction when reporting a problem; remove secrets and sensitive data from logs.
+- [समस्या बताएँ या सुविधा सुझाएँ](https://github.com/eosphoros-ai/DB-GPT/issues)
+- [उपयोग और डिज़ाइन पर चर्चा करें](https://github.com/orgs/eosphoros-ai/discussions)
+- [सामुदायिक परियोजनाएँ देखें](https://github.com/eosphoros-ai/community)
+- [Slack से जुड़ें](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
+- [योगदानकर्ताओं को देखें](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
-## Contribution
+पुनरुत्पादित किए जा सकने वाले उदाहरण, सुधार, दस्तावेज़, Skills और कार्यप्रवाह में योगदान दें। समस्या बताते समय संस्करण, कॉन्फ़िगरेशन विधि और न्यूनतम पुनरुत्पादन चरण दें; लॉग से गोपनीय और संवेदनशील डेटा हटाएँ।
 
-For detailed guidelines, see [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md). Contributions to code, documentation, Skills, workflows, and reproducible examples are welcome.
+## योगदान
 
-### Contributors Wall
+विस्तृत दिशानिर्देशों के लिए [योगदान कैसे करें](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md) देखें। कोड, दस्तावेज़, Skills, कार्यप्रवाह और पुनरुत्पादित उदाहरणों में योगदान का स्वागत है।
+
+### योगदानकर्ता सूची
 
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT contributors" />
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT योगदानकर्ता" />
 </a>
 
-## License and disclaimer
+## लाइसेंस और अस्वीकरण
 
-DB-GPT is distributed under the [MIT License](LICENSE). Read the [disclaimer](DISCKAIMER.md).
+DB-GPT [MIT लाइसेंस](LICENSE) के अंतर्गत वितरित है। [अस्वीकरण](DISCKAIMER.md) भी पढ़ें।
 
-## Academic citations
+## अकादमिक उद्धरण
 
-The following papers introduce the project and related research. They do not describe the compatibility of every current UI feature.
+निम्न शोधपत्र परियोजना और संबंधित शोध का परिचय देते हैं। ये हर वर्तमान UI सुविधा की संगतता का विवरण नहीं हैं।
 
 <details>
-<summary>BibTeX references</summary>
+<summary>BibTeX संदर्भ</summary>
 
 ```bibtex
 @article{xue2023dbgpt,
@@ -279,6 +291,6 @@ The following papers introduce the project and related research. They do not des
 
 </details>
 
-## Star History
+## Star वृद्धि का इतिहास
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star इतिहास चार्ट](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
