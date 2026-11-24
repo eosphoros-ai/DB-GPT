@@ -247,14 +247,33 @@ class ConnectorManager(BaseComponent):
         SQLAlchemy engine is attempted so connections are released
         promptly rather than waiting for GC.
         """
+        connector = self._evict_connector(db_name)
+        if connector is not None:
+            self._dispose_connector(connector)
+
+    def _invalidate_connector_in_background(self, db_name: str) -> None:
+        """Like ``invalidate_connector`` but dispose the engine off-thread.
+
+        The legacy add/edit/delete methods are called directly from async
+        routes, so the eviction happens before they return but the
+        potentially blocking ``engine.dispose()`` runs on the default
+        executor instead of the event loop.
+        """
+        connector = self._evict_connector(db_name)
+        if connector is not None:
+            executor = self.system_app.get_component(
+                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+            ).create()  # type: ignore
+            executor.submit(self._dispose_connector, connector)
+
+    def _evict_connector(self, db_name: str) -> Optional[BaseConnector]:
+        """Pop the cached connector and bump the name's generation."""
         with self._connector_cache_lock:
             cached = self._connector_cache.pop(db_name, None)
             self._connector_generations[db_name] = (
                 self._connector_generations.get(db_name, 0) + 1
             )
-        if cached is not None:
-            _, connector = cached
-            self._dispose_connector(connector)
+        return cached[1] if cached is not None else None
 
     def clear_connector_cache(self) -> None:
         """Drop all cached connectors. Useful for tests / shutdown hooks."""
@@ -449,7 +468,7 @@ class ConnectorManager(BaseComponent):
             return self.storage.delete_db(db_name)
         finally:
             # Never keep serving a connector for a datasource that is gone.
-            self.invalidate_connector(db_name)
+            self._invalidate_connector_in_background(db_name)
 
     @Deprecated(
         version="0.7.0",
@@ -469,7 +488,7 @@ class ConnectorManager(BaseComponent):
                 db_info.comment,
             )
         finally:
-            self.invalidate_connector(db_info.db_name)
+            self._invalidate_connector_in_background(db_info.db_name)
 
     async def async_db_summary_embedding(self, db_name, db_type):
         """Async db summary embedding."""
@@ -517,7 +536,7 @@ class ConnectorManager(BaseComponent):
                 )
             # A same-name connector may still be cached from a previous
             # registration; drop it so the new config is used.
-            self.invalidate_connector(db_info.db_name)
+            self._invalidate_connector_in_background(db_info.db_name)
             # async embedding
             executor = self.system_app.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory

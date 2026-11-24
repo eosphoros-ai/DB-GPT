@@ -140,3 +140,48 @@ def test_refresh_invalidates_off_the_event_loop(env):
     assert [name for name, _ in events] == ["dispose", "embed"]
     assert events[0][1] != loop_thread
     assert manager.get_connector("poc") is not cached
+
+
+@pytest.mark.parametrize("mutation", ["add", "edit", "delete"])
+def test_legacy_mutations_dispose_off_the_event_loop(env, mutation):
+    manager, db_a, db_b = env
+    manager.add_db(_sqlite(db_a))
+    cached = manager.get_connector("poc")
+    dispose_threads = []
+    real_dispose = manager._dispose_connector
+
+    def recording_dispose(connector):
+        dispose_threads.append(threading.get_ident())
+        real_dispose(connector)
+
+    manager._dispose_connector = recording_dispose
+    executor = ThreadPoolExecutor(max_workers=1)
+    manager.system_app.get_component.return_value.create.return_value = executor
+
+    async def mutate():
+        if mutation == "add":
+            # Row removed behind the cache's back, then re-registered.
+            manager.storage.delete_db("poc")
+            manager.add_db(_sqlite(db_b))
+        elif mutation == "edit":
+            manager.edit_db(_sqlite(db_b))
+        else:
+            manager.delete_db("poc")
+        # Evicted by the time the route returns.
+        assert "poc" not in manager._connector_cache
+        return threading.get_ident()
+
+    try:
+        loop_thread = asyncio.run(mutate())
+    finally:
+        executor.shutdown()
+
+    assert len(dispose_threads) == 1
+    assert dispose_threads[0] != loop_thread
+    if mutation == "delete":
+        with pytest.raises(ValueError, match="not found"):
+            manager.get_connector("poc")
+    else:
+        connector = manager.get_connector("poc")
+        assert connector is not cached
+        assert _query(connector) == "B_MARKER"
