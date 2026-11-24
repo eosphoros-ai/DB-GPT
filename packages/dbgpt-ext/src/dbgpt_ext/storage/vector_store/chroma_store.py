@@ -462,6 +462,10 @@ def _convert_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == FilterOperator.LTE:
         return "$lte"
+    elif operator == FilterOperator.IN:
+        return "$in"
+    elif operator == FilterOperator.NIN:
+        return "$nin"
     else:
         raise ValueError(f"Chroma Where operator {operator} not supported")
 
