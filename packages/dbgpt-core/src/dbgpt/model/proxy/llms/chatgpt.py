@@ -298,13 +298,13 @@ class OpenAILLMClient(ProxyLLMClient):
         # Apply openai kwargs
         for k, v in self._openai_kwargs.items():
             payload[k] = v
-        if request.temperature:
+        if request.temperature is not None:
             payload["temperature"] = request.temperature
         if request.max_new_tokens:
             payload["max_tokens"] = request.max_new_tokens
         if request.stop:
             payload["stop"] = request.stop
-        if request.top_p:
+        if request.top_p is not None:
             payload["top_p"] = request.top_p
         if request.tools is not None:
             payload["tools"] = request.tools
