@@ -25,6 +25,18 @@ from dbgpt.util.json_utils import serialize
 logger = logging.getLogger(__name__)
 
 
+_MILVUS_FILTER_OPERATORS = {
+    FilterOperator.EQ: "==",
+    FilterOperator.NE: "!=",
+    FilterOperator.GT: ">",
+    FilterOperator.GTE: ">=",
+    FilterOperator.LT: "<",
+    FilterOperator.LTE: "<=",
+    FilterOperator.IN: "in",
+    FilterOperator.NIN: "not in",
+}
+
+
 @register_resource(
     _("Milvus Config"),
     "milvus_vector_config",
@@ -740,29 +752,17 @@ class MilvusStore(VectorStoreBase):
         """
         metadata_filters = []
         for metadata_filter in filters.filters:
-            if isinstance(metadata_filter.value, str):
-                expr = (
-                    f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.EQ.value} '{metadata_filter.value}'"
+            operator = _MILVUS_FILTER_OPERATORS.get(metadata_filter.operator)
+            if operator is None:
+                raise ValueError(
+                    f"Milvus filter operator {metadata_filter.operator} not supported"
                 )
-                metadata_filters.append(expr)
-            elif isinstance(metadata_filter.value, List):
-                expr = (
-                    f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.IN.value} {metadata_filter.value}"
-                )
-                metadata_filters.append(expr)
-            else:
-                expr = (
-                    f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.EQ.value} {str(metadata_filter.value)}"
-                )
-                metadata_filters.append(expr)
-        if len(metadata_filters) > 1:
-            metadata_filter_expr = f" {filters.condition.value} ".join(metadata_filters)
-        else:
-            metadata_filter_expr = metadata_filters[0]
-        return metadata_filter_expr
+            # JSON quoting gives valid Milvus key and value literals, including
+            # strings with quotes and lists of strings.
+            key = json.dumps(metadata_filter.key, ensure_ascii=False)
+            value = json.dumps(metadata_filter.value, ensure_ascii=False)
+            metadata_filters.append(f"({self.props_field}[{key}] {operator} {value})")
+        return f" {filters.condition.value} ".join(metadata_filters)
 
     def truncate(self):
         """检测pymilvus安装"""
