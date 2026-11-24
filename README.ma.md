@@ -12,6 +12,8 @@
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="ഏറ്റവും പുതിയ റിലീസ്" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT ലൈസൻസ്" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="X (Twitter)-ൽ DB-GPT പിന്തുടരുക" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="DB-GPT Discord കമ്മ്യൂണിറ്റിയിൽ ചേരുക" /></a>
 </p>
 
 <p align="center">
