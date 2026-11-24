@@ -14,7 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
   <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="关注 DB-GPT 的 X（Twitter）" /></a>
   <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="加入 DB-GPT Discord 社区" /></a>
-  <a href="#dingtalk-community"><img src="https://img.shields.io/badge/%E9%92%89%E9%92%89-%E5%8A%A0%E5%85%A5%E7%A4%BE%E7%BE%A4-0089FF?style=flat&amp;logo=dingtalk&amp;logoColor=white" alt="加入 DB-GPT 钉钉社区群" /></a>
+  <a href="assets/ding.jpg"><img src="https://img.shields.io/badge/%E9%92%89%E9%92%89-%E5%8A%A0%E5%85%A5%E7%A4%BE%E7%BE%A4-0089FF?style=flat&amp;logo=dingtalk&amp;logoColor=white" alt="加入 DB-GPT 钉钉社区群" /></a>
 </p>
 
 <p align="center">
@@ -234,8 +234,6 @@ dbgpt start
 - [查看贡献者](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
 欢迎提交可复现的案例、问题修复、文档、Skills 与工作流。报告问题时请附版本、配置方式与最小复现步骤，并移除日志中的密钥和敏感数据。
-
-<a id="dingtalk-community"></a>
 
 ### 钉钉社区群
 
