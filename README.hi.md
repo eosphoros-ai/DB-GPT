@@ -237,6 +237,8 @@ dbgpt start
 - [समस्या बताएँ या सुविधा सुझाएँ](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [उपयोग और डिज़ाइन पर चर्चा करें](https://github.com/orgs/eosphoros-ai/discussions)
 - [सामुदायिक परियोजनाएँ देखें](https://github.com/eosphoros-ai/community)
+- [X (Twitter) पर DB-GPT को फ़ॉलो करें](https://x.com/DBGPT_AI)
+- [Discord से जुड़ें](https://discord.gg/7uQnPuveTY)
 - [Slack से जुड़ें](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [योगदानकर्ताओं को देखें](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

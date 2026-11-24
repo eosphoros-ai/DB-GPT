@@ -237,6 +237,8 @@ dbgpt start
 - [問題の報告・機能提案](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [使い方と設計の議論](https://github.com/orgs/eosphoros-ai/discussions)
 - [コミュニティのプロジェクト](https://github.com/eosphoros-ai/community)
+- [X（Twitter）で DB-GPT をフォロー](https://x.com/DBGPT_AI)
+- [Discord に参加](https://discord.gg/7uQnPuveTY)
 - [Slack に参加](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [貢献者を見る](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

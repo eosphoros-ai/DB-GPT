@@ -225,6 +225,8 @@ Development directions include semantic consistency, task evaluation, execution 
 - [Report an issue or suggest a feature](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [Discuss usage and design](https://github.com/orgs/eosphoros-ai/discussions)
 - [Explore community projects](https://github.com/eosphoros-ai/community)
+- [Follow DB-GPT on X (Twitter)](https://x.com/DBGPT_AI)
+- [Join Discord](https://discord.gg/7uQnPuveTY)
 - [Join Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [Meet the contributors](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

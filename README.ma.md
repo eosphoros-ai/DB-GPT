@@ -237,6 +237,8 @@ dbgpt start
 - [പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക അല്ലെങ്കിൽ കഴിവ് നിർദ്ദേശിക്കുക](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [ഉപയോഗവും രൂപകൽപ്പനയും ചർച്ച ചെയ്യുക](https://github.com/orgs/eosphoros-ai/discussions)
 - [കമ്മ്യൂണിറ്റി പദ്ധതികൾ കാണുക](https://github.com/eosphoros-ai/community)
+- [X (Twitter)-ൽ DB-GPT പിന്തുടരുക](https://x.com/DBGPT_AI)
+- [Discord-ൽ ചേരുക](https://discord.gg/7uQnPuveTY)
 - [Slack-ൽ ചേരുക](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [സംഭാവകരെ കാണുക](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

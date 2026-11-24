@@ -237,6 +237,8 @@ dbgpt start
 - [பிரச்சினையைப் புகாரளிக்கவும் அல்லது அம்சம் பரிந்துரைக்கவும்](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [பயன்பாடு மற்றும் வடிவமைப்பு பற்றி விவாதிக்கவும்](https://github.com/orgs/eosphoros-ai/discussions)
 - [சமூகத் திட்டங்களைப் பார்க்கவும்](https://github.com/eosphoros-ai/community)
+- [X (Twitter)-இல் DB-GPT-ஐப் பின்தொடரவும்](https://x.com/DBGPT_AI)
+- [Discord-இல் இணையவும்](https://discord.gg/7uQnPuveTY)
 - [Slack-இல் இணையவும்](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [பங்களிப்பாளர்களைப் பார்க்கவும்](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
