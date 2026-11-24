@@ -308,6 +308,16 @@ async def add_documents_chunks(
     """ """
 
 
+def _with_chunk_defaults(
+    requests: List[KnowledgeSyncRequest],
+) -> List[KnowledgeSyncRequest]:
+    """Fill in the default chunk parameters for requests that omit them."""
+    for request in requests:
+        if request.chunk_parameters is None:
+            request.chunk_parameters = ChunkParameters(chunk_strategy="Automatic")
+    return requests
+
+
 @router.post("/documents/sync", dependencies=[Depends(check_api_key)])
 async def sync_documents(
     requests: List[KnowledgeSyncRequest], service: Service = Depends(get_service)
@@ -320,10 +330,10 @@ async def sync_documents(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.sync_document(requests))
+    return Result.succ(await service.sync_document(_with_chunk_defaults(requests)))
 
 
-@router.post("/documents/batch_sync")
+@router.post("/documents/batch_sync", dependencies=[Depends(check_api_key)])
 async def sync_documents(
     requests: List[KnowledgeSyncRequest],
     service: Service = Depends(get_service),
@@ -336,10 +346,10 @@ async def sync_documents(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.sync_document(requests))
+    return Result.succ(await service.sync_document(_with_chunk_defaults(requests)))
 
 
-@router.post("/documents/{document_id}/sync")
+@router.post("/documents/{document_id}/sync", dependencies=[Depends(check_api_key)])
 async def sync_document(
     document_id: int,
     request: KnowledgeSyncRequest,
@@ -354,9 +364,7 @@ async def sync_document(
         ServerResponse: The response
     """
     request.doc_id = document_id
-    if request.chunk_parameters is None:
-        request.chunk_parameters = ChunkParameters(chunk_strategy="Automatic")
-    return Result.succ(service.sync_document([request]))
+    return Result.succ(await service.sync_document(_with_chunk_defaults([request])))
 
 
 @router.delete(
