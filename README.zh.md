@@ -14,6 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
   <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="关注 DB-GPT 的 X（Twitter）" /></a>
   <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="加入 DB-GPT Discord 社区" /></a>
+  <a href="#钉钉社区群"><img src="https://img.shields.io/badge/%E9%92%89%E9%92%89-%E5%8A%A0%E5%85%A5%E7%A4%BE%E7%BE%A4-0089FF?style=flat&amp;logo=dingtalk&amp;logoColor=white" alt="加入 DB-GPT 钉钉社区群" /></a>
 </p>
 
 <p align="center">
