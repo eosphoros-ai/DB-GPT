@@ -25,6 +25,13 @@ def _is_flow_resource(cls):
     return metadata is not None and isinstance(metadata, ResourceMetadata)
 
 
+import logging
+from typing import List, Optional, cast
+
+logger = logging.getLogger(__name__)
+
+# ... (existing imports and helper functions unchanged) ...
+
 def _scan_awel_flow(modules: Optional[List[str]] = None):
     scanner = ModelScanner[object]()
     if not modules:
@@ -37,7 +44,10 @@ def _scan_awel_flow(modules: Optional[List[str]] = None):
             class_filter=lambda cls: _is_flow_operator(cls) or _is_flow_resource(cls),
             skip_files=["test_*.py", "*_test.py"],
         )
-        scanner.scan_and_register(config)
+        try:
+            scanner.scan_and_register(config)
+        except Exception as e:
+            logger.warning(f"Failed to scan module {module}: {e}")
     flow_cls = scanner.get_registered_items()
     compat_metadata = []
     for cls_name, cls in flow_cls.items():
