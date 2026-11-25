@@ -16,7 +16,7 @@ on:
       - .github/workflows/build-web.yml
 
 concurrency:
-  group: ${{ github.event.number || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.number || github.run_id }}
   cancel-in-progress: true
 
 defaults:
