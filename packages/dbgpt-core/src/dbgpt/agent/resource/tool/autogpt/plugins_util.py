@@ -6,10 +6,13 @@ zip file.
 
 import datetime
 import glob
+import importlib.util
 import json
 import logging
 import os
+import sys
 from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
@@ -75,6 +78,25 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
         return True
 
 
+def _load_zipped_module(importer, fullname: str) -> ModuleType:
+    """Load a module from a zip archive with a ``zipimporter``.
+
+    ``zipimporter.load_module()`` was removed in Python 3.15, so create the module
+    from its spec and run it with ``exec_module()`` instead.
+    """
+    spec = importer.find_spec(fullname)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Can't find module {fullname!r} in {importer.archive!r}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[fullname] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(fullname, None)
+        raise
+    return module
+
+
 def scan_plugin_file(file_path, debug: bool = False) -> List["AutoGPTPluginTemplate"]:
     """Scan a plugin file and load the plugins."""
     from zipimport import zipimporter
@@ -87,8 +109,9 @@ def scan_plugin_file(file_path, debug: bool = False) -> List["AutoGPTPluginTempl
             module = Path(module)  # type: ignore
             logger.debug(f"Plugin: {plugin} Module: {module}")
             zipped_package = zipimporter(str(plugin))
-            zipped_module = zipped_package.load_module(
-                str(module.parent)  # type: ignore
+            zipped_module = _load_zipped_module(
+                zipped_package,
+                str(module.parent),  # type: ignore
             )
             for key in dir(zipped_module):
                 if key.startswith("__"):
