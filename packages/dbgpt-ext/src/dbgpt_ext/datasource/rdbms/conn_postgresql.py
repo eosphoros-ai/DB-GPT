@@ -92,6 +92,10 @@ class PostgreSQLConnector(RDBMSConnector):
             engine_args=parameters.engine_args(),
         )
 
+    def _reflection_schema(self) -> Optional[str]:
+        """Reflect into the schema ``_sync_tables_from_db`` already loaded."""
+        return self._schema or "public"
+
     def _sync_tables_from_db(self) -> Iterable[str]:
         """Read table information from database with schema support."""
         schema = self._schema or "public"

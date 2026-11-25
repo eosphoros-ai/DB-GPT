@@ -150,3 +150,17 @@ def test_db_file_path_without_directory(tmp_path, monkeypatch):
         assert list(db.get_table_names()) == []
     finally:
         db.close()
+
+
+def test_sync_tables_from_db_reflects_under_metadata_lock(db, monkeypatch):
+    db.run("CREATE TABLE locked (id INTEGER);")
+    held = []
+    original_reflect = db._metadata.reflect
+
+    def tracking_reflect(*args, **kwargs):
+        held.append(db._metadata_lock.locked())
+        return original_reflect(*args, **kwargs)
+
+    monkeypatch.setattr(db._metadata, "reflect", tracking_reflect)
+    db._sync_tables_from_db()
+    assert held == [True]
