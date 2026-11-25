@@ -11,7 +11,7 @@ from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
 from dbgpt.util.annotations import Deprecated
 from dbgpt.util.configure.manager import _resolve_env_vars
-from dbgpt.util.executor_utils import ExecutorFactory
+from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
 from dbgpt_serve.core import ResourceParameters, ResourceTypes
@@ -55,6 +55,9 @@ class ConnectorManager(BaseComponent):
         # cold db_name only one of them runs the expensive reflection;
         # the others wait and reuse the same instance.
         self._connector_creation_locks: Dict[str, threading.Lock] = {}
+        # Per-db_name generation, bumped on every invalidation. A build that
+        # started before an invalidation must not publish its (stale) result.
+        self._connector_generations: Dict[str, int] = {}
         self._connector_cache_ttl = self._CONNECTOR_CACHE_DEFAULT_TTL
 
         super().__init__(system_app)
@@ -225,10 +228,14 @@ class ConnectorManager(BaseComponent):
                 cached = self._connector_cache.get(db_name)
                 if cached and time.time() - cached[0] < self._connector_cache_ttl:
                     return cached[1]
+                generation = self._connector_generations.get(db_name, 0)
 
             connector = self._build_connector(db_name)
             with self._connector_cache_lock:
-                self._connector_cache[db_name] = (time.time(), connector)
+                # The registration changed while we were building; serve this
+                # request but don't cache a connector built from the old row.
+                if self._connector_generations.get(db_name, 0) == generation:
+                    self._connector_cache[db_name] = (time.time(), connector)
             return connector
 
     def invalidate_connector(self, db_name: str) -> None:
@@ -240,11 +247,33 @@ class ConnectorManager(BaseComponent):
         SQLAlchemy engine is attempted so connections are released
         promptly rather than waiting for GC.
         """
+        connector = self._evict_connector(db_name)
+        if connector is not None:
+            self._dispose_connector(connector)
+
+    def _invalidate_connector_in_background(self, db_name: str) -> None:
+        """Like ``invalidate_connector`` but dispose the engine off-thread.
+
+        The legacy add/edit/delete methods are called directly from async
+        routes, so the eviction happens before they return but the
+        potentially blocking ``engine.dispose()`` runs on the default
+        executor instead of the event loop.
+        """
+        connector = self._evict_connector(db_name)
+        if connector is not None:
+            executor = self.system_app.get_component(
+                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+            ).create()  # type: ignore
+            executor.submit(self._dispose_connector, connector)
+
+    def _evict_connector(self, db_name: str) -> Optional[BaseConnector]:
+        """Pop the cached connector and bump the name's generation."""
         with self._connector_cache_lock:
             cached = self._connector_cache.pop(db_name, None)
-        if cached is not None:
-            _, connector = cached
-            self._dispose_connector(connector)
+            self._connector_generations[db_name] = (
+                self._connector_generations.get(db_name, 0) + 1
+            )
+        return cached[1] if cached is not None else None
 
     def clear_connector_cache(self) -> None:
         """Drop all cached connectors. Useful for tests / shutdown hooks."""
@@ -435,7 +464,11 @@ class ConnectorManager(BaseComponent):
     )
     def delete_db(self, db_name: str):
         """Delete db connect info."""
-        return self.storage.delete_db(db_name)
+        try:
+            return self.storage.delete_db(db_name)
+        finally:
+            # Never keep serving a connector for a datasource that is gone.
+            self._invalidate_connector_in_background(db_name)
 
     @Deprecated(
         version="0.7.0",
@@ -443,22 +476,27 @@ class ConnectorManager(BaseComponent):
     )
     def edit_db(self, db_info: DBConfig):
         """Edit db connect info."""
-        return self.storage.update_db_info(
-            db_info.db_name,
-            db_info.db_type,
-            db_info.file_path,
-            db_info.db_host,
-            db_info.db_port,
-            db_info.db_user,
-            db_info.db_pwd,
-            db_info.comment,
-        )
+        try:
+            return self.storage.update_db_info(
+                db_info.db_name,
+                db_info.db_type,
+                db_info.file_path,
+                db_info.db_host,
+                db_info.db_port,
+                db_info.db_user,
+                db_info.db_pwd,
+                db_info.comment,
+            )
+        finally:
+            self._invalidate_connector_in_background(db_info.db_name)
 
     async def async_db_summary_embedding(self, db_name, db_type):
         """Async db summary embedding."""
         executor = self.system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()  # type: ignore
+        # Disposing the cached engine can block; keep it off the event loop.
+        await blocking_func_to_async(executor, self.invalidate_connector, db_name)
         executor.submit(self.db_summary_client.db_summary_embedding, db_name, db_type)
         return True
 
@@ -496,6 +534,9 @@ class ConnectorManager(BaseComponent):
                     db_info.comment,
                     user_id,
                 )
+            # A same-name connector may still be cached from a previous
+            # registration; drop it so the new config is used.
+            self._invalidate_connector_in_background(db_info.db_name)
             # async embedding
             executor = self.system_app.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory

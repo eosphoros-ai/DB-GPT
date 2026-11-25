@@ -148,6 +148,9 @@ class Service(
                 )
 
             res = self._dao.create(persisted_state)
+            # Drop any connector cached under this name by a previous
+            # registration so the new config is used.
+            self.datasource_manager.invalidate_connector(db_name)
 
             # async embedding
             executor = self._system_app.get_component(
