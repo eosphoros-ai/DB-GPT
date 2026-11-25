@@ -1045,6 +1045,118 @@ CREATE TABLE IF NOT EXISTS dbgpt_uploaded_dataset (
 	KEY `ix_dbgpt_uploaded_dataset_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- v0.8.3: LLM wiki index for knowledge spaces
+CREATE TABLE IF NOT EXISTS `knowledge_wiki_page` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `space_id` int DEFAULT NULL COMMENT 'Knowledge space id',
+  `slug` varchar(255) DEFAULT NULL COMMENT 'Page slug within the space',
+  `title` varchar(255) DEFAULT NULL COMMENT 'Page title',
+  `page_type` varchar(32) DEFAULT NULL COMMENT 'summary, entity, concept, index, synthesis or comparison',
+  `status` varchar(32) DEFAULT 'published' COMMENT 'Page status',
+  `content` text DEFAULT NULL COMMENT 'Page content',
+  `summary` text DEFAULT NULL COMMENT 'Page summary',
+  `aliases` text DEFAULT NULL COMMENT 'JSON list of aliases',
+  `parent_slug` varchar(255) DEFAULT NULL COMMENT 'Parent page slug',
+  `category_path` text DEFAULT NULL COMMENT 'JSON list of category path segments',
+  `depth` int DEFAULT 0 COMMENT 'Depth in the category tree',
+  `sort_order` int DEFAULT 0 COMMENT 'Sort order among siblings',
+  `source_refs` text DEFAULT NULL COMMENT 'JSON list of source documents',
+  `chunk_refs` text DEFAULT NULL COMMENT 'JSON list of source chunk ids',
+  `in_links` text DEFAULT NULL COMMENT 'JSON list of linking page slugs',
+  `out_links` text DEFAULT NULL COMMENT 'JSON list of linked page slugs',
+  `version` int DEFAULT 1 COMMENT 'Page version',
+  `last_edit_source` varchar(16) DEFAULT 'pipeline' COMMENT 'pipeline, agent, user or revert',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT NULL COMMENT 'Record update time',
+  PRIMARY KEY (`id`),
+  KEY `ix_knowledge_wiki_page_space_id` (`space_id`),
+  KEY `ix_knowledge_wiki_page_slug` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge wiki page table';
+
+CREATE TABLE IF NOT EXISTS `knowledge_wiki_page_revision` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `page_id` int DEFAULT NULL COMMENT 'Wiki page id',
+  `space_id` int DEFAULT NULL COMMENT 'Knowledge space id',
+  `version` int DEFAULT NULL COMMENT 'Superseded page version',
+  `title` varchar(255) DEFAULT NULL COMMENT 'Page title at this version',
+  `content` text DEFAULT NULL COMMENT 'Page content at this version',
+  `summary` text DEFAULT NULL COMMENT 'Page summary at this version',
+  `aliases` text DEFAULT NULL COMMENT 'JSON list of aliases at this version',
+  `edit_source` varchar(16) DEFAULT NULL COMMENT 'Edit source of this version',
+  `editor` varchar(64) DEFAULT NULL COMMENT 'Editor that superseded this version',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  PRIMARY KEY (`id`),
+  KEY `ix_knowledge_wiki_page_revision_page_id` (`page_id`),
+  KEY `ix_knowledge_wiki_page_revision_space_id` (`space_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge wiki page revision table';
+
+CREATE TABLE IF NOT EXISTS `knowledge_wiki_task` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `space_id` int DEFAULT NULL COMMENT 'Knowledge space id',
+  `task_type` varchar(32) DEFAULT NULL COMMENT 'wiki:ingest, wiki:finalize or wiki:reconcile',
+  `status` varchar(16) DEFAULT 'pending' COMMENT 'pending, running, done, failed or dead',
+  `payload` text DEFAULT NULL COMMENT 'Task payload JSON',
+  `run_after` datetime DEFAULT NULL COMMENT 'Earliest time the task may run',
+  `retry_count` int DEFAULT 0 COMMENT 'Number of failed attempts',
+  `last_error` text DEFAULT NULL COMMENT 'Last error message',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT NULL COMMENT 'Record update time',
+  PRIMARY KEY (`id`),
+  KEY `ix_knowledge_wiki_task_space_id` (`space_id`),
+  KEY `ix_knowledge_wiki_task_task_type` (`task_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge wiki task queue table';
+
+-- v0.8.3: Knowledge source connectors that sync external content into a space
+CREATE TABLE IF NOT EXISTS `knowledge_source` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `space_id` int DEFAULT NULL COMMENT 'Knowledge space id',
+  `name` varchar(128) DEFAULT NULL COMMENT 'Source name',
+  `type` varchar(64) DEFAULT NULL COMMENT 'Connector type',
+  `config` text DEFAULT NULL COMMENT 'Encrypted connector config',
+  `target_resource_ids` text DEFAULT NULL COMMENT 'JSON list of external resource ids',
+  `mapping_json` text DEFAULT NULL COMMENT 'JSON map of external id to document id',
+  `interval_minutes` int DEFAULT 0 COMMENT 'Sync interval in minutes, 0 means manual only',
+  `sync_mode` varchar(16) DEFAULT 'incremental' COMMENT 'incremental or full',
+  `conflict_strategy` varchar(16) DEFAULT 'overwrite' COMMENT 'Conflict strategy',
+  `sync_deletions` int DEFAULT 0 COMMENT 'Whether deletions are synced, 1: yes, 0: no',
+  `status` varchar(16) DEFAULT 'active' COMMENT 'active, paused, running or error',
+  `last_sync_at` datetime DEFAULT NULL COMMENT 'Last sync time',
+  `last_sync_cursor` text DEFAULT NULL COMMENT 'Last sync cursor JSON',
+  `last_sync_result` text DEFAULT NULL COMMENT 'Last sync result JSON',
+  `error_message` text DEFAULT NULL COMMENT 'Last error message',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT NULL COMMENT 'Record update time',
+  PRIMARY KEY (`id`),
+  KEY `ix_knowledge_source_space_id` (`space_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge source binding table';
+
+CREATE TABLE IF NOT EXISTS `knowledge_source_keystore` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `key_text` text DEFAULT NULL COMMENT 'Key used to encrypt knowledge source configs',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT NULL COMMENT 'Record update time',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge source key store table';
+
+CREATE TABLE IF NOT EXISTS `knowledge_source_sync_log` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `source_id` int DEFAULT NULL COMMENT 'Knowledge source id',
+  `space_id` int DEFAULT NULL COMMENT 'Knowledge space id',
+  `trigger` varchar(16) DEFAULT NULL COMMENT 'manual or scheduler',
+  `mode` varchar(16) DEFAULT NULL COMMENT 'incremental or full',
+  `items_created` int DEFAULT 0 COMMENT 'Number of created items',
+  `items_updated` int DEFAULT 0 COMMENT 'Number of updated items',
+  `items_skipped` int DEFAULT 0 COMMENT 'Number of skipped items',
+  `items_failed` int DEFAULT 0 COMMENT 'Number of failed items',
+  `status` varchar(16) DEFAULT NULL COMMENT 'success or failed',
+  `error` text DEFAULT NULL COMMENT 'Error message',
+  `started_at` datetime DEFAULT NULL COMMENT 'Sync start time',
+  `finished_at` datetime DEFAULT NULL COMMENT 'Sync finish time',
+  PRIMARY KEY (`id`),
+  KEY `ix_knowledge_source_sync_log_source_id` (`source_id`),
+  KEY `ix_knowledge_source_sync_log_space_id` (`space_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Knowledge source sync log table';
+
 -- dbgpt_serve_plugins, expert-suite (scenario suite) install/enable registry.
 -- Content lives in the suite package on disk; this table records install state,
 -- version pin source and a rebuildable manifest snapshot (derived projection).
