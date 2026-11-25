@@ -1,6 +1,14 @@
 import pytest
 
 from dbgpt.component import SystemApp
+from dbgpt.core.awel import DAG
+from dbgpt.core.awel.flow.flow_factory import FlowCategory
+from dbgpt.core.awel.trigger.http_trigger import (
+    CommonLLMHttpTrigger,
+    DictHttpTrigger,
+    RequestBodyToDictOperator,
+    RequestedParsedOperator,
+)
 from dbgpt.storage.metadata import db
 from dbgpt_serve.core import BaseServeConfig
 from dbgpt_serve.core.tests.conftest import (  # noqa: F401
@@ -78,3 +86,17 @@ def test_service_get_list_by_page(service: Service):
 
 
 # Add more test cases according to your own logic
+
+
+@pytest.mark.parametrize(
+    "trigger_cls, operator_cls, expected",
+    [
+        (CommonLLMHttpTrigger, RequestedParsedOperator, FlowCategory.CHAT_FLOW),
+        (CommonLLMHttpTrigger, RequestBodyToDictOperator, FlowCategory.COMMON),
+        (DictHttpTrigger, RequestedParsedOperator, FlowCategory.COMMON),
+    ],
+)
+def test_parse_flow_category(service: Service, trigger_cls, operator_cls, expected):
+    with DAG("test_parse_flow_category") as dag:
+        trigger_cls(endpoint="/test_parse_flow_category") >> operator_cls()
+    assert service._parse_flow_category(dag) == expected

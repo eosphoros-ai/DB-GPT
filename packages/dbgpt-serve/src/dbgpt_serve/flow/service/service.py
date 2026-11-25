@@ -786,6 +786,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 return FlowCategory.CHAT_FLOW
         except Exception:
             return FlowCategory.COMMON
+        return FlowCategory.COMMON
 
     async def debug_flow(
         self, request: FlowDebugRequest, default_incremental: Optional[bool] = None
