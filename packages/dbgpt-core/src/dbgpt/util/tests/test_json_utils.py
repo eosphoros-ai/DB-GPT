@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from dbgpt.util.json_utils import find_json_objects
@@ -63,3 +65,24 @@ def test_find_json_objects(text, expected, description):
     assert result == expected, (
         f"Test failed: {description}\nExpected: {expected}\nGot: {result}"
     )
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r", "\r\n"])
+def test_find_json_objects_preserves_raw_line_endings(newline):
+    content = "first" + newline + "second"
+    text = '```json\n{"content":"' + content + '"}\n```'
+
+    assert find_json_objects(text) == [{"content": content}]
+
+
+@pytest.mark.parametrize("content", ["first\r\nsecond", r"first\r\nsecond"])
+def test_find_json_objects_preserves_escaped_line_endings(content):
+    text = json.dumps({"content": content})
+
+    assert find_json_objects(text) == [{"content": content}]
+
+
+def test_find_json_objects_accepts_crlf_whitespace_outside_strings():
+    text = '\r\n{\r\n"content": "value"\r\n}\r\n'
+
+    assert find_json_objects(text) == [{"content": "value"}]
