@@ -73,7 +73,58 @@ def get_config(
             for k, v in default_config.items():
                 if hasattr(config, k) and getattr(config, k) is None:
                     setattr(config, k, v)
+        if hasattr(config, "api_keys") and default_config.get("api_keys"):
+            keys = [
+                key.strip()
+                for value in (default_config["api_keys"], config.api_keys or "")
+                for key in value.split(",")
+                if key.strip()
+            ]
+            config.api_keys = ",".join(dict.fromkeys(keys))
     return config
+
+
+def _v1_api_key_routes(app, components):
+    from fastapi.routing import APIRoute
+
+    from dbgpt_serve.core import BaseServe
+
+    serves = []
+    for component in components.values():
+        if not isinstance(component, BaseServe):
+            continue
+        prefixes = component._api_prefix
+        if isinstance(prefixes, str):
+            prefixes = [prefixes]
+        config = getattr(component, "_config", None) or getattr(
+            component, "_serve_config", None
+        )
+        keys = getattr(config, "api_keys", None)
+        module = component.__class__.__module__.rsplit(".", 1)[0]
+        for prefix in prefixes:
+            if prefix.startswith("/api/v1/") and keys:
+                serves.append(
+                    (
+                        prefix,
+                        module,
+                        tuple(key.strip() for key in keys.split(",") if key.strip()),
+                    )
+                )
+
+    global_keys = tuple(app.state.api_keys)
+    routes = []
+    for route in app.router.routes:
+        if not isinstance(route, APIRoute) or not route.path.startswith("/api/v1/"):
+            continue
+        keys = global_keys
+        for prefix, module, serve_keys in serves:
+            if (
+                route.path == prefix or route.path.startswith(prefix + "/")
+            ) and route.endpoint.__module__.startswith(module + "."):
+                keys = serve_keys
+                break
+        routes.append((route.path_regex, route.methods, keys))
+    return routes
 
 
 def register_serve_apps(
@@ -90,6 +141,8 @@ def register_serve_apps(
     if app_config.system.api_keys:
         global_api_keys = ",".join(app_config.system.api_keys)
         system_app.config.set("dbgpt.app.global.api_keys", global_api_keys)
+    if system_app.app is not None:
+        system_app.app.state.api_keys = tuple(app_config.system.api_keys or ())
     if app_config.system.encrypt_key:
         system_app.config.set(
             "dbgpt.app.global.encrypt_key", app_config.system.encrypt_key
@@ -409,3 +462,10 @@ def register_serve_apps(
         ),
     )
     # ######################### Report Serve Register End ###########################
+
+    if system_app.app is not None:
+        routes = _v1_api_key_routes(system_app.app, system_app.components)
+        system_app.app.state.api_keys_by_route = routes
+        system_app.app.state.v1_api_keys_configured = bool(
+            system_app.app.state.api_keys or any(keys for _, _, keys in routes)
+        )

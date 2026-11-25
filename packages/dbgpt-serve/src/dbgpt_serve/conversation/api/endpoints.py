@@ -11,6 +11,7 @@ from starlette.responses import JSONResponse, StreamingResponse
 from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result
+from dbgpt_serve.utils.auth import get_v1_owner
 
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
@@ -108,7 +109,9 @@ async def test_auth():
     dependencies=[Depends(check_api_key)],
 )
 async def query(
-    request: ServeRequest, service: Service = Depends(get_service)
+    request: ServeRequest,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[ServerResponse]:
     """Query Conversation entities
 
@@ -118,7 +121,7 @@ async def query(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get(request))
+    return Result.succ(service.get(request, owner=owner))
 
 
 @router.post(
@@ -132,8 +135,9 @@ async def dialogue_new(
     user_name: str = None,
     user_id: str = None,
     sys_code: str = None,
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
-    user_name = user_name or user_id
+    user_name = owner if owner is not None else user_name or user_id
     unique_id = uuid.uuid1()
     res = ServerResponse(
         user_input="",
@@ -150,14 +154,18 @@ async def dialogue_new(
     "/delete",
     dependencies=[Depends(check_api_key)],
 )
-async def delete(con_uid: str, service: Service = Depends(get_service)):
+async def delete(
+    con_uid: str,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
+):
     """Delete a Conversation entity
 
     Args:
         con_uid (str): The conversation UID
         service (Service): The service
     """
-    service.delete(ServeRequest(conv_uid=con_uid))
+    service.delete(ServeRequest(conv_uid=con_uid), owner=owner)
     return Result.succ(None)
 
 
@@ -168,6 +176,7 @@ async def delete(con_uid: str, service: Service = Depends(get_service)):
 async def clear(
     con_uid: str,
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Clear a Conversation entity
 
@@ -175,7 +184,7 @@ async def clear(
         con_uid (str): The conversation UID
         service (Service): The service
     """
-    service.clear(ServeRequest(conv_uid=con_uid))
+    service.clear(ServeRequest(conv_uid=con_uid), owner=owner)
     return Result.succ(None)
 
 
@@ -189,6 +198,7 @@ async def query_page(
     page: Optional[int] = Query(default=1, description="current page"),
     page_size: Optional[int] = Query(default=10, description="page size"),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Conversation entities
 
@@ -200,7 +210,7 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_list_by_page(request, page, page_size))
+    return Result.succ(service.get_list_by_page(request, page, page_size, owner=owner))
 
 
 @router.get(
@@ -215,13 +225,16 @@ async def list_latest_conv(
     page: Optional[int] = Query(default=1, description="current page"),
     page_size: Optional[int] = Query(default=10, description="page size"),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ) -> Result[List[ServerResponse]]:
     """Return latest conversations"""
     request = ServeRequest(
         user_name=user_name or user_id,
         sys_code=sys_code,
     )
-    return Result.succ(service.get_list_by_page(request, page, page_size).items)
+    return Result.succ(
+        service.get_list_by_page(request, page, page_size, owner=owner).items
+    )
 
 
 @router.get(
@@ -229,9 +242,15 @@ async def list_latest_conv(
     response_model=Result[List[MessageVo]],
     dependencies=[Depends(check_api_key)],
 )
-async def get_history_messages(con_uid: str, service: Service = Depends(get_service)):
+async def get_history_messages(
+    con_uid: str,
+    service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
+):
     """Get the history messages of a conversation"""
-    return Result.succ(service.get_history_messages(ServeRequest(conv_uid=con_uid)))
+    return Result.succ(
+        service.get_history_messages(ServeRequest(conv_uid=con_uid), owner=owner)
+    )
 
 
 @router.get(
@@ -246,6 +265,7 @@ async def export_all_messages(
         "file", description="response format(file or json)"
     ),
     service: Service = Depends(get_service),
+    owner: Optional[str] = Depends(get_v1_owner),
 ):
     """Export all conversations and messages for a user
 
@@ -261,7 +281,7 @@ async def export_all_messages(
     """
     # 1. Get all conversations for the user
     request = ServeRequest(
-        user_name=user_name or user_id,
+        user_name=owner if owner is not None else user_name or user_id,
         sys_code=sys_code,
     )
 
@@ -272,7 +292,9 @@ async def export_all_messages(
 
     # Paginate through all conversations
     while True:
-        pagination_result = service.get_list_by_page(request, page, page_size)
+        pagination_result = service.get_list_by_page(
+            request, page, page_size, owner=owner
+        )
         all_conversations.extend(pagination_result.items)
 
         if page >= pagination_result.total_pages:
@@ -281,14 +303,16 @@ async def export_all_messages(
 
     # 2. For each conversation, get all messages
     result = {
-        "user_name": user_name or user_id,
+        "user_name": request.user_name,
         "sys_code": sys_code,
         "total_conversations": len(all_conversations),
         "conversations": [],
     }
 
     for conv in all_conversations:
-        messages = service.get_history_messages(ServeRequest(conv_uid=conv.conv_uid))
+        messages = service.get_history_messages(
+            ServeRequest(conv_uid=conv.conv_uid), owner=owner
+        )
         conversation_data = {
             "conv_uid": conv.conv_uid,
             "chat_mode": conv.chat_mode,
@@ -304,8 +328,7 @@ async def export_all_messages(
         return JSONResponse(content=result)
     else:
         file_name = (
-            f"conversation_export_{user_name or user_id or 'dbgpt'}_"
-            f"{sys_code or 'dbgpt'}"
+            f"conversation_export_{request.user_name or 'dbgpt'}_{sys_code or 'dbgpt'}"
         )
         # Return the json file
         return StreamingResponse(

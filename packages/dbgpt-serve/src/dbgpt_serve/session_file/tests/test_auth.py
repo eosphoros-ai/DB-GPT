@@ -1,17 +1,6 @@
-"""Authentication contract tests for the session file API.
+"""Session file ownership follows the verified v1 principal, not headers."""
 
-Session file routes consume configured ``api_keys`` exactly like the
-existing serves (see ``dbgpt_serve.file.api.endpoints``): when
-``config.api_keys`` is set, a valid ``Bearer`` token is required regardless
-of user headers and a missing or blank ``user-id`` header is always a 401;
-when it is not set (anonymous lightweight deployments), requests are allowed
-through key checking and a missing or blank ``user-id`` header falls back to
-the codebase-wide shared owner ``"001"``, matching
-``get_user_from_headers`` behavior everywhere else. Clients still never
-control the owner: any anomaly in ``user-id`` (overlong etc.) is rejected
-before the registry.
-"""
-
+import hashlib
 from unittest.mock import MagicMock
 
 import pytest
@@ -23,11 +12,14 @@ from dbgpt.storage.metadata import db
 from dbgpt_serve.session_file.api import endpoints as endpoints_module
 from dbgpt_serve.session_file.config import ServeConfig
 from dbgpt_serve.session_file.models.models import SessionFileEntity  # noqa: F401
+from dbgpt_serve.utils.auth import v1_auth_middleware
 
 PREFIX = "/api/v1/agent/files"
 ALICE = {"user-id": "alice"}
 GOOD_KEY = {"Authorization": "Bearer secret-key-1"}
 BAD_KEY = {"Authorization": "Bearer wrong-key"}
+OWNER_1 = "key-" + hashlib.sha256(b"secret-key-1").hexdigest()
+OWNER_2 = "key-" + hashlib.sha256(b"secret-key-2").hexdigest()
 
 
 class _EmptyListService:
@@ -68,16 +60,17 @@ def _isolate_module_state():
 def client():
     config = ServeConfig(api_keys="secret-key-1,secret-key-2")
     app = FastAPI()
+    app.state.api_keys = ("secret-key-1", "secret-key-2")
+    app.middleware("http")(v1_auth_middleware)
     app.include_router(endpoints_module.router, prefix=PREFIX)
-    endpoints_module.init_endpoints(MagicMock(), _EmptyListService(), config)
+    app.state.spy = _SpyListService()
+    endpoints_module.init_endpoints(MagicMock(), app.state.spy, config)
     return TestClient(app)
 
 
 def _assert_auth_error(response):
     assert response.status_code == 401, response.text
-    payload = response.json()
-    assert payload["success"] is False
-    assert payload["err_code"] == "MISSING_AUTH_OWNER"
+    assert "detail" in response.json()
 
 
 def test_missing_bearer_token_is_rejected_when_api_keys_configured(client):
@@ -96,22 +89,21 @@ def test_wrong_bearer_token_is_rejected(client):
     _assert_auth_error(response)
 
 
-def test_valid_key_without_user_id_is_rejected(client):
-    # The shared auth util would fall back to a mock "001" owner here; the
-    # session file module must never do that.
+def test_valid_key_without_user_id_uses_verified_owner(client):
     response = client.get(PREFIX, params={"session_id": "conv-1"}, headers=GOOD_KEY)
+    assert response.status_code == 200, response.text
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
-    _assert_auth_error(response)
 
-
-def test_valid_key_with_blank_user_id_is_rejected(client):
+def test_valid_key_with_blank_user_id_uses_verified_owner(client):
     response = client.get(
         PREFIX,
         params={"session_id": "conv-1"},
         headers={"user-id": "   ", **GOOD_KEY},
     )
 
-    _assert_auth_error(response)
+    assert response.status_code == 200, response.text
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
 def test_valid_key_and_valid_user_id_is_accepted(client):
@@ -125,23 +117,21 @@ def test_valid_key_and_valid_user_id_is_accepted(client):
     payload = response.json()
     assert payload["success"] is True
     assert payload["data"] == []
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
-def test_overlong_owner_is_rejected_before_registry(client):
-    # Persistence/materialization cap scope components at 128 bytes; the
-    # transport must reject overlong owners before any registry call.
+def test_overlong_caller_header_does_not_change_verified_owner(client):
     response = client.get(
         PREFIX,
         params={"session_id": "conv-1"},
         headers={"user-id": "o" * 129, **GOOD_KEY},
     )
 
-    _assert_auth_error(response)
+    assert response.status_code == 200, response.text
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
 
 
-def test_owner_is_capped_in_raw_header_bytes(client):
-    # 129 raw header bytes decode to 129 latin-1 characters: over the cap
-    # whether counted as bytes or as decoded characters.
+def test_raw_header_bytes_do_not_change_verified_owner(client):
     response = client.get(
         PREFIX,
         params={"session_id": "conv-1"},
@@ -151,7 +141,19 @@ def test_owner_is_capped_in_raw_header_bytes(client):
         ],
     )
 
-    _assert_auth_error(response)
+    assert response.status_code == 200, response.text
+    assert client.app.state.spy.seen_owners[0] == OWNER_1
+
+
+def test_distinct_verified_keys_have_distinct_owners(client):
+    client.get(PREFIX, params={"session_id": "conv-1"}, headers=GOOD_KEY)
+    client.get(
+        PREFIX,
+        params={"session_id": "conv-1"},
+        headers={"Authorization": "Bearer secret-key-2", **ALICE},
+    )
+    first, second = client.app.state.spy.seen_owners
+    assert (first, second) == (OWNER_1, OWNER_2)
 
 
 class _SpyListService(_EmptyListService):
@@ -167,11 +169,10 @@ class _SpyListService(_EmptyListService):
 
 @pytest.fixture()
 def anon_client():
-    # Anonymous mode: the server has no api_keys configured. The session file
-    # module must mirror the codebase-wide anonymous identity behavior from
-    # ``get_user_from_headers`` (missing/blank user-id -> shared owner "001").
     config = ServeConfig()
     app = FastAPI()
+    app.state.api_keys = ()
+    app.middleware("http")(v1_auth_middleware)
     app.include_router(endpoints_module.router, prefix=PREFIX)
     spy = _SpyListService()
     endpoints_module.init_endpoints(MagicMock(), spy, config)
@@ -199,10 +200,10 @@ def test_anonymous_mode_blank_user_id_falls_back_to_shared_owner(anon_client):
     assert spy.seen_owners == ["001"]
 
 
-def test_anonymous_mode_explicit_user_id_is_used_without_bearer(anon_client):
+def test_anonymous_mode_explicit_user_id_does_not_change_shared_owner(anon_client):
     client, spy = anon_client
 
     response = client.get(PREFIX, params={"session_id": "conv-1"}, headers=ALICE)
 
     assert response.status_code == 200, response.text
-    assert spy.seen_owners == ["alice"]
+    assert spy.seen_owners == ["001"]
