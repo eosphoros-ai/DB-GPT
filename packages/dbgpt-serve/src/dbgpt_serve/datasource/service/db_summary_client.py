@@ -164,7 +164,7 @@ class DBSummaryClient:
             logger.info(f"Vector store name {vector_store_name} exist")
         logger.info("initialize db summary profile success...")
 
-    def delete_db_profile(self, dbname):
+    def delete_db_profile(self, dbname) -> bool:
         """Delete db profile.
 
         Held under the per-db indexing lock so a delete cannot race with a
@@ -173,7 +173,13 @@ class DBSummaryClient:
         ``Collection <uuid> does not exist``).
         """
         lock = _get_db_index_lock(dbname)
-        with lock:
+        if not lock.acquire(blocking=False):
+            logger.info(
+                "skip deleting db profile %s because summary indexing is in progress",
+                dbname,
+            )
+            return False
+        try:
             table_vector_store_name = dbname + "_profile"
             field_vector_store_name = dbname + "_profile_field"
 
@@ -184,6 +190,9 @@ class DBSummaryClient:
             table_vector_connector.delete_vector_name(table_vector_store_name)
             field_vector_connector.delete_vector_name(field_vector_store_name)
             logger.info(f"delete db profile {dbname} success")
+            return True
+        finally:
+            lock.release()
 
     @staticmethod
     def create_summary_client(dbname: str, db_type: str):

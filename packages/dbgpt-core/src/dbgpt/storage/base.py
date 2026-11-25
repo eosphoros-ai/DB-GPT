@@ -112,6 +112,29 @@ class IndexStoreBase(ABC):
         """Whether name exists."""
         return True
 
+    @staticmethod
+    def _is_non_retryable_load_error(error: Exception) -> bool:
+        """Return whether retrying the load is unlikely to change the result."""
+        status_code = getattr(error, "status_code", None)
+        if status_code is None:
+            response = getattr(error, "response", None)
+            status_code = getattr(response, "status_code", None)
+        if status_code in (401, 403):
+            return True
+
+        message = str(error).lower()
+        return any(
+            marker in message
+            for marker in (
+                "401",
+                "403",
+                "unauthorized",
+                "authentication",
+                "invalid api key",
+                "forbidden",
+            )
+        )
+
     def _safe_load_group(self, chunk_group: List[Chunk]) -> List[str]:
         """Load a chunk group with per-chunk fallback on group-level failure.
 
@@ -129,6 +152,13 @@ class IndexStoreBase(ABC):
         try:
             return self.load_document(chunk_group)
         except Exception as group_err:
+            if self._is_non_retryable_load_error(group_err):
+                logger.error(
+                    "Aborting chunk load without per-chunk retries because the "
+                    "embedding backend rejected the request: %s",
+                    group_err,
+                )
+                raise
             if len(chunk_group) <= 1:
                 first_id = (
                     getattr(chunk_group[0], "chunk_id", "?") if chunk_group else "?"
@@ -161,6 +191,13 @@ class IndexStoreBase(ABC):
         try:
             return await self.aload_document(chunk_group, file_id)
         except Exception as group_err:
+            if self._is_non_retryable_load_error(group_err):
+                logger.error(
+                    "Aborting async chunk load without per-chunk retries because "
+                    "the embedding backend rejected the request: %s",
+                    group_err,
+                )
+                raise
             if len(chunk_group) <= 1:
                 first_id = (
                     getattr(chunk_group[0], "chunk_id", "?") if chunk_group else "?"
@@ -288,6 +325,11 @@ class IndexStoreBase(ABC):
         skipped_cnt = 0
         for idx, (result, chunk_group) in enumerate(zip(results, chunk_groups)):
             if isinstance(result, Exception):
+                if self._is_non_retryable_load_error(result):
+                    # Authentication and authorization failures are systemic;
+                    # skipping those groups would report a misleading partial
+                    # success and hide the embedding backend failure.
+                    raise result
                 # _safe_aload_group already swallows per-chunk errors; an
                 # exception here would be an unexpected internal failure.
                 logger.error(
