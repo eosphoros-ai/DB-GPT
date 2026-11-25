@@ -12,6 +12,8 @@
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="नवीनतम रिलीज़" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT लाइसेंस" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="X (Twitter) पर DB-GPT को फ़ॉलो करें" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="DB-GPT के Discord समुदाय से जुड़ें" /></a>
 </p>
 
 <p align="center">
@@ -237,6 +239,8 @@ dbgpt start
 - [समस्या बताएँ या सुविधा सुझाएँ](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [उपयोग और डिज़ाइन पर चर्चा करें](https://github.com/orgs/eosphoros-ai/discussions)
 - [सामुदायिक परियोजनाएँ देखें](https://github.com/eosphoros-ai/community)
+- [X (Twitter) पर DB-GPT को फ़ॉलो करें](https://x.com/DBGPT_AI)
+- [Discord से जुड़ें](https://discord.gg/7uQnPuveTY)
 - [Slack से जुड़ें](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [योगदानकर्ताओं को देखें](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

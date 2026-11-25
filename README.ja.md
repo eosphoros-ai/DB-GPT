@@ -12,6 +12,8 @@
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="最新リリース" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT ライセンス" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="X（Twitter）で DB-GPT をフォロー" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="DB-GPT の Discord コミュニティに参加" /></a>
 </p>
 
 <p align="center">
@@ -237,6 +239,8 @@ dbgpt start
 - [問題の報告・機能提案](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [使い方と設計の議論](https://github.com/orgs/eosphoros-ai/discussions)
 - [コミュニティのプロジェクト](https://github.com/eosphoros-ai/community)
+- [X（Twitter）で DB-GPT をフォロー](https://x.com/DBGPT_AI)
+- [Discord に参加](https://discord.gg/7uQnPuveTY)
 - [Slack に参加](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [貢献者を見る](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 

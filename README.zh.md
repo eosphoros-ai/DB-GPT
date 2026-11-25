@@ -12,6 +12,9 @@
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="最新发布" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="关注 DB-GPT 的 X（Twitter）" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="加入 DB-GPT Discord 社区" /></a>
+  <a href="assets/ding.jpg"><img src="https://img.shields.io/badge/%E9%92%89%E9%92%89-%E5%8A%A0%E5%85%A5%E7%A4%BE%E7%BE%A4-0089FF?style=flat&amp;logo=dingtalk&amp;logoColor=white" alt="加入 DB-GPT 钉钉社区群" /></a>
 </p>
 
 <p align="center">
@@ -225,10 +228,22 @@ dbgpt start
 - [提交问题或功能建议](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [交流使用方法与设计](https://github.com/orgs/eosphoros-ai/discussions)
 - [查看社区项目](https://github.com/eosphoros-ai/community)
+- [关注 DB-GPT 的 X（Twitter）](https://x.com/DBGPT_AI)
+- [加入 Discord](https://discord.gg/7uQnPuveTY)
 - [加入 Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [查看贡献者](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
 欢迎提交可复现的案例、问题修复、文档、Skills 与工作流。报告问题时请附版本、配置方式与最小复现步骤，并移除日志中的密钥和敏感数据。
+
+### 钉钉社区群
+
+**说明：由于微信群人数上限的限制，我们的答疑与问题支持优先在钉钉大群进行。**
+
+<p>
+  <img src="assets/ding.jpg" alt="DB-GPT 钉钉社区群二维码" width="220" />
+</p>
+
+使用钉钉扫描上方二维码加入社区群。
 
 ## 贡献
 

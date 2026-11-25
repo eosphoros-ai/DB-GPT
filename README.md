@@ -12,6 +12,8 @@
   <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="Latest release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="Follow DB-GPT on X (Twitter)" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="Join the DB-GPT Discord community" /></a>
 </p>
 
 <p align="center">
@@ -225,6 +227,8 @@ Development directions include semantic consistency, task evaluation, execution 
 - [Report an issue or suggest a feature](https://github.com/eosphoros-ai/DB-GPT/issues)
 - [Discuss usage and design](https://github.com/orgs/eosphoros-ai/discussions)
 - [Explore community projects](https://github.com/eosphoros-ai/community)
+- [Follow DB-GPT on X (Twitter)](https://x.com/DBGPT_AI)
+- [Join Discord](https://discord.gg/7uQnPuveTY)
 - [Join Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
 - [Meet the contributors](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
