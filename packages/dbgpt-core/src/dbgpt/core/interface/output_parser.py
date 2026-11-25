@@ -141,14 +141,59 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             return response
 
     def _illegal_json_ends(self, s):
-        temp_json = s
-        illegal_json_ends_1 = [", }", ",}"]
-        illegal_json_ends_2 = ", ]", ",]"
-        for illegal_json_end in illegal_json_ends_1:
-            temp_json = temp_json.replace(illegal_json_end, " }")
-        for illegal_json_end in illegal_json_ends_2:
-            temp_json = temp_json.replace(illegal_json_end, " ]")
-        return temp_json
+        result = []
+        in_string = False
+        escaped = False
+        for i, char in enumerate(s):
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+            elif char == '"':
+                in_string = True
+            elif char == ",":
+                # Keep the existing trailing-comma formatting, but never
+                # rewrite delimiter sequences that belong to string data.
+                if s[i + 1 : i + 2] in ("}", "]"):
+                    char = " "
+                elif s[i + 1 : i + 3] in (" }", " ]"):
+                    continue
+            result.append(char)
+        return "".join(result)
+
+    def _is_parsable_json(self, fragment: str) -> bool:
+        if not fragment:
+            return False
+        # parse_prompt_response normalizes newlines after extracting, so a
+        # candidate has to be judged the same way to stay compatible.
+        normalized = (
+            fragment.strip()
+            .replace("\\r\\n", " ")
+            .replace("\r\n", " ")
+            .replace("\\n", " ")
+            .replace("\n", " ")
+        )
+        try:
+            json.loads(self._illegal_json_ends(normalized))
+            return True
+        except Exception:
+            return False
+
+    def _is_nested_in(self, inner: str, outer: str, source: str) -> bool:
+        """Whether ``inner`` is a span inside ``outer`` in ``source``."""
+        if not inner or not outer:
+            return False
+        outer_start = source.find(outer)
+        inner_start = source.find(inner)
+        return (
+            outer_start != -1
+            and inner_start != -1
+            and inner_start >= outer_start
+            and inner_start + len(inner) <= outer_start + len(outer)
+        )
 
     def _extract_json(self, s):
         try:
@@ -159,6 +204,23 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
                 temp_json = temp_json_simple
             else:
                 temp_json = temp_json_array
+
+            if not self._is_parsable_json(temp_json):
+                other_json = (
+                    temp_json_simple
+                    if temp_json is temp_json_array
+                    else temp_json_array
+                )
+                if (
+                    other_json
+                    and not self._is_nested_in(other_json, temp_json, s)
+                    and self._is_parsable_json(other_json)
+                ):
+                    # The string-aware scan can lengthen a fragment, so the
+                    # longest candidate is no longer always the parsable one.
+                    # A fragment nested inside the longer one stays rejected:
+                    # returning it would silently drop the enclosing content.
+                    temp_json = other_json
 
             if not temp_json:
                 temp_json = self._json_interception(s)
@@ -171,37 +233,40 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             )
 
     def _json_interception(self, s, is_json_array: bool = False):
-        try:
-            if is_json_array:
-                i = s.find("[")
-                if i < 0:
-                    return ""
-                count = 1
-                for j, c in enumerate(s[i + 1 :], start=i + 1):
-                    if c == "]":
-                        count -= 1
-                    elif c == "[":
-                        count += 1
-                    if count == 0:
-                        break
-                assert count == 0
-                return s[i : j + 1]
-            else:
-                i = s.find("{")
-                if i < 0:
-                    return ""
-                count = 1
-                for j, c in enumerate(s[i + 1 :], start=i + 1):
-                    if c == "}":
-                        count -= 1
-                    elif c == "{":
-                        count += 1
-                    if count == 0:
-                        break
-                assert count == 0
-                return s[i : j + 1]
-        except Exception:
+        opener, closer = ("[", "]") if is_json_array else ("{", "}")
+        i = s.find(opener)
+        if i < 0:
             return ""
+        count = 1
+        in_string = False
+        escaped = False
+        j = i
+        for j, c in enumerate(s[i + 1 :], start=i + 1):
+            if in_string:
+                # Brackets inside a JSON string are data, not structure: a SQL
+                # payload such as json_extract(col, '$.a}') must not close the
+                # object. Track string state and backslash escapes so the scan
+                # only counts structural brackets.
+                if escaped:
+                    escaped = False
+                elif c == "\\":
+                    escaped = True
+                elif c == '"':
+                    in_string = False
+                continue
+            if c == '"':
+                in_string = True
+            elif c == closer:
+                count -= 1
+                if count == 0:
+                    break
+            elif c == opener:
+                count += 1
+        if count != 0:
+            # Unterminated object/array: report no match instead of returning a
+            # truncated fragment that cannot be parsed downstream.
+            return ""
+        return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> Any:
         """Parse model out text to prompt define response.
