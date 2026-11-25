@@ -13,6 +13,49 @@ from typing import Any, Dict, List, Optional, Set
 from dbgpt.core import PromptTemplate
 
 
+def escape_jinja2_syntax(text: str) -> str:
+    """转义 Jinja2 模板语法，使文本在 Jinja2 模板中始终按字面量渲染。
+
+    技能指令来自用户上传的 SKILL.md，属于不可信数据，不能直接当作 Jinja2
+    模板源码使用。否则其中的 ``{{ }}`` / ``{% %}`` / ``{# #}`` 会被当作模板
+    指令求值：
+
+    - 未定义的变量会被静默渲染成空字符串，技能指令中的内容凭空丢失；
+    - 非法语法（例如文档里常见的 JSON 示例 ``{{ "k": "v" }}``）会直接抛出
+      TemplateSyntaxError，导致技能无法加载；
+    - 构造的载荷还可能构成服务端模板注入（SSTI）。
+
+    这里把三种定界符替换为等价的字面量表达式，保证技能指令始终以原文形式
+    呈现给模型。
+
+    Args:
+        text: 原始文本。
+
+    Returns:
+        转义后的文本，作为 Jinja2 模板渲染时输出与原文一致。
+    """
+    # 注意替换顺序：先替换 "{{"，避免替换结果中的 "{{" 被二次处理
+    return (
+        text.replace("{{", "{{ '{{' }}")
+        .replace("{%", "{{ '{%' }}")
+        .replace("{#", "{{ '{#' }}")
+    )
+
+
+class SkillPromptTemplate(PromptTemplate):
+    """Prompt template of a skill, keeping the original text of the skill.
+
+    The template source of a skill is the Jinja2 escaped version of the skill
+    instructions, so that the instructions are never evaluated as template
+    source. ``raw_template`` keeps the original text, so that callers can
+    return the skill content verbatim (see
+    ``SkillManager.get_skill_content``) instead of rendering the template.
+    """
+
+    raw_template: str = ""
+    """The original, unescaped text of the skill."""
+
+
 @dataclasses.dataclass
 class SkillMetadata:
     """Metadata for a Claude-style SKILL file."""
@@ -330,12 +373,18 @@ class FileBasedSkill:
     def get_prompt(self) -> PromptTemplate:
         """Get the prompt template for this skill.
 
+        技能指令是不可信数据，这里先转义其中的 Jinja2 语法，避免它在渲染
+        系统提示词时被当作模板源码求值（内容丢失、语法报错或 SSTI）。
+
         Returns:
             PromptTemplate with the skill instructions.
         """
-        prompt = f"""{self.instructions}"""
-        return PromptTemplate.from_template(
-            prompt, template_format="jinja2", template_is_strict=False
+        prompt = escape_jinja2_syntax(self.instructions)
+        return SkillPromptTemplate.from_template(
+            prompt,
+            template_format="jinja2",
+            template_is_strict=False,
+            raw_template=self.instructions,
         )
 
     def __str__(self) -> str:
