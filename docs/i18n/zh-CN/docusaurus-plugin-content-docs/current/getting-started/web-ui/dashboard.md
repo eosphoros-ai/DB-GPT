@@ -46,7 +46,7 @@ Create a pie chart of customer distribution by region
 
 ## 图表类型
 
-DB-GPT 的可视化引擎（[GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis)）支持以下图表：
+DB-GPT 的可视化引擎（[GPT-Vis](https://github.com/antvis/GPT-Vis)）支持以下图表：
 
 | 图表类型 | 适用场景 |
 |---|---|
