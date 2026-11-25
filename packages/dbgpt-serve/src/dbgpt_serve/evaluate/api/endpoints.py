@@ -117,6 +117,56 @@ def _parse_api_keys(api_keys: str) -> List[str]:
     return [key.strip() for key in api_keys.split(",")]
 
 
+def _invalid_api_key_error() -> HTTPException:
+    """401 error raised when the caller presents no (or a wrong) API key."""
+    return HTTPException(
+        status_code=401,
+        detail={
+            "error": {
+                "message": "",
+                "type": "invalid_request_error",
+                "param": None,
+                "code": "invalid_api_key",
+            }
+        },
+    )
+
+
+async def _resolve_api_key(
+    auth: Optional[HTTPAuthorizationCredentials],
+    service: Service,
+    *,
+    require_configured: bool,
+) -> Optional[str]:
+    """Validate the bearer API key against the configured keys.
+
+    Args:
+        auth: The bearer credentials from the request, if any.
+        service: The evaluate service, carrying the configured API keys.
+        require_configured: When True, reject the request when no API keys
+            are configured instead of allowing all callers through.
+
+    Returns:
+        The validated API key token, or None when no keys are configured
+        and the caller is allowed through.
+
+    Raises:
+        HTTPException: 401 when the caller presents no (or a wrong) key
+            while keys are configured, or when no keys are configured at
+            all and ``require_configured`` is True.
+    """
+    if service.config.api_keys:
+        api_keys = _parse_api_keys(service.config.api_keys)
+        if auth is None or (token := auth.credentials) not in api_keys:
+            raise _invalid_api_key_error()
+        return token
+    if require_configured:
+        # No API keys configured: fail closed instead of allowing all.
+        raise _invalid_api_key_error()
+    # api_keys not set; allow all
+    return None
+
+
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
     service: Service = Depends(get_service),
@@ -137,24 +187,35 @@ async def check_api_key(
         assert res.status_code == 200
 
     """
-    if service.config.api_keys:
-        api_keys = _parse_api_keys(service.config.api_keys)
-        if auth is None or (token := auth.credentials) not in api_keys:
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "error": {
-                        "message": "",
-                        "type": "invalid_request_error",
-                        "param": None,
-                        "code": "invalid_api_key",
-                    }
-                },
-            )
-        return token
-    else:
-        # api_keys not set; allow all
-        return None
+    return await _resolve_api_key(auth, service, require_configured=False)
+
+
+async def check_api_key_strict(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+    service: Service = Depends(get_service),
+) -> Optional[str]:
+    """Check the api key, failing closed when no key is configured.
+
+    Unlike :func:`check_api_key`, which allows all callers through when
+    the deployment configures no API keys, this variant rejects every
+    request with 401 unless the caller presents a configured key. Use it
+    on data-bearing routes such as the benchmark-result read, where the
+    allow-all default would hand other users' records to anonymous
+    callers.
+
+    Your can pass the token in you request header like this:
+
+    .. code-block:: python
+
+        import requests
+
+        client_api_key = "your_api_key"
+        headers = {"Authorization": "Bearer " + client_api_key}
+        res = requests.get("http://test/hello", headers=headers)
+        assert res.status_code == 200
+
+    """
+    return await _resolve_api_key(auth, service, require_configured=True)
 
 
 @router.get("/health", dependencies=[Depends(check_api_key)])
@@ -200,7 +261,10 @@ async def evaluation(
     )
 
 
-@router.get("/benchmark/result/{evaluate_code}", dependencies=[Depends(check_api_key)])
+@router.get(
+    "/benchmark/result/{evaluate_code}",
+    dependencies=[Depends(check_api_key_strict)],
+)
 async def get_compare_run_detail(
     evaluate_code: str, service: BenchmarkService = Depends(get_benchmark_service)
 ):
