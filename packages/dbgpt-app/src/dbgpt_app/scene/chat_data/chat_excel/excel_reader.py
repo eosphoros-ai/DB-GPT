@@ -24,8 +24,9 @@ class TransformedExcelResponse(NamedTuple):
     plans: List[str]
 
 
-def excel_colunm_format(old_name: str) -> str:
-    new_column = old_name.strip()
+def excel_colunm_format(old_name: object) -> str:
+    """Normalize a header, including numbers and dates stored in workbook cells."""
+    new_column = str(old_name).strip()
     new_column = new_column.replace(" ", "_")
     return new_column
 
@@ -148,11 +149,14 @@ def read_from_df(
     unnamed_columns_tmp = [
         col
         for col in df_tmp.columns
-        if col.startswith("Unnamed") and df_tmp[col].isnull().all()
+        if isinstance(col, str)
+        and col.startswith("Unnamed")
+        and df_tmp[col].isnull().all()
     ]
     df_tmp.drop(columns=unnamed_columns_tmp, inplace=True)
 
-    df = df[df_tmp.columns.values]
+    # Boolean Excel headers would otherwise be interpreted as a row mask.
+    df.drop(columns=unnamed_columns_tmp, inplace=True)
 
     columns_map = {}
     for column_name in df_tmp.columns:
@@ -169,7 +173,7 @@ def read_from_df(
                 except Exception:
                     print("Can't transform column: " + column_name)
 
-    df = df.rename(columns=lambda x: x.strip().replace(" ", "_"))
+    df = df.rename(columns=excel_colunm_format)
     # write data in duckdb
     db.register("temp_df_table", df)
     # The table is explicitly created due to the issue at
