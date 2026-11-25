@@ -1,9 +1,16 @@
-from typing import Optional
+import hashlib
+import hmac
+import os
+from dataclasses import dataclass
+from typing import Any, List, Optional, Tuple
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.security.http import HTTPAuthorizationCredentials
+from starlette.concurrency import run_in_threadpool
 
+from dbgpt_app.openapi.api_v1.dashboard import identity as dashboard_identity
 from dbgpt_app.openapi.api_v1.dashboard.identity import (
+    DashboardIdentityError,
     DBGPTUserIdentityProvider,
     dashboard_production_mode,
 )
@@ -13,54 +20,258 @@ from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_serve.feedback.api import endpoints as feedback_serve_endpoints
 from dbgpt_serve.feedback.config import SERVE_SERVICE_COMPONENT_NAME
 from dbgpt_serve.feedback.service.service import Service as FeedbackService
-from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
+from dbgpt_serve.utils.auth import UserRequest
+
+TRUSTED_GATEWAY_SECRET_ENV = "DBGPT_TRUSTED_GATEWAY_SECRET"
+TRUSTED_GATEWAY_SIG_HEADER = "x-dbgpt-gateway-signature"
+AUTH_USER_HEADER = "x-authenticated-user"
+DEV_FALLBACK_ENV = "DBGPT_FEEDBACK_ALLOW_DEV_FALLBACK"
+
+
+@dataclass(frozen=True)
+class _ApiKeyAuthResult:
+    authenticated: bool = False
+    bound_owner: Optional[str] = None
+
+
+def compute_gateway_signature(secret: str, actor_id: str) -> str:
+    """Compute the hex HMAC-SHA256 gateway attestation for ``actor_id``."""
+    return hmac.new(
+        secret.encode("utf-8"),
+        actor_id.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _parse_api_key_entries(
+    raw_keys: str,
+) -> Tuple[bool, List[Tuple[Optional[str], str]]]:
+    """Parse comma-separated API keys supporting optional ``owner:token`` bindings."""
+    entries: List[Tuple[Optional[str], str]] = []
+    has_non_empty_entry = False
+    for raw_item in raw_keys.split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        has_non_empty_entry = True
+        if ":" in item:
+            owner_part, _, token_part = item.partition(":")
+            owner = owner_part.strip()
+            token = token_part.strip()
+            if owner and token:
+                entries.append((owner, token))
+        else:
+            entries.append((None, item))
+    return has_non_empty_entry, entries
+
+
+def _invalid_api_key_error() -> HTTPException:
+    return HTTPException(
+        status_code=401,
+        detail={
+            "error": {
+                "message": "",
+                "type": "invalid_request_error",
+                "param": None,
+                "code": "invalid_api_key",
+            }
+        },
+    )
 
 
 async def check_feedback_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(
         feedback_serve_endpoints.get_bearer_token
     ),
-) -> Optional[str]:
-    """Enforce configured feedback service API keys when registered."""
+) -> _ApiKeyAuthResult:
+    """Enforce configured feedback service API keys and extract bound principal."""
     sys_app = feedback_serve_endpoints.global_system_app
     if sys_app is None:
-        return None
+        return _ApiKeyAuthResult()
     service = sys_app.get_component(
         SERVE_SERVICE_COMPONENT_NAME,
         FeedbackService,
         default_component=None,
     )
     if service is None or not service.config.api_keys:
+        return _ApiKeyAuthResult()
+    has_configured_key, entries = _parse_api_key_entries(service.config.api_keys)
+    if not has_configured_key:
+        return _ApiKeyAuthResult()
+    if not entries or auth is None or not auth.credentials:
+        raise _invalid_api_key_error()
+
+    provided = auth.credentials.encode("utf-8")
+    matched = False
+    bound_owner: Optional[str] = None
+    for owner, expected_token in entries:
+        if hmac.compare_digest(provided, expected_token.encode("utf-8")):
+            matched = True
+            bound_owner = owner
+    if not matched:
+        raise _invalid_api_key_error()
+    return _ApiKeyAuthResult(authenticated=True, bound_owner=bound_owner)
+
+
+def _extract_principal_id(principal: Any) -> Optional[str]:
+    if principal is None:
         return None
-    api_keys = feedback_serve_endpoints._parse_api_keys(service.config.api_keys)
-    if auth is None or (token := auth.credentials) not in api_keys:
+    if getattr(principal, "is_authenticated", True) is False:
+        return None
+    if isinstance(principal, str):
+        return principal.strip() or None
+    if isinstance(principal, UserRequest):
+        if DBGPTUserIdentityProvider._is_development_fallback(principal):
+            return None
+        return (principal.user_id or principal.user_name or "").strip() or None
+    for attr in ("user_id", "username", "identity", "display_name", "id"):
+        value = getattr(principal, attr, None)
+        if isinstance(value, (str, int)):
+            text = str(value).strip()
+            if text:
+                return text
+    return None
+
+
+def _extract_request_principal(request: Request) -> Optional[str]:
+    """Read a verified principal populated by upstream ASGI/FastAPI auth middleware."""
+    for state_attr in ("authenticated_user", "user"):
+        candidate = _extract_principal_id(getattr(request.state, state_attr, None))
+        if candidate:
+            return candidate
+    if "user" in request.scope:
+        return _extract_principal_id(request.scope.get("user"))
+    return None
+
+
+def _resolve_custom_provider(
+    request: Request, verified_hint: Optional[str]
+) -> Optional[str]:
+    provider = dashboard_identity._identity_provider
+    if provider is None and os.getenv("DBGPT_DASHBOARD_IDENTITY_PROVIDER", "").strip():
+        provider = dashboard_identity.get_dashboard_identity_provider()
+    if provider is None or isinstance(provider, DBGPTUserIdentityProvider):
+        return None
+    try:
+        resolve_req = getattr(provider, "resolve_request", None)
+        if callable(resolve_req):
+            resolved = str(resolve_req(request)).strip()
+        else:
+            resolved = provider.resolve(UserRequest(user_id=verified_hint)).strip()
+    except DashboardIdentityError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    if not resolved:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return resolved
+
+
+def _allow_dev_feedback_fallback() -> bool:
+    if dashboard_production_mode():
+        return False
+    return os.getenv(DEV_FALLBACK_ENV, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _single_header(request: Request, name: str) -> Optional[str]:
+    values = request.headers.getlist(name)
+    if len(values) > 1:
         raise HTTPException(
-            status_code=401,
-            detail={
-                "error": {
-                    "message": "",
-                    "type": "invalid_request_error",
-                    "param": None,
-                    "code": "invalid_api_key",
-                }
-            },
+            status_code=400, detail=f"Duplicate {name} header is not allowed"
         )
-    return token
+    return values[0] if values else None
 
 
 def _resolve_feedback_actor(
-    user_token: UserRequest = Depends(get_user_from_headers),
+    request: Request,
+    api_key_auth: _ApiKeyAuthResult = Depends(check_feedback_api_key),
 ) -> str:
-    """Resolve the authenticated caller identity for feedback operations."""
+    """Resolve a verified caller principal without trusting raw ``user-id`` headers."""
+    raw_user_id = _single_header(request, "user-id")
+    raw_auth_user = _single_header(request, AUTH_USER_HEADER)
+    raw_gateway_sig = _single_header(request, TRUSTED_GATEWAY_SIG_HEADER)
+    has_identity_header = (
+        raw_user_id is not None
+        or raw_auth_user is not None
+        or raw_gateway_sig is not None
+    )
     if (
-        dashboard_production_mode()
-        and DBGPTUserIdentityProvider._is_development_fallback(user_token)
+        raw_user_id is not None
+        and raw_auth_user is not None
+        and raw_user_id.strip() != raw_auth_user.strip()
     ):
-        raise HTTPException(status_code=401, detail="Authentication required")
-    actor_id = (user_token.user_id or user_token.user_name or "").strip()
-    if not actor_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    return actor_id
+        raise HTTPException(status_code=403, detail="Conflicting identity headers")
+
+    claimed_header_user = (
+        raw_auth_user if raw_auth_user is not None else (raw_user_id or "")
+    ).strip()
+
+    state_owner = _extract_request_principal(request)
+    gateway_secret = os.getenv(TRUSTED_GATEWAY_SECRET_ENV, "").strip()
+    gateway_owner: Optional[str] = None
+    if gateway_secret and has_identity_header:
+        provided_sig = (raw_gateway_sig or "").strip().lower()
+        if not claimed_header_user or not provided_sig:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or missing trusted gateway signature",
+            )
+        expected_sig = compute_gateway_signature(gateway_secret, claimed_header_user)
+        if not hmac.compare_digest(provided_sig, expected_sig):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or missing trusted gateway signature",
+            )
+        gateway_owner = claimed_header_user
+
+    provider_owner = _resolve_custom_provider(
+        request, state_owner or gateway_owner or api_key_auth.bound_owner
+    )
+    candidates = [
+        c
+        for c in (
+            state_owner,
+            gateway_owner,
+            api_key_auth.bound_owner,
+            provider_owner,
+        )
+        if c
+    ]
+    if len(set(candidates)) > 1:
+        raise HTTPException(
+            status_code=403, detail="Conflicting authenticated principals"
+        )
+    verified_owner = candidates[0] if candidates else None
+
+    if has_identity_header and gateway_owner is None:
+        if raw_gateway_sig is not None:
+            raise HTTPException(
+                status_code=401, detail="Trusted gateway boundary is not configured"
+            )
+        if verified_owner is None:
+            raise HTTPException(
+                status_code=401, detail="Unverified user-id header is not accepted"
+            )
+        if not claimed_header_user or claimed_header_user != verified_owner:
+            raise HTTPException(
+                status_code=403,
+                detail="Forged user-id header does not match authenticated principal",
+            )
+
+    if verified_owner:
+        return verified_owner
+
+    if (
+        not api_key_auth.authenticated
+        and not gateway_secret
+        and _allow_dev_feedback_fallback()
+    ):
+        return "001"
+
+    raise HTTPException(status_code=401, detail="Authentication required")
 
 
 router = APIRouter(dependencies=[Depends(check_feedback_api_key)])
@@ -73,7 +284,12 @@ async def feed_back_find(
     conv_index: int,
     actor_id: str = Depends(_resolve_feedback_actor),
 ):
-    rt = chat_feed_back.get_chat_feed_back(conv_uid, conv_index, user_name=actor_id)
+    rt = await run_in_threadpool(
+        chat_feed_back.get_chat_feed_back,
+        conv_uid,
+        conv_index,
+        user_name=actor_id,
+    )
     if rt is not None:
         return Result.succ(
             FeedBackBody(
@@ -101,8 +317,10 @@ async def feed_back_commit(
             status_code=422, detail="conv_uid and conv_index are required"
         )
     try:
-        chat_feed_back.create_or_update_chat_feed_back(
-            feed_back_body, user_name=actor_id
+        await run_in_threadpool(
+            chat_feed_back.create_or_update_chat_feed_back,
+            feed_back_body,
+            user_name=actor_id,
         )
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
