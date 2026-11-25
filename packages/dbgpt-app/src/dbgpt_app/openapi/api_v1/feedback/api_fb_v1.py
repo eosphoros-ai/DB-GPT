@@ -1,10 +1,12 @@
 import hashlib
 import hmac
 import os
+import secrets
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple
+from functools import partial
+from typing import Any, List, Optional, Set, Tuple
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response
 from fastapi.security.http import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 
@@ -26,6 +28,10 @@ TRUSTED_GATEWAY_SECRET_ENV = "DBGPT_TRUSTED_GATEWAY_SECRET"
 TRUSTED_GATEWAY_SIG_HEADER = "x-dbgpt-gateway-signature"
 AUTH_USER_HEADER = "x-authenticated-user"
 DEV_FALLBACK_ENV = "DBGPT_FEEDBACK_ALLOW_DEV_FALLBACK"
+SESSION_SECRET_ENV = "DBGPT_FEEDBACK_SESSION_SECRET"
+SESSION_COOKIE_NAME = "dbgpt_feedback_session"
+_SESSION_DOMAIN_PREFIX = "dbgpt-feedback-session-v1:"
+_PROCESS_SESSION_SECRET = secrets.token_hex(32)
 
 
 @dataclass(frozen=True)
@@ -34,13 +40,86 @@ class _ApiKeyAuthResult:
     bound_owner: Optional[str] = None
 
 
+@dataclass(frozen=True)
+class _ResolvedFeedbackActor:
+    actor_id: str
+    is_session_actor: bool = False
+
+
 def compute_gateway_signature(secret: str, actor_id: str) -> str:
-    """Compute the hex HMAC-SHA256 gateway attestation for ``actor_id``."""
+    """Compute the hex HMAC-SHA256 attestation for ``actor_id``."""
     return hmac.new(
         secret.encode("utf-8"),
         actor_id.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
+
+
+def _session_signing_secret() -> str:
+    configured = os.getenv(SESSION_SECRET_ENV, "").strip()
+    return configured or _PROCESS_SESSION_SECRET
+
+
+def _compute_session_signature(secret: str, actor_id: str) -> str:
+    """Compute a domain-separated HMAC-SHA256 signature for session cookies."""
+    return hmac.new(
+        secret.encode("utf-8"),
+        f"{_SESSION_DOMAIN_PREFIX}{actor_id}".encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _mint_session_cookie_value() -> str:
+    actor_id = f"session:{secrets.token_hex(16)}"
+    sig = _compute_session_signature(_session_signing_secret(), actor_id)
+    return f"{actor_id}.{sig}"
+
+
+def _verify_session_cookie(request: Request) -> Optional[str]:
+    raw_cookie = request.cookies.get(SESSION_COOKIE_NAME)
+    if not raw_cookie or not raw_cookie.isascii():
+        return None
+    actor_part, sep, sig_part = raw_cookie.partition(".")
+    if sep != "." or not actor_part.startswith("session:") or not sig_part:
+        return None
+    session_hex = actor_part[len("session:") :]
+    if len(session_hex) < 16 or any(ch not in "0123456789abcdef" for ch in session_hex):
+        return None
+    expected_sig = _compute_session_signature(_session_signing_secret(), actor_part)
+    if not hmac.compare_digest(
+        sig_part.lower().encode("ascii"), expected_sig.encode("ascii")
+    ):
+        return None
+    return actor_part
+
+
+def _enforce_cookie_mutation_guards(request: Request) -> None:
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return
+    if request.headers.get("sec-fetch-site", "").strip().lower() == "cross-site":
+        raise HTTPException(
+            status_code=403, detail="Cross-site feedback mutation is not allowed"
+        )
+    media_type = request.headers.get("content-type", "").partition(";")[0].strip()
+    if media_type.lower() != "application/json":
+        raise HTTPException(
+            status_code=415, detail="Content-Type must be application/json"
+        )
+
+
+def _is_https_request(request: Request) -> bool:
+    if request.url.scheme == "https":
+        return True
+    forwarded_proto = request.headers.get("x-forwarded-proto", "")
+    first_hop = forwarded_proto.split(",")[0].strip().lower()
+    return first_hop == "https"
+
+
+def _feedback_cookie_path(request: Request) -> str:
+    raw_path = request.url.path or "/"
+    if raw_path.endswith("/select"):
+        return raw_path[: -len("/select")] or "/"
+    return "/"
 
 
 def _parse_api_key_entries(
@@ -102,14 +181,13 @@ async def check_feedback_api_key(
         raise _invalid_api_key_error()
 
     provided = auth.credentials.encode("utf-8")
-    matched = False
-    bound_owner: Optional[str] = None
+    matched_owners: Set[Optional[str]] = set()
     for owner, expected_token in entries:
         if hmac.compare_digest(provided, expected_token.encode("utf-8")):
-            matched = True
-            bound_owner = owner
-    if not matched:
+            matched_owners.add(owner)
+    if len(matched_owners) != 1:
         raise _invalid_api_key_error()
+    bound_owner = next(iter(matched_owners))
     return _ApiKeyAuthResult(authenticated=True, bound_owner=bound_owner)
 
 
@@ -155,11 +233,16 @@ def _resolve_custom_provider(
     try:
         resolve_req = getattr(provider, "resolve_request", None)
         if callable(resolve_req):
-            resolved = str(resolve_req(request)).strip()
+            resolved_value = resolve_req(request)
         else:
-            resolved = provider.resolve(UserRequest(user_id=verified_hint)).strip()
-    except DashboardIdentityError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
+            resolved_value = provider.resolve(UserRequest(user_id=verified_hint))
+    except (DashboardIdentityError, PermissionError) as exc:
+        raise HTTPException(
+            status_code=401, detail=str(exc) or "Authentication required"
+        ) from exc
+    if not isinstance(resolved_value, str):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    resolved = resolved_value.strip()
     if not resolved:
         raise HTTPException(status_code=401, detail="Authentication required")
     return resolved
@@ -185,10 +268,10 @@ def _single_header(request: Request, name: str) -> Optional[str]:
     return values[0] if values else None
 
 
-def _resolve_feedback_actor(
+def _resolve_feedback_actor_context(
     request: Request,
     api_key_auth: _ApiKeyAuthResult = Depends(check_feedback_api_key),
-) -> str:
+) -> _ResolvedFeedbackActor:
     """Resolve a verified caller principal without trusting raw ``user-id`` headers."""
     raw_user_id = _single_header(request, "user-id")
     raw_auth_user = _single_header(request, AUTH_USER_HEADER)
@@ -214,13 +297,15 @@ def _resolve_feedback_actor(
     gateway_owner: Optional[str] = None
     if gateway_secret and has_identity_header:
         provided_sig = (raw_gateway_sig or "").strip().lower()
-        if not claimed_header_user or not provided_sig:
+        if not claimed_header_user or not provided_sig or not provided_sig.isascii():
             raise HTTPException(
                 status_code=401,
                 detail="Invalid or missing trusted gateway signature",
             )
         expected_sig = compute_gateway_signature(gateway_secret, claimed_header_user)
-        if not hmac.compare_digest(provided_sig, expected_sig):
+        if not hmac.compare_digest(
+            provided_sig.encode("ascii"), expected_sig.encode("ascii")
+        ):
             raise HTTPException(
                 status_code=401,
                 detail="Invalid or missing trusted gateway signature",
@@ -245,6 +330,13 @@ def _resolve_feedback_actor(
             status_code=403, detail="Conflicting authenticated principals"
         )
     verified_owner = candidates[0] if candidates else None
+    is_session_actor = False
+
+    if verified_owner is None and not gateway_secret and not api_key_auth.authenticated:
+        session_owner = _verify_session_cookie(request)
+        if session_owner is not None:
+            verified_owner = session_owner
+            is_session_actor = True
 
     if has_identity_header and gateway_owner is None:
         if raw_gateway_sig is not None:
@@ -262,16 +354,26 @@ def _resolve_feedback_actor(
             )
 
     if verified_owner:
-        return verified_owner
+        if is_session_actor:
+            _enforce_cookie_mutation_guards(request)
+        return _ResolvedFeedbackActor(
+            actor_id=verified_owner, is_session_actor=is_session_actor
+        )
 
     if (
         not api_key_auth.authenticated
         and not gateway_secret
         and _allow_dev_feedback_fallback()
     ):
-        return "001"
+        return _ResolvedFeedbackActor(actor_id="001", is_session_actor=False)
 
     raise HTTPException(status_code=401, detail="Authentication required")
+
+
+def _resolve_feedback_actor(
+    actor: _ResolvedFeedbackActor = Depends(_resolve_feedback_actor_context),
+) -> str:
+    return actor.actor_id
 
 
 router = APIRouter(dependencies=[Depends(check_feedback_api_key)])
@@ -310,7 +412,7 @@ async def feed_back_find(
 async def feed_back_commit(
     request: Request,
     feed_back_body: FeedBackBody = Body(),
-    actor_id: str = Depends(_resolve_feedback_actor),
+    actor: _ResolvedFeedbackActor = Depends(_resolve_feedback_actor_context),
 ):
     if not feed_back_body.conv_uid or feed_back_body.conv_index is None:
         raise HTTPException(
@@ -318,9 +420,12 @@ async def feed_back_commit(
         )
     try:
         await run_in_threadpool(
-            chat_feed_back.create_or_update_chat_feed_back,
-            feed_back_body,
-            user_name=actor_id,
+            partial(
+                chat_feed_back.create_or_update_chat_feed_back,
+                feed_back_body,
+                user_name=actor.actor_id,
+                allow_default_conv_owner=actor.is_session_actor,
+            )
         )
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -328,7 +433,25 @@ async def feed_back_commit(
 
 
 @router.get("/v1/feedback/select", response_model=Result[dict])
-async def feed_back_select():
+async def feed_back_select(
+    request: Request,
+    response: Response,
+    api_key_auth: _ApiKeyAuthResult = Depends(check_feedback_api_key),
+):
+    if (
+        not os.getenv(TRUSTED_GATEWAY_SECRET_ENV, "").strip()
+        and not api_key_auth.authenticated
+        and _extract_request_principal(request) is None
+        and _verify_session_cookie(request) is None
+    ):
+        response.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=_mint_session_cookie_value(),
+            httponly=True,
+            samesite="lax",
+            secure=_is_https_request(request),
+            path=_feedback_cookie_path(request),
+        )
     return Result.succ(
         {
             "information": "信息查询",

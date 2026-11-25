@@ -13,7 +13,11 @@ ChatFeedBackEntity = ServeEntity
 
 class ChatFeedBackDao(BaseDao):
     def create_or_update_chat_feed_back(
-        self, feed_back: FeedBackBody, user_name: Optional[str] = None
+        self,
+        feed_back: FeedBackBody,
+        user_name: Optional[str] = None,
+        *,
+        allow_default_conv_owner: bool = False,
     ):
         raw_user = user_name if user_name is not None else feed_back.user_name
         effective_user = (raw_user or "").strip()
@@ -33,10 +37,11 @@ class ChatFeedBackDao(BaseDao):
                     .filter(ChatHistoryEntity.conv_uid == feed_back.conv_uid)
                     .first()
                 )
+                conv_owner = (conv.user_name or "").strip() if conv is not None else ""
                 if (
-                    conv is not None
-                    and conv.user_name
-                    and conv.user_name != effective_user
+                    conv_owner
+                    and conv_owner != effective_user
+                    and not (allow_default_conv_owner and conv_owner == "001")
                 ):
                     raise PermissionError(
                         "Cannot submit feedback for another user's conversation"

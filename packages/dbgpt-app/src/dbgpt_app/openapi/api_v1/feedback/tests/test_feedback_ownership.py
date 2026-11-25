@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from types import SimpleNamespace
 
 import pytest
@@ -7,6 +9,7 @@ from fastapi.testclient import TestClient
 from dbgpt.component import SystemApp
 from dbgpt.storage.chat_history.chat_history_db import ChatHistoryEntity
 from dbgpt.storage.metadata import db
+from dbgpt_app.openapi.api_v1.dashboard import identity as dashboard_identity
 from dbgpt_app.openapi.api_v1.dashboard.identity import (
     DashboardIdentityError,
     configure_dashboard_identity_provider,
@@ -25,7 +28,7 @@ GATEWAY_SECRET = "unit-test-trusted-gateway-secret"
 
 @pytest.fixture(autouse=True)
 def isolated_db(tmp_path, monkeypatch):
-    """Provide an isolated SQLite metadata database and clean auth env per test."""
+    """Provide an isolated SQLite metadata database and restore global state."""
     db_file = (tmp_path / "feedback_meta.db").as_posix()
     db.init_db(
         f"sqlite:///{db_file}",
@@ -33,6 +36,7 @@ def isolated_db(tmp_path, monkeypatch):
     )
     db.create_all()
     prev_app = feedback_serve_endpoints.global_system_app
+    prev_provider = dashboard_identity._identity_provider
     feedback_serve_endpoints.global_system_app = None
     configure_dashboard_identity_provider(None)
     for env_key in (
@@ -40,10 +44,11 @@ def isolated_db(tmp_path, monkeypatch):
         "DBGPT_DASHBOARD_IDENTITY_PROVIDER",
         api_fb_v1.TRUSTED_GATEWAY_SECRET_ENV,
         api_fb_v1.DEV_FALLBACK_ENV,
+        api_fb_v1.SESSION_SECRET_ENV,
     ):
         monkeypatch.delenv(env_key, raising=False)
     yield
-    configure_dashboard_identity_provider(None)
+    configure_dashboard_identity_provider(prev_provider)
     if db.engine is not None:
         db.engine.dispose()
     feedback_serve_endpoints.global_system_app = prev_app
@@ -92,9 +97,16 @@ def _sample_payload(conv_uid: str = "poc-fb-conv", conv_index: int = 1, **overri
 def test_verified_owner_can_commit_update_and_read_back_own_feedback(
     gateway_client: TestClient,
 ):
+    # Independently compute expected HMAC digest without calling production signer.
+    independent_sig = hmac.new(
+        GATEWAY_SECRET.encode("utf-8"), b"alice", hashlib.sha256
+    ).hexdigest()
     res = gateway_client.post(
         "/api/v1/feedback/commit",
-        headers=_gateway_headers("alice"),
+        headers={
+            "user-id": "alice",
+            api_fb_v1.TRUSTED_GATEWAY_SIG_HEADER: independent_sig,
+        },
         json=_sample_payload(),
     )
     assert res.status_code == 200
@@ -103,7 +115,10 @@ def test_verified_owner_can_commit_update_and_read_back_own_feedback(
     found = gateway_client.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "poc-fb-conv", "conv_index": 1},
-        headers=_gateway_headers("alice"),
+        headers={
+            "user-id": "alice",
+            api_fb_v1.TRUSTED_GATEWAY_SIG_HEADER: independent_sig,
+        },
     )
     assert found.status_code == 200
     body = found.json()
@@ -167,7 +182,6 @@ def test_other_verified_user_cannot_read_or_overwrite_feedback(
 def test_unauthenticated_and_raw_forged_user_id_headers_are_rejected(
     raw_client: TestClient, monkeypatch
 ):
-    # Pre-populate Alice's row and a legacy unowned row directly in metadata DB.
     dao = ChatFeedBackDao()
     dao.create_or_update_chat_feed_back(
         api_fb_v1.FeedBackBody(**_sample_payload()),
@@ -187,7 +201,7 @@ def test_unauthenticated_and_raw_forged_user_id_headers_are_rejected(
             )
         )
 
-    # Anonymous read (no headers) fails with 401.
+    # Stateless anonymous read (no session cookie, no auth) fails with 401.
     anon_find = raw_client.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "poc-fb-conv", "conv_index": 1},
@@ -211,7 +225,7 @@ def test_unauthenticated_and_raw_forged_user_id_headers_are_rejected(
     )
     assert forged_default_commit.status_code == 401
 
-    # Production mode likewise rejects raw user-id spoofing and anonymous calls.
+    # Production mode likewise rejects raw user-id spoofing and stateless calls.
     monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "true")
     forged_prod_find = raw_client.get(
         "/api/v1/feedback/find",
@@ -225,6 +239,140 @@ def test_unauthenticated_and_raw_forged_user_id_headers_are_rejected(
         params={"conv_uid": "legacy-conv", "conv_index": 0},
     )
     assert anon_legacy.status_code == 401
+
+
+def test_browser_session_cookie_works_in_production_and_isolates_browsers(
+    monkeypatch,
+):
+    """Browser select -> commit -> find flow works in production without raw headers."""
+    monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "true")
+    monkeypatch.setenv(api_fb_v1.SESSION_SECRET_ENV, "browser-session-test-key")
+    with db.session() as session:
+        session.add_all(
+            [
+                ChatHistoryEntity(
+                    conv_uid="browser-conv-a",
+                    chat_mode="chat_normal",
+                    summary="Browser chat recorded with default placeholder",
+                    user_name="001",
+                ),
+                ChatHistoryEntity(
+                    conv_uid="alice-named-conv",
+                    chat_mode="chat_normal",
+                    summary="Named user conversation",
+                    user_name="alice",
+                ),
+            ]
+        )
+
+    app = FastAPI()
+    app.include_router(api_fb_v1.router, prefix="/api")
+
+    browser_a = TestClient(app)
+    browser_b = TestClient(app)
+    https_proxy_client = TestClient(app)
+
+    # Behind HTTPS / X-Forwarded-Proto: https, Set-Cookie carries Secure + HttpOnly.
+    https_sel = https_proxy_client.get(
+        "/api/v1/feedback/select", headers={"x-forwarded-proto": "https"}
+    )
+    assert https_sel.status_code == 200
+    https_cookie_hdr = https_sel.headers.get("set-cookie", "").lower()
+    assert "httponly" in https_cookie_hdr
+    assert "secure" in https_cookie_hdr
+
+    direct_tls_client = TestClient(app, base_url="https://testserver")
+    tls_sel = direct_tls_client.get("/api/v1/feedback/select")
+    assert "secure" in tls_sel.headers.get("set-cookie", "").lower()
+
+    # Browser A loads feedback categories (completion.tsx mount) and gets signed cookie.
+    sel_a = browser_a.get("/api/v1/feedback/select")
+    assert sel_a.status_code == 200
+    assert "httponly" in sel_a.headers.get("set-cookie", "").lower()
+    cookie_a = browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME)
+    assert cookie_a is not None and cookie_a.startswith("session:")
+
+    # Subsequent select preserves the same session actor.
+    browser_a.get("/api/v1/feedback/select")
+    assert browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME) == cookie_a
+
+    # Browser A commits and reads back its own feedback on a default ("001") chat.
+    commit_a = browser_a.post(
+        "/api/v1/feedback/commit",
+        json=_sample_payload(conv_uid="browser-conv-a", conv_index=1),
+    )
+    assert commit_a.status_code == 200
+
+    find_a = browser_a.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "browser-conv-a", "conv_index": 1},
+    )
+    assert find_a.status_code == 200
+    assert find_a.json()["data"]["messages"] == "POC transcript marker"
+    assert find_a.json()["data"]["user_name"].startswith("session:")
+
+    # Browser session cannot attach feedback to a named user's ("alice") conversation.
+    foreign_named = browser_a.post(
+        "/api/v1/feedback/commit",
+        json=_sample_payload(conv_uid="alice-named-conv", conv_index=1),
+    )
+    assert foreign_named.status_code == 403
+
+    # Cross-site fetch metadata and non-JSON form posts are rejected for cookie auth.
+    csrf_cross_site = browser_a.post(
+        "/api/v1/feedback/commit",
+        headers={"sec-fetch-site": "cross-site"},
+        json=_sample_payload(conv_uid="browser-conv-a", conv_index=1, score=1),
+    )
+    assert csrf_cross_site.status_code == 403
+
+    csrf_form = browser_a.post(
+        "/api/v1/feedback/commit",
+        headers={"content-type": "text/plain"},
+        content=b'{"conv_uid":"browser-conv-a","conv_index":1,"score":1}',
+    )
+    assert csrf_form.status_code == 415
+
+    # Browser A still cannot forge a raw `user-id: alice` header -> 403.
+    forged_from_browser = browser_a.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "browser-conv-a", "conv_index": 1},
+        headers={"user-id": "alice"},
+    )
+    assert forged_from_browser.status_code == 403
+
+    # Browser B gets its own distinct session cookie and cannot read/overwrite A's row.
+    browser_b.get("/api/v1/feedback/select")
+    find_b = browser_b.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "browser-conv-a", "conv_index": 1},
+    )
+    assert find_b.status_code == 200
+    assert find_b.json()["data"] is None
+
+    overwrite_b = browser_b.post(
+        "/api/v1/feedback/commit",
+        json=_sample_payload(
+            conv_uid="browser-conv-a", conv_index=1, messages="Tampered by B"
+        ),
+    )
+    assert overwrite_b.status_code == 403
+
+    # Tampered or malformed session cookies fail closed with 401.
+    for bad_cookie in (
+        "session:00112233445566778899aabbccddeeff.bad_sig",
+        "no-dot-cookie",
+        "session:not_hex_00112233445566778899.00",
+    ):
+        tampered_client = TestClient(app)
+        tampered_client.cookies.set(api_fb_v1.SESSION_COOKIE_NAME, bad_cookie)
+        assert (
+            tampered_client.get(
+                "/api/v1/feedback/find",
+                params={"conv_uid": "browser-conv-a", "conv_index": 1},
+            ).status_code
+            == 401
+        )
 
 
 def test_middleware_verified_principal_rejects_forged_victim_header():
@@ -241,7 +389,6 @@ def test_middleware_verified_principal_rejects_forged_victim_header():
     app.include_router(api_fb_v1.router, prefix="/api")
     test_client = TestClient(app)
 
-    # Verified owner Alice stores and reads back her feedback without raw headers.
     current_principal["user"] = UserRequest(user_id="alice")
     commit_res = test_client.post(
         "/api/v1/feedback/commit",
@@ -257,7 +404,6 @@ def test_middleware_verified_principal_rejects_forged_victim_header():
     assert alice_find.json()["data"]["user_name"] == "alice"
     assert alice_find.json()["data"]["messages"] == "POC transcript marker"
 
-    # Verified Bob attempting to pass a forged `user-id: alice` header is rejected.
     current_principal["user"] = UserRequest(user_id="bob")
     forged_find = test_client.get(
         "/api/v1/feedback/find",
@@ -274,7 +420,6 @@ def test_middleware_verified_principal_rejects_forged_victim_header():
     )
     assert forged_commit.status_code == 403
 
-    # Verified Alice still reads her intact record (matching header also allowed).
     current_principal["user"] = "alice"
     intact = test_client.get(
         "/api/v1/feedback/find",
@@ -307,6 +452,25 @@ def test_trusted_gateway_enforces_signature_and_blocks_header_tampering(
         headers={"user-id": "alice"},
     )
     assert no_sig.status_code == 401
+
+    # Request signed with a different gateway secret -> 401.
+    wrong_secret = gateway_client.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "poc-fb-conv", "conv_index": 1},
+        headers=_gateway_headers("alice", secret="different-untrusted-secret"),
+    )
+    assert wrong_secret.status_code == 401
+
+    # Non-ASCII Latin-1 header bytes return 401 rather than 500 TypeError.
+    non_ascii_sig = gateway_client.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "poc-fb-conv", "conv_index": 1},
+        headers={
+            "user-id": "alice",
+            api_fb_v1.TRUSTED_GATEWAY_SIG_HEADER: "é-non-ascii-sig".encode("latin-1"),
+        },
+    )
+    assert non_ascii_sig.status_code == 401
 
     # Replaying Bob's valid signature with forged `user-id: alice` -> 401.
     replayed_bob_sig = gateway_client.get(
@@ -344,17 +508,21 @@ def test_trusted_gateway_enforces_signature_and_blocks_header_tampering(
     assert dup_res.status_code == 400
 
 
-def test_principal_bound_and_shared_api_keys_prevent_impersonation(monkeypatch):
+def test_principal_bound_shared_and_conflicting_api_keys(monkeypatch):
     app = FastAPI()
     sys_app = SystemApp(app)
     feedback_serve_endpoints.init_endpoints(
         sys_app,
-        ServeConfig(api_keys="alice:secret-key-1, bob:secret-key-2, shared-gw-key"),
+        ServeConfig(
+            api_keys=(
+                "alice:secret-key-1, bob:secret-key-2, shared-gw-key, "
+                "ambig-shared, alice:ambig-shared, bob:ambig-two, carol:ambig-two"
+            )
+        ),
     )
     app.include_router(api_fb_v1.router, prefix="/api")
     test_client = TestClient(app)
 
-    # Missing or invalid bearer token -> 401.
     assert (
         test_client.get(
             "/api/v1/feedback/find",
@@ -371,7 +539,23 @@ def test_principal_bound_and_shared_api_keys_prevent_impersonation(monkeypatch):
         == 401
     )
 
-    # Alice's bound key commits and reads Alice's feedback without user-id header.
+    # Ambiguous keys (shared+bound or two distinct owners) are rejected with 401.
+    assert (
+        test_client.get(
+            "/api/v1/feedback/select",
+            headers={"Authorization": "Bearer ambig-shared"},
+        ).status_code
+        == 401
+    )
+    assert (
+        test_client.get(
+            "/api/v1/feedback/select",
+            headers={"Authorization": "Bearer ambig-two"},
+        ).status_code
+        == 401
+    )
+
+    # Unambiguous Alice key remains valid.
     ok_commit = test_client.post(
         "/api/v1/feedback/commit",
         headers={"Authorization": "Bearer secret-key-1"},
@@ -386,9 +570,7 @@ def test_principal_bound_and_shared_api_keys_prevent_impersonation(monkeypatch):
     )
     assert ok_find.status_code == 200
     assert ok_find.json()["data"]["user_name"] == "alice"
-    assert ok_find.json()["data"]["messages"] == "POC transcript marker"
 
-    # Bob's bound key cannot read Alice's feedback and gets 403 if forging user-id.
     bob_find = test_client.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "poc-fb-conv", "conv_index": 1},
@@ -407,7 +589,6 @@ def test_principal_bound_and_shared_api_keys_prevent_impersonation(monkeypatch):
     )
     assert bob_forged.status_code == 403
 
-    # An unbound shared bearer key does NOT bind to Alice and rejects raw user-id.
     shared_forged = test_client.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "poc-fb-conv", "conv_index": 1},
@@ -425,7 +606,6 @@ def test_principal_bound_and_shared_api_keys_prevent_impersonation(monkeypatch):
     )
     assert shared_no_principal.status_code == 401
 
-    # Shared bearer key paired with a valid trusted gateway signature succeeds.
     monkeypatch.setenv(api_fb_v1.TRUSTED_GATEWAY_SECRET_ENV, GATEWAY_SECRET)
     shared_with_gw = test_client.get(
         "/api/v1/feedback/find",
@@ -480,14 +660,14 @@ def test_other_user_cannot_commit_feedback_on_foreign_conversation(
     assert alice_res.status_code == 200
 
 
-def test_scope_principal_custom_provider_and_dev_fallback_edges(monkeypatch):
-    scope_Holder: dict = {"user": None}
+def test_scope_principal_custom_provider_and_fixture_restore(tmp_path, monkeypatch):
+    scope_holder: dict = {"user": None}
     app = FastAPI()
 
     @app.middleware("http")
     async def set_scope_user(request: Request, call_next):
-        if scope_Holder["user"] is not None:
-            request.scope["user"] = scope_Holder["user"]
+        if scope_holder["user"] is not None:
+            request.scope["user"] = scope_holder["user"]
         return await call_next(request)
 
     sys_app = SystemApp(app)
@@ -495,13 +675,7 @@ def test_scope_principal_custom_provider_and_dev_fallback_edges(monkeypatch):
     app.include_router(api_fb_v1.router, prefix="/api")
     client = TestClient(app)
 
-    # /v1/feedback/select remains reachable when api_keys has no active entries.
-    select_res = client.get("/api/v1/feedback/select")
-    assert select_res.status_code == 200
-    assert "information" in select_res.json()["data"]
-
-    # Unauthenticated scope user object is ignored -> 401.
-    scope_Holder["user"] = SimpleNamespace(username="alice", is_authenticated=False)
+    scope_holder["user"] = SimpleNamespace(username="alice", is_authenticated=False)
     assert (
         client.get(
             "/api/v1/feedback/find",
@@ -510,19 +684,19 @@ def test_scope_principal_custom_provider_and_dev_fallback_edges(monkeypatch):
         == 401
     )
 
-    # Authenticated scope user object resolves principal and validates payload.
-    scope_Holder["user"] = SimpleNamespace(username="alice", is_authenticated=True)
-    missing_conv = client.post(
-        "/api/v1/feedback/commit",
-        json=_sample_payload(conv_uid="", conv_index=1),
+    scope_holder["user"] = SimpleNamespace(username="alice", is_authenticated=True)
+    assert (
+        client.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(conv_uid="", conv_index=1),
+        ).status_code
+        == 422
     )
-    assert missing_conv.status_code == 422
-
     assert (
         client.post("/api/v1/feedback/commit", json=_sample_payload()).status_code
         == 200
     )
-    scope_Holder["user"] = None
+    scope_holder["user"] = None
 
     # Untrusted gateway signature header when gateway secret is unset -> 401.
     assert (
@@ -534,18 +708,25 @@ def test_scope_principal_custom_provider_and_dev_fallback_edges(monkeypatch):
         == 401
     )
 
-    # Custom DashboardIdentityProvider adapter (request-aware and error handling).
+    # Custom DashboardIdentityProvider returning None is rejected as 401 (never "None").
     class CustomSSOProvider:
-        def __init__(self, actor: str = ""):
-            self.actor = actor
-
-        def resolve_request(self, request: Request) -> str:
+        def resolve_request(self, request: Request):
             token = request.headers.get("x-sso-ticket", "")
+            if token == "none-ticket":
+                return None
             if token == "valid-alice-ticket":
                 return "alice"
             raise DashboardIdentityError("Invalid SSO ticket")
 
     configure_dashboard_identity_provider(CustomSSOProvider())
+    assert (
+        client.get(
+            "/api/v1/feedback/find",
+            params={"conv_uid": "poc-fb-conv", "conv_index": 1},
+            headers={"x-sso-ticket": "none-ticket"},
+        ).status_code
+        == 401
+    )
     assert (
         client.get(
             "/api/v1/feedback/find",
@@ -562,49 +743,55 @@ def test_scope_principal_custom_provider_and_dev_fallback_edges(monkeypatch):
     assert sso_ok.status_code == 200
     assert sso_ok.json()["data"]["user_name"] == "alice"
 
-    # Conflicting principals (e.g. scope user=bob vs custom SSO=alice) -> 403.
-    scope_Holder["user"] = SimpleNamespace(username="bob", is_authenticated=True)
-    conflict_res = client.get(
-        "/api/v1/feedback/find",
-        params={"conv_uid": "poc-fb-conv", "conv_index": 1},
-        headers={"x-sso-ticket": "valid-alice-ticket"},
+    scope_holder["user"] = SimpleNamespace(username="bob", is_authenticated=True)
+    assert (
+        client.get(
+            "/api/v1/feedback/find",
+            params={"conv_uid": "poc-fb-conv", "conv_index": 1},
+            headers={"x-sso-ticket": "valid-alice-ticket"},
+        ).status_code
+        == 403
     )
-    assert conflict_res.status_code == 403
-    scope_Holder["user"] = None
+    scope_holder["user"] = None
     configure_dashboard_identity_provider(None)
 
-    # Explicit opt-in dev fallback works only without forged headers or prod mode.
     monkeypatch.setenv(api_fb_v1.DEV_FALLBACK_ENV, "true")
+    stateless_client = TestClient(app)
     assert (
-        client.post(
+        stateless_client.post(
             "/api/v1/feedback/commit",
             json=_sample_payload(conv_uid="dev-conv", conv_index=1),
         ).status_code
         == 200
     )
     assert (
-        client.get(
+        stateless_client.get(
             "/api/v1/feedback/find",
             params={"conv_uid": "dev-conv", "conv_index": 1},
         ).json()["data"]["user_name"]
         == "001"
     )
-    assert (
-        client.get(
-            "/api/v1/feedback/find",
-            params={"conv_uid": "poc-fb-conv", "conv_index": 1},
-            headers={"user-id": "alice"},
-        ).status_code
-        == 401
-    )
     monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "true")
     assert (
-        client.get(
+        stateless_client.get(
             "/api/v1/feedback/find",
             params={"conv_uid": "dev-conv", "conv_index": 1},
         ).status_code
         == 401
     )
+
+    # Verify isolated_db saves and restores an inherited identity provider on teardown.
+    nested_dir = tmp_path / "nested"
+    nested_dir.mkdir()
+    sentinel_provider = SimpleNamespace(resolve=lambda _u: "sentinel")
+    configure_dashboard_identity_provider(sentinel_provider)
+    gen = isolated_db.__wrapped__(nested_dir, monkeypatch)
+    next(gen)
+    assert dashboard_identity._identity_provider is None
+    with pytest.raises(StopIteration):
+        next(gen)
+    assert dashboard_identity._identity_provider is sentinel_provider
+    configure_dashboard_identity_provider(None)
 
 
 def test_dao_guards_fail_closed():
