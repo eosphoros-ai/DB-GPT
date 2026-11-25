@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+from contextlib import contextmanager
 from types import SimpleNamespace
 
 import pytest
@@ -8,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from dbgpt.component import SystemApp
 from dbgpt.storage.chat_history.chat_history_db import ChatHistoryEntity
-from dbgpt.storage.metadata import db
+from dbgpt.storage.metadata import DatabaseManager, Model, db
 from dbgpt_app.openapi.api_v1.dashboard import identity as dashboard_identity
 from dbgpt_app.openapi.api_v1.dashboard.identity import (
     DashboardIdentityError,
@@ -19,6 +20,7 @@ from dbgpt_app.openapi.api_v1.feedback.feed_back_db import (
     ChatFeedBackDao,
     ChatFeedBackEntity,
 )
+from dbgpt_serve.conversation.api import endpoints as conv_serve_endpoints
 from dbgpt_serve.feedback.api import endpoints as feedback_serve_endpoints
 from dbgpt_serve.feedback.config import ServeConfig
 from dbgpt_serve.utils.auth import UserRequest
@@ -26,19 +28,37 @@ from dbgpt_serve.utils.auth import UserRequest
 GATEWAY_SECRET = "unit-test-trusted-gateway-secret"
 
 
+@contextmanager
+def _preserve_identity_provider():
+    prev_provider = dashboard_identity._identity_provider
+    configure_dashboard_identity_provider(None)
+    try:
+        yield
+    finally:
+        configure_dashboard_identity_provider(prev_provider)
+
+
 @pytest.fixture(autouse=True)
 def isolated_db(tmp_path, monkeypatch):
     """Provide an isolated SQLite metadata database and restore global state."""
+    from dbgpt._private.config import Config
+
     db_file = (tmp_path / "feedback_meta.db").as_posix()
     db.init_db(
         f"sqlite:///{db_file}",
         engine_args={"connect_args": {"check_same_thread": False}},
     )
     db.create_all()
-    prev_app = feedback_serve_endpoints.global_system_app
-    prev_provider = dashboard_identity._identity_provider
+    cfg = Config()
+    prev_fb_app = feedback_serve_endpoints.global_system_app
+    prev_conv_app = conv_serve_endpoints.global_system_app
+    prev_cfg_app = cfg.SYSTEM_APP
     feedback_serve_endpoints.global_system_app = None
-    configure_dashboard_identity_provider(None)
+    conv_serve_endpoints.global_system_app = None
+    cfg.SYSTEM_APP = None
+    monkeypatch.setenv(
+        api_fb_v1.SESSION_KEY_FILE_ENV, str(tmp_path / "feedback-session.key")
+    )
     for env_key in (
         "DBGPT_DASHBOARD_PRODUCTION_MODE",
         "DBGPT_DASHBOARD_IDENTITY_PROVIDER",
@@ -47,11 +67,15 @@ def isolated_db(tmp_path, monkeypatch):
         api_fb_v1.SESSION_SECRET_ENV,
     ):
         monkeypatch.delenv(env_key, raising=False)
-    yield
-    configure_dashboard_identity_provider(prev_provider)
-    if db.engine is not None:
-        db.engine.dispose()
-    feedback_serve_endpoints.global_system_app = prev_app
+    with _preserve_identity_provider():
+        try:
+            yield
+        finally:
+            if db.engine is not None:
+                db.engine.dispose()
+            feedback_serve_endpoints.global_system_app = prev_fb_app
+            conv_serve_endpoints.global_system_app = prev_conv_app
+            cfg.SYSTEM_APP = prev_cfg_app
 
 
 def _gateway_headers(actor_id: str, secret: str = GATEWAY_SECRET, **extra) -> dict:
@@ -241,19 +265,26 @@ def test_unauthenticated_and_raw_forged_user_id_headers_are_rejected(
     assert anon_legacy.status_code == 401
 
 
-def test_browser_session_cookie_works_in_production_and_isolates_browsers(
+def test_browser_session_cookie_works_in_production_and_survives_restart(
     monkeypatch,
 ):
-    """Browser select -> commit -> find flow works in production without raw headers."""
+    """Browser select -> commit -> find flow works in production and across restarts."""
     monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "true")
-    monkeypatch.setenv(api_fb_v1.SESSION_SECRET_ENV, "browser-session-test-key")
+    # Intentionally leave SESSION_SECRET_ENV unset so the persistent key file is used
+    # across independent app instances / restarts.
     with db.session() as session:
         session.add_all(
             [
                 ChatHistoryEntity(
                     conv_uid="browser-conv-a",
                     chat_mode="chat_normal",
-                    summary="Browser chat recorded with default placeholder",
+                    summary="Unowned browser dialogue",
+                    user_name=None,
+                ),
+                ChatHistoryEntity(
+                    conv_uid="default-001-conv",
+                    chat_mode="chat_normal",
+                    summary="Conversation owned by 001",
                     user_name="001",
                 ),
                 ChatHistoryEntity(
@@ -272,22 +303,26 @@ def test_browser_session_cookie_works_in_production_and_isolates_browsers(
     browser_b = TestClient(app)
     https_proxy_client = TestClient(app)
 
-    # Behind HTTPS / X-Forwarded-Proto: https, Set-Cookie carries Secure + HttpOnly.
+    # Behind HTTPS / X-Forwarded-Proto: https, Set-Cookie carries Secure + HttpOnly
+    # and the response sets Cache-Control: no-store to prevent shared cache replay.
     https_sel = https_proxy_client.get(
         "/api/v1/feedback/select", headers={"x-forwarded-proto": "https"}
     )
     assert https_sel.status_code == 200
+    assert https_sel.headers.get("cache-control") == "no-store"
     https_cookie_hdr = https_sel.headers.get("set-cookie", "").lower()
     assert "httponly" in https_cookie_hdr
     assert "secure" in https_cookie_hdr
 
     direct_tls_client = TestClient(app, base_url="https://testserver")
     tls_sel = direct_tls_client.get("/api/v1/feedback/select")
+    assert tls_sel.headers.get("cache-control") == "no-store"
     assert "secure" in tls_sel.headers.get("set-cookie", "").lower()
 
-    # Browser A loads feedback categories (completion.tsx mount) and gets signed cookie.
+    # Browser A loads feedback categories and gets a persistent-key-signed cookie.
     sel_a = browser_a.get("/api/v1/feedback/select")
     assert sel_a.status_code == 200
+    assert sel_a.headers.get("cache-control") == "no-store"
     assert "httponly" in sel_a.headers.get("set-cookie", "").lower()
     cookie_a = browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME)
     assert cookie_a is not None and cookie_a.startswith("session:")
@@ -296,27 +331,59 @@ def test_browser_session_cookie_works_in_production_and_isolates_browsers(
     browser_a.get("/api/v1/feedback/select")
     assert browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME) == cookie_a
 
-    # Browser A commits and reads back its own feedback on a default ("001") chat.
+    # Browser A commits and reads back its own feedback on a built-in ("001") chat
+    # as well as an unowned (None) chat, and keeps access across restarts.
+    commit_001 = browser_a.post(
+        "/api/v1/feedback/commit",
+        json=_sample_payload(conv_uid="default-001-conv", conv_index=1),
+    )
+    assert commit_001.status_code == 200
+
     commit_a = browser_a.post(
         "/api/v1/feedback/commit",
         json=_sample_payload(conv_uid="browser-conv-a", conv_index=1),
     )
     assert commit_a.status_code == 200
 
+    find_001 = browser_a.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "default-001-conv", "conv_index": 1},
+    )
+    assert find_001.status_code == 200
+    assert find_001.headers.get("cache-control") == "no-store"
+    assert find_001.json()["data"]["messages"] == "POC transcript marker"
+    assert find_001.json()["data"]["user_name"].startswith("session:")
+
     find_a = browser_a.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "browser-conv-a", "conv_index": 1},
     )
     assert find_a.status_code == 200
+    assert find_a.headers.get("cache-control") == "no-store"
     assert find_a.json()["data"]["messages"] == "POC transcript marker"
     assert find_a.json()["data"]["user_name"].startswith("session:")
 
-    # Browser session cannot attach feedback to a named user's ("alice") conversation.
-    foreign_named = browser_a.post(
-        "/api/v1/feedback/commit",
-        json=_sample_payload(conv_uid="alice-named-conv", conv_index=1),
+    # Simulate an application restart / independent worker reading the shared key file:
+    # the existing browser cookie continues to verify and read/update its feedback.
+    restarted_app = FastAPI()
+    restarted_app.include_router(api_fb_v1.router, prefix="/api")
+    restarted_browser_a = TestClient(restarted_app)
+    restarted_browser_a.cookies.set(api_fb_v1.SESSION_COOKIE_NAME, cookie_a)
+    after_restart_find = restarted_browser_a.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "default-001-conv", "conv_index": 1},
     )
-    assert foreign_named.status_code == 403
+    assert after_restart_find.status_code == 200
+    assert after_restart_find.json()["data"]["messages"] == "POC transcript marker"
+
+    # Session actors still cannot attach feedback to a named ("alice") conversation.
+    assert (
+        browser_a.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(conv_uid="alice-named-conv", conv_index=1),
+        ).status_code
+        == 403
+    )
 
     # Cross-site fetch metadata and non-JSON form posts are rejected for cookie auth.
     csrf_cross_site = browser_a.post(
@@ -341,8 +408,46 @@ def test_browser_session_cookie_works_in_production_and_isolates_browsers(
     )
     assert forged_from_browser.status_code == 403
 
-    # Browser B gets its own distinct session cookie and cannot read/overwrite A's row.
+    # Browser B gets its own distinct session cookie: cannot read, overwrite, or
+    # claim subsequent turns on Browser A's default-001-conv / browser-conv-a.
     browser_b.get("/api/v1/feedback/select")
+    assert (
+        browser_b.get(
+            "/api/v1/feedback/find",
+            params={"conv_uid": "default-001-conv", "conv_index": 1},
+        ).json()["data"]
+        is None
+    )
+    assert (
+        browser_b.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(conv_uid="default-001-conv", conv_index=1),
+        ).status_code
+        == 403
+    )
+    assert (
+        browser_b.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(conv_uid="default-001-conv", conv_index=2),
+        ).status_code
+        == 403
+    )
+
+    # Meanwhile the direct conversation owner ("001" via verified principal) is not
+    # locked out by a session actor's prior row on its own conversation.
+    ChatFeedBackDao().create_or_update_chat_feed_back(
+        api_fb_v1.FeedBackBody(
+            **_sample_payload(
+                conv_uid="default-001-conv", conv_index=1, messages="Reclaimed by 001"
+            )
+        ),
+        user_name="001",
+    )
+    reclaimed = ChatFeedBackDao().get_chat_feed_back(
+        "default-001-conv", 1, user_name="001"
+    )
+    assert reclaimed is not None and reclaimed.messages == "Reclaimed by 001"
+
     find_b = browser_b.get(
         "/api/v1/feedback/find",
         params={"conv_uid": "browser-conv-a", "conv_index": 1},
@@ -780,18 +885,162 @@ def test_scope_principal_custom_provider_and_fixture_restore(tmp_path, monkeypat
         == 401
     )
 
-    # Verify isolated_db saves and restores an inherited identity provider on teardown.
-    nested_dir = tmp_path / "nested"
-    nested_dir.mkdir()
+    # Verify _preserve_identity_provider saves and restores inherited provider cleanly
+    # without reopening or disposing the metadata database.
     sentinel_provider = SimpleNamespace(resolve=lambda _u: "sentinel")
     configure_dashboard_identity_provider(sentinel_provider)
-    gen = isolated_db.__wrapped__(nested_dir, monkeypatch)
-    next(gen)
-    assert dashboard_identity._identity_provider is None
-    with pytest.raises(StopIteration):
-        next(gen)
+    with _preserve_identity_provider():
+        assert dashboard_identity._identity_provider is None
     assert dashboard_identity._identity_provider is sentinel_provider
     configure_dashboard_identity_provider(None)
+
+
+def test_case_sensitive_owner_matching_and_separate_conversation_db(
+    tmp_path, gateway_client: TestClient, monkeypatch
+):
+    """Exact case-sensitive owner lookup and separate conversation DB binding."""
+    # `Alice` commits feedback; `alice` (different case) cannot read or modify it.
+    assert (
+        gateway_client.post(
+            "/api/v1/feedback/commit",
+            headers=_gateway_headers("Alice"),
+            json=_sample_payload(
+                conv_uid="case-conv", conv_index=1, messages="Alice uppercase secret"
+            ),
+        ).status_code
+        == 200
+    )
+    lower_find = gateway_client.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "case-conv", "conv_index": 1},
+        headers=_gateway_headers("alice"),
+    )
+    assert lower_find.status_code == 200
+    assert lower_find.json()["data"] is None
+    assert "Alice uppercase secret" not in lower_find.text
+
+    lower_overwrite = gateway_client.post(
+        "/api/v1/feedback/commit",
+        headers=_gateway_headers("alice"),
+        json=_sample_payload(conv_uid="case-conv", conv_index=1, score=1),
+    )
+    assert lower_overwrite.status_code == 403
+
+    upper_find = gateway_client.get(
+        "/api/v1/feedback/find",
+        params={"conv_uid": "case-conv", "conv_index": 1},
+        headers=_gateway_headers("Alice"),
+    )
+    assert upper_find.status_code == 200
+    assert upper_find.json()["data"]["messages"] == "Alice uppercase secret"
+
+    # Separate DatabaseManager holding `chat_history` (absent from global `db`):
+    # feedback writes targeting another user's conversation in that manager are blocked.
+    conv_db_file = (tmp_path / "separate_conv.db").as_posix()
+    separate_conv_mgr = DatabaseManager()
+    separate_conv_mgr.init_db(
+        f"sqlite:///{conv_db_file}",
+        engine_args={"connect_args": {"check_same_thread": False}},
+        base=Model,
+    )
+    separate_conv_mgr.create_all()
+    try:
+        with separate_conv_mgr.session() as conv_session:
+            conv_session.add(
+                ChatHistoryEntity(
+                    conv_uid="separate-db-alice-conv",
+                    chat_mode="chat_normal",
+                    summary="Stored in separate conversation DB",
+                    user_name="alice",
+                )
+            )
+
+        bound_dao = ChatFeedBackDao(conv_db_manager=separate_conv_mgr)
+        with pytest.raises(PermissionError):
+            bound_dao.create_or_update_chat_feed_back(
+                api_fb_v1.FeedBackBody(
+                    **_sample_payload(conv_uid="separate-db-alice-conv", conv_index=0)
+                ),
+                user_name="bob",
+            )
+
+        bound_dao.create_or_update_chat_feed_back(
+            api_fb_v1.FeedBackBody(
+                **_sample_payload(conv_uid="separate-db-alice-conv", conv_index=0)
+            ),
+            user_name="alice",
+        )
+        assert (
+            bound_dao.get_chat_feed_back("separate-db-alice-conv", 0, user_name="alice")
+            is not None
+        )
+
+        # Also verify ConversationServe._db_manager resolution via SystemApp on router.
+        from dbgpt_serve.conversation.serve import Serve as ConversationServe
+
+        app = FastAPI()
+        sys_app = SystemApp(app)
+        conv_serve = ConversationServe(
+            sys_app, db_url_or_db=separate_conv_mgr, try_create_tables=False
+        )
+        sys_app.register_instance(conv_serve)
+        conv_serve.before_start()
+        conv_serve_endpoints.global_system_app = sys_app
+
+        assert (
+            gateway_client.post(
+                "/api/v1/feedback/commit",
+                headers=_gateway_headers("bob"),
+                json=_sample_payload(conv_uid="separate-db-alice-conv", conv_index=2),
+            ).status_code
+            == 403
+        )
+        conv_serve_endpoints.global_system_app = None
+
+        # Verify UnifiedDBManagerFactory resolution when registered on SystemApp.
+        from dbgpt.storage.metadata.db_factory import UnifiedDBManagerFactory
+
+        unified_app = SystemApp(FastAPI())
+        unified_app.register_instance(
+            UnifiedDBManagerFactory(unified_app, separate_conv_mgr)
+        )
+        feedback_serve_endpoints.global_system_app = unified_app
+        assert (
+            gateway_client.post(
+                "/api/v1/feedback/commit",
+                headers=_gateway_headers("bob"),
+                json=_sample_payload(conv_uid="separate-db-alice-conv", conv_index=3),
+            ).status_code
+            == 403
+        )
+        feedback_serve_endpoints.global_system_app = None
+
+        explicit_dao = ChatFeedBackDao(db_manager=separate_conv_mgr)
+        with pytest.raises(PermissionError):
+            explicit_dao.create_or_update_chat_feed_back(
+                api_fb_v1.FeedBackBody(
+                    **_sample_payload(conv_uid="separate-db-alice-conv", conv_index=4)
+                ),
+                user_name="bob",
+            )
+    finally:
+        if separate_conv_mgr.engine is not None:
+            separate_conv_mgr.engine.dispose()
+
+    # Missing `chat_history` table in the bound conversation DB fails closed.
+    empty_db_file = (tmp_path / "missing_table.db").as_posix()
+    empty_mgr = DatabaseManager()
+    empty_mgr.init_db(f"sqlite:///{empty_db_file}")
+    try:
+        missing_table_dao = ChatFeedBackDao(conv_db_manager=empty_mgr)
+        with pytest.raises(PermissionError):
+            missing_table_dao.create_or_update_chat_feed_back(
+                api_fb_v1.FeedBackBody(**_sample_payload()),
+                user_name="alice",
+            )
+    finally:
+        if empty_mgr.engine is not None:
+            empty_mgr.engine.dispose()
 
 
 def test_dao_guards_fail_closed():

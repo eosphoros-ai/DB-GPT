@@ -4,12 +4,14 @@ import os
 import secrets
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 from typing import Any, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response
 from fastapi.security.http import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 
+from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt_app.openapi.api_v1.dashboard import identity as dashboard_identity
 from dbgpt_app.openapi.api_v1.dashboard.identity import (
     DashboardIdentityError,
@@ -29,9 +31,11 @@ TRUSTED_GATEWAY_SIG_HEADER = "x-dbgpt-gateway-signature"
 AUTH_USER_HEADER = "x-authenticated-user"
 DEV_FALLBACK_ENV = "DBGPT_FEEDBACK_ALLOW_DEV_FALLBACK"
 SESSION_SECRET_ENV = "DBGPT_FEEDBACK_SESSION_SECRET"
+SESSION_KEY_FILE_ENV = "DBGPT_FEEDBACK_SESSION_KEY_FILE"
+DEFAULT_SESSION_KEY_FILE = str(Path(PILOT_PATH) / "meta_data" / "feedback-session.key")
 SESSION_COOKIE_NAME = "dbgpt_feedback_session"
+SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 _SESSION_DOMAIN_PREFIX = "dbgpt-feedback-session-v1:"
-_PROCESS_SESSION_SECRET = secrets.token_hex(32)
 
 
 @dataclass(frozen=True)
@@ -56,8 +60,47 @@ def compute_gateway_signature(secret: str, actor_id: str) -> str:
 
 
 def _session_signing_secret() -> str:
+    """Return a persistent signing key shared across restarts and worker processes."""
     configured = os.getenv(SESSION_SECRET_ENV, "").strip()
-    return configured or _PROCESS_SESSION_SECRET
+    if configured:
+        return configured
+    key_path = Path(
+        os.getenv(SESSION_KEY_FILE_ENV, DEFAULT_SESSION_KEY_FILE).strip()
+        or DEFAULT_SESSION_KEY_FILE
+    )
+    try:
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+        if not key_path.exists():
+            tmp_path = key_path.with_name(f"{key_path.name}.{secrets.token_hex(8)}.tmp")
+            try:
+                with os.fdopen(
+                    os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600),
+                    "wb",
+                ) as handle:
+                    handle.write(secrets.token_hex(32).encode("ascii"))
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                try:
+                    os.link(tmp_path, key_path)
+                except FileExistsError:
+                    pass
+            finally:
+                tmp_path.unlink(missing_ok=True)
+        persisted = key_path.read_text(encoding="ascii").strip()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Feedback session signing key is unavailable; configure "
+                f"{SESSION_SECRET_ENV} or a writable {SESSION_KEY_FILE_ENV}."
+            ),
+        ) from exc
+    if len(persisted) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail="Feedback session key file must be at least 32 ASCII chars.",
+        )
+    return persisted
 
 
 def _compute_session_signature(secret: str, actor_id: str) -> str:
@@ -272,7 +315,19 @@ def _resolve_feedback_actor_context(
     request: Request,
     api_key_auth: _ApiKeyAuthResult = Depends(check_feedback_api_key),
 ) -> _ResolvedFeedbackActor:
-    """Resolve a verified caller principal without trusting raw ``user-id`` headers."""
+    """Resolve a verified caller principal without trusting raw ``user-id`` headers.
+
+    Accepted identity sources:
+    1. Upstream ASGI/FastAPI middleware principals (`request.state` / `request.scope`);
+    2. Trusted gateway HMAC-SHA256 attestations (`DBGPT_TRUSTED_GATEWAY_SECRET`);
+    3. Unambiguous principal-bound feedback API keys (`owner:token`);
+    4. Custom non-default `DashboardIdentityProvider` adapters;
+    5. When neither a gateway secret nor API keys nor upstream principals are active,
+       an isolated per-browser `dbgpt_feedback_session` cookie signed by a persistent
+       shared key (supporting the built-in browser UI in default and production modes
+       while rejecting stateless anonymous calls and raw header spoofing);
+    6. Explicit non-production opt-in `DBGPT_FEEDBACK_ALLOW_DEV_FALLBACK` (`"001"`).
+    """
     raw_user_id = _single_header(request, "user-id")
     raw_auth_user = _single_header(request, AUTH_USER_HEADER)
     raw_gateway_sig = _single_header(request, TRUSTED_GATEWAY_SIG_HEADER)
@@ -384,8 +439,10 @@ chat_feed_back = ChatFeedBackDao()
 async def feed_back_find(
     conv_uid: str,
     conv_index: int,
+    response: Response,
     actor_id: str = Depends(_resolve_feedback_actor),
 ):
+    response.headers["Cache-Control"] = "no-store"
     rt = await run_in_threadpool(
         chat_feed_back.get_chat_feed_back,
         conv_uid,
@@ -438,6 +495,7 @@ async def feed_back_select(
     response: Response,
     api_key_auth: _ApiKeyAuthResult = Depends(check_feedback_api_key),
 ):
+    response.headers["Cache-Control"] = "no-store"
     if (
         not os.getenv(TRUSTED_GATEWAY_SECRET_ENV, "").strip()
         and not api_key_auth.authenticated
@@ -447,6 +505,7 @@ async def feed_back_select(
         response.set_cookie(
             key=SESSION_COOKIE_NAME,
             value=_mint_session_cookie_value(),
+            max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
             httponly=True,
             samesite="lax",
             secure=_is_https_request(request),
