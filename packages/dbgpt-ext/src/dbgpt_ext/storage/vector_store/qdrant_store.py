@@ -239,14 +239,18 @@ class QdrantStore(VectorStoreBase):
         indexes = self._parse_metadata_indexes(
             self._vector_store_config.metadata_indexes
         )
-        if not self._client.collection_exists(collection_name):
+        self._distance = self._resolve_distance(self._vector_store_config.distance)
+        if self._client.collection_exists(collection_name):
+            # Score conversion must follow the metric the collection was
+            # created with, not the current config, which may have changed.
+            vectors = self._client.get_collection(collection_name).config.params.vectors
+            if isinstance(vectors, VectorParams):
+                self._distance = vectors.distance
+        else:
             dim = len(self.embeddings.embed_query("probe"))
             self._client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=dim,
-                    distance=self._resolve_distance(self._vector_store_config.distance),
-                ),
+                vectors_config=VectorParams(size=dim, distance=self._distance),
             )
         if indexes:
             self._ensure_metadata_indexes(collection_name, indexes)
@@ -342,21 +346,26 @@ class QdrantStore(VectorStoreBase):
         filters: Optional[MetadataFilters] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Chunk]:
+        from qdrant_client.models import Distance
+
         query_vector = self.embeddings.embed_query(text)
         qdrant_filter = self.convert_metadata_filters(filters) if filters else None
+        # Euclid and Manhattan return a distance (lower is better), so the
+        # threshold is applied after converting it to a similarity score.
+        is_distance = self._distance in (Distance.EUCLID, Distance.MANHATTAN)
         response = self._client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
             limit=topk,
             query_filter=qdrant_filter,
             with_payload=True,
-            score_threshold=score_threshold,
+            score_threshold=None if is_distance else score_threshold,
         )
         return [
             Chunk(
                 content=r.payload.get("content", ""),
                 metadata=r.payload.get("metadata", {}),
-                score=r.score,
+                score=1.0 / (1.0 + r.score) if is_distance else r.score,
                 chunk_id=r.payload.get("chunk_id", ""),
             )
             for r in response.points
