@@ -191,6 +191,7 @@ class OpenAILLMClient(ProxyLLMClient):
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         try:
@@ -220,7 +221,12 @@ class OpenAILLMClient(ProxyLLMClient):
             "adapter_metadata" if context_length else "fallback"
         )
         self._api_type = api_type
-        self._client = openai_client
+        self._default_headers = default_headers
+        self._client = (
+            openai_client.with_options(default_headers=default_headers)
+            if openai_client is not None and default_headers is not None
+            else openai_client
+        )
         self._openai_kwargs = openai_kwargs or {}
         super().__init__(model_names=[model_alias], context_length=self._context_length)
 
@@ -278,7 +284,7 @@ class OpenAILLMClient(ProxyLLMClient):
             from dbgpt.model.utils.chatgpt_utils import _build_openai_client
 
             self._api_type, self._client = _build_openai_client(
-                init_params=self._init_params
+                init_params=self._init_params, default_headers=self._default_headers
             )
         return self._client
 

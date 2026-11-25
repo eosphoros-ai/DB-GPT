@@ -9,6 +9,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Dict,
     Optional,
     Tuple,
     Union,
@@ -97,7 +98,10 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
     return openai_params, api_type, api_version, api_azure_deployment
 
 
-def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType]:
+def _build_openai_client(
+    init_params: OpenAIParameters,
+    default_headers: Optional[Dict[str, str]] = None,
+) -> Tuple[str, ClientType]:
     import httpx
 
     openai_params, api_type, api_version, api_azure_deployment = _initialize_openai_v1(
@@ -111,6 +115,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
             api_version=api_version,
             azure_deployment=api_azure_deployment,
             azure_endpoint=openai_params["base_url"],
+            default_headers=default_headers,
         )
     else:
         from openai import AsyncOpenAI
@@ -126,7 +131,9 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
             http_client = httpx.AsyncClient(proxies=init_params.proxies)
         else:
             http_client = httpx.AsyncClient()
-        async_client = AsyncOpenAI(**openai_params, http_client=http_client)
+        async_client = AsyncOpenAI(
+            **openai_params, http_client=http_client, default_headers=default_headers
+        )
     return api_type, async_client
 
 
