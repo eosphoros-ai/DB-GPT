@@ -751,6 +751,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 )
                 for chunk_doc in chunk_docs
             ]
+            # The document may have been deleted while this background sync
+            # was running. Persisting chunks (or merging the detached doc
+            # below) would resurrect it, so drop the write-back and remove
+            # the vectors that were just persisted for it.
+            if self._document_dao.document_by_id(doc.id) is None:
+                logger.warning(
+                    f"document {doc.id} deleted during sync, dropping result"
+                )
+                if vector_ids is not None:
+                    storage_connector.delete_by_ids(",".join(vector_ids))
+                return None
             self._chunk_dao.create_documents_chunks(chunk_entities)
             # Build markdown heading graph if the space has KnowledgeGraph index
             # method and the document is a markdown file. This runs after chunks

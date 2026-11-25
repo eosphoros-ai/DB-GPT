@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
@@ -15,6 +16,8 @@ from dbgpt_serve.rag.api.schemas import (
 )
 
 CFG = Config()
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeDocumentEntity(Model):
@@ -307,6 +310,16 @@ class KnowledgeDocumentDao(BaseDao):
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
         try:
             session = self.get_raw_session()
+            # A document deleted while a background sync was still running
+            # must stay deleted: session.merge() would re-insert the row and
+            # resurrect it as a normal document.
+            if document.id is not None and (
+                session.get(KnowledgeDocumentEntity, document.id) is None
+            ):
+                logger.warning(
+                    f"document {document.id} no longer exists, skipping update"
+                )
+                return None
             updated_document = session.merge(document)
             session.commit()
             return updated_document.id
