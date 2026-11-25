@@ -120,9 +120,9 @@ class TestLiteLLMBuildRequest:
     def test_model_resolution_uses_request_model_first(self):
         client = LiteLLMClient(model="openai/gpt-4o-mini")
         payload = client._build_request(
-            self._request(model="groq/llama-3.3-70b-versatile")
+            self._request(model="groq/openai/gpt-oss-120b")
         )
-        assert payload["model"] == "groq/llama-3.3-70b-versatile"
+        assert payload["model"] == "groq/openai/gpt-oss-120b"
 
     def test_api_credentials_passed_when_provided(self):
         client = LiteLLMClient(api_key="sk-test", api_base="https://example.invalid/v1")
@@ -375,7 +375,7 @@ class TestLiteLLMNewClient:
 
     def test_new_client_preserves_drop_params_default(self):
         params = LiteLLMDeployModelParameters(
-            name="groq/llama-3.3-70b-versatile",
+            name="groq/openai/gpt-oss-120b",
             provider="proxy/litellm",
         )
         client = LiteLLMClient.new_client(params)
