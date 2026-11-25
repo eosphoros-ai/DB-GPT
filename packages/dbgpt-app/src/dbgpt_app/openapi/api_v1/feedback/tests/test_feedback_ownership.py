@@ -49,6 +49,29 @@ def isolated_db(tmp_path, monkeypatch):
         engine_args={"connect_args": {"check_same_thread": False}},
     )
     db.create_all()
+    with db.session() as seed_session:
+        seed_session.add_all(
+            [
+                ChatHistoryEntity(
+                    conv_uid="poc-fb-conv",
+                    chat_mode="chat_normal",
+                    summary="Seeded Alice conversation",
+                    user_name="alice",
+                ),
+                ChatHistoryEntity(
+                    conv_uid="dev-conv",
+                    chat_mode="chat_normal",
+                    summary="Seeded dev conversation",
+                    user_name="001",
+                ),
+                ChatHistoryEntity(
+                    conv_uid="case-conv",
+                    chat_mode="chat_normal",
+                    summary="Seeded case-sensitive conversation",
+                    user_name="Alice",
+                ),
+            ]
+        )
     cfg = Config()
     prev_fb_app = feedback_serve_endpoints.global_system_app
     prev_conv_app = conv_serve_endpoints.global_system_app
@@ -821,6 +844,13 @@ def test_other_user_cannot_commit_feedback_on_foreign_conversation(
     )
     assert alice_res.status_code == 200
 
+    missing_conv_res = gateway_client.post(
+        "/api/v1/feedback/commit",
+        headers=_gateway_headers("alice"),
+        json=_sample_payload(conv_uid="non-existent-conv-uid", conv_index=0),
+    )
+    assert missing_conv_res.status_code == 403
+
 
 def test_scope_principal_custom_provider_and_fixture_restore(tmp_path, monkeypatch):
     scope_holder: dict = {"user": None}
@@ -1116,6 +1146,11 @@ def test_dao_guards_fail_closed():
     with pytest.raises(PermissionError):
         dao.create_or_update_chat_feed_back(
             api_fb_v1.FeedBackBody(**_sample_payload()), user_name="  "
+        )
+    with pytest.raises(PermissionError):
+        dao.create_or_update_chat_feed_back(
+            api_fb_v1.FeedBackBody(**_sample_payload(conv_uid="missing-conv-row")),
+            user_name="alice",
         )
     with pytest.raises(ValueError):
         dao.create_or_update_chat_feed_back(

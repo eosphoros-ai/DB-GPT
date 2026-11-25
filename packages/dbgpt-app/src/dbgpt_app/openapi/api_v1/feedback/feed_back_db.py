@@ -110,7 +110,9 @@ class ChatFeedBackDao(BaseDao):
                 .filter(ChatHistoryEntity.conv_uid == conv_uid)
                 .first()
             )
-            conv_owner = (conv.user_name or "").strip() if conv is not None else ""
+            if conv is None:
+                raise PermissionError("Conversation does not exist")
+            conv_owner = (conv.user_name or "").strip()
             if (
                 conv_owner
                 and conv_owner != effective_user
