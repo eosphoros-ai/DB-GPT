@@ -58,6 +58,7 @@ const POPULAR_PROVIDERS: Array<{ id: string }> = [
   { id: 'proxy/burncloud' },
   { id: 'proxy/gitee' },
   { id: 'proxy/infiniai' },
+  { id: 'proxy/opper' },
   { id: 'proxy/ollama' },
 ];
 
@@ -97,6 +98,7 @@ const PROVIDER_SPRITE_IDS: Record<string, string> = {
   'proxy/groq': 'groq',
   'proxy/mistral': 'mistral',
   'proxy/nvidia': 'nvidia',
+  'proxy/opper': 'opper',
   'proxy/ollama': 'ollama-cloud',
 };
 

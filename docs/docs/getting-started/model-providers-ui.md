@@ -30,13 +30,13 @@ Use the top navigation: **Model Providers**. The page has three worker-type tabs
 
 ## Built-in providers (pre-integrated)
 
-27 providers ship pre-integrated — each comes with a ready-made model catalog (label, context length, function-calling support), so you only need to provide credentials:
+28 providers ship pre-integrated — each comes with a ready-made model catalog (label, context length, function-calling support), so you only need to provide credentials:
 
 | Group | Providers |
 | --- | --- |
 | Global model providers | OpenAI, GitHub Copilot, Anthropic (Claude), Google Gemini, xAI (Grok), Mistral AI, NVIDIA NIM |
 | Chinese model providers | DeepSeek, Zhipu AI (GLM), Kimi (Moonshot), Tongyi Qwen, Volcengine (Doubao), MiniMax, Baichuan, Yi (01.AI), iFlytek Spark, Baidu Qianfan (ERNIE) |
-| Gateways & aggregators | OrcaRouter (orcarouter.ai), Vercel AI Gateway, SiliconFlow, LiteLLM, Groq, AIML API, BurnCloud, Gitee AI, Infini AI |
+| Gateways & aggregators | OrcaRouter (orcarouter.ai), Vercel AI Gateway, SiliconFlow, LiteLLM, Groq, AIML API, BurnCloud, Gitee AI, Infini AI, Opper (opper.ai) |
 | Local | Ollama (local models, no API key needed) |
 
 Notes on a few of them:
