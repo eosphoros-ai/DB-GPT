@@ -34,7 +34,8 @@ SESSION_SECRET_ENV = "DBGPT_FEEDBACK_SESSION_SECRET"
 SESSION_KEY_FILE_ENV = "DBGPT_FEEDBACK_SESSION_KEY_FILE"
 DEFAULT_SESSION_KEY_FILE = str(Path(PILOT_PATH) / "meta_data" / "feedback-session.key")
 SESSION_COOKIE_NAME = "dbgpt_feedback_session"
-SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+SESSION_RECOVERY_HEADER = "x-dbgpt-feedback-session"
+SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400
 _SESSION_DOMAIN_PREFIX = "dbgpt-feedback-session-v1:"
 
 
@@ -48,6 +49,7 @@ class _ApiKeyAuthResult:
 class _ResolvedFeedbackActor:
     actor_id: str
     is_session_actor: bool = False
+    can_reclaim_session_row: bool = False
 
 
 def compute_gateway_signature(secret: str, actor_id: str) -> str:
@@ -112,17 +114,19 @@ def _compute_session_signature(secret: str, actor_id: str) -> str:
     ).hexdigest()
 
 
-def _mint_session_cookie_value() -> str:
-    actor_id = f"session:{secrets.token_hex(16)}"
+def _format_session_token(actor_id: str) -> str:
     sig = _compute_session_signature(_session_signing_secret(), actor_id)
     return f"{actor_id}.{sig}"
 
 
-def _verify_session_cookie(request: Request) -> Optional[str]:
-    raw_cookie = request.cookies.get(SESSION_COOKIE_NAME)
-    if not raw_cookie or not raw_cookie.isascii():
+def _mint_session_cookie_value() -> str:
+    return _format_session_token(f"session:{secrets.token_hex(16)}")
+
+
+def _verify_signed_session_token(raw_token: Optional[str]) -> Optional[str]:
+    if not raw_token or not raw_token.isascii():
         return None
-    actor_part, sep, sig_part = raw_cookie.partition(".")
+    actor_part, sep, sig_part = raw_token.strip().partition(".")
     if sep != "." or not actor_part.startswith("session:") or not sig_part:
         return None
     session_hex = actor_part[len("session:") :]
@@ -134,6 +138,25 @@ def _verify_session_cookie(request: Request) -> Optional[str]:
     ):
         return None
     return actor_part
+
+
+def _verify_session_cookie(request: Request) -> Optional[str]:
+    cookie_actor = _verify_signed_session_token(
+        request.cookies.get(SESSION_COOKIE_NAME)
+    )
+    raw_recovery = _single_header(request, SESSION_RECOVERY_HEADER)
+    if raw_recovery is not None:
+        recovered_actor = _verify_signed_session_token(raw_recovery)
+        if recovered_actor is None:
+            raise HTTPException(
+                status_code=401, detail="Invalid feedback session recovery token"
+            )
+        if cookie_actor is not None and cookie_actor != recovered_actor:
+            raise HTTPException(
+                status_code=403, detail="Conflicting feedback session credentials"
+            )
+        return recovered_actor
+    return cookie_actor
 
 
 def _enforce_cookie_mutation_guards(request: Request) -> None:
@@ -160,9 +183,23 @@ def _is_https_request(request: Request) -> bool:
 
 def _feedback_cookie_path(request: Request) -> str:
     raw_path = request.url.path or "/"
-    if raw_path.endswith("/select"):
-        return raw_path[: -len("/select")] or "/"
+    for suffix in ("/select", "/find", "/commit"):
+        if raw_path.endswith(suffix):
+            return raw_path[: -len(suffix)] or "/"
     return "/"
+
+
+def _set_session_cookie(request: Request, response: Response, actor_id: str) -> None:
+    response.headers["Cache-Control"] = "no-store"
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=_format_session_token(actor_id),
+        max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https_request(request),
+        path=_feedback_cookie_path(request),
+    )
 
 
 def _parse_api_key_entries(
@@ -412,7 +449,9 @@ def _resolve_feedback_actor_context(
         if is_session_actor:
             _enforce_cookie_mutation_guards(request)
         return _ResolvedFeedbackActor(
-            actor_id=verified_owner, is_session_actor=is_session_actor
+            actor_id=verified_owner,
+            is_session_actor=is_session_actor,
+            can_reclaim_session_row=not is_session_actor,
         )
 
     if (
@@ -420,7 +459,11 @@ def _resolve_feedback_actor_context(
         and not gateway_secret
         and _allow_dev_feedback_fallback()
     ):
-        return _ResolvedFeedbackActor(actor_id="001", is_session_actor=False)
+        return _ResolvedFeedbackActor(
+            actor_id="001",
+            is_session_actor=False,
+            can_reclaim_session_row=False,
+        )
 
     raise HTTPException(status_code=401, detail="Authentication required")
 
@@ -437,17 +480,20 @@ chat_feed_back = ChatFeedBackDao()
 
 @router.get("/v1/feedback/find", response_model=Result[FeedBackBody])
 async def feed_back_find(
+    request: Request,
     conv_uid: str,
     conv_index: int,
     response: Response,
-    actor_id: str = Depends(_resolve_feedback_actor),
+    actor: _ResolvedFeedbackActor = Depends(_resolve_feedback_actor_context),
 ):
     response.headers["Cache-Control"] = "no-store"
+    if actor.is_session_actor:
+        _set_session_cookie(request, response, actor.actor_id)
     rt = await run_in_threadpool(
         chat_feed_back.get_chat_feed_back,
         conv_uid,
         conv_index,
-        user_name=actor_id,
+        user_name=actor.actor_id,
     )
     if rt is not None:
         return Result.succ(
@@ -468,13 +514,17 @@ async def feed_back_find(
 @router.post("/v1/feedback/commit", response_model=Result[bool])
 async def feed_back_commit(
     request: Request,
+    response: Response,
     feed_back_body: FeedBackBody = Body(),
     actor: _ResolvedFeedbackActor = Depends(_resolve_feedback_actor_context),
 ):
+    response.headers["Cache-Control"] = "no-store"
     if not feed_back_body.conv_uid or feed_back_body.conv_index is None:
         raise HTTPException(
             status_code=422, detail="conv_uid and conv_index are required"
         )
+    if actor.is_session_actor:
+        _set_session_cookie(request, response, actor.actor_id)
     try:
         await run_in_threadpool(
             partial(
@@ -482,6 +532,7 @@ async def feed_back_commit(
                 feed_back_body,
                 user_name=actor.actor_id,
                 allow_default_conv_owner=actor.is_session_actor,
+                can_reclaim_session_row=actor.can_reclaim_session_row,
             )
         )
     except PermissionError as exc:
@@ -500,17 +551,10 @@ async def feed_back_select(
         not os.getenv(TRUSTED_GATEWAY_SECRET_ENV, "").strip()
         and not api_key_auth.authenticated
         and _extract_request_principal(request) is None
-        and _verify_session_cookie(request) is None
     ):
-        response.set_cookie(
-            key=SESSION_COOKIE_NAME,
-            value=_mint_session_cookie_value(),
-            max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
-            httponly=True,
-            samesite="lax",
-            secure=_is_https_request(request),
-            path=_feedback_cookie_path(request),
-        )
+        existing_actor = _verify_session_cookie(request)
+        actor_to_issue = existing_actor or f"session:{secrets.token_hex(16)}"
+        _set_session_cookie(request, response, actor_to_issue)
     return Result.succ(
         {
             "information": "信息查询",

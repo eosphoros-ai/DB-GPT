@@ -127,6 +127,7 @@ class ChatFeedBackDao(BaseDao):
         user_name: Optional[str] = None,
         *,
         allow_default_conv_owner: bool = False,
+        can_reclaim_session_row: bool = False,
     ):
         raw_user = user_name if user_name is not None else feed_back.user_name
         effective_user = (raw_user or "").strip()
@@ -165,7 +166,8 @@ class ChatFeedBackDao(BaseDao):
             now = datetime.now()
             if result is not None:
                 direct_owner_reclaiming_session_row = (
-                    not allow_default_conv_owner
+                    can_reclaim_session_row
+                    and not allow_default_conv_owner
                     and bool(conv_owner)
                     and conv_owner == effective_user
                     and (result.user_name or "").startswith("session:")

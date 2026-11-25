@@ -327,9 +327,10 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
     cookie_a = browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME)
     assert cookie_a is not None and cookie_a.startswith("session:")
 
-    # Subsequent select preserves the same session actor.
-    browser_a.get("/api/v1/feedback/select")
+    # Subsequent select preserves and renews the same session actor (sliding Max-Age).
+    renew_sel = browser_a.get("/api/v1/feedback/select")
     assert browser_a.cookies.get(api_fb_v1.SESSION_COOKIE_NAME) == cookie_a
+    assert "max-age=" in renew_sel.headers.get("set-cookie", "").lower()
 
     # Browser A commits and reads back its own feedback on a built-in ("001") chat
     # as well as an unowned (None) chat, and keeps access across restarts.
@@ -338,6 +339,7 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
         json=_sample_payload(conv_uid="default-001-conv", conv_index=1),
     )
     assert commit_001.status_code == 200
+    assert "max-age=" in commit_001.headers.get("set-cookie", "").lower()
 
     commit_a = browser_a.post(
         "/api/v1/feedback/commit",
@@ -363,10 +365,25 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
     assert find_a.json()["data"]["messages"] == "POC transcript marker"
     assert find_a.json()["data"]["user_name"].startswith("session:")
 
-    # Simulate an application restart / independent worker reading the shared key file:
-    # the existing browser cookie continues to verify and read/update its feedback.
+    # Verify the persisted key file was created and load a fresh independent worker
+    # module copy (with fresh module-level state) to validate the original cookie.
+    import importlib.util
+    import os
+    from pathlib import Path
+
+    key_file = Path(os.environ[api_fb_v1.SESSION_KEY_FILE_ENV])
+    assert (
+        key_file.is_file() and len(key_file.read_text(encoding="ascii").strip()) == 64
+    )
+    spec = importlib.util.spec_from_file_location(
+        "_fresh_worker_api_fb_v1", api_fb_v1.__file__
+    )
+    assert spec is not None and spec.loader is not None
+    fresh_worker_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fresh_worker_mod)
+
     restarted_app = FastAPI()
-    restarted_app.include_router(api_fb_v1.router, prefix="/api")
+    restarted_app.include_router(fresh_worker_mod.router, prefix="/api")
     restarted_browser_a = TestClient(restarted_app)
     restarted_browser_a.cookies.set(api_fb_v1.SESSION_COOKIE_NAME, cookie_a)
     after_restart_find = restarted_browser_a.get(
@@ -375,6 +392,30 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
     )
     assert after_restart_find.status_code == 200
     assert after_restart_find.json()["data"]["messages"] == "POC transcript marker"
+
+    # Verified recovery path after cookie expiry: presenting the signed session token
+    # via X-DBGPT-Feedback-Session re-mints the same cookie, whereas forged tokens 401.
+    expired_cookie_client = TestClient(restarted_app)
+    assert (
+        expired_cookie_client.get(
+            "/api/v1/feedback/select",
+            headers={api_fb_v1.SESSION_RECOVERY_HEADER: "session:0011223344556677.bad"},
+        ).status_code
+        == 401
+    )
+    recovered_sel = expired_cookie_client.get(
+        "/api/v1/feedback/select",
+        headers={api_fb_v1.SESSION_RECOVERY_HEADER: cookie_a},
+    )
+    assert recovered_sel.status_code == 200
+    assert expired_cookie_client.cookies.get(api_fb_v1.SESSION_COOKIE_NAME) == cookie_a
+    assert (
+        expired_cookie_client.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(conv_uid="default-001-conv", conv_index=2),
+        ).status_code
+        == 200
+    )
 
     # Session actors still cannot attach feedback to a named ("alice") conversation.
     assert (
@@ -428,13 +469,28 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
     assert (
         browser_b.post(
             "/api/v1/feedback/commit",
-            json=_sample_payload(conv_uid="default-001-conv", conv_index=2),
+            json=_sample_payload(conv_uid="default-001-conv", conv_index=3),
         ).status_code
         == 403
     )
 
-    # Meanwhile the direct conversation owner ("001" via verified principal) is not
-    # locked out by a session actor's prior row on its own conversation.
+    # Development fallback ("001" without verified principal) CANNOT overwrite a
+    # browser session's existing row, whereas a verified "001" principal CAN reclaim it.
+    monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "false")
+    monkeypatch.setenv(api_fb_v1.DEV_FALLBACK_ENV, "true")
+    dev_fallback_client = TestClient(app)
+    assert (
+        dev_fallback_client.post(
+            "/api/v1/feedback/commit",
+            json=_sample_payload(
+                conv_uid="default-001-conv", conv_index=1, messages="Dev overwrite"
+            ),
+        ).status_code
+        == 403
+    )
+    monkeypatch.setenv("DBGPT_DASHBOARD_PRODUCTION_MODE", "true")
+    monkeypatch.delenv(api_fb_v1.DEV_FALLBACK_ENV, raising=False)
+
     ChatFeedBackDao().create_or_update_chat_feed_back(
         api_fb_v1.FeedBackBody(
             **_sample_payload(
@@ -442,6 +498,7 @@ def test_browser_session_cookie_works_in_production_and_survives_restart(
             )
         ),
         user_name="001",
+        can_reclaim_session_row=True,
     )
     reclaimed = ChatFeedBackDao().get_chat_feed_back(
         "default-001-conv", 1, user_name="001"
