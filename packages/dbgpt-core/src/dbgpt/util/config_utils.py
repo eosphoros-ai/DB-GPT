@@ -1,5 +1,4 @@
 import os
-from functools import cache
 from typing import Any, Dict, Optional, Type, TypeVar, cast
 
 T = TypeVar("T")
@@ -65,7 +64,6 @@ class AppConfig:
                 f"Cannot convert config value '{value}' to type {type_class.__name__}"
             )
 
-    @cache
     def get_all_by_prefix(self, prefix) -> Dict[str, Any]:
         """Get all config values by prefix
         Args:
