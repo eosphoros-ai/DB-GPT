@@ -31,6 +31,9 @@ CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-atlascloud.
 Pass the key in at run time rather than baking it into the image with `ENV` — a
 key set at build time stays in the image layers and travels with anyone who pulls it:
 
+Build the image after editing the Dockerfile (`docker run` starts an image, not the edited file), then run it:
+
 ```bash
+bash docker/base/build_image.sh --install-mode openai --image-name dbgpt:latest
 docker run -it --rm -e ATLASCLOUD_API_KEY="your-key" -p 5670:5670 dbgpt:latest
 ```

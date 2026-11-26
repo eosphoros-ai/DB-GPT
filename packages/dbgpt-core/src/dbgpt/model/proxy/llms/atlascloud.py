@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
+from urllib.parse import urlparse
 
 from dbgpt.core import ModelMetadata
 from dbgpt.core.awel.flow import (
@@ -62,6 +63,23 @@ async def atlascloud_generate_stream(
         yield r
 
 
+def _require_secure_api_base(api_base: str) -> None:
+    """Refuse to send the API key over plaintext HTTP (loopback excepted)."""
+    if "${" in api_base:
+        # Unresolved config template (e.g. ``${env:ATLASCLOUD_API_BASE:-https://...}``);
+        # the resolved value is validated when the client is built.
+        return
+    parsed = urlparse(api_base)
+    if parsed.scheme == "https":
+        return
+    if parsed.scheme == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"}:
+        return
+    raise ValueError(
+        f"Atlas Cloud API base must use https (got {api_base!r}); the API key is "
+        "sent with every request."
+    )
+
+
 class AtlasCloudLLMClient(OpenAILLMClient):
     """Atlas Cloud LLM Client using OpenAI-compatible endpoints.
 
@@ -92,6 +110,7 @@ class AtlasCloudLLMClient(OpenAILLMClient):
             or os.getenv("ATLASCLOUD_API_BASE")
             or "https://api.atlascloud.ai/v1"
         )
+        _require_secure_api_base(api_base)
         api_key = api_key or os.getenv("ATLASCLOUD_API_KEY")
         model = model or _ATLASCLOUD_DEFAULT_MODEL
         if not context_length:

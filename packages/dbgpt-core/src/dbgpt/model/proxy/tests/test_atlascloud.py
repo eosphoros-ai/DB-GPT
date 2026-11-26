@@ -42,14 +42,39 @@ class TestAtlasCloudClient:
             with pytest.raises(ValueError, match="ATLASCLOUD_API_KEY"):
                 AtlasCloudLLMClient(openai_client=_FakeOpenAIClient())
 
-    @patch.dict(os.environ, {"ATLASCLOUD_API_KEY": "env-key"})
-    def test_env_key_and_default_context_length(self):
+    def test_env_key_and_default_context_length(self, monkeypatch):
+        monkeypatch.setenv("ATLASCLOUD_API_KEY", "env-key")
+        monkeypatch.delenv("ATLASCLOUD_API_BASE", raising=False)
         client = AtlasCloudLLMClient(openai_client=_FakeOpenAIClient())
 
         assert client._init_params.api_key == "env-key"
         assert client._init_params.api_base == "https://api.atlascloud.ai/v1"
         assert client.default_model == "deepseek-ai/DeepSeek-V3.1-Terminus"
         assert client.context_length == 128 * 1024
+
+    @pytest.mark.parametrize(
+        "api_base", ["http://api.atlascloud.ai/v1", "ftp://api.atlascloud.ai/v1", ""]
+    )
+    def test_plaintext_or_invalid_api_base_is_rejected(self, monkeypatch, api_base):
+        monkeypatch.setenv("ATLASCLOUD_API_KEY", "env-key")
+        monkeypatch.setenv("ATLASCLOUD_API_BASE", api_base or "relative/path")
+        with pytest.raises(ValueError, match="must use https"):
+            AtlasCloudLLMClient(openai_client=_FakeOpenAIClient())
+        monkeypatch.delenv("ATLASCLOUD_API_BASE")
+        with pytest.raises(ValueError, match="must use https"):
+            AtlasCloudLLMClient(
+                api_base=api_base or "relative/path",
+                openai_client=_FakeOpenAIClient(),
+            )
+
+    def test_loopback_http_and_https_bases_are_allowed(self, monkeypatch):
+        monkeypatch.setenv("ATLASCLOUD_API_KEY", "env-key")
+        monkeypatch.delenv("ATLASCLOUD_API_BASE", raising=False)
+        for base in ("http://localhost:8000/v1", "https://gateway.example.com/v1"):
+            client = AtlasCloudLLMClient(
+                api_base=base, openai_client=_FakeOpenAIClient()
+            )
+            assert client._init_params.api_base == base
 
     def test_new_client_keeps_default_context_length_when_unset(self):
         # OpenAILLMClient.new_client would floor this to 8192.
