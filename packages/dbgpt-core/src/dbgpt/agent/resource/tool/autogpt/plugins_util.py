@@ -6,11 +6,14 @@ zip file.
 
 import datetime
 import glob
+import ipaddress
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
+from urllib.parse import urljoin, urlsplit
 
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
@@ -133,6 +136,74 @@ def scan_plugins(
     return loaded_plugins
 
 
+_GITHUB_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+_BRANCH_NAME_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+_ALLOWED_GITHUB_HOSTS = frozenset({"github.com"})
+_ALLOWED_DOWNLOAD_HOSTS = frozenset({"github.com", "codeload.github.com"})
+_MAX_REDIRECTS = 5
+_REQUEST_TIMEOUT = 30
+
+
+def _validate_github_repo_url(github_repo: str) -> tuple[str, str]:
+    """Validate and canonicalize a GitHub repository HTTPS URL."""
+    parsed = urlsplit(github_repo.strip())
+    if parsed.scheme.lower() != "https":
+        raise ValueError(f"Not a correct Github repository address: {github_repo}")
+    if (
+        parsed.username is not None
+        or parsed.password is not None
+        or parsed.port is not None
+    ):
+        raise ValueError(f"Not a correct Github repository address: {github_repo}")
+    hostname = (parsed.hostname or "").lower()
+    if hostname not in _ALLOWED_GITHUB_HOSTS:
+        raise ValueError(f"Not a correct Github repository address: {github_repo}")
+    if parsed.query or parsed.fragment:
+        raise ValueError(f"Not a correct Github repository address: {github_repo}")
+
+    parts = [part for part in parsed.path.strip("/").split("/") if part]
+    if len(parts) != 2:
+        raise ValueError(f"Not a correct Github repository address: {github_repo}")
+    owner, repo = parts
+    repo = repo.removesuffix(".git")
+    for segment in (owner, repo):
+        if segment in ("", ".", "..") or not _GITHUB_SEGMENT_RE.match(segment):
+            raise ValueError(f"Not a correct Github repository address: {github_repo}")
+
+    return f"https://github.com/{owner}/{repo}", repo
+
+
+def _validate_branch_name(branch_name: str) -> str:
+    """Validate a git branch name for safe URL construction and filenames."""
+    branch = branch_name.strip()
+    if not branch or not _BRANCH_NAME_RE.match(branch):
+        raise ValueError(f"Invalid branch name: {branch_name}")
+    if any(seg in ("", ".", "..") for seg in branch.split("/")):
+        raise ValueError(f"Invalid branch name: {branch_name}")
+    return branch
+
+
+def _validate_download_url(url: str) -> str:
+    """Ensure archive fetch and redirect URLs stay on allowlisted GitHub HTTPS hosts."""
+    parsed = urlsplit(url)
+    if parsed.scheme.lower() != "https":
+        raise ValueError(f"Disallowed plugin download scheme: {url}")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError(f"Disallowed credentials in download URL: {url}")
+    if parsed.port not in (None, 443):
+        raise ValueError(f"Disallowed port in download URL: {url}")
+    hostname = (parsed.hostname or "").lower()
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        pass
+    else:
+        raise ValueError(f"Disallowed IP literal host in download URL: {url}")
+    if hostname not in _ALLOWED_DOWNLOAD_HOSTS:
+        raise ValueError(f"Disallowed plugin download host: {url}")
+    return url
+
+
 def update_from_git(
     download_path: str,
     github_repo: str = "",
@@ -143,12 +214,10 @@ def update_from_git(
     import requests
 
     os.makedirs(download_path, exist_ok=True)
+    branch_name = _validate_branch_name(branch_name)
     if github_repo:
-        if github_repo.index("github.com") <= 0:
-            raise ValueError("Not a correct Github repository address！" + github_repo)
-        github_repo = github_repo.replace(".git", "")
-        url = github_repo + "/archive/refs/heads/" + branch_name + ".zip"
-        plugin_repo_name = github_repo.strip("/").split("/")[-1]
+        canonical_repo, plugin_repo_name = _validate_github_repo_url(github_repo)
+        url = f"{canonical_repo}/archive/refs/heads/{branch_name}.zip"
     else:
         url = (
             "https://github.com/eosphoros-ai/DB-GPT-Plugins/archive/refs/heads/main.zip"
@@ -156,33 +225,62 @@ def update_from_git(
         plugin_repo_name = "DB-GPT-Plugins"
     try:
         session = requests.Session()
-        headers = {}
-        if authorization and len(authorization) > 0:
-            headers = {"Authorization": authorization}
-        response = session.get(
-            url,
-            headers=headers,
-        )
+        current_url = _validate_download_url(url)
+        response = None
+        for _ in range(_MAX_REDIRECTS + 1):
+            host = (urlsplit(current_url).hostname or "").lower()
+            headers = {}
+            if (
+                authorization
+                and len(authorization) > 0
+                and host in _ALLOWED_GITHUB_HOSTS
+            ):
+                headers = {"Authorization": authorization}
+            response = session.get(
+                current_url,
+                headers=headers,
+                allow_redirects=False,
+                timeout=_REQUEST_TIMEOUT,
+            )
+            if response.is_redirect or response.status_code in (
+                301,
+                302,
+                303,
+                307,
+                308,
+            ):
+                location = response.headers.get("Location")
+                if not location:
+                    raise ValueError("Redirect missing Location header")
+                current_url = _validate_download_url(urljoin(current_url, location))
+                continue
+            break
+        else:
+            raise ValueError("Too many redirects while downloading plugin")
 
-        if response.status_code == 200:
-            plugins_path_path = Path(download_path)
+        if response is not None and response.status_code == 200:
+            plugins_path_path = Path(download_path).resolve()
             files = glob.glob(os.path.join(plugins_path_path, f"{plugin_repo_name}*"))
             for file in files:
                 os.remove(file)
             now = datetime.datetime.now()
             time_str = now.strftime("%Y%m%d%H%M%S")
-            file_name = (
-                f"{plugins_path_path}/{plugin_repo_name}-{branch_name}-{time_str}.zip"
-            )
-            print(file_name)
-            with open(file_name, "wb") as f:
+            safe_branch = branch_name.replace("/", "_")
+            dest_path = (
+                plugins_path_path / f"{plugin_repo_name}-{safe_branch}-{time_str}.zip"
+            ).resolve()
+            if dest_path.parent != plugins_path_path:
+                raise ValueError(
+                    "Resolved plugin archive path escapes download directory"
+                )
+            print(dest_path)
+            with open(dest_path, "wb") as f:
                 f.write(response.content)
             return plugin_repo_name
         else:
-            logger.error(
-                f"Update plugins failed，response code：{response.status_code}"
-            )
-            raise ValueError(f"Download plugin failed: {response.status_code}")
+            status = response.status_code if response is not None else "unknown"
+            logger.error(f"Update plugins failed, response code: {status}")
+            raise ValueError(f"Download plugin failed: {status}")
     except Exception as e:
         logger.error("update plugins from git exception!" + str(e))
         raise ValueError("download plugin exception!", e)
