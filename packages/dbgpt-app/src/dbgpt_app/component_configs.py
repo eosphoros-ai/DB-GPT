@@ -1,4 +1,5 @@
 import logging
+import os
 from importlib.resources import as_file, files
 from typing import Optional
 
@@ -108,11 +109,7 @@ def _initialize_resource_manager(system_app: SystemApp):
         get_current_host_memory_status,
         get_current_host_system_load,
     )
-    from dbgpt.agent.expand.resources.search_tool import (
-        baidu_search,
-        serply_search,
-        specstream_search,
-    )
+    from dbgpt.agent.expand.resources.search_tool import baidu_search, serply_search
     from dbgpt.agent.resource.base import ResourceType
     from dbgpt.agent.resource.manage import get_resource_manager, initialize_resource
     from dbgpt.agent.resource.skill_resource import SkillResource
@@ -144,7 +141,7 @@ def _initialize_resource_manager(system_app: SystemApp):
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=serply_search)
-    rm.register_resource(resource_instance=specstream_search)
+    _register_specstream_search(rm)
     rm.register_resource(resource_instance=list_dbgpt_support_models)
     # Register host tools
     rm.register_resource(resource_instance=get_current_host_cpu_status)
@@ -158,6 +155,20 @@ def _initialize_resource_manager(system_app: SystemApp):
     except Exception:
         # ignore if already registered
         pass
+
+
+def _register_specstream_search(rm) -> None:
+    """Register specstream_search only when SPECSTREAM_API_KEY is set.
+
+    The default agent adds every registered tool to its catalog, and the tool
+    fails on every call without a key, so an installation without one does not
+    expose it.
+    """
+    if not os.getenv("SPECSTREAM_API_KEY"):
+        return
+    from dbgpt.agent.expand.resources.search_tool import specstream_search
+
+    rm.register_resource(resource_instance=specstream_search)
 
 
 def _initialize_openapi(system_app: SystemApp):
