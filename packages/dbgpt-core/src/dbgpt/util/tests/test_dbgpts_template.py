@@ -52,3 +52,25 @@ def test_create_template_writes_into_the_shipped_package(
         assert "def main()" not in (shipped / written).read_text()
     if layout == "src":
         assert not (project_dir / "my_demo").exists()
+
+
+@pytest.mark.parametrize("layout", ["src", "flat"])
+def test_manifest_includes_the_definition_where_it_is_written(
+    tmp_path, monkeypatch, layout
+):
+    monkeypatch.setattr(
+        template_module, "_create_project_structure", _fake_project(layout)
+    )
+    package_root = tmp_path / template_module.TYPE_TO_PACKAGE["flow"]
+    package_root.mkdir()
+
+    template_module.create_template(
+        "my-demo", "My Demo", "demo", "flow", "json", str(tmp_path)
+    )
+
+    project_dir = package_root / "my-demo"
+    manifest = (project_dir / "MANIFEST.in").read_text().splitlines()
+    patterns = [line.split(" ", 1)[1] for line in manifest if "definition" in line]
+    assert patterns
+    for pattern in patterns:
+        assert list(project_dir.glob(pattern)), pattern

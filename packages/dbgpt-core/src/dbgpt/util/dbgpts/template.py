@@ -307,10 +307,14 @@ def _write_dbgpts_toml(working_directory: str, name: str, json_data: dict):
 def _write_manifest_file(working_directory: str, name: str, mod_name: str):
     """Write the manifest file"""
 
+    project_dir = Path(working_directory) / name
+    module_path = _module_dir(working_directory, name, mod_name).relative_to(
+        project_dir
+    )
     manifest = f"""include dbgpts.toml
-include {mod_name}/definition/*.json
+include {module_path.as_posix()}/definition/*.json
 """
-    with open(Path(working_directory) / name / "MANIFEST.in", "w") as f:
+    with open(project_dir / "MANIFEST.in", "w") as f:
         f.write(manifest)
 
 
