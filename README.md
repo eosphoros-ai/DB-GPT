@@ -1,490 +1,288 @@
-# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: Open-Source Agentic AI Data Assistant
-
-<p align="left">
-  <img src="./assets/dbgpt_vision.png" width="100%" />
+<p align="center">
+  <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<div align="center">
-  <p>
-    <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
-    </a>
-    <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
-    </a>
-    <a href="http://dbgpt.cn/">
-        <img alt="Official Website" src="https://img.shields.io/badge/Official%20website-DB--GPT-blue?style=flat&labelColor=3366CC" />
-    </a>
-    <a href="https://opensource.org/licenses/MIT">
-      <img alt="License: MIT" src="https://img.shields.io/github/license/eosphoros-ai/db-gpt?style=flat&labelColor=009966&color=009933" />
-    </a>
-     <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
-      <img alt="Release Notes" src="https://img.shields.io/github/v/release/eosphoros-ai/db-gpt?style=flat&labelColor=FF9933&color=FF6633" />
-    </a>
-    <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/db-gpt?style=flat&labelColor=666666&color=333333" />
-    </a>
-    <a href="https://x.com/DBGPT_AI">
-      <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
-    </a>
-    <a href="https://medium.com/@dbgpt0506">
-      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/DB-GPT/333333?icon=medium&labelColor=666666" />
-    </a>
-    <a href="https://space.bilibili.com/3537113070963392">
-      <img alt="Bilibili Space" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Frelation%2Fstat%3Fvmid%3D3537113070963392&query=data.follower&style=flat&logo=bilibili&logoColor=white&label=Bilibili%20Fans&labelColor=F37697&color=6495ED" />
-    </a>
-    <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
-      <img alt="Slack" src="https://img.shields.io/badge/Slack-Join%20us-5d6b98?style=flat&logo=slack&labelColor=7d89b0" />
-    </a>
-    <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
-      <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
-    </a>
-  </p>
+<h1 align="center">DB-GPT: Open-Source Product for Controlled Data Agents</h1>
 
+<p align="center">
+  From a data question to verifiable queries, analytical reports, and reusable dashboards.
+</p>
 
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
+<p align="center">
+  <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
+  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="Follow DB-GPT on X (Twitter)" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="Join the DB-GPT Discord community" /></a>
+</p>
 
-[**Documents**](http://docs.dbgpt.cn/docs/overview/) | [**Contact Us**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ma.md">മലയാളം</a> · <a href="README.ta.md">தமிழ்</a>
+</p>
 
-</div>
+<p align="center">
+  <a href="http://docs.dbgpt.cn/docs/overview/">Documentation</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a> · <a href="#quick-start">Quick start</a>
+</p>
 
-> **An open-source AI data assistant that connects to your data, writes SQL and code, runs skills in sandboxed environments, and turns analysis into reports, insights, and action.**
+> **Connect your data, establish business definitions, choose expert methods, execute within configured tool and runtime boundaries, and deliver results you can inspect, edit, and reuse.**
 
-![welcome_page](https://github.com/user-attachments/assets/ff9beb32-7db5-487a-bd81-d4489d853ea5)
+DB-GPT goes beyond translating natural language into SQL. It brings **data connections, business semantics, expert skills, task orchestration, and analytical artifacts** into one workflow: a practical assistant for users and an extensible foundation for developers building AI-native data applications.
 
-## What is DB-GPT?
+[Product demo](#product-demo) · [Why DB-GPT?](#why-db-gpt) · [Product modules](#product-modules) · [Safety and execution boundaries](#safety-and-execution-boundaries) · [Quick start](#quick-start) · [Community](#community)
 
-DB-GPT is an open-source **agentic AI data assistant** for the next generation of **AI + Data** products.
+## Product demo
 
-It helps users and teams:
-- connect to **databases, CSV / Excel files, warehouses, and knowledge bases**
-- ask questions in natural language and let AI **write SQL autonomously**
-- run **Python- and code-driven analysis** workflows
-- load and execute reusable **skills** for domain-specific tasks
-- generate **charts, dashboards, HTML reports, and analysis summaries**
-- execute tasks safely in **sandboxed environments**
-
-DB-GPT is also a platform for building **AI-native data agents, workflows, and applications** with agents, AWEL, RAG, and multi-model support.
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
 ## Why DB-GPT?
 
-### 1. Agentic data analysis
-Plan tasks, break work into steps, call tools, and complete analysis workflows end to end.
-![csv_data_analysis_demo_en](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
+### Business context before queries
 
-### 2. Autonomous SQL + code execution
-Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.
-![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
-![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
+“Revenue” can mean different date attribution, refund treatment, and scope. The Semantic Center organizes schema metadata, business meanings, metric formulas, and published versions so an agent can work from explicit definitions rather than guess them again for each question.
 
-### 3. Multi-source data access
-Work across structured and unstructured sources, including databases, spreadsheets, documents, and knowledge bases.
+### Expert methods, not just answers
 
-![datasource](./assets/datasources.png)
+Use specialized plugins for queries, analysis, SQL optimization, metadata and architecture, or financial analysis. Skills package reusable instructions and scripts; workflows make steps, dependencies, and tool configuration explicit.
 
-### 4. Skills-driven extensibility
-Package domain knowledge, analysis methods, and execution workflows into reusable skills.
+### Reusable results
 
+Deliver query tables, charts, analytical reports, and editable dashboards—not only chat messages. Inspect the execution, review the result, request changes, and retain the artifact for the next task.
 
+### Human control over consequential actions
 
+Models, tools, data sources, and runtime access depend on deployment and task configuration. Dashboard plans and proposed edits can be reviewed before application. **Controlled execution is not a guarantee of absolute safety**: use least-privilege credentials, appropriate isolation, and independent review.
 
+## Product modules
 
-![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
+### A shared starting point
 
-### 5. Sandboxed execution
-Run code and tools in isolated environments for safer, more reliable analysis.
-![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
+![The current DB-GPT home interface: natural-language input, model selection, and expert entry points](assets/readme-en/home.png)
 
+Start with a question, a file, or a database. Choose a model and the relevant expert, clarify the objective, and move into a query, analysis, or dashboard task.
 
+### 1. Dashboards: from plan to board view
 
-## What you can do with DB-GPT
+Start with a plan or template, generate a draft, edit widgets and queries, and enter Preview to present the full board.
 
-- **Analyze CSV / Excel files** and generate visual reports
-- **Connect to databases** and produce profiling reports
-- Ask business questions in natural language and let AI **write SQL automatically**
-- Perform **financial report analysis** with code, charts, and narrative summaries
-- Create and reuse **SQL analysis skills** and domain workflows
-- Combine **code, SQL, retrieval, and tools** in a single agentic workflow
-- Build next-generation **AI + Data assistants** for your team or product
+![The generated Walmart dashboard in Preview: total sales, active stores, weekly trend, and Top 10 stores](assets/readme-en/generated-dashboard.png)
 
-## Product Workflow
+*This is the actual Walmart dashboard generated and saved during the product demo, shown in Preview board view. Its four widgets include sales and store KPIs, a weekly trend, and a Top 10 ranking. It is a saved draft, not a publicly published board.*
 
-### Explore data
-Connect files, databases, and knowledge bases in one workspace.
+- Define metrics, charts, and filters before generation.
+- Adjust widgets, layout, query configuration, and filtering.
+- Discuss changes with the AI assistant and review proposals before applying them.
+- Save drafts; publish or share only when the result and access scope are ready.
 
-### Plan and execute
-Let AI reason through the task, write SQL and code, and execute step by step.
+The featured Walmart board uses an example dataset. Its values illustrate this case, not current company performance.
 
-### Use skills
-Load reusable skills for repeatable business analysis workflows.
+### 2. Plugins and Skills: reusable expertise
 
-### Generate reports
-Produce charts, dashboards, HTML reports, and decision-ready outputs.
+Select an expert plugin for the task and bind its data, knowledge context, and permitted tools. Skills package domain instructions, methods, and scripts.
 
+![The English plugin interface with five data-expert categories](assets/readme-en/plugins.png)
 
-## Quick Start
+| Expert | Typical work |
+| --- | --- |
+| Data Query | Clarify the question and metric, inspect and execute SQL, export results |
+| Data Analysis | Inspect data, analyze trends and composition, prepare reports and dashboards |
+| SQL Optimization | Inspect SQL and execution plans, propose changes for review |
+| Metadata & Architecture | Organize data dictionaries, relationships, and modeling recommendations |
+| Financial Analysis | Read financial materials and structure comparisons, subject to configuration and data prerequisites |
 
-Get DB-GPT running in minutes with the one-line installer (macOS & Linux):
+Plugins provide methods, not data permissions. Review third-party instructions, scripts, dependencies, and tool access before installing them.
+
+### 3. Data sources: reliable connections
+
+Manage database connections and select the source for each task. Queries, analysis, and dashboards can work from the same connection inventory and metadata context.
+
+![Full English database catalog: all 27 types, with environment availability preserved](assets/readme-en/datasource-catalog-full.png)
+
+Supports data sources including MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j, and TuGraph.
+
+- Configure and inspect database connections.
+- Bind a task to the relevant source and confirm its scope.
+- A database catalog entry or connection template is not proof of a working connection. Drivers, network access, and credentials must be available.
+
+### 4. Semantic Center: maintained metric definitions
+
+Organize metadata, business definitions, metrics, query examples, relationships, and rules around a source. Published definitions preserve versions that can be associated with a query result.
+
+![The Semantic Center with published metric formulas and versions](assets/readme-en/semantic.png)
+
+- Maintain table and column meanings, annotations, and synonyms.
+- Define base and derived metrics, formulas, and dependencies.
+- Review and publish definitions; a published-only read must not treat an unpublished draft as authoritative.
+
+### 5. Workflow: explicit steps and collaboration
+
+Use the visual editor to organize Agent nodes, inputs, outputs, serial steps, and parallel branches. Prefer explicit workflows when a task should be repeatable.
+
+![An English workflow template with semantic grounding, planning, parallel analysis, and combined review](assets/readme-en/workflow.png)
+
+This is a template editing view, not evidence that the workflow has been debugged or published. Configure its data source, model, and tools before running it.
+
+### 6. Knowledge, connectors, and runtime management
+
+- **Knowledge bases** provide document context for retrieval. Parsing, chunking, indexing, and retrieval configuration affect availability and quality.
+- **Connectors** integrate external tools through configured MCP services. Templates need activation and authorization before use.
+- **Models and runtimes** let you select providers and local or container execution, with configured dependencies and tool access.
+- **Scheduled tasks** replay work or refresh artifacts. The scheduler, models, files, and sources must remain available.
+
+## From question to result
+
+**Connect → Ground → Plan → Execute → Review → Reuse**
+
+1. Select the source and clarify the objective, time range, and metric scope.
+2. Inspect fields, data quality, business definitions, and metric versions.
+3. Select an expert and Skills; configure a workflow for repeatable tasks.
+4. Execute SQL, code, or retrieval within permitted tools and runtimes.
+5. Review the plan, calculations, sources, artifacts, and proposed changes.
+6. Retain the report or dashboard; configure scheduling only with the required operational support.
+
+## Safety and execution boundaries
+
+DB-GPT provides configurable execution and review mechanisms. Effective safety depends on deployment:
+
+- **Data access:** prefer read-only, least-privilege credentials. Descriptive catalog flags are not row- or column-level authorization enforcement.
+- **Isolation:** local execution is not container isolation. Configure file access, resource limits, and network boundaries.
+- **Secrets:** keep API keys, database passwords, and sensitive data out of commits, screenshots, and shared artifacts.
+- **Review:** independently verify important metrics, calculations, SQL, and external outputs. Model results do not replace professional review.
+- **Publication and scheduling:** drafts, published snapshots, sharing, and continuous operation are different states. Confirm access and availability before deployment.
+
+> Capabilities depend on the release, configuration, schema migrations, and model behavior. Use the code and documentation for your version; a UI entry or historical demo is not a production-readiness guarantee.
+
+## Quick start
+
+### Option 1: installer for macOS and Linux
+
+Download and review the script before running it:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
+less install.sh
+bash install.sh
 ```
 
-Or specify a profile and API key directly:
+Follow the wizard to choose a profile and configure a model provider. Then use the directory and startup command printed by the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh \
-  | OPENAI_API_KEY=sk-xxx bash -s -- --profile openai
+cd ~/.dbgpt/DB-GPT
+uv run dbgpt start webserver --profile <profile>
 ```
 
-For Kimi 2.5 via Moonshot API:
+Replace `<profile>` with your configured profile and open [http://localhost:5670](http://localhost:5670).
+
+<details>
+<summary>Existing source checkout: keep your current branch</summary>
+
+From the repository root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh \
-  | MOONSHOT_API_KEY=sk-xxx bash -s -- --profile kimi
+bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)"
+uv run dbgpt start webserver --profile openai
 ```
 
-For MiniMax via the OpenAI-compatible API:
+`--repo-dir` reuses the current checkout instead of cloning or switching branches. Provider credentials and required services still need configuration.
+
+With dependencies installed and an appropriate TOML configuration, the backend can also be started directly:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh \
-  | MINIMAX_API_KEY=sk-xxx bash -s -- --profile minimax
+.venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
 ```
 
-Already have a local DB-GPT checkout? Reuse it instead of cloning `~/.dbgpt/DB-GPT`:
+For frontend development, run `npm run dev -- --hostname 127.0.0.1 --port 3000` inside `web/`. A running UI does not prove model inference or data access is ready.
+
+</details>
+
+### Option 2: PyPI
+
+Use Python 3.10 or newer:
 
 ```bash
-OPENAI_API_KEY=sk-xxx \
-  bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)" --yes
-```
-
-Or reuse your local repo with Kimi 2.5:
-
-```bash
-MOONSHOT_API_KEY=sk-xxx \
-  bash scripts/install/install.sh --profile kimi --repo-dir "$(pwd)" --yes
-```
-
-Or reuse your local repo with MiniMax:
-
-```bash
-MINIMAX_API_KEY=sk-xxx \
-  bash scripts/install/install.sh --profile minimax --repo-dir "$(pwd)" --yes
-```
-
-After installation, start the server with the generated profile config:
-
-```bash
-cd ~/.dbgpt/DB-GPT && uv run dbgpt start webserver --profile <profile>
-```
-
-Then open [http://localhost:5670](http://localhost:5670).
-
-> **Prefer to review the script first?**
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
-> less install.sh
-> bash install.sh --profile openai
-> ```
-
-### Install via PyPI
-
-Install DB-GPT from PyPI and start it with a single command — no source checkout required.
-
-> **Prerequisites:** Python **3.10+** and [uv](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or pip.
-
-**1. Install**
-
-```bash
-# Recommended: use uv
-uv pip install dbgpt-app
-
-# Or with pip
 pip install dbgpt-app
-```
-
-The default installation includes the core framework (CLI, FastAPI, Agent), OpenAI-compatible LLM support, DashScope / Tongyi support, RAG document parsing, and ChromaDB vector store.
-
-**2. Start**
-
-```bash
 dbgpt start
 ```
 
-On first run, an interactive setup wizard will guide you through choosing an LLM provider and entering your API key. Once complete, the web server starts automatically.
+Complete provider setup before using the interface. PyPI releases, `main`, and feature branches may differ; use the corresponding source checkout to test branch-specific features.
 
-**3. Open the Web UI**
+See the [documentation](http://docs.dbgpt.cn/docs/overview/) for additional installation and configuration options.
 
-Visit [http://localhost:5670](http://localhost:5670) — you're all set! 🎉
+## Developer ecosystem
 
-### Advanced Installation
+- **DB-GPT:** the platform for data agents, tools, execution, and analytical applications.
+- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL training and evaluation resources.
+- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** applications, agents, and workflow ecosystem.
+- **[Contributing](CONTRIBUTING.md):** development, testing, and contribution guidelines.
 
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+Consult current documentation for provider support, drivers, and dependencies instead of treating historical model lists as compatibility guarantees.
 
-For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see the full docs:
+## Vision and evolution
 
-- [**Install**](http://docs.dbgpt.cn/docs/installation)
-  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [Source Code](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
-- [**Quickstart**](http://docs.dbgpt.cn/docs/overview)
-- [**Application**](http://docs.dbgpt.cn/docs/use_cases)
-  - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop)
-  - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
-- [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
-- [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
-  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
-  - [Finetune](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
+Make trustworthy data work open and composable: help users complete an analysis while enabling teams to retain business context, reusable methods, and analytical artifacts.
 
+Development directions include semantic consistency, task evaluation, execution diagnostics, portable Skills and workflows, and supervised recurring tasks. Track proposals and priorities through [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) and [Discussions](https://github.com/orgs/eosphoros-ai/discussions), without assuming unconfirmed release dates.
 
-## Core Capabilities
+## Community
 
-### Agentic Analysis
-- task planning
-- step-by-step execution
-- tool use
-- iterative reasoning
+- [Report an issue or suggest a feature](https://github.com/eosphoros-ai/DB-GPT/issues)
+- [Discuss usage and design](https://github.com/orgs/eosphoros-ai/discussions)
+- [Explore community projects](https://github.com/eosphoros-ai/community)
+- [Follow DB-GPT on X (Twitter)](https://x.com/DBGPT_AI)
+- [Join Discord](https://discord.gg/7uQnPuveTY)
+- [Join Slack](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
+- [Meet the contributors](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
 
-### SQL + Code Execution
-- natural language to SQL
-- Python-based analysis and transformation
-- metric calculation
-- chart generation
-
-### Multi-Source Data Access
-- relational databases
-- CSV / Excel
-- documents
-- knowledge bases
-- mixed-source workflows
-
-### Skills and Agents
-- reusable skills
-- domain workflows
-- agent orchestration
-- customizable execution flows
-
-### Reporting and Decision Support
-- database profiling reports
-- financial analysis reports
-- visual reports and dashboards
-- summaries and business insights
-
-### Safe Execution
-- sandboxed code execution
-- controlled tool use
-- reproducible outputs and artifacts
-
-#### Text2SQL Finetune
-
-  |     LLM     |  Supported  | 
-  |:-----------:|:-----------:|
-  |    LLaMA    |      ✅     |
-  |   LLaMA-2   |      ✅     | 
-  |    BLOOM    |      ✅     | 
-  |   BLOOMZ    |      ✅     | 
-  |   Falcon    |      ✅     | 
-  |  Baichuan   |      ✅     | 
-  |  Baichuan2  |      ✅     | 
-  |  InternLM   |      ✅     |
-  |    Qwen     |      ✅     | 
-  |   XVERSE    |      ✅     | 
-  |  ChatGLM2   |      ✅     |
-
-[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
-
-### Supported Models
-
-<table>
-      <thead>
-        <tr>
-          <th>Provider</th>
-          <th>Supported</th>
-          <th>Models</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td align="center" valign="middle">DeepSeek</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">DeepSeek-R1-0528</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">DeepSeek-R1</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3">DeepSeek-V3</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B">DeepSeek-R1-Distill-Llama-70B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B">DeepSeek-R1-Distill-Qwen-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct">DeepSeek-Coder-V2-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Qwen</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-235B-A22B">Qwen3-235B-A22B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-30B-A3B">Qwen3-30B-A3B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-32B">Qwen3-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/QwQ-32B">QwQ-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct">Qwen2.5-Coder-32B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct">Qwen2.5-Coder-14B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-32B-Instruct">Qwen2.5-32B-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">GLM</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-Z1-32B-0414">GLM-Z1-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-4-32B-0414">GLM-4-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/glm-4-9b-chat">Glm-4-9b-chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Llama</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-405B-Instruct">Meta-Llama-3.1-405B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct">Meta-Llama-3.1-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct">Meta-Llama-3.1-8B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct">Meta-Llama-3-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct">Meta-Llama-3-8B-Instruct</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Gemma</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-27b-it">gemma-2-27b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-9b-it">gemma-2-9b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-7b-it">gemma-7b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2b-it">gemma-2b-it</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Yi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-34B-Chat">Yi-1.5-34B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-9B-Chat">Yi-1.5-9B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-6B-Chat">Yi-1.5-6B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-34B-Chat">Yi-34B-Chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Starling</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Nexusflow/Starling-LM-7B-beta">Starling-LM-7B-beta</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">SOLAR</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0">SOLAR-10.7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Mixtral</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral-8x7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Phi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/collections/microsoft/phi-3-6626e15e9585a200d2d761e3">Phi-3</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-  - [More Supported LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
-
-### Privacy and Security
-
-We protect data privacy and execution safety through private model deployment, proxy desensitization, and sandboxed execution mechanisms.
-
-### Data Sources
-- [Datasources](http://docs.dbgpt.cn/docs/modules/connections)
-
-## Vision
-
-We believe the future of data products goes beyond dashboards.
-
-The next generation of **AI + Data** products will be:
-- **agentic**
-- **multi-source**
-- **skill-driven**
-- **sandboxed**
-- capable of writing **SQL and code**
-- able to turn analysis into **reports, decisions, and action**
-
-DB-GPT aims to help developers and enterprises build that future.
-
+Contribute reproducible cases, fixes, documentation, Skills, and workflows. Include the version, configuration method, and a minimal reproduction when reporting a problem; remove secrets and sensitive data from logs.
 
 ## Contribution
 
-- To check detailed guidelines for new contributions, please refer [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)
+For detailed guidelines, see [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md). Contributions to code, documentation, Skills, workflows, and reproducible examples are welcome.
 
 ### Contributors Wall
+
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT contributors" />
 </a>
 
+## License and disclaimer
 
-## Licence
-The MIT License (MIT)
+DB-GPT is distributed under the [MIT License](LICENSE). Read the [disclaimer](DISCKAIMER.md).
 
-## DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+## Academic citations
 
-## Citation
-If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">Paper</a> and <a href="https://arxiv.org/abs/2404.10209" target="_blank">Paper</a>
+The following papers introduce the project and related research. They do not describe the compatibility of every current UI feature.
 
-If you want to learn about using DB-GPT for Agent development, please cite the <a href="https://arxiv.org/abs/2412.13520" target="_blank">Paper</a>
+<details>
+<summary>BibTeX references</summary>
+
 ```bibtex
 @article{xue2023dbgpt,
-      title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
+      title={DB-GPT: Empowering Database Interactions with Private Large Language Models},
       author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
       year={2023},
       journal={arXiv preprint arXiv:2312.17449},
       url={https://arxiv.org/abs/2312.17449}
 }
 @misc{huang2024romasrolebasedmultiagentdatabase,
-      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning}, 
+      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning},
       author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidong Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
       year={2024},
       eprint={2412.13520},
       archivePrefix={arXiv},
       primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2412.13520}, 
+      url={https://arxiv.org/abs/2412.13520}
 }
 @inproceedings{xue2024demonstration,
-      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models},
       author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
       year={2024},
-      booktitle = "Proceedings of the VLDB Endowment",
+      booktitle={Proceedings of the VLDB Endowment},
       url={https://arxiv.org/abs/2404.10209}
 }
 ```
 
+</details>
 
-## Contact Information
-Thanks to everyone who has contributed to DB-GPT! Your ideas, code, comments, and even sharing them at events and on social platforms can make DB-GPT better.
-We are working on building a community, if you have any ideas for building the community, feel free to contact us.  
-
-- [Github Issues](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️：For questions about using GB-DPT, see the CONTRIBUTING.  
-- [Github Discussions](https://github.com/orgs/eosphoros-ai/discussions) ⭐️：Share your experience or unique apps.  
-- [Twitter](https://x.com/DBGPT_AI) ⭐️：Please feel free to talk to us.  
-
+## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

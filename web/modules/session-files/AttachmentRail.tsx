@@ -179,15 +179,8 @@ const BaseFileCard: React.FC<{
       tone === 'error' && 'border-red-300 bg-red-50/60 dark:border-red-800/70 dark:bg-red-900/15',
     )}
   >
-    <div
-      className={classNames(
-        'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[14px]',
-        tone === 'error'
-          ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
-          : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-      )}
-    >
-      <FileKindIcon name={name} mediaType={mediaType} kind={kind} className='text-[14px]' />
+    <div className='flex h-7 w-7 flex-shrink-0 items-center justify-center'>
+      <FileKindIcon name={name} mediaType={mediaType} kind={kind} className='text-[24px]' />
     </div>
     <div className='min-w-0 flex-1'>
       <div className='truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={name}>
@@ -374,7 +367,7 @@ const CompactFileChip: React.FC<{
             failed && '!bg-red-100 dark:!bg-red-900/35',
           )}
         >
-          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[12px]' />
+          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[18px]' />
         </span>
         <span className='max-w-[96px] truncate font-medium tracking-[-0.005em]'>{item.name}</span>
       </button>
@@ -468,7 +461,7 @@ const CompactLegacyChip: React.FC<{
       )}
     >
       <span className='flex h-5 w-5 flex-none items-center justify-center rounded-md bg-white/90 shadow-[0_1px_1px_rgba(15,23,42,0.06)] dark:bg-white/[0.08] dark:shadow-none'>
-        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[12px]' />
+        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[18px]' />
       </span>
       <span className='max-w-[116px] truncate font-medium tracking-[-0.005em]'>{item.name}</span>
     </div>
@@ -538,7 +531,7 @@ const CompactOverflowDraftRow: React.FC<{
                 : 'border-emerald-100 text-emerald-600 dark:border-emerald-900/50 dark:text-emerald-300',
           )}
         >
-          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-sm' />
+          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[20px]' />
         </span>
         <span className='min-w-0 flex-1'>
           <span className='block truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={item.name}>
@@ -608,7 +601,7 @@ const CompactOverflowLegacyRow: React.FC<{
       )}
     >
       <span className='flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-emerald-100 bg-white text-sm text-emerald-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-emerald-900/50 dark:bg-white/[0.05] dark:text-emerald-300 dark:shadow-none'>
-        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-sm' />
+        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[20px]' />
       </span>
       <span className='min-w-0 flex-1'>
         <span className='block truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={item.name}>

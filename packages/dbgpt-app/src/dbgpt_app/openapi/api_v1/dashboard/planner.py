@@ -48,6 +48,7 @@ from .schemas import (
     model_validate_compat,
 )
 from .service import DashboardSchemaValidationError, DashboardService
+from .temporal_discovery import _named_or_typed_temporal, infer_temporal_format
 
 DashboardEventCallback = Callable[[str, Dict[str, Any]], Optional[Awaitable[None]]]
 
@@ -94,6 +95,91 @@ def _expects_empty_table(schema: DashboardSchemaV1, widget: DashboardWidget) -> 
         item.get("id") == widget.id and item.get("expected_data_points") == 0
         for item in plan.get("widgets", [])
     )
+
+
+def _reject_invalid_line_axis(
+    result: WidgetQueryResult, widget: DashboardWidget
+) -> WidgetQueryResult:
+    """A successful SELECT must still produce a usable, ordered time axis."""
+    if (
+        result.error
+        or not result.rows
+        or widget.type != WidgetType.LINE
+        or widget.encoding.x not in result.columns
+    ):
+        return result
+    index = result.columns.index(widget.encoding.x)
+    values = [row[index] for row in result.rows]
+    message = None
+    if any(value is None for value in values):
+        message = (
+            "The line chart x-axis contains NULL values. Check the stored "
+            "date format before calling database date functions; convert text "
+            "dates to ISO calendar dates before grouping and ordering."
+        )
+    elif all(isinstance(value, str) for value in values):
+        evidence = infer_temporal_format(values, complete=not result.truncated)
+        unordered_formats = {
+            "DD-MM-YYYY",
+            "MM-DD-YYYY",
+            "DD/MM/YYYY",
+            "MM/DD/YYYY",
+        }
+        possible_formats = set(evidence["possible_formats"])
+        if possible_formats and possible_formats <= unordered_formats:
+            date_format = evidence["format"] or "/".join(sorted(possible_formats))
+            message = (
+                f"The line chart returns {date_format} text dates. "
+                "Normalize the x-axis to YYYY-MM-DD and ORDER BY the normalized "
+                "date, using the confirmed source date format. Do not order by "
+                "the original day/month-first string or pass it directly to "
+                "database date functions."
+            )
+    if message is None:
+        return result
+    return result.model_copy(
+        update={
+            "error": WidgetError(
+                code="planner_widget_invalid_time_axis",
+                message=message,
+                retryable=True,
+            )
+        }
+    )
+
+
+def _reject_null_table_period(
+    result: WidgetQueryResult, widget: DashboardWidget
+) -> WidgetQueryResult:
+    """Detect collapsed time groups without rejecting nullable detail columns."""
+    if (
+        result.error
+        or not result.rows
+        or widget.type != WidgetType.TABLE
+        or widget.publication is None
+        or widget.publication.row_mode
+    ):
+        return result
+    for name in widget.publication.group_by:
+        if name not in result.columns or not _named_or_typed_temporal(name, ""):
+            continue
+        index = result.columns.index(name)
+        if all(row[index] is None for row in result.rows):
+            return result.model_copy(
+                update={
+                    "error": WidgetError(
+                        code="planner_widget_invalid_time_axis",
+                        message=(
+                            f"The table time grouping field {name!r} is NULL in "
+                            "every row. Normalize the observed source dates to "
+                            "ISO calendar dates before grouping. Use the same "
+                            "normalization in the widget and publication queries."
+                        ),
+                        retryable=True,
+                    )
+                }
+            )
+    return result
 
 
 def _default_encoding(
@@ -637,6 +723,8 @@ class DashboardPlannerService:
                 ),
                 expected_empty=_expects_empty_table(schema, widget),
             )
+            result = _reject_invalid_line_axis(result, widget)
+            result = _reject_null_table_period(result, widget)
             results[widget.id] = result
             widget.query.last_execution = LastExecution(
                 status="failed" if result.error else "succeeded",
@@ -1169,6 +1257,8 @@ class DashboardPlannerService:
                 ),
                 expected_empty=_expects_empty_table(schema, widget),
             )
+            result = _reject_invalid_line_axis(result, widget)
+            result = _reject_null_table_period(result, widget)
             results[widget.id] = result
             widget.query.last_execution = LastExecution(
                 status="failed" if result.error else "succeeded",

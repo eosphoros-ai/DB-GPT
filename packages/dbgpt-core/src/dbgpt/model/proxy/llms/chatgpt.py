@@ -188,7 +188,7 @@ class OpenAILLMClient(ProxyLLMClient):
         proxy: Optional["ProxyTypes"] = None,
         timeout: Optional[int] = 240,
         model_alias: Optional[str] = "gpt-4o-mini",
-        context_length: Optional[int] = 8192,
+        context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
@@ -215,11 +215,14 @@ class OpenAILLMClient(ProxyLLMClient):
         self._proxies = proxies
         self._timeout = timeout
         self._model_alias = model_alias
-        self._context_length = context_length
+        self._context_length = context_length or 8192
+        self._context_length_source = (
+            "adapter_metadata" if context_length else "fallback"
+        )
         self._api_type = api_type
         self._client = openai_client
         self._openai_kwargs = openai_kwargs or {}
-        super().__init__(model_names=[model_alias], context_length=context_length)
+        super().__init__(model_names=[model_alias], context_length=self._context_length)
 
         # Prepare openai client and cache default headers
         # It will block the main thread in some cases
@@ -253,7 +256,7 @@ class OpenAILLMClient(ProxyLLMClient):
             model=model_params.real_provider_model_name,
             proxy=model_params.http_proxy,
             model_alias=model_params.real_provider_model_name,
-            context_length=max(model_params.context_length or 8192, 8192),
+            context_length=model_params.context_length,
             # full_url=model_params.proxy_server_url,
         )
 
@@ -342,12 +345,32 @@ class OpenAILLMClient(ProxyLLMClient):
         async for r in self.generate_stream_v1(messages, payload):
             yield r
 
+    async def _create_chat_completion(
+        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
+    ) -> Any:
+        from openai import BadRequestError
+
+        try:
+            return await self.client.chat.completions.create(
+                messages=messages, **payload
+            )
+        except BadRequestError:
+            if payload.get("tool_choice") != "required" or not payload.get("tools"):
+                raise
+            # Some compatible endpoints accept tools but reject "required".
+            # Retry once with auto; agent protocol/workflow checks still enforce
+            # legal calls and completion. Do not mutate the caller's payload.
+            logger.warning(
+                "Model endpoint rejected required tool choice; retrying with auto"
+            )
+            return await self.client.chat.completions.create(
+                messages=messages, **{**payload, "tool_choice": "auto"}
+            )
+
     async def generate_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> ModelOutput:
-        chat_completion = await self.client.chat.completions.create(
-            messages=messages, **payload
-        )
+        chat_completion = await self._create_chat_completion(messages, payload)
         reasoning_content = ""
         message_obj = chat_completion.choices[0].message
         if hasattr(message_obj, "reasoning_content"):
@@ -379,9 +402,7 @@ class OpenAILLMClient(ProxyLLMClient):
     async def generate_stream_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> AsyncIterator[ModelOutput]:
-        chat_completion = await self.client.chat.completions.create(
-            messages=messages, **payload
-        )
+        chat_completion = await self._create_chat_completion(messages, payload)
         text = ""
         reasoning_content = ""
         usage = None
@@ -423,6 +444,7 @@ class OpenAILLMClient(ProxyLLMClient):
         model_metadata = ModelMetadata(
             model=self._model_alias,
             context_length=await self.get_context_length(),
+            metadata={"context_length_source": self._context_length_source},
         )
         return [model_metadata]
 

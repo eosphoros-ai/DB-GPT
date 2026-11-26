@@ -490,6 +490,7 @@ def compile_report_objects(
         raise ValueError("REPORT_OBJECT_INVALID: data must be an object")
     literal_errors = []
     object_errors = []
+    value_choices = None
 
     def validate_literals():
         if object_errors:
@@ -517,6 +518,7 @@ def compile_report_objects(
             )
 
     def prose(value, location, depth=0):
+        nonlocal value_choices
         if depth > MAX_NESTING_DEPTH:
             raise _ReportObjectDepthError(f"{_DEPTH_ERROR} at {location}")
         if isinstance(value, str):
@@ -577,7 +579,17 @@ def compile_report_objects(
             try:
                 return objects.reference(value["object_id"], value.get("format"))
             except ValueError as error:
-                object_errors.append({"location": location, "error": str(error)})
+                details = {"location": location, "error": str(error)}
+                token = value["object_id"]
+                if (
+                    isinstance(token, str)
+                    and token.startswith("value-")
+                    and str(error).startswith("REPORT_OBJECT_INVALID: unknown ")
+                    and value_choices is None
+                ):
+                    value_choices = objects.manifest(kind="value", limit=20)["objects"]
+                    details["available_values"] = value_choices
+                object_errors.append(details)
                 return ""
         raise ValueError(
             f"REPORT_OBJECT_INVALID: expected text or object_id at {location}"
@@ -796,12 +808,14 @@ def make_report_object_tools(state, renderer, template_path, contract):
             if field in contract["fields"]
         }
 
-    def selection_failure(error):
+    def selection_failure(error, *, rejected_sections=None):
         from .report_repair import record_report_object_failure
 
         corrected_fields.clear()
         return record_report_object_failure(
-            state, _DEPTH_ERROR if isinstance(error, RecursionError) else str(error)
+            state,
+            _DEPTH_ERROR if isinstance(error, RecursionError) else str(error),
+            rejected_sections=rejected_sections,
         )
 
     def catalogue(*, eager=True):
@@ -1338,7 +1352,9 @@ def make_report_object_tools(state, renderer, template_path, contract):
                             "the submitted new sections, not existing section 0. "
                             "Preserve the already staged report and its metadata."
                         )
-                    return selection_failure(error)
+                    return selection_failure(
+                        error, rejected_sections=append_sections or None
+                    )
                 from .report_repair import invalidate_report_output
 
                 # The repaired document is accepted for immediate rendering;

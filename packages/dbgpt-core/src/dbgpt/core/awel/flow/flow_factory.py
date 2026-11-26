@@ -485,6 +485,18 @@ class FlowPanel(BaseModel):
         description="Define type of the flow panel",
         examples=["json", "python"],
     )
+    flow_format: Optional[str] = Field(
+        "awel",
+        description="Format of the flow definition. 'awel': raw AWEL flow_data; "
+        "'taskflow': product-layer TaskFlow DSL (stored in taskflow_source and "
+        "compiled into flow_data).",
+        examples=["awel", "taskflow"],
+    )
+    taskflow_source: Optional[Dict[str, Any]] = Field(
+        None,
+        description="The TaskFlow DSL document (taskflow/1). Only valid when "
+        "flow_format is 'taskflow'.",
+    )
     editable: bool = Field(
         True,
         description="Whether the flow panel is editable",

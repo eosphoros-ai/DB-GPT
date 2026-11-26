@@ -51,6 +51,11 @@ class ContextManager:
         self._layer3 = FullContextCompression()
         self._layer4 = ReactiveCompact()
 
+    @property
+    def model_name(self) -> Optional[str]:
+        """Use the same model for counting, status and LLM summarization."""
+        return self.tracker.model_name
+
     async def _emit_status(
         self,
         token_count: int,
@@ -85,6 +90,13 @@ class ContextManager:
                     "ratio": ratio,
                     "state": state.value,
                     "compact_layer": compact_layer,
+                    "model": self.model_name,
+                    "context_window": self.config.max_context_tokens,
+                    "model_context_window": self.config.model_context_tokens,
+                    "reserved_tokens": self.config.reserved_tokens,
+                    "window_source": self.config.context_window_source,
+                    "estimated": True,
+                    "tools_tokens": self.tracker.extra_tokens,
                 }
             )
         except Exception:

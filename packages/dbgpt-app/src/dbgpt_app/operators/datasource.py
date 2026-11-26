@@ -301,6 +301,12 @@ class HODatasourceExecutorOperator(GPTVisMixin, MapOperator[dict, str]):
             df = await self.current_dag_context.get_from_share_data(
                 HODatasourceExecutorOperator._share_data_key
             )
+            if df is None:
+                # No SQL was executed for this run (e.g. the model declined to
+                # generate SQL or parsing produced no sql field); the executor
+                # returned its thoughts text instead of a result table. The
+                # markdown channel stays empty rather than crashing the DAG.
+                return ""
             return df_to_markdown(df)
 
     metadata = ViewMetadata(

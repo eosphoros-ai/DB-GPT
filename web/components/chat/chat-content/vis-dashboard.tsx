@@ -1,4 +1,5 @@
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
+import { groupChartsIntoRows } from '@/components/chart/chart-rows';
 import { Datum } from '@antv/ava';
 import { useMemo } from 'react';
 
@@ -17,21 +18,8 @@ interface Props {
   };
 }
 
-const chartLayout = [[2], [1, 2], [1, 3], [2, 1, 2], [2, 1, 3], [3, 1, 3], [3, 2, 3]];
-
 function VisDashboard({ data }: Props) {
-  const charts = useMemo(() => {
-    if (data.chart_count > 1) {
-      const layout = chartLayout[data.chart_count - 2];
-      let prevIndex = 0;
-      return layout.map(item => {
-        const items = data.data.slice(prevIndex, prevIndex + item);
-        prevIndex = item;
-        return items;
-      });
-    }
-    return [data.data];
-  }, [data.data, data.chart_count]);
+  const charts = useMemo(() => groupChartsIntoRows(data.data), [data.data]);
 
   return (
     <div className='flex flex-col gap-3'>

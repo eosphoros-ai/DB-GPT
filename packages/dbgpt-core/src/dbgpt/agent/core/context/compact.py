@@ -175,7 +175,8 @@ class SessionMemoryCompact:
         kept_tokens = 0
         for r_idx in range(len(rounds) - 1, -1, -1):
             round_tokens = sum(
-                tracker.count_messages([conv_msgs[i]]) for i in rounds[r_idx]
+                tracker.count_messages([conv_msgs[i]], include_extra=False)
+                for i in rounds[r_idx]
             )
             kept_tokens += round_tokens
             if r_idx < keep_from and kept_tokens >= cfg.min_keep_tokens:

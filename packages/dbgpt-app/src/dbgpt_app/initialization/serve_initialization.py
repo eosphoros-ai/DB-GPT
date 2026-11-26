@@ -226,6 +226,21 @@ def register_serve_apps(
     )
     # ################################ Chat Feedback Register End #####################
 
+    # ################################ Plugins (expert suites) Register Begin ########
+    from dbgpt_serve.plugins.serve import Serve as PluginsServe
+
+    # Register serve plugins (scenario suites registry + REST /api/v1/suites)
+    system_app.register(
+        PluginsServe,
+        config=get_config(
+            serve_configs,
+            PluginsServe.name,
+            dbgpt_serve.plugins.serve.ServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ################################ Plugins Register End ##########################
+
     # ################################ DbGpts Register Begin ##########################
     # Register serve dbgptshub
     from dbgpt_serve.dbgpts.hub.serve import Serve as DbgptsHubServe

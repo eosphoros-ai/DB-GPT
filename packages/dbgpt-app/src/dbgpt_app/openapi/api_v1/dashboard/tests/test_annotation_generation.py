@@ -61,10 +61,19 @@ def output(path="/widgets/by-id/value-card/title", value="会话总量"):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("selected_model", ["chosen-model", None])
 async def test_repairs_real_validation_failure_and_only_persists_proposal(
-    annotation_services,
+    annotation_services, monkeypatch, selected_model
 ):
     service, dashboards, _, _ = annotation_services
+    original_get = dashboards.get_dashboard
+
+    def get_with_generation_model(*args, **kwargs):
+        record = original_get(*args, **kwargs)
+        record.schema_payload.metadata.agent.model_name = "generation-model"
+        return record
+
+    monkeypatch.setattr(dashboards, "get_dashboard", get_with_generation_model)
     current = create(service)
     client = SimpleNamespace(
         generate=AsyncMock(
@@ -79,7 +88,7 @@ async def test_repairs_real_validation_failure_and_only_persists_proposal(
         "annotation-dashboard",
         current.id,
         "alice",
-        AnnotationGenerationRequest(model="chosen-model"),
+        AnnotationGenerationRequest(model=selected_model),
         client,
     )
     assert result.status.value == "proposed"
@@ -93,7 +102,7 @@ async def test_repairs_real_validation_failure_and_only_persists_proposal(
     )
     assert client.generate.await_count == 2
     request = client.generate.call_args.args[0]
-    assert request.model == "chosen-model"
+    assert request.model == (selected_model or "generation-model")
     assert "validation_feedback" in request.messages[-1].content
     assert "missing" in request.messages[-1].content
     # A retry of a completed item must not generate another proposal.

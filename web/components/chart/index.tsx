@@ -2,6 +2,7 @@ import { ChartData } from '@/types/chat';
 import { Card, CardContent, Typography } from '@mui/joy';
 import { useMemo } from 'react';
 import BarChart from './bar-chart';
+import { groupChartsIntoRows } from './chart-rows';
 import LineChart from './line-chart';
 import PieChart from './pie-chart';
 import TableChart from './table-chart';
@@ -23,19 +24,9 @@ function Chart({ chartsData }: Props) {
         });
       }
       const otherCharts = chartsData?.filter(item => item.chart_type !== 'IndicatorValue');
-      const otherLength = otherCharts.length;
-      let curIndex = 0;
-      // charts 数量 3～8个，暂定每行排序
-      const chartLengthMap = [[0], [1], [2], [1, 2], [1, 3], [2, 1, 2], [2, 1, 3], [3, 1, 3], [3, 2, 3]];
-      chartLengthMap[otherLength].forEach(item => {
-        if (item > 0) {
-          const rowsItem = otherCharts.slice(curIndex, curIndex + item);
-          curIndex = curIndex + item;
-          res.push({
-            charts: rowsItem,
-          });
-        }
-      });
+      for (const charts of groupChartsIntoRows(otherCharts)) {
+        res.push({ charts });
+      }
       return res;
     }
     return undefined;

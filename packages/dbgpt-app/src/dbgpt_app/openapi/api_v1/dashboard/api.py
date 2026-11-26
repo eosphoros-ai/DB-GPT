@@ -708,6 +708,10 @@ async def resolve_dashboard_annotation_intents(
         service._authorized_entity(dashboard_id, _user_id(user), DashboardAction.EDIT)
         record = service.get_dashboard(dashboard_id, _user_id(user))
         schema = record.schema_payload
+        if not request.model and schema.metadata.agent.model_name:
+            request = request.model_copy(
+                update={"model": schema.metadata.agent.model_name}
+            )
         context = {
             "dashboard": schema.dashboard.model_dump(mode="json"),
             "filters": [item.model_dump(mode="json") for item in schema.filters],
