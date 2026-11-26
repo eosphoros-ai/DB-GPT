@@ -113,6 +113,76 @@ def serply_search(
     return _search_to_view(search_results)
 
 
+@tool(
+    description="Web search through the SpecStream API and return the results as a "
+    "markdown string. Please set number of results not less than 8 for rich "
+    "search results.",
+)
+def specstream_search(
+    query: Annotated[str, Doc("The search query.")],
+    num_results: Annotated[
+        int, Doc("The number of search results to return, at most 100.")
+    ] = 8,
+) -> str:
+    """Web search through the SpecStream API and return the results as markdown.
+
+    Reads the API key from the `SPECSTREAM_API_KEY` environment variable. Get a key
+    at https://specstream.ai/workspace, the API reference is at
+    https://specstream.ai/agents.md.
+    """
+    try:
+        import requests
+    except ImportError:
+        raise ImportError(
+            "`requests` is required for specstream_search tool, please run "
+            "`pip install requests` to install it."
+        )
+
+    api_key = os.getenv("SPECSTREAM_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "`SPECSTREAM_API_KEY` environment variable is required for "
+            "specstream_search tool, get an API key at https://specstream.ai/workspace"
+        )
+    num_results = min(max(num_results, 8), 100)
+    response = requests.get(
+        "https://api.specstream.ai/v1/web-search",
+        params={"q": query, "num": num_results, "speed": "fast"},
+        headers={"Authorization": f"Bearer {api_key}", "User-Agent": "dbgpt"},
+        timeout=10,
+    )
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+    if not isinstance(body, dict):
+        body = {}
+    if not response.ok:
+        # Errors come back as {"error": {"code": ..., "message": ...}}, so the
+        # agent sees why the call failed and not only the status.
+        error = body.get("error")
+        message = error.get("message") if isinstance(error, dict) else None
+        raise requests.HTTPError(
+            f"SpecStream API returned HTTP {response.status_code}: "
+            f"{message or response.reason}",
+            response=response,
+        )
+
+    data = body.get("data")
+    sources = data.get("sources", []) if isinstance(data, dict) else []
+    search_results = []
+    for source in sources[:num_results]:
+        search_results.append(
+            {
+                "title": source.get("title", ""),
+                "href": source.get("url", ""),
+                "snippet": source.get("snippet", ""),
+            }
+        )
+
+    return _search_to_view(search_results)
+
+
 def _search_to_view(results) -> str:
     view_results = []
     for item in results:
