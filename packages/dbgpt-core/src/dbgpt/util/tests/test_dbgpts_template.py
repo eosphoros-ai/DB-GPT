@@ -74,3 +74,28 @@ def test_manifest_includes_the_definition_where_it_is_written(
     assert patterns
     for pattern in patterns:
         assert list(project_dir.glob(pattern)), pattern
+
+
+@pytest.mark.parametrize("name", ["My-Demo", "my.demo"])
+def test_create_template_follows_the_module_name_uv_creates(
+    tmp_path, monkeypatch, name
+):
+    def uv_init(working_directory, name, description=None):
+        # `uv init` lowercases the name and turns `-`/`.` into `_`.
+        package_dir = Path(working_directory) / name / "src" / "my_demo"
+        package_dir.mkdir(parents=True)
+        (package_dir / "__init__.py").write_text("def main() -> None: ...\n")
+        return True
+
+    monkeypatch.setattr(template_module, "_create_project_structure", uv_init)
+    package_root = tmp_path / template_module.TYPE_TO_PACKAGE["operator"]
+    package_root.mkdir()
+
+    template_module.create_template(
+        name, "My Demo", "demo", "operator", "python", str(tmp_path)
+    )
+
+    project_dir = package_root / name
+    assert "Operator" in (project_dir / "src/my_demo/__init__.py").read_text()
+    assert [p.name for p in project_dir.iterdir() if p.is_dir()] == ["src"]
+    assert 'name = "my_demo"' in (project_dir / "dbgpts.toml").read_text()

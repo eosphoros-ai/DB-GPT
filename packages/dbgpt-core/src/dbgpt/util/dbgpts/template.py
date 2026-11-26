@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -19,7 +20,7 @@ def create_template(
     """Create a new flow dbgpt"""
     if dbgpts_type != "flow":
         definition_type = "python"
-    mod_name = name.replace("-", "_")
+    mod_name = _to_module_name(name)
     base_metadata = {
         "label": name_label,
         "name": mod_name,
@@ -264,7 +265,7 @@ def _update_pyproject_description(pyproject_path, description):
 
 def _create_manual_project_structure(project_dir, name, description=None):
     """Create manual project structure with necessary files"""
-    mod_name = name.replace("-", "_")
+    mod_name = _to_module_name(name)
 
     # Create module directory
     module_dir = project_dir / mod_name
@@ -316,6 +317,12 @@ include {module_path.as_posix()}/definition/*.json
 """
     with open(project_dir / "MANIFEST.in", "w") as f:
         f.write(manifest)
+
+
+def _to_module_name(name: str) -> str:
+    """The import name uv and Poetry derive from a project name (``My-Demo`` and
+    ``my.demo`` both become ``my_demo``)."""
+    return re.sub(r"[-_.]+", "_", name).lower()
 
 
 def _module_dir(working_directory: str, name: str, mod_name: str) -> Path:
