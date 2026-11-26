@@ -1,5 +1,35 @@
+import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
 import type { DashboardSchemaV1, DashboardThemeOverrides } from '@/types/dashboard';
 import type { DashboardThemeTokens } from './dashboard-appearance';
+
+/** Apply the same palette as the gallery swatch to saved and shared boards. */
+export function galleryStyleTheme(
+  theme: DashboardThemeTokens,
+  schema: {
+    dashboard: Pick<DashboardSchemaV1['dashboard'], 'theme'>;
+    metadata: Pick<DashboardSchemaV1['metadata'], 'compatibility'>;
+  },
+): DashboardThemeTokens {
+  const name = schema.metadata.compatibility?.gallery_style;
+  const design =
+    typeof name === 'string' && Object.prototype.hasOwnProperty.call(ADAPTED_SKILLS, name)
+      ? ADAPTED_SKILLS[name]
+      : undefined;
+  if (!design || theme.mode !== 'light') return theme;
+  const overrides = schema.dashboard.theme?.overrides || {};
+  return {
+    ...theme,
+    canvas: design.background,
+    text: design.ink,
+    border: design.variant === 'poster' ? design.ink : theme.border,
+    primary: overrides.primary_color ? theme.primary : design.accent,
+    primarySoft: `${design.accent}18`,
+    radius: overrides.card_radius ?? (design.variant === 'poster' ? 0 : 14),
+    chartPalette: overrides.chart_palette?.length
+      ? theme.chartPalette
+      : [design.accent, design.ink, '#86B4D2', '#D6AD76'],
+  };
+}
 
 const styles = [
   'skill_tree',

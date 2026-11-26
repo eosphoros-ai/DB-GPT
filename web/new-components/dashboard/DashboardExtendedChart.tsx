@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardVisualization } from '@/types/dashboard';
 import { Empty } from 'antd';
 import { useState, type CSSProperties, type SVGProps } from 'react';
@@ -34,6 +35,7 @@ export default function DashboardExtendedChart({
   theme?: DashboardThemeTokens;
   onSelect?: (datum: Record<string, unknown>) => void;
 }) {
+  useDashboardTranslation();
   const [hover, setHover] = useState('');
   const rows = numericChartData(data, categoryField, valueField);
   const palette = colors?.length
@@ -60,21 +62,30 @@ export default function DashboardExtendedChart({
       }
     },
   });
-  if (!rows.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='没有有效数值，请检查数值字段' />;
+  if (!rows.length)
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={dt('没有有效数值，请检查数值字段')} />;
   if (visualization !== 'waterfall' && rows.some(item => item.value < 0))
-    return <p className={styles.explanation}>此图需要非负数值。存在负值时可选择瀑布图或条形图。</p>;
+    return <p className={styles.explanation}>{dt('此图需要非负数值。存在负值时可选择瀑布图或条形图。')}</p>;
   if (visualization === 'geo_map' && mapRegion === 'china')
     return <DashboardChinaMap rows={rows} format={format} onSelect={onSelect} />;
   const max = Math.max(...rows.map(item => item.value), 1);
   let plot;
-  let note = rows.length < data.length ? `已略过 ${data.length - rows.length} 条空值或无效数值。` : '';
+  let note =
+    rows.length < data.length ? dt('已略过 {{value0}} 条空值或无效数值。', { value0: data.length - rows.length }) : '';
   if (visualization === 'geo_map') {
     const { matched, unmatched } = mapCountryData(rows);
     const countryValues = new Map(matched.map(item => [item.country.id, item]));
     const largest = Math.max(...matched.map(item => item.value), 1);
-    note += `气泡面积表示数值，位置为国家标记点。${unmatched.length ? `未匹配 ${unmatched.length} 项：${unmatched.map(item => item.label).join('、')}。` : ''}`;
+    note += dt('气泡面积表示数值，位置为国家标记点。{{value0}}', {
+      value0: unmatched.length
+        ? dt('未匹配 {{value0}} 项：{{value1}}。', {
+            value0: unmatched.length,
+            value1: unmatched.map(item => item.label).join('、'),
+          })
+        : '',
+    });
     plot = (
-      <svg viewBox='0 0 800 420' className={styles.map} aria-label='国家地理分布'>
+      <svg viewBox='0 0 800 420' className={styles.map} aria-label={dt('国家地理分布')}>
         {countries.map(country => {
           const item = countryValues.get(country.id);
           return (
@@ -87,7 +98,7 @@ export default function DashboardExtendedChart({
             >
               <title>
                 {country.name}
-                {item ? ` · ${format(item.value)}` : ' · 无数据'}
+                {item ? ` · ${format(item.value)}` : dt(' · 无数据')}
               </title>
             </path>
           );
@@ -112,9 +123,10 @@ export default function DashboardExtendedChart({
     );
   } else if (visualization === 'treemap') {
     const boxes = treemapBoxes(rows.filter(item => item.value > 0).sort((a, b) => b.value - a.value));
-    if (!boxes.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='数值均为 0，无法分配面积' />;
+    if (!boxes.length)
+      return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={dt('数值均为 0，无法分配面积')} />;
     plot = (
-      <svg viewBox='0 0 560 320' aria-label='按数值面积分配的矩形树图'>
+      <svg viewBox='0 0 560 320' aria-label={dt('按数值面积分配的矩形树图')}>
         {boxes.map((item, index) => (
           <g key={index} {...interactive(item)}>
             <rect
@@ -143,11 +155,11 @@ export default function DashboardExtendedChart({
         ))}
       </svg>
     );
-    note += '面积表示数值占比；悬停或聚焦查看完整名称与数值。';
+    note += dt('面积表示数值占比；悬停或聚焦查看完整名称与数值。');
   } else if (visualization === 'funnel') {
     const height = Math.max(280, rows.length * 47);
     plot = (
-      <svg viewBox={`0 0 560 ${height}`} style={{ minHeight: height }} aria-label='按查询阶段顺序排列的漏斗图'>
+      <svg viewBox={`0 0 560 ${height}`} style={{ minHeight: height }} aria-label={dt('按查询阶段顺序排列的漏斗图')}>
         {rows.map((item, index) => {
           const w = (item.value / max) * 310;
           const next = ((rows[index + 1]?.value ?? item.value) / max) * 310;
@@ -172,18 +184,23 @@ export default function DashboardExtendedChart({
         })}
       </svg>
     );
-    note += '按查询返回的阶段顺序显示，宽度表示各阶段数值。';
+    note += dt('按查询返回的阶段顺序显示，宽度表示各阶段数值。');
   } else if (visualization === 'radar') {
     const dimensions = rows.slice(0, 12),
       count = dimensions.length;
-    if (count < 3) return <p className={styles.explanation}>雷达图至少需要 3 个同单位维度；当前有 {count} 个。</p>;
+    if (count < 3)
+      return (
+        <p className={styles.explanation}>
+          {dt('雷达图至少需要 3 个同单位维度；当前有')} {count} {dt('个。')}
+        </p>
+      );
     const point = (index: number, radius: number) => [
       280 + Math.sin((index * 2 * Math.PI) / count) * radius,
       160 - Math.cos((index * 2 * Math.PI) / count) * radius,
     ];
     const polygon = (radius: number) => dimensions.map((_, index) => point(index, radius).join(',')).join(' ');
     plot = (
-      <svg viewBox='0 0 560 340' aria-label='从零开始、统一量程的雷达图'>
+      <svg viewBox='0 0 560 340' aria-label={dt('从零开始、统一量程的雷达图')}>
         {[0.25, 0.5, 0.75, 1].map(ratio => (
           <polygon key={ratio} points={polygon(112 * ratio)} fill='none' stroke='var(--plot-border)' />
         ))}
@@ -216,11 +233,13 @@ export default function DashboardExtendedChart({
           );
         })}
         <text x='280' y='326' textAnchor='middle' fontSize='11'>
-          量程 0 — {format(max)}
+          {dt('量程 0 —')} {format(max)}
         </text>
       </svg>
     );
-    note += `各维度使用相同单位与量程。${rows.length > 12 ? `显示前 12 / ${rows.length} 个维度。` : ''}`;
+    note += dt('各维度使用相同单位与量程。{{value0}}', {
+      value0: rows.length > 12 ? dt('显示前 12 / {{value0}} 个维度。', { value0: rows.length }) : '',
+    });
   } else {
     const steps = waterfallSeries(rows);
     const lo = Math.min(0, ...steps.flatMap(item => [item.start, item.end]));
@@ -229,7 +248,7 @@ export default function DashboardExtendedChart({
     const width = Math.max(560, steps.length * 75 + 75),
       stepWidth = (width - 75) / steps.length;
     plot = (
-      <svg viewBox={`0 0 ${width} 320`} style={{ minWidth: width }} aria-label='各项增减及累计总额瀑布图'>
+      <svg viewBox={`0 0 ${width} 320`} style={{ minWidth: width }} aria-label={dt('各项增减及累计总额瀑布图')}>
         {[lo, (hi + lo) / 2, hi].map((value, index) => (
           <g key={index}>
             <line x1='65' y1={y(value)} x2={width - 5} y2={y(value)} stroke='var(--plot-border)' />
@@ -268,14 +287,15 @@ export default function DashboardExtendedChart({
                 {item.label.slice(0, 9)}
               </text>
               <title>
-                {label(item)}；累计 {format(item.end)}
+                {label(item)}
+                {dt('；累计')} {format(item.end)}
               </title>
             </g>
           );
         })}
       </svg>
     );
-    note += '最后一列为累计合计。已核对一致的末尾合计不会重复累加。';
+    note += dt('最后一列为累计合计。已核对一致的末尾合计不会重复累加。');
   }
   return (
     <div

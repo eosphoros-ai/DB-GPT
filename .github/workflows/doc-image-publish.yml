@@ -37,6 +37,9 @@ jobs:
             echo "Main branch commit: $(git rev-parse origin/main)"
             echo "Using branch: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"
       
+      - name: Test versioned docs source restoration
+        run: node --test docs/scripts/test-deploy-build.mjs
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         

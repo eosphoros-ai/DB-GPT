@@ -252,7 +252,10 @@ async def db_connect_edit(
     db_config: DBConfig = Body(),
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    return Result.succ(CFG.local_db_manager.edit_db(db_config))
+    try:
+        return Result.succ(CFG.local_db_manager.edit_db(db_config))
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"edit db connect info error: {e}")
 
 
 @router.post("/v1/chat/db/delete", response_model=Result[bool])

@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardSchemaV1, DashboardSnapshot } from '@/types/dashboard';
 import {
   ExpandOutlined,
@@ -12,20 +13,21 @@ import { useEffect, useState, type RefObject } from 'react';
 import styles from './DashboardShowcase.module.css';
 
 export function DashboardMarketingRail({ onNavigate }: { onNavigate: (id: string) => void }) {
+  useDashboardTranslation();
   return (
-    <aside className={styles.marketingRail} aria-label='营销沙盘章节'>
+    <aside className={styles.marketingRail} aria-label={dt('营销沙盘章节')}>
       <div className={styles.identity}>
         <ShopOutlined />
         <strong>
-          DB-GPT<small>门店营销沙盘</small>
+          DB-GPT<small>{dt('门店营销沙盘')}</small>
         </strong>
       </div>
-      <span className={styles.railLabel}>经营视角</span>
+      <span className={styles.railLabel}>{dt('经营视角')}</span>
       {[
-        { id: 'campaigns', label: '营销总览', icon: <ShopOutlined /> },
-        { id: 'trend', label: '活动表现', icon: <SoundOutlined /> },
-        { id: 'channels', label: '渠道贡献', icon: <PieChartOutlined /> },
-        { id: 'ledger', label: '活动明细', icon: <TableOutlined /> },
+        { id: 'campaigns', label: dt('营销总览'), icon: <ShopOutlined /> },
+        { id: 'trend', label: dt('活动表现'), icon: <SoundOutlined /> },
+        { id: 'channels', label: dt('渠道贡献'), icon: <PieChartOutlined /> },
+        { id: 'ledger', label: dt('活动明细'), icon: <TableOutlined /> },
       ].map(item => (
         <button key={item.id} type='button' onClick={() => onNavigate(item.id)}>
           {item.icon}
@@ -33,9 +35,9 @@ export function DashboardMarketingRail({ onNavigate }: { onNavigate: (id: string
         </button>
       ))}
       <div className={styles.railFoot}>
-        让每一次触达
+        {dt('让每一次触达')}
         <br />
-        都有迹可循。
+        {dt('都有迹可循。')}
       </div>
     </aside>
   );
@@ -54,6 +56,7 @@ export default function DashboardShowcaseControls({
   filters?: Record<string, unknown>;
   onChange?: (filters: Record<string, unknown>) => void;
 }) {
+  useDashboardTranslation();
   const [fullscreen, setFullscreen] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function DashboardShowcaseControls({
   return (
     <div className={styles.controls}>
       <span className={styles.sourceBadge} data-demo={demo}>
-        {referenceSource ? metadata?.source_label : demo ? '合成演示 · 历史样本' : '已连接数据源'}
+        {referenceSource ? metadata?.source_label : demo ? dt('合成演示 · 历史样本') : dt('已连接数据源')}
       </span>
       {onChange && (
         <div className={styles.scopeControls}>
@@ -80,7 +83,7 @@ export default function DashboardShowcaseControls({
               <label key={filter.id}>
                 <span>{filter.label}</span>
                 <select
-                  aria-label={`展示筛选：${filter.label}`}
+                  aria-label={dt('展示筛选：{{value0}}', { value0: filter.label })}
                   value={String(values[filter.id] ?? filter.default ?? 'all')}
                   onChange={e => onChange({ ...values, [filter.id]: e.target.value })}
                 >
@@ -94,8 +97,8 @@ export default function DashboardShowcaseControls({
             ))}
           <button
             type='button'
-            title='重置展示筛选'
-            aria-label='重置展示筛选'
+            title={dt('重置展示筛选')}
+            aria-label={dt('重置展示筛选')}
             onClick={() => onChange(Object.fromEntries(schema.filters.map(f => [f.id, f.default ?? 'all'])))}
           >
             <ReloadOutlined />
@@ -103,7 +106,7 @@ export default function DashboardShowcaseControls({
         </div>
       )}
       <button
-        aria-label={fullscreen ? '退出全屏' : '全屏展示'}
+        aria-label={fullscreen ? dt('退出全屏') : dt('全屏展示')}
         className={styles.fullscreenButton}
         type='button'
         onClick={async () => {
@@ -112,12 +115,12 @@ export default function DashboardShowcaseControls({
             if (document.fullscreenElement === rootRef.current) await document.exitFullscreen();
             else await rootRef.current?.requestFullscreen();
           } catch {
-            setError('当前浏览器未允许全屏，请在普通预览中查看。');
+            setError(dt('当前浏览器未允许全屏，请在普通预览中查看。'));
           }
         }}
       >
         {fullscreen ? <FullscreenExitOutlined /> : <ExpandOutlined />}
-        {fullscreen ? '退出全屏' : '全屏展示'}
+        {fullscreen ? dt('退出全屏') : dt('全屏展示')}
       </button>
       {error && <span role='alert'>{error}</span>}
     </div>

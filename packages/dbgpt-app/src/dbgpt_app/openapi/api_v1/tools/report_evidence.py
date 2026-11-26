@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import logging
+import sqlite3
 from collections import Counter
 from typing import Any, Dict, Optional
 
@@ -25,6 +27,7 @@ _MANIFEST_TEXT_CHARS = 360
 _MANIFEST_KB_EXCERPT_CHARS = 900
 _MANIFEST_RESULT_CHARS = 3000
 _MANIFEST_DETAIL_LIMIT = 12
+logger = logging.getLogger(__name__)
 
 
 def result_structure(value, depth=0, budget=256):
@@ -59,7 +62,11 @@ def result_selector_context(artifact, selector):
     value = read_artifact_result(artifact)
     field = selector.get("field")
     if field is not None:
-        value = select_result_value(value, {"field": field})
+        try:
+            value = select_result_value(value, {"field": field})
+        except ValueError:
+            field = None
+            selector = {}
     if isinstance(value, str) and value.lstrip().startswith(("{", "[")):
         value = json.loads(value)
     prefix = []
@@ -163,6 +170,7 @@ def _artifact_manifest_item(
         "name": artifact.name,
         "status": artifact.status,
         "action": artifact.execution.action,
+        "run_id": artifact.execution.run_id,
         "step_id": (execution_step_map or {}).get(
             artifact.execution.step_id, artifact.execution.step_id
         ),
@@ -182,7 +190,13 @@ def _artifact_manifest_item(
                 if artifact.row_count
                 else [],
                 "result_preview": _compact_sql_preview(
-                    artifact.result.inline if artifact.result is not None else None,
+                    (
+                        read_artifact_result(artifact)
+                        if detail and artifact.result is not None
+                        else artifact.result.inline
+                        if artifact.result is not None
+                        else None
+                    ),
                     max_rows=50 if detail else _MANIFEST_SQL_ROWS,
                 ),
             }
@@ -215,6 +229,7 @@ def _artifact_manifest_item(
             {
                 "language": artifact.language,
                 "exit_code": artifact.exit_code,
+                "result_available": artifact.result is not None,
                 "result_structure": result_structure(preview_data),
                 "result_preview": preview,
                 "result_preview_truncated": truncated,
@@ -270,7 +285,9 @@ def result_evidence_catalog(artifacts) -> list[dict]:
             if key in keys and value is not None
         }
         for artifact in artifacts
-        if artifact.status == "succeeded" and artifact.type in {"sql", "python"}
+        if artifact.status == "succeeded"
+        and artifact.type in {"sql", "python"}
+        and artifact.result is not None
     ]
 
 
@@ -371,6 +388,20 @@ def make_report_evidence_manifest(react_state: Optional[Dict[str, Any]] = None):
             and (not requested or artifact.artifact_id in requested)
             and (not artifact_types or artifact.type in artifact_types)
         ]
+        try:
+            metrics = (
+                sink.catalog.list_metrics(sink.context.conv_uid)
+                if hasattr(sink, "catalog")
+                else []
+            )
+        except (OSError, sqlite3.Error):
+            logger.warning("Session metric index unavailable", exc_info=True)
+            metrics = []
+        visible_ids = {artifact.artifact_id for artifact in artifacts}
+        metrics = [metric for metric in metrics if metric["artifact_id"] in visible_ids]
+        # The directory is an index, not another full result snapshot in the prompt.
+        metric_count = len(metrics)
+        metrics = metrics[-40:]
         execution_step_map = state.get("_report_execution_step_map", {})
         detailed = (detail or bool(requested)) and len(
             artifacts
@@ -425,6 +456,7 @@ def make_report_evidence_manifest(react_state: Optional[Dict[str, Any]] = None):
             json.dumps(
                 {
                     "artifacts": items,
+                    "metrics": metrics,
                     "step_map": {
                         artifact.execution.step_id: execution_step_map.get(
                             artifact.execution.step_id, artifact.execution.step_id
@@ -541,6 +573,8 @@ def make_report_evidence_manifest(react_state: Optional[Dict[str, Any]] = None):
                 "status": "ok" if artifacts else "empty",
                 "manifest_id": revision,
                 "artifacts": items,
+                "metrics": metrics,
+                "metric_count": metric_count,
                 "knowledge_retrievals": list(retrieval_groups.values()),
                 "diagnostics": {
                     "capture_run_id": getattr(sink.context, "run_id", None),
@@ -557,8 +591,13 @@ def make_report_evidence_manifest(react_state: Optional[Dict[str, Any]] = None):
                     "For detailed results, select at most 12 artifact_ids per call. "
                     "Nested result previews are bounded; full results remain in "
                     "their captured artifacts. "
-                    "Use only the compact artifact list above. Make a concise report "
-                    "with 3–6 visible KPI/table/chart objects, not one object per "
+                    "Use only the compact artifact list above. "
+                    "For listed scalar metrics, a template numeric ref may use "
+                    '{"metric_id":"real metric ID"}; the renderer expands and '
+                    "validates its saved artifact selector. A field label is not "
+                    "a verified business definition. "
+                    "Make a concise report with 3–6 visible KPI/table/chart "
+                    "objects, not one object per "
                     "artifact. Every visible data object needs its own local binding; "
                     "every conclusion number needs its own strong binding. Empty or "
                     "error status is a capture problem; do not repeat successful SQL "

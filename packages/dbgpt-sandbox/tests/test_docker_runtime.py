@@ -1,15 +1,19 @@
 """Container execution and workspace transfer tests without a Docker daemon."""
 
 import asyncio
+import base64
 import io
+import posixpath
 import tarfile
 import threading
+from pathlib import PurePosixPath
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from dbgpt_sandbox.sandbox.execution_layer.base import SessionConfig
+from dbgpt_sandbox.sandbox.control_layer.control_layer import ControlLayer
+from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus, SessionConfig
 from dbgpt_sandbox.sandbox.execution_layer.docker_runtime import (
     DockerRuntime,
     DockerSandboxSession,
@@ -238,3 +242,142 @@ async def test_cancelled_creation_recovers_and_removes_container():
         assert runtime.sessions == {}
     finally:
         released.set()
+
+
+def _session_for_get_file(files, links=None):
+    """Session whose container emulates ``readlink -f``, ``test -f`` and archives.
+
+    ``files`` maps absolute container paths to content; ``links`` maps symlink
+    paths to their targets.
+    """
+    links = {} if links is None else links
+
+    def realpath(path):
+        current = "/"
+        for part in PurePosixPath(path).parts[1:]:
+            current = posixpath.join(current, part)
+            for _ in range(10):
+                if current not in links:
+                    break
+                target = posixpath.join(posixpath.dirname(current), links[current])
+                current = posixpath.normpath(target)
+        return current
+
+    def exec_run(cmd, **kwargs):
+        if cmd[:2] == ["readlink", "-f"]:
+            return SimpleNamespace(exit_code=0, output=f"{realpath(cmd[2])}\n".encode())
+        if cmd[:2] == ["test", "-f"]:
+            return SimpleNamespace(exit_code=0 if cmd[2] in files else 1, output=b"")
+        return SimpleNamespace(exit_code=0, output=b"")
+
+    def get_archive(path):
+        if path not in files:
+            raise FileNotFoundError(path)
+        name = posixpath.basename(path)
+        return [_archive([(name, files[path], "file")])], {}
+
+    container = _container()
+    container.exec_run.side_effect = exec_run
+    container.get_archive.side_effect = get_archive
+    session = DockerSandboxSession("get-file", SessionConfig(working_dir="/work"), None)
+    session.container = container
+    session._is_active = True
+    return session, container
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "/etc/passwd",
+        "../../etc/passwd",
+        "../work-other/result.csv",
+        "/work/../etc/passwd",
+        "nested/../../etc/passwd",
+        ".",
+    ],
+)
+async def test_get_file_rejects_paths_outside_workspace(filename):
+    session, container = _session_for_get_file(
+        {"/etc/passwd": b"root:x:0:0", "/work-other/result.csv": b"secret"}
+    )
+    result = await session.get_file_content(filename)
+    assert result.status == "error"
+    assert "outside the sandbox working directory" in result.error
+    container.exec_run.assert_not_called()
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("filename", ["escape/passwd", "leak"])
+async def test_get_file_rejects_symlinks_leaving_workspace(filename):
+    session, container = _session_for_get_file(
+        {"/etc/passwd": b"root:x:0:0"},
+        links={"/work/escape": "/etc", "/work/leak": "../etc/passwd"},
+    )
+    result = await session.get_file_content(filename)
+    assert result.status == "error"
+    assert "outside the sandbox working directory" in result.error
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_file_rejects_replaced_workspace_root():
+    links = {}
+    session, container = _session_for_get_file({"/etc/passwd": b"root:x:0:0"}, links)
+    session.container = None
+    session.docker_client = SimpleNamespace(
+        containers=SimpleNamespace(run=Mock(return_value=container))
+    )
+    assert await session.start()
+    # Session code later swaps the workspace for a symlink to /etc.
+    links["/work"] = "/etc"
+    result = await session.get_file_content("passwd")
+    assert result.status == "error"
+    assert "outside the sandbox working directory" in result.error
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename",
+    ["chart.png", "./chart.png", "nested/../chart.png", "/work/chart.png", "latest"],
+)
+async def test_get_file_reads_files_inside_workspace(filename):
+    session, _ = _session_for_get_file(
+        {"/work/chart.png": b"image-bytes"}, links={"/work/latest": "chart.png"}
+    )
+    result = await session.get_file_content(filename)
+    assert result.status == "success"
+    assert base64.b64decode(result.output) == b"image-bytes"
+
+
+@pytest.mark.asyncio
+async def test_get_file_keeps_trailing_whitespace_in_name():
+    session, _ = _session_for_get_file(
+        {"/work/report": b"plain", "/work/report ": b"with-space"}
+    )
+    result = await session.get_file_content("report ")
+    assert result.status == "success"
+    assert base64.b64decode(result.output) == b"with-space"
+
+
+@pytest.mark.asyncio
+async def test_get_file_reports_missing_file():
+    session, container = _session_for_get_file({})
+    result = await session.get_file_content("missing.csv")
+    assert result.status == "error"
+    assert "missing.csv" in result.error
+    container.get_archive.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_file_task_reports_rejected_path_as_error():
+    session, _ = _session_for_get_file({"/etc/passwd": b"root:x:0:0"})
+    control = object.__new__(ControlLayer)
+    control.tasks = {"task": {"session_id": "get-file"}}
+    control.runtime = SimpleNamespace(get_session=AsyncMock(return_value=session))
+    task = SimpleNamespace(task_id="task", file_name="/etc/passwd")
+    result = await control._handle_get_file(task)
+    assert result.status == ExecutionStatus.ERROR
+    assert "outside the sandbox working directory" in result.error

@@ -31,7 +31,7 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.expand.actions.react_action import Terminate
-from dbgpt.agent.resource import ToolPack, tool
+from dbgpt.agent.resource import tool
 from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.core import PromptTemplate
@@ -40,6 +40,7 @@ from dbgpt.core.interface.report_capture import (
     get_current_artifact_sink,
 )
 
+from ..tools.semantic_tools import make_semantic_tools
 from .react_tools import make_react_tools
 from .result import (
     SubagentArtifactSink,
@@ -171,12 +172,11 @@ def _extract_sql_from_llm_reply(llm_reply: Any) -> Optional[str]:
 # (sub-agents do not maintain a task list; it lives in the main loop).
 _SUBAGENT_FACTORY_TOOL_NAMES = [
     "load_skill",
-    "load_tools",
     "knowledge_retrieve",
     "sql_query",
-    "code_interpreter",
-    "shell_interpreter",
-    "execute_skill_script_file",
+    "code",
+    "bash",
+    "run_skill_script",
     "html_interpreter",
 ]
 
@@ -190,14 +190,12 @@ history. Everything you need is in the goal (and optional context) below.
 {goal}
 {extra_context}
 
-## ACTION SPACE (your available tools)
-You operate resources ONLY through the tools listed below. You MUST use the
-EXACT tool name shown here — do not invent names like ``run_sql`` / ``run_python``.
-All tools are read-only; you CANNOT perform write operations. If your task
-needs a write, return a recommendation for the lead agent to act instead.
+## Available tools
+Use the provided native functions. Discover auxiliary tools via tool_search;
+discovery cannot add unselected resources or delegation tools.
+Database queries and inherited connectors are read-only. If your task
+needs a data change, return a recommendation for the lead agent instead.
 Use the database / knowledge base / MCP connector named in your goal.
-
-{{{{ action_space }}}}
 
 ## Rules
 - You CANNOT delegate further (no parallel sub-tasks of your own).
@@ -206,27 +204,17 @@ Use the database / knowledge base / MCP connector named in your goal.
 
 ## Output formatting (IMPORTANT — keep results readable)
 - One query/result per step. Prefer separate ``sql_query`` calls over packing
-  many results into one ``code_interpreter`` print — each ``sql_query`` already
+  many results into one ``code`` print — each ``sql_query`` already
   returns a clean, properly newline-separated markdown table on its own.
 - NEVER concatenate multiple tables into one blob. If you DO print markdown
-  from ``code_interpreter``, every table row MUST be on its OWN line (``\\n``),
+  from ``code``, every table row MUST be on its OWN line (``\\n``),
   and there MUST be a blank line between a table and any following heading or
   the next table. Do NOT glue ``| ... |### heading`` or ``| --- || row``.
-- In ``code_interpreter``, use ``print(df.to_markdown(index=False))`` per table
+- In ``code``, use ``print(df.to_markdown(index=False))`` per table
   and ``print()`` (blank line) between tables — do not hand-build one big string.
 
-## RESPONSE FORMAT (ReAct)
-Every response MUST contain exactly one Action and one Action Input.
-The Action MUST be one of [{{{{ action_space_names }}}}].
-- Thought: analyze status and decide the next step
-- Action Intention: what this step will do (short, user-facing)
-- Action: the selected tool name (exactly as listed above)
-- Action Input: the JSON tool parameters (empty if none required)
-
-When the task is complete, use exactly:
-Thought: ...
-Action: terminate
-Action Input: {{"result": "final answer"}}
+Use function calls rather than a text Action/Action Input protocol.
+Finish by calling terminate with the final answer in its result parameter.
 """
 
 
@@ -344,6 +332,7 @@ async def build_sub_react_agent(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     knowledge_resources: Any = None,
     readonly_connector_tools: Optional[List[Any]] = None,
     extra_context: Optional[str] = None,
@@ -371,11 +360,12 @@ async def build_sub_react_agent(
     """
     from dbgpt.agent import AgentContext, AgentMemory
     from dbgpt.agent.core.memory.gpts import DefaultGptsPlansMemory, GptsMemory
-    from dbgpt.agent.expand.react_agent import ReActAgent
+    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
+    from dbgpt_app.openapi.api_v1.tools.tool_catalog import make_scoped_tool_pack
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
 
     # (1) Independent conv_id — the workspace-isolation anchor. Drives the
-    # subprocess cwd pilot/tmp/{conv_id} inside code_interpreter / shell.
+    # subprocess cwd pilot/tmp/{conv_id} inside code / shell.
     # The ``d{batch_id}`` segment makes each dispatch batch's sub-agents get
     # their OWN directory, so batch 2's sub_0 cannot read/overwrite batch 1's
     # sub_0 artifacts (a real cross-batch data-leak before this).
@@ -383,7 +373,11 @@ async def build_sub_react_agent(
 
     # (2) Independent react_state — artifact bookkeeping isolation. A fresh
     # dict means generated_images / image_url_map etc. never cross-write.
-    sub_state = {"conv_id": sub_conv_id, "file_path": None}
+    sub_state = {
+        "conv_id": sub_conv_id,
+        "file_path": None,
+        "database_name": database_name,
+    }
 
     # (3) Independent AgentMemory — not cached in REACT_AGENT_MEMORY_CACHE,
     # so the sub-agent's history never pollutes the parent's memory.
@@ -403,10 +397,23 @@ async def build_sub_react_agent(
         database_connector=database_connector,
         knowledge_resources=knowledge_resources,
     )
-    sub_tool_pack = ToolPack(
-        [sub_tools[name] for name in _SUBAGENT_FACTORY_TOOL_NAMES]
+    sub_tool_pack = make_scoped_tool_pack(
+        [
+            sub_tools[name]
+            for name in _SUBAGENT_FACTORY_TOOL_NAMES
+            if (name != "sql_query" or database_connector is not None)
+            and (name != "knowledge_retrieve" or knowledge_resources is not None)
+        ]
+        + (make_semantic_tools(database_name) if database_connector is not None else [])
         + (readonly_connector_tools or [])
-        + [Terminate()]
+        + [Terminate()],
+        eager_names={
+            "load_skill",
+            "code",
+            "sql_query",
+            "knowledge_retrieve",
+            "terminate",
+        },
     )
 
     # (5) Rebuild LLMConfig reusing the client. None model => Default strategy
@@ -426,10 +433,11 @@ async def build_sub_react_agent(
         gpts_app_name="ReAct-Sub",
         language=language,
         enable_context_management=True,
+        enable_native_function_calling=True,
     )
 
     sub_agent = await (
-        ReActAgent(max_retry_count=_SUBAGENT_MAX_RETRY)
+        ToolCallingReActAgent(max_retry_count=_SUBAGENT_MAX_RETRY)
         .bind(sub_context)
         .bind(sub_agent_memory)
         .bind(sub_llm_config)
@@ -532,6 +540,7 @@ def make_dispatch_tool(
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
+    database_name: Optional[str] = None,
     database_context: str = "",
     knowledge_resources: Any = None,
     connector_tool_extras: Optional[List[Any]] = None,
@@ -659,6 +668,7 @@ def make_dispatch_tool(
                     llm_client=llm_client,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,
+                    database_name=database_name,
                     knowledge_resources=knowledge_resources,
                     readonly_connector_tools=readonly_connector_tools,
                     extra_context=extra,

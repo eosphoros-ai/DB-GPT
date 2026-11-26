@@ -1,0 +1,95 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB 数据取数",
+    "name": "taskflow_db_fetch_template",
+    "flow_category": "chat_flow",
+    "description": "业务问题→语义接地→SQL 取数→校验与口径说明的有界只读取数链。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "语义接地与查询规划",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "把用户问题中的业务名词映射到表/字段/口径:用 sql_query 查元数据与有界样例(表结构、distinct/limit 采样,禁止全表扫描);多口径时列候选并说明默认采纳与理由。输出查询计划:每步 SQL 草案+预期字段与行数上限。",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "SQL 取数执行",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "按上游查询计划用 sql_query 执行取数;报错时依据观察修正 SQL 重试(不得改口径);输出行数/字段概览+关键行样例;如计划缺漏可补最小查询。",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "结果校验与口径说明",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "对上游取数结果独立抽查:换一条聚合路径或反向样例核对关键数字;说明口径与局限(时间窗/过滤/聚合粒度/空值处理)。输出校验结论(确认/修正)+口径说明段。",
+            "tools": [
+              "sql_query",
+              "code_interpreter"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n4",
+          "n5"
+        ]
+      ]
+    }
+  }
+}

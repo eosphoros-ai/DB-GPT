@@ -1,378 +1,300 @@
-<img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: AI Native Data App Development framework with AWEL and Agents
-
-<p align="left">
-  <img src="./assets/dbgpt_vision.png" width="100%" />
+<p align="center">
+  <img src="assets/readme-en/brand.png" alt="DB-GPT" width="280" />
 </p>
 
-<div align="center">
-  <p>
-    <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
-    </a>
-    <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
-    </a>
-    <a href="http://dbgpt.cn/">
-        <img alt="Official Website" src="https://img.shields.io/badge/Official%20website-DB--GPT-blue?style=flat&labelColor=3366CC" />
-    </a>
-    <a href="https://opensource.org/licenses/MIT">
-      <img alt="License: MIT" src="https://img.shields.io/github/license/eosphoros-ai/db-gpt?style=flat&labelColor=009966&color=009933" />
-    </a>
-     <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
-      <img alt="Release Notes" src="https://img.shields.io/github/v/release/eosphoros-ai/db-gpt?style=flat&labelColor=FF9933&color=FF6633" />
-    </a>
-    <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/db-gpt?style=flat&labelColor=666666&color=333333" />
-    </a>
-    <a href="https://x.com/DBGPT_AI">
-      <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
-    </a>
-    <a href="https://medium.com/@dbgpt0506">
-      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/DB-GPT/333333?icon=medium&labelColor=666666" />
-    </a>
-    <a href="https://space.bilibili.com/3537113070963392">
-      <img alt="Bilibili Space" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Frelation%2Fstat%3Fvmid%3D3537113070963392&query=data.follower&style=flat&logo=bilibili&logoColor=white&label=Bilibili%20Fans&labelColor=F37697&color=6495ED" />
-    </a>
-    <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
-      <img alt="Slack" src="https://img.shields.io/badge/Slack-Join%20us-5d6b98?style=flat&logo=slack&labelColor=7d89b0" />
-    </a>
-    <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
-      <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
-    </a>
-  </p>
-
-
-[![English](https://img.shields.io/badge/English-d9d9d9?style=flat-square)](README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-d9d9d9?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
-
-[**दस्तावेज़**](http://docs.dbgpt.cn/docs/overview/) | [**हमसे संपर्क करें**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**समुदाय**](https://github.com/eosphoros-ai/community) | [**पेपर**](https://arxiv.org/pdf/2312.17449.pdf)
-
-</div>
-
-## DB-GPT क्या है?
-
-🤖 **DB-GPT AWEL (Agentic Workflow Expression Language) और एजेंटों के साथ एक ओपन सोर्स AI नेटिव डेटा ऐप डेवलपमेंट फ्रेमवर्क है**। 
-
-उद्देश्य बड़े मॉडलों के क्षेत्र में बुनियादी ढांचा बनाना है, मल्टी-मॉडल प्रबंधन (SMMF), Text2SQL प्रभाव अनुकूलन, RAG फ्रेमवर्क और अनुकूलन, मल्टी-एजेंट फ्रेमवर्क सहयोग, AWEL (एजेंट वर्कफ्लो ऑर्केस्ट्रेशन) आदि जैसे कई तकनीकी क्षमताओं के विकास के माध्यम से। जो बड़े मॉडल अनुप्रयोगों को डेटा के साथ सरल और अधिक सुविधाजनक बनाता है।
-
-🚀 **डेटा 3.0 युग में, मॉडलों और डेटाबेस पर आधारित, उद्यम और डेवलपर्स कम कोड के साथ अपने खुद के विशेष अनुप्रयोग बना सकते हैं।**
-
-### परिचय 
-DB-GPT की वास्तुकला निम्नलिखित चित्र में दिखाई गई है:
+<h1 align="center">DB-GPT: नियंत्रित डेटा एजेंटों के लिए ओपन-सोर्स उत्पाद</h1>
 
 <p align="center">
-  <img src="./assets/dbgpt.png" width="800" />
+  डेटा से जुड़े प्रश्न से सत्यापन योग्य क्वेरी, विश्लेषण रिपोर्ट और पुनः उपयोग योग्य डैशबोर्ड तक।
 </p>
 
-कोर क्षमताओं में निम्नलिखित भाग शामिल हैं:
+<p align="center">
+  <a href="https://github.com/eosphoros-ai/DB-GPT/stargazers"><img src="https://img.shields.io/github/stars/eosphoros-ai/DB-GPT?style=flat" alt="GitHub Stars" /></a>
+  <a href="https://github.com/eosphoros-ai/DB-GPT/releases"><img src="https://img.shields.io/github/v/release/eosphoros-ai/DB-GPT" alt="नवीनतम रिलीज़" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT लाइसेंस" /></a>
+  <a href="https://x.com/DBGPT_AI"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat&amp;logo=x&amp;logoColor=white" alt="X (Twitter) पर DB-GPT को फ़ॉलो करें" /></a>
+  <a href="https://discord.gg/7uQnPuveTY"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat&amp;logo=discord&amp;logoColor=white" alt="DB-GPT के Discord समुदाय से जुड़ें" /></a>
+</p>
 
-- **RAG (Retrieval Augmented Generation)**: RAG वर्तमान में सबसे व्यावहारिक रूप से कार्यान्वित और अत्यंत आवश्यक डोमेन है। DB-GPT ने पहले ही RAG पर आधारित एक फ्रेमवर्क लागू किया है, जो उपयोगकर्ताओं को DB-GPT की RAG क्षमताओं का उपयोग करके ज्ञान-आधारित अनुप्रयोग बनाने की अनुमति देता है।
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ma.md">മലയാളം</a> · <a href="README.ta.md">தமிழ்</a>
+</p>
 
-- **GBI (Generative Business Intelligence)**: जनरेटिव BI DB-GPT परियोजना की कोर क्षमताओं में से एक है, जो उद्यम रिपोर्ट विश्लेषण और व्यावसायिक अंतर्दृष्टि बनाने के लिए आधारभूत डेटा बुद्धिमत्ता तकनीक प्रदान करता है।
+<p align="center">
+  <a href="http://docs.dbgpt.cn/docs/overview/">दस्तावेज़</a> · <a href="https://github.com/eosphoros-ai/DB-GPT/releases">रिलीज़</a> · <a href="https://github.com/orgs/eosphoros-ai/discussions">समुदाय</a> · <a href="#quick-start">त्वरित शुरुआत</a>
+</p>
 
-- **फाइन-ट्यूनिंग फ्रेमवर्क**: मॉडल फाइन-ट्यूनिंग किसी भी उद्यम के लिए लंबवत और विशिष्ट डोमेन में कार्यान्वित करने के लिए एक अनिवार्य क्षमता है। DB-GPT एक पूर्ण फाइन-ट्यूनिंग फ्रेमवर्क प्रदान करता है जो DB-GPT परियोजना के साथ सहज रूप से एकीकृत होता है। हालिया फाइन-ट्यूनिंग प्रयासों में, स्पाइडर डेटासेट पर आधारित एक सटीकता दर 82.5% हासिल की गई है।
+> **अपने डेटा को जोड़ें, व्यावसायिक परिभाषाएँ तय करें, विशेषज्ञ विधियाँ चुनें और कॉन्फ़िगर किए गए टूल तथा रनटाइम की सीमाओं में काम करें। परिणामों की जाँच करें, उन्हें संपादित करें और दोबारा उपयोग करें।**
 
-- **डेटा-ड्रिवन मल्टी-एजेंट फ्रेमवर्क**: DB-GPT एक डेटा-ड्रिवन स्व-विकासशील मल्टी-एजेंट फ्रेमवर्क प्रदान करता है, जिसका उद्देश्य निरंतर डेटा पर आधारित निर्णय लेना और निष्पादित करना है।
+DB-GPT केवल प्राकृतिक भाषा को SQL में नहीं बदलता। यह **डेटा कनेक्शन, व्यावसायिक अर्थ, विशेषज्ञ कौशल, कार्य समन्वय और विश्लेषण से बनी सामग्री** को एक कार्यप्रवाह में जोड़ता है। यह उपयोगकर्ताओं के लिए व्यावहारिक सहायक और डेवलपरों के लिए AI-आधारित डेटा अनुप्रयोग बनाने का विस्तार योग्य आधार है।
 
-- **डेटा फैक्टरी**: डेटा फैक्टरी मुख्य रूप से बड़े मॉडलों के युग में विश्वसनीय ज्ञान और डेटा को साफ करने और संसाधित करने के बारे में है।
+[उत्पाद डेमो](#product-demo) · [DB-GPT क्यों चुनें](#why-db-gpt) · [उत्पाद मॉड्यूल](#product-modules) · [सुरक्षा और निष्पादन सीमाएँ](#safety-and-execution-boundaries) · [त्वरित शुरुआत](#quick-start) · [समुदाय](#community)
 
-- **डेटा स्रोत**: विभिन्न डेटा स्रोतों को एकीकृत करना ताकि उत्पादन व्यावसायिक डेटा को DB-GPT की कोर क्षमताओं से सहज रूप से जोड़ा जा सके।
+<a id="product-demo"></a>
 
-#### सबमॉड्यूल
-- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) बड़े भाषा मॉडलों (LLMs) पर पर्यवेक्षित फाइन-ट्यूनिंग (SFT) लागू करके उच्च प्रदर्शन के साथ Text-to-SQL वर्कफ्लो।
+## उत्पाद डेमो
 
-- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts आधिकारिक रिपॉजिटरी है जिसमें कुछ डेटा ऐप्स, AWEL ऑपरेटर्स, AWEL वर्कफ्लो टेम्प्लेट और एजेंट शामिल हैं जो DB-GPT पर बनाए गए हैं।
+https://github.com/user-attachments/assets/36ddad2c-1021-4181-b31a-8fb216c93f81
 
-#### डीपविकी
-- [DB-GPT](https://deepwiki.com/eosphoros-ai/DB-GPT)
-- [DB-GPT-HUB](https://deepwiki.com/eosphoros-ai/DB-GPT-Hub)
-- [dbgpts](https://deepwiki.com/eosphoros-ai/dbgpts)
+<a id="why-db-gpt"></a>
 
+## DB-GPT क्यों चुनें
 
-#### Text2SQL फाइनट्यून
+### क्वेरी से पहले व्यावसायिक संदर्भ
 
-  |     LLM     |  समर्थित  | 
-  |:-----------:|:-----------:|
-  |    LLaMA    |      ✅     |
-  |   LLaMA-2   |      ✅     | 
-  |    BLOOM    |      ✅     | 
-  |   BLOOMZ    |      ✅     | 
-  |   Falcon    |      ✅     | 
-  |  Baichuan   |      ✅     | 
-  |  Baichuan2  |      ✅     | 
-  |  InternLM   |      ✅     |
-  |    Qwen     |      ✅     | 
-  |   XVERSE    |      ✅     | 
-  |  ChatGLM2   |      ✅     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+‘राजस्व’ का अर्थ तारीख के निर्धारण, रिफ़ंड के व्यवहार और गणना के दायरे के अनुसार बदल सकता है। सेमांटिक सेंटर स्कीमा मेटाडेटा, व्यावसायिक अर्थ, मीट्रिक सूत्र और प्रकाशित संस्करण व्यवस्थित करता है, ताकि एजेंट हर प्रश्न पर अनुमान लगाने के बजाय स्पष्ट परिभाषाओं से काम करे।
 
+### केवल उत्तर नहीं, विशेषज्ञ विधियाँ
 
-[Text2SQL फाइनट्यून के बारे में अधिक जानकारी](https://github.com/eosphoros-ai/DB-GPT-Hub)
+क्वेरी, विश्लेषण, SQL अनुकूलन, मेटाडेटा और आर्किटेक्चर तथा वित्तीय विश्लेषण के लिए विशेष प्लगइन चुनें। Skills दोबारा उपयोग योग्य निर्देश और स्क्रिप्ट देते हैं; कार्यप्रवाह चरणों, निर्भरताओं और टूल कॉन्फ़िगरेशन को स्पष्ट करते हैं।
 
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT प्लगइन्स जो Auto-GPT प्लगइन को सीधे चला सकते हैं
-- [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) विज़ुअलाइज़ेशन प्रोटोकॉल
+### पुनः उपयोग योग्य परिणाम
 
-### AI-नेटिव डेटा ऐप 
----
-- 🔥🔥🔥 [रिलीज़ V0.7.0 | महत्वपूर्ण अपग्रेड का एक सेट](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
-  - [MCP प्रोटोकॉल का समर्थन](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
-  - [DeepSeek R1 का समर्थन](https://github.com/deepseek-ai/DeepSeek-R1)
-  - [QwQ-32B का समर्थन](https://huggingface.co/Qwen/QwQ-32B)
-  - [बुनियादी मॉड्यूल को रिफैक्टर करें]()
-    - [dbgpt-app](./packages/dbgpt-app)
-    - [dbgpt-core](./packages/dbgpt-core)
-    - [dbgpt-serve](./packages/dbgpt-serve)
-    - [dbgpt-client](./packages/dbgpt-client)
-    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
-    - [dbgpt-ext](./packages/dbgpt-ext)
----
+केवल चैट संदेशों के बजाय क्वेरी तालिकाएँ, चार्ट, विश्लेषण रिपोर्ट और संपादन योग्य डैशबोर्ड बनाएँ। निष्पादन और परिणाम की समीक्षा करें, बदलाव माँगें और अगली गतिविधि के लिए सामग्री सहेजें।
 
-## क्यों DB-GPT?
+### महत्वपूर्ण कार्रवाइयों पर मानवीय नियंत्रण
 
-### 1. एजेंटिक डेटा विश्लेषण
-कार्यों की योजना बनाएं, कार्य को चरणों में विभाजित करें, टूल्स को कॉल करें, और विश्लेषण वर्कफ़्लो को अंत तक पूरा करें।
-![csv_data_analysis_demo](https://github.com/user-attachments/assets/4921fa40-20f7-4a9c-b908-c0b4e7caa9d6)
+मॉडल, टूल, डेटा स्रोत और रनटाइम का उपयोग परिनियोजन तथा कार्य कॉन्फ़िगरेशन पर निर्भर करता है। डैशबोर्ड योजना और प्रस्तावित बदलाव लागू करने से पहले जाँचे जा सकते हैं। **नियंत्रित निष्पादन पूर्ण सुरक्षा की गारंटी नहीं है**: न्यूनतम अधिकार वाले क्रेडेंशियल, उचित अलगाव और स्वतंत्र समीक्षा अपनाएँ।
 
-### 2. स्वायत्त SQL + कोड निष्पादन
-डेटा को क्वेरी करने, डेटासेट साफ़ करने, मेट्रिक्स की गणना करने और आउटपुट उत्पन्न करने के लिए SQL और कोड जenerate करें।
-![agentic_write_code](https://github.com/user-attachments/assets/aeebc2b8-6c50-4ebb-96fd-07b860faa044)
-![sql_query](https://github.com/user-attachments/assets/da45de20-3768-4f0d-ab20-e939ddf21361)
+<a id="product-modules"></a>
 
-### 3. मल्टी-सोर्स डेटा एक्सेस
-संरचित और असंरचित स्रोतों के साथ काम करें, जिसमें डेटाबेस, स्प्रेडशीट, दस्तावेज़ और नॉलेज बेस शामिल हैं।
+## उत्पाद मॉड्यूल
 
-### 4. स्किल्स-संचालित एक्स्टेंसिबिलिटी
-डोमेन ज्ञान, विश्लेषण विधियों और निष्पादन वर्कफ़्लो को पुन: प्रयोज्य स्किल्स में पैकेज करें।
+### कार्य शुरू करने का साझा स्थान
 
-![import_github_skill](https://github.com/user-attachments/assets/39f39c36-a014-4a2e-8e14-b3af3f1d2f1c)
+![वर्तमान DB-GPT होम इंटरफ़ेस: प्राकृतिक भाषा इनपुट, मॉडल चयन और विशेषज्ञ प्रवेश बिंदु](assets/readme-en/home.png)
 
-![agent_browse_use](https://github.com/user-attachments/assets/21864e9f-2179-4f6f-910f-18463ec2b46e)
+प्रश्न, फ़ाइल या डेटाबेस से शुरू करें। मॉडल और उपयुक्त विशेषज्ञ चुनें, उद्देश्य स्पष्ट करें और क्वेरी, विश्लेषण या डैशबोर्ड कार्य में आगे बढ़ें।
 
-### 5. सैंडबॉक्स्ड निष्पादन
-सुरक्षित, अधिक विश्वसनीय विश्लेषण के लिए अलग-थलग वातावरण में कोड और टूल्स चलाएं।
-![sandbox](https://github.com/user-attachments/assets/bfbd78e0-15e2-42ac-876f-5b91847aadc1)
+### 1. डैशबोर्ड: योजना से बोर्ड दृश्य तक
 
+योजना या टेम्पलेट से शुरू करें, ड्राफ़्ट बनाएँ, विजेट और क्वेरी संपादित करें तथा पूरा बोर्ड दिखाने के लिए Preview खोलें।
 
-## इंस्टॉलेशन / क्विक स्टार्ट 
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Preview में तैयार Walmart डैशबोर्ड: कुल बिक्री, सक्रिय स्टोर, साप्ताहिक रुझान और शीर्ष 10 स्टोर](assets/readme-en/generated-dashboard.png)
 
-[**उपयोग ट्यूटोरियल**](http://docs.dbgpt.cn/docs/overview)
-- [**इंस्टॉल**](http://docs.dbgpt.cn/docs/installation)
-  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [सोर्स कोड](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
-- [**क्विकस्टार्ट**](http://docs.dbgpt.cn/docs/overview)
-- [**अनुप्रयोग**](http://docs.dbgpt.cn/docs/use_cases)
-  - [डेवलपमेंट गाइड](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
-  - [AWEL फ्लो उपयोग](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
-- [**डिबगिंग**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
-- [**उन्नत उपयोग**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
-  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
-  - [फाइनट्यून](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
+*यह उत्पाद डेमो के दौरान वास्तव में बनाया और सहेजा गया Walmart डैशबोर्ड है, जिसे Preview बोर्ड दृश्य में दिखाया गया है। इसके चार विजेट बिक्री और स्टोर के KPI, साप्ताहिक रुझान और शीर्ष 10 की रैंकिंग दिखाते हैं। यह सहेजा हुआ ड्राफ़्ट है, सार्वजनिक रूप से प्रकाशित बोर्ड नहीं।*
 
+- बनाने से पहले मीट्रिक, चार्ट और फ़िल्टर तय करें।
+- विजेट, लेआउट, क्वेरी कॉन्फ़िगरेशन और फ़िल्टर समायोजित करें।
+- AI सहायक के साथ बदलावों पर चर्चा करें और लागू करने से पहले प्रस्तावों की समीक्षा करें।
+- ड्राफ़्ट सहेजें; परिणाम और पहुँच का दायरा तैयार होने पर ही प्रकाशित या साझा करें।
 
-## विशेषताएं
+Walmart बोर्ड में उदाहरण डेटासेट का उपयोग किया गया है। इसकी संख्याएँ इस मामले को समझाती हैं, कंपनी के वर्तमान प्रदर्शन को नहीं।
 
-वर्तमान में, हमने अपनी वर्तमान क्षमताओं को प्रदर्शित करने के लिए कई प्रमुख विशेषताओं का परिचय दिया है:
-- **प्राइवेट डोमेन Q&A & डेटा प्रोसेसिंग**
+### 2. प्लगइन और Skills: विशेषज्ञता का पुनः उपयोग
 
-  DB-GPT परियोजना ज्ञान आधार निर्माण में सुधार करने और संरचित और असंरचित डेटा दोनों के कुशल भंडारण और पुनर्प्राप्ति को सक्षम करने के लिए डिज़ाइन की गई कार्यक्षमताओं की एक श्रृंखला प्रदान करती है। इन कार्यक्षमताओं में कई फ़ाइल स्वरूपों को अपलोड करने के लिए अंतर्निहित समर्थन, कस्टम डेटा एक्सट्रैक्शन प्लग-इन्स को एकीकृत करने की क्षमता, और बड़ी मात्रा में जानकारी को प्रभावी ढंग से प्रबंधित करने के लिए एकीकृत वेक्टर भंडारण और पुनर्प्राप्ति क्षमताएं शामिल हैं।
+कार्य के लिए विशेषज्ञ प्लगइन चुनें और उसके डेटा, ज्ञान संदर्भ तथा अनुमत टूल जोड़ें। Skills में विषय-विशिष्ट निर्देश, विधियाँ और स्क्रिप्ट शामिल होते हैं।
 
-- **मल्टी-डेटा स्रोत & GBI (जनरेटिव बिजनेस इंटेलिजेंस)**
+![पाँच डेटा-विशेषज्ञ श्रेणियों वाला अंग्रेज़ी प्लगइन इंटरफ़ेस](assets/readme-en/plugins.png)
 
-  DB-GPT परियोजना Excel, डेटाबेस और डेटा गोदाम सहित विविध डेटा स्रोतों के साथ सहज प्राकृतिक भाषा इंटरैक्शन को सुविधाजनक बनाती है। यह इन स्रोतों से जानकारी को क्वेरी और पुनर्प्राप्त करने की प्रक्रिया को सरल बनाता है, उपयोगकर्ताओं को सहज बातचीत में संलग्न होने और अंतर्दृष्टि प्राप्त करने में सक्षम बनाता है। इसके अलावा, DB-GPT विश्लेषणात्मक रिपोर्ट उत्पन्न करने का समर्थन करता है, उपयोगकर्ताओं को मूल्यवान डेटा सारांश और व्याख्याएं प्रदान करता है।
+| विशेषज्ञता | सामान्य कार्य |
+| --- | --- |
+| डेटा क्वेरी | प्रश्न और मीट्रिक स्पष्ट करना, SQL जाँचना व चलाना और परिणाम निर्यात करना |
+| डेटा विश्लेषण | डेटा जाँचना, रुझान व संरचना का विश्लेषण और रिपोर्ट व डैशबोर्ड बनाना |
+| SQL अनुकूलन | SQL और निष्पादन योजना जाँचना और समीक्षा के लिए सुधार सुझाना |
+| मेटाडेटा और आर्किटेक्चर | डेटा शब्दकोश, संबंध और मॉडलिंग सुझाव व्यवस्थित करना |
+| वित्तीय विश्लेषण | आवश्यक कॉन्फ़िगरेशन व डेटा उपलब्ध होने पर वित्तीय सामग्री पढ़ना और तुलनाएँ व्यवस्थित करना |
 
-- **मल्टी-एजेंट और प्लगइन्स**
+प्लगइन विधियाँ देते हैं, डेटा अनुमति नहीं। इंस्टॉल करने से पहले तीसरे पक्ष के निर्देश, स्क्रिप्ट, निर्भरताएँ और टूल पहुँच की समीक्षा करें।
 
-  यह विभिन्न कार्यों को करने के लिए कस्टम प्लग-इन्स का समर्थन प्रदान करता है और मूल रूप से Auto-GPT प्लग-इन मॉडल को एकीकृत करता है। एजेंट प्रोटोकॉल एजेंट प्रोटोकॉल मानक का पालन करता है।
+### 3. डेटा स्रोत: विश्वसनीय कनेक्शन
 
-- **स्वचालित फाइन-ट्यूनिंग text2SQL**
+डेटाबेस कनेक्शन प्रबंधित करें और हर कार्य के लिए स्रोत चुनें। क्वेरी, विश्लेषण और डैशबोर्ड समान कनेक्शन सूची तथा मेटाडेटा संदर्भ का उपयोग कर सकते हैं।
 
-  हमने बड़े भाषा मॉडलों (LLMs), Text2SQL डेटासेट, LoRA/QLoRA/Pturning और अन्य फाइन-ट्यूनिंग विधियों पर केंद्रित एक स्वचालित फाइन-ट्यूनिंग हल्का फ्रेमवर्क विकसित किया है। यह फ्रेमवर्क Text-to-SQL फाइन-ट्यूनिंग को सरल बनाता है, इसे एक असेंबली लाइन प्रक्रिया जितना सरल बनाता है। [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+![पूरा अंग्रेज़ी डेटाबेस कैटलॉग: सभी 27 प्रकार और उस परिवेश की उपलब्धता स्थिति](assets/readme-en/datasource-catalog-full.png)
 
-  - **SMMF (सर्विस-ओरिएंटेड मल्टी-मॉडल मैनेजमेंट फ्रेमवर्क)**
+MySQL, PostgreSQL, SQLite, DuckDB, ClickHouse, Apache Doris, StarRocks, Oracle, MSSQL, Neo4j और TuGraph सहित विभिन्न डेटा स्रोत समर्थित हैं।
 
-    हम व्यापक मॉडल समर्थन प्रदान करते हैं, जिसमें ओपन-सोर्स और API एजेंट दोनों से दर्जनों बड़े भाषा मॉडल (LLMs) शामिल हैं, जैसे LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, और कई अन्य। 
+- डेटाबेस कनेक्शन कॉन्फ़िगर करें और जाँचें।
+- कार्य को सही स्रोत से जोड़ें और उसका दायरा सुनिश्चित करें।
+- कैटलॉग प्रविष्टि या कनेक्शन टेम्पलेट कार्यरत कनेक्शन का प्रमाण नहीं है। ड्राइवर, नेटवर्क पहुँच और क्रेडेंशियल उपलब्ध होने चाहिए।
 
-  - समाचार
-    <table>
-      <thead>
-        <tr>
-          <th>प्रदाता</th>
-          <th>समर्थित</th>
-          <th>मॉडल</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td align="center" valign="middle">DeepSeek</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">DeepSeek-R1-0528</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">DeepSeek-R1</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3">DeepSeek-V3</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B">DeepSeek-R1-Distill-Llama-70B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B">DeepSeek-R1-Distill-Qwen-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct">DeepSeek-Coder-V2-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Qwen</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-235B-A22B">Qwen3-235B-A22B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-30B-A3B">Qwen3-30B-A3B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen3-32B">Qwen3-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/QwQ-32B">QwQ-32B</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct">Qwen2.5-Coder-32B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct">Qwen2.5-Coder-14B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/Qwen/Qwen2.5-32B-Instruct">Qwen2.5-32B-Instruct</a><br/>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">GLM</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-Z1-32B-0414">GLM-Z1-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/GLM-4-32B-0414">GLM-4-32B-0414</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/THUDM/glm-4-9b-chat">Glm-4-9b-chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Llama</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-405B-Instruct">Meta-Llama-3.1-405B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct">Meta-Llama-3.1-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct">Meta-Llama-3.1-8B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct">Meta-Llama-3-70B-Instruct</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct">Meta-Llama-3-8B-Instruct</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Gemma</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-27b-it">gemma-2-27b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2-9b-it">gemma-2-9b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-7b-it">gemma-7b-it</a><br>
-            🔥🔥🔥  <a href="https://huggingface.co/google/gemma-2b-it">gemma-2b-it</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Yi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-34B-Chat">Yi-1.5-34B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-9B-Chat">Yi-1.5-9B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-1.5-6B-Chat">Yi-1.5-6B-Chat</a><br/>
-            🔥🔥🔥  <a href="https://huggingface.co/01-ai/Yi-34B-Chat">Yi-34B-Chat</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Starling</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/Nexusflow/Starling-LM-7B-beta">Starling-LM-7B-beta</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">SOLAR</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0">SOLAR-10.7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Mixtral</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral-8x7B</a>
-          </td>
-        </tr>
-        <tr>
-          <td align="center" valign="middle">Phi</td>
-          <td align="center" valign="middle">✅</td>
-          <td>
-            🔥🔥🔥  <a href="https://huggingface.co/collections/microsoft/phi-3-6626e15e9585a200d2d761e3">Phi-3</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+### 4. सेमांटिक सेंटर: मीट्रिक परिभाषाओं का रखरखाव
 
-- [अधिक समर्थित LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
+स्रोत के आसपास मेटाडेटा, व्यावसायिक परिभाषाएँ, मीट्रिक, क्वेरी उदाहरण, संबंध और नियम व्यवस्थित करें। प्रकाशित परिभाषाओं के संस्करण सुरक्षित रहते हैं और क्वेरी परिणाम से जोड़े जा सकते हैं।
 
-- **गोपनीयता और सुरक्षा**
-  
-  हम विभिन्न तकनीकों के कार्यान्वयन के माध्यम से डेटा की गोपनीयता और सुरक्षा सुनिश्चित करते हैं, जिसमें निजीकरण बड़े मॉडल और प्रॉक्सी डेसेंसिटाइज़ेशन शामिल हैं।
+![प्रकाशित मीट्रिक सूत्र और संस्करण वाला सेमांटिक सेंटर](assets/readme-en/semantic.png)
 
-- समर्थित डेटा स्रोत
-  - [डेटा स्रोत](http://docs.dbgpt.cn/docs/modules/connections)
+- तालिका व कॉलम के अर्थ, टिप्पणियाँ और पर्यायवाची बनाए रखें।
+- मूल और व्युत्पन्न मीट्रिक, सूत्र और निर्भरताएँ परिभाषित करें।
+- परिभाषाओं की समीक्षा करके प्रकाशित करें; केवल प्रकाशित परिभाषाएँ पढ़ते समय अप्रकाशित ड्राफ़्ट को प्रामाणिक न मानें।
 
-## छवि
-🌐 [AutoDL छवि](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
+### 5. कार्यप्रवाह: स्पष्ट चरण और सहयोग
 
+विज़ुअल एडिटर से Agent नोड, इनपुट, आउटपुट, क्रमिक चरण और समानांतर शाखाएँ व्यवस्थित करें। दोहराए जाने वाले कार्यों के लिए स्पष्ट कार्यप्रवाह अपनाएँ।
 
+![अर्थ-संदर्भ तैयार करने, योजना, समानांतर विश्लेषण और संयुक्त समीक्षा वाला अंग्रेज़ी कार्यप्रवाह टेम्पलेट](assets/readme-en/workflow.png)
+
+यह टेम्पलेट संपादन दृश्य है, कार्यप्रवाह के डिबग या प्रकाशित होने का प्रमाण नहीं। चलाने से पहले डेटा स्रोत, मॉडल और टूल कॉन्फ़िगर करें।
+
+### 6. ज्ञान, कनेक्टर और रनटाइम प्रबंधन
+
+- **ज्ञान भंडार** खोज के लिए दस्तावेज़ संदर्भ देते हैं। पार्सिंग, विभाजन, इंडेक्सिंग और खोज कॉन्फ़िगरेशन उपलब्धता व गुणवत्ता को प्रभावित करते हैं।
+- **कनेक्टर** कॉन्फ़िगर किए गए MCP सेवाओं से बाहरी टूल जोड़ते हैं। टेम्पलेट इस्तेमाल करने से पहले सक्रिय करना और अनुमति देना आवश्यक है।
+- **मॉडल और रनटाइम** निर्भरताएँ व टूल पहुँच कॉन्फ़िगर करके प्रदाता और स्थानीय या कंटेनर निष्पादन चुनने देते हैं।
+- **निर्धारित कार्य** काम दोहराते या सामग्री ताज़ा करते हैं। शेड्यूलर, मॉडल, फ़ाइल और स्रोत उपलब्ध रहने चाहिए।
+
+## प्रश्न से परिणाम तक
+
+**कनेक्ट करें → संदर्भ तय करें → योजना बनाएँ → निष्पादित करें → समीक्षा करें → पुनः उपयोग करें**
+
+1. स्रोत चुनें और उद्देश्य, समय सीमा तथा मीट्रिक दायरा स्पष्ट करें।
+2. फ़ील्ड, डेटा गुणवत्ता, व्यावसायिक परिभाषाएँ और मीट्रिक संस्करण जाँचें।
+3. विशेषज्ञ और Skills चुनें; दोहराने योग्य कार्यों के लिए कार्यप्रवाह कॉन्फ़िगर करें।
+4. अनुमत टूल और रनटाइम में SQL, कोड या खोज चलाएँ।
+5. योजना, गणना, स्रोत, सामग्री और प्रस्तावित बदलावों की समीक्षा करें।
+6. रिपोर्ट या डैशबोर्ड सहेजें; आवश्यक संचालन समर्थन होने पर ही शेड्यूलिंग कॉन्फ़िगर करें।
+
+<a id="safety-and-execution-boundaries"></a>
+
+## सुरक्षा और निष्पादन सीमाएँ
+
+DB-GPT कॉन्फ़िगर किए जा सकने वाले निष्पादन और समीक्षा तंत्र देता है। प्रभावी सुरक्षा परिनियोजन पर निर्भर करती है:
+
+- **डेटा पहुँच:** केवल पढ़ने और न्यूनतम अधिकार वाले क्रेडेंशियल चुनें। कैटलॉग के विवरणात्मक फ़्लैग पंक्ति या कॉलम स्तर का अधिकार नियंत्रण नहीं हैं।
+- **अलगाव:** स्थानीय निष्पादन कंटेनर अलगाव नहीं है। फ़ाइल पहुँच, संसाधन सीमाएँ और नेटवर्क सीमाएँ कॉन्फ़िगर करें।
+- **गोपनीय जानकारी:** API कुंजियाँ, डेटाबेस पासवर्ड और संवेदनशील डेटा कमिट, स्क्रीनशॉट या साझा सामग्री में न रखें।
+- **समीक्षा:** महत्वपूर्ण मीट्रिक, गणना, SQL और बाहरी परिणामों का स्वतंत्र सत्यापन करें। मॉडल के परिणाम पेशेवर समीक्षा का विकल्प नहीं हैं।
+- **प्रकाशन और शेड्यूलिंग:** ड्राफ़्ट, प्रकाशित स्नैपशॉट, साझा करना और निरंतर संचालन अलग अवस्थाएँ हैं। परिनियोजन से पहले पहुँच और उपलब्धता सुनिश्चित करें।
+
+> क्षमताएँ रिलीज़, कॉन्फ़िगरेशन, स्कीमा माइग्रेशन और मॉडल व्यवहार पर निर्भर हैं। अपने संस्करण के कोड और दस्तावेज़ देखें; UI में विकल्प या पुराना डेमो उत्पादन-तत्परता की गारंटी नहीं है।
+
+<a id="quick-start"></a>
+
+## त्वरित शुरुआत
+
+### विकल्प 1: macOS और Linux के लिए इंस्टॉलर
+
+चलाने से पहले स्क्रिप्ट डाउनलोड करके उसकी समीक्षा करें:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/install/install.sh -o install.sh
+less install.sh
+bash install.sh
+```
+
+विज़ार्ड से प्रोफ़ाइल चुनें और मॉडल प्रदाता कॉन्फ़िगर करें। फिर इंस्टॉलर द्वारा बताए गए स्थान और स्टार्टअप कमांड का उपयोग करें:
+
+```bash
+cd ~/.dbgpt/DB-GPT
+uv run dbgpt start webserver --profile <profile>
+```
+
+`<profile>` को कॉन्फ़िगर की गई प्रोफ़ाइल से बदलें और [http://localhost:5670](http://localhost:5670) खोलें।
+
+<details>
+<summary>मौजूदा सोर्स चेकआउट: वर्तमान ब्रांच बनाए रखें</summary>
+
+रिपॉज़िटरी के मूल फ़ोल्डर से:
+
+```bash
+bash scripts/install/install.sh --profile openai --repo-dir "$(pwd)"
+uv run dbgpt start webserver --profile openai
+```
+
+`--repo-dir` क्लोन या ब्रांच बदले बिना मौजूदा चेकआउट का उपयोग करता है। प्रदाता क्रेडेंशियल और आवश्यक सेवाएँ फिर भी कॉन्फ़िगर करनी होंगी।
+
+निर्भरताएँ इंस्टॉल होने और उपयुक्त TOML कॉन्फ़िगरेशन उपलब्ध होने पर बैकएंड सीधे भी शुरू किया जा सकता है:
+
+```bash
+.venv/bin/python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c configs/dbgpt-proxy-openai.toml
+```
+
+फ़्रंटएंड विकास के लिए `web/` में `npm run dev -- --hostname 127.0.0.1 --port 3000` चलाएँ। UI चलना मॉडल अनुमान या डेटा पहुँच तैयार होने का प्रमाण नहीं है।
+
+</details>
+
+### विकल्प 2: PyPI
+
+Python 3.10 या नया संस्करण उपयोग करें:
+
+```bash
+pip install dbgpt-app
+dbgpt start
+```
+
+इंटरफ़ेस इस्तेमाल करने से पहले प्रदाता सेटअप पूरा करें। PyPI रिलीज़, `main` और फ़ीचर ब्रांच अलग हो सकते हैं; ब्रांच-विशिष्ट सुविधाएँ जाँचने के लिए संबंधित सोर्स चेकआउट उपयोग करें।
+
+अन्य इंस्टॉलेशन और कॉन्फ़िगरेशन विकल्पों के लिए [दस्तावेज़](http://docs.dbgpt.cn/docs/overview/) देखें।
+
+## डेवलपर इकोसिस्टम
+
+- **DB-GPT:** डेटा एजेंट, टूल, निष्पादन और विश्लेषण अनुप्रयोगों का आधार।
+- **[DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub):** Text-to-SQL प्रशिक्षण और मूल्यांकन संसाधन।
+- **[dbgpts](https://github.com/eosphoros-ai/dbgpts):** अनुप्रयोग, एजेंट और कार्यप्रवाह इकोसिस्टम।
+- **[योगदान](CONTRIBUTING.md):** विकास, परीक्षण और योगदान संबंधी दिशानिर्देश।
+
+प्रदाता समर्थन, ड्राइवर और निर्भरताओं के लिए वर्तमान दस्तावेज़ देखें; पुराने मॉडल की सूचियों को संगतता की गारंटी न मानें।
+
+## दृष्टि और विकास
+
+विश्वसनीय डेटा कार्य को खुला और संयोजनीय बनाएँ: उपयोगकर्ताओं को विश्लेषण पूरा करने में मदद दें और टीमों को व्यावसायिक संदर्भ, पुनः उपयोग योग्य विधियाँ तथा विश्लेषण सामग्री सहेजने दें।
+
+विकास की दिशाओं में अर्थ की संगति, कार्य मूल्यांकन, निष्पादन निदान, पोर्टेबल Skills और कार्यप्रवाह तथा निगरानी योग्य आवर्ती कार्य शामिल हैं। प्रस्ताव और प्राथमिकताएँ [Issues](https://github.com/eosphoros-ai/DB-GPT/issues) और [Discussions](https://github.com/orgs/eosphoros-ai/discussions) में देखें; अपुष्ट रिलीज़ तारीखें न मानें।
+
+<a id="community"></a>
+
+## समुदाय
+
+- [समस्या बताएँ या सुविधा सुझाएँ](https://github.com/eosphoros-ai/DB-GPT/issues)
+- [उपयोग और डिज़ाइन पर चर्चा करें](https://github.com/orgs/eosphoros-ai/discussions)
+- [सामुदायिक परियोजनाएँ देखें](https://github.com/eosphoros-ai/community)
+- [X (Twitter) पर DB-GPT को फ़ॉलो करें](https://x.com/DBGPT_AI)
+- [Discord से जुड़ें](https://discord.gg/7uQnPuveTY)
+- [Slack से जुड़ें](https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA)
+- [योगदानकर्ताओं को देखें](https://github.com/eosphoros-ai/DB-GPT/graphs/contributors)
+
+पुनरुत्पादित किए जा सकने वाले उदाहरण, सुधार, दस्तावेज़, Skills और कार्यप्रवाह में योगदान दें। समस्या बताते समय संस्करण, कॉन्फ़िगरेशन विधि और न्यूनतम पुनरुत्पादन चरण दें; लॉग से गोपनीय और संवेदनशील डेटा हटाएँ।
 
 ## योगदान
 
-- नए योगदान के लिए विस्तृत दिशानिर्देशों की जांच करने के लिए, कृपया [कैसे योगदान करें](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md) देखें
+विस्तृत दिशानिर्देशों के लिए [योगदान कैसे करें](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md) देखें। कोड, दस्तावेज़, Skills, कार्यप्रवाह और पुनरुत्पादित उदाहरणों में योगदान का स्वागत है।
 
-### योगदानकर्ता दीवार
+### योगदानकर्ता सूची
+
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" alt="DB-GPT योगदानकर्ता" />
 </a>
 
+## लाइसेंस और अस्वीकरण
 
-## लाइसेंस
-MIT लाइसेंस (MIT)
+DB-GPT [MIT लाइसेंस](LICENSE) के अंतर्गत वितरित है। [अस्वीकरण](DISCKAIMER.md) भी पढ़ें।
 
-## डिस्क्लेमर
-- [डिस्क्लेमर](./DISCKAIMER.md)
+## अकादमिक उद्धरण
 
-## उद्धरण
-यदि आप DB-GPT की समग्र वास्तुकला को समझना चाहते हैं, तो कृपया <a href="https://arxiv.org/abs/2312.17449" target="_blank">पेपर</a> और <a href="https://arxiv.org/abs/2404.10209" target="_blank">पेपर</a> का उद्धरण करें
+निम्न शोधपत्र परियोजना और संबंधित शोध का परिचय देते हैं। ये हर वर्तमान UI सुविधा की संगतता का विवरण नहीं हैं।
 
-यदि आप एजेंट विकास के लिए DB-GPT का उपयोग सीखना चाहते हैं, तो कृपया <a href="https://arxiv.org/abs/2412.13520" target="_blank">पेपर</a> का उद्धरण करें
+<details>
+<summary>BibTeX संदर्भ</summary>
+
 ```bibtex
 @article{xue2023dbgpt,
-      title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
+      title={DB-GPT: Empowering Database Interactions with Private Large Language Models},
       author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
       year={2023},
       journal={arXiv preprint arXiv:2312.17449},
       url={https://arxiv.org/abs/2312.17449}
 }
 @misc{huang2024romasrolebasedmultiagentdatabase,
-      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning}, 
+      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning},
       author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidong Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
       year={2024},
       eprint={2412.13520},
       archivePrefix={arXiv},
       primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2412.13520}, 
+      url={https://arxiv.org/abs/2412.13520}
 }
 @inproceedings{xue2024demonstration,
-      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models},
       author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
       year={2024},
-      booktitle = "Proceedings of the VLDB Endowment",
+      booktitle={Proceedings of the VLDB Endowment},
       url={https://arxiv.org/abs/2404.10209}
 }
 ```
 
+</details>
 
-## संपर्क जानकारी
-DB-GPT में योगदान करने वाले सभी लोगों को धन्यवाद! आपकी विचार, कोड, टिप्पणियां, और यहां तक कि घटनाओं और सोशल प्लेटफार्मों पर उन्हें साझा करना DB-GPT को बेहतर बना सकता है।
-हम एक समुदाय बनाने पर काम कर रहे हैं, यदि आपके पास समुदाय बनाने के लिए कोई विचार हैं, तो कृपया हमसे संपर्क करें।  
+## Star वृद्धि का इतिहास
 
-- [GitHub मुद्दे](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️: GB-DPT का उपयोग करने के बारे में प्रश्नों के लिए, CONTRIBUTING देखें।  
-- [GitHub चर्चाएं](https://github.com/orgs/eosphoros-ai/discussions) ⭐️: अपना अनुभव या अद्वितीय ऐप्स साझा करें।  
-- [ट्विटर](https://x.com/DBGPT_AI) ⭐️: कृपया हमसे बात करने के लिए स्वतंत्र महसूस करें।  
-
-
-[![स्टार इतिहास चार्ट](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star इतिहास चार्ट](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

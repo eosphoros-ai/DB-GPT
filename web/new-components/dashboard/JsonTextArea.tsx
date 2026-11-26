@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { Alert, Input } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -11,6 +12,7 @@ interface JsonTextAreaProps {
 const format = (value: unknown) => JSON.stringify(value ?? null, null, 2);
 
 export default function JsonTextArea({ label, value, rows = 4, onCommit }: JsonTextAreaProps) {
+  useDashboardTranslation();
   const [draft, setDraft] = useState(() => format(value));
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ export default function JsonTextArea({ label, value, rows = 4, onCommit }: JsonT
       onCommit(JSON.parse(draft));
       setError(null);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'JSON 格式不正确');
+      setError(reason instanceof Error ? reason.message : dt('JSON 格式不正确'));
     }
   };
 

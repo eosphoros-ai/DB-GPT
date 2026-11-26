@@ -48,6 +48,7 @@ from .schemas import (
     model_validate_compat,
 )
 from .service import DashboardSchemaValidationError, DashboardService
+from .temporal_discovery import _named_or_typed_temporal, infer_temporal_format
 
 DashboardEventCallback = Callable[[str, Dict[str, Any]], Optional[Awaitable[None]]]
 
@@ -96,6 +97,91 @@ def _expects_empty_table(schema: DashboardSchemaV1, widget: DashboardWidget) -> 
     )
 
 
+def _reject_invalid_line_axis(
+    result: WidgetQueryResult, widget: DashboardWidget
+) -> WidgetQueryResult:
+    """A successful SELECT must still produce a usable, ordered time axis."""
+    if (
+        result.error
+        or not result.rows
+        or widget.type != WidgetType.LINE
+        or widget.encoding.x not in result.columns
+    ):
+        return result
+    index = result.columns.index(widget.encoding.x)
+    values = [row[index] for row in result.rows]
+    message = None
+    if any(value is None for value in values):
+        message = (
+            "The line chart x-axis contains NULL values. Check the stored "
+            "date format before calling database date functions; convert text "
+            "dates to ISO calendar dates before grouping and ordering."
+        )
+    elif all(isinstance(value, str) for value in values):
+        evidence = infer_temporal_format(values, complete=not result.truncated)
+        unordered_formats = {
+            "DD-MM-YYYY",
+            "MM-DD-YYYY",
+            "DD/MM/YYYY",
+            "MM/DD/YYYY",
+        }
+        possible_formats = set(evidence["possible_formats"])
+        if possible_formats and possible_formats <= unordered_formats:
+            date_format = evidence["format"] or "/".join(sorted(possible_formats))
+            message = (
+                f"The line chart returns {date_format} text dates. "
+                "Normalize the x-axis to YYYY-MM-DD and ORDER BY the normalized "
+                "date, using the confirmed source date format. Do not order by "
+                "the original day/month-first string or pass it directly to "
+                "database date functions."
+            )
+    if message is None:
+        return result
+    return result.model_copy(
+        update={
+            "error": WidgetError(
+                code="planner_widget_invalid_time_axis",
+                message=message,
+                retryable=True,
+            )
+        }
+    )
+
+
+def _reject_null_table_period(
+    result: WidgetQueryResult, widget: DashboardWidget
+) -> WidgetQueryResult:
+    """Detect collapsed time groups without rejecting nullable detail columns."""
+    if (
+        result.error
+        or not result.rows
+        or widget.type != WidgetType.TABLE
+        or widget.publication is None
+        or widget.publication.row_mode
+    ):
+        return result
+    for name in widget.publication.group_by:
+        if name not in result.columns or not _named_or_typed_temporal(name, ""):
+            continue
+        index = result.columns.index(name)
+        if all(row[index] is None for row in result.rows):
+            return result.model_copy(
+                update={
+                    "error": WidgetError(
+                        code="planner_widget_invalid_time_axis",
+                        message=(
+                            f"The table time grouping field {name!r} is NULL in "
+                            "every row. Normalize the observed source dates to "
+                            "ISO calendar dates before grouping. Use the same "
+                            "normalization in the widget and publication queries."
+                        ),
+                        retryable=True,
+                    )
+                }
+            )
+    return result
+
+
 def _default_encoding(
     widget_type: WidgetType, fields: List[QueryOutputField]
 ) -> ChartEncoding:
@@ -115,6 +201,7 @@ def _canonical_encoding(
     widget_type: WidgetType,
     fields: List[QueryOutputField],
     proposed: ChartEncoding,
+    dimensions: Optional[List[str]] = None,
 ) -> ChartEncoding:
     """Keep only valid encoding slots for the approved widget type.
 
@@ -133,9 +220,27 @@ def _canonical_encoding(
     if widget_type == WidgetType.KPI:
         return ChartEncoding(value=valid(proposed.value, defaults.value))
     if widget_type in (WidgetType.LINE, WidgetType.BAR):
+        x, y = valid(proposed.x, defaults.x), valid(proposed.y, defaults.y)
+        if widget_type == WidgetType.BAR and len(dimensions or []) == 1:
+            # A numeric identifier is still a category. Correct the model's
+            # horizontal-axis convention only when the confirmed dimension
+            # matches exactly; never infer a metric from its magnitude/name.
+            dimension = dimensions[0].rsplit(".", 1)[-1].casefold()
+            numeric = {
+                field.name
+                for field in fields
+                if field.type.value in {"number", "integer"}
+            }
+            if (
+                x in numeric
+                and y
+                and y.casefold() == dimension
+                and x.casefold() != dimension
+            ):
+                x, y = y, x
         return ChartEncoding(
-            x=valid(proposed.x, defaults.x),
-            y=valid(proposed.y, defaults.y),
+            x=x,
+            y=y,
             series=valid(proposed.series),
             color=valid(proposed.color),
         )
@@ -416,7 +521,10 @@ class DashboardPlannerService:
             )
 
         encoding = _canonical_encoding(
-            plan_widget.type, draft.output_fields, draft.encoding
+            plan_widget.type,
+            draft.output_fields,
+            draft.encoding,
+            plan_widget.dimensions,
         )
 
         publication = None
@@ -486,6 +594,7 @@ class DashboardPlannerService:
         model_name: Optional[str],
         user_confirmed: bool = False,
         compatibility: Optional[Dict[str, Any]] = None,
+        saved_schema: Optional[DashboardSchemaV1] = None,
     ) -> DashboardSchemaV1:
         ordered_plan_widgets = [
             item
@@ -574,6 +683,11 @@ class DashboardPlannerService:
             ),
         )
         self._normalize_filter_mappings(schema)
+        selection = effective_compatibility.get("gallery_template")
+        if selection:
+            from .gallery_templates import apply_gallery_appearance
+
+            apply_gallery_appearance(schema, selection, saved_schema=saved_schema)
         return schema
 
     async def _execute_and_mark_widgets(
@@ -609,6 +723,8 @@ class DashboardPlannerService:
                 ),
                 expected_empty=_expects_empty_table(schema, widget),
             )
+            result = _reject_invalid_line_axis(result, widget)
+            result = _reject_null_table_period(result, widget)
             results[widget.id] = result
             widget.query.last_execution = LastExecution(
                 status="failed" if result.error else "succeeded",
@@ -750,6 +866,7 @@ class DashboardPlannerService:
         model_name: Optional[str],
         request_token: str,
         event_callback: Optional[DashboardEventCallback] = None,
+        gallery_template: Optional[str] = None,
     ) -> DashboardRecord:
         """Persist a SQL-free plan and pause until a later user turn confirms it."""
 
@@ -767,7 +884,10 @@ class DashboardPlannerService:
             conversation_id=conversation_id,
             prompt=prompt,
             model_name=model_name,
-            compatibility={"agent_dashboard_workflow": workflow},
+            compatibility={
+                "agent_dashboard_workflow": workflow,
+                **({"gallery_template": gallery_template} if gallery_template else {}),
+            },
         )
         record = self.dashboard_service.create_agent_dashboard(
             DashboardCreateRequest(
@@ -855,6 +975,7 @@ class DashboardPlannerService:
             model_name=record.schema_payload.metadata.agent.model_name,
             user_confirmed=True,
             compatibility=compatibility,
+            saved_schema=record.schema_payload,
         )
         schema.dashboard.id = record.id
         schema.dashboard.created_at = record.schema_payload.dashboard.created_at
@@ -946,7 +1067,11 @@ class DashboardPlannerService:
             conversation_id=current.conversation_id,
             prompt=prompt,
             model_name=model_name,
-            compatibility={"agent_dashboard_workflow": workflow},
+            compatibility={
+                **current.schema_payload.metadata.compatibility,
+                "agent_dashboard_workflow": workflow,
+            },
+            saved_schema=current.schema_payload,
         )
         schema.dashboard.id = dashboard_id
         schema.dashboard.created_at = current.schema_payload.dashboard.created_at
@@ -1107,6 +1232,10 @@ class DashboardPlannerService:
             widget = self._normalized_widget(
                 plan_widget, draft, schema.dashboard.data_source_id
             )
+            if schema.metadata.compatibility.get("gallery_template"):
+                previous = current_map[widget_id]
+                widget.style = previous.style.copy()
+                widget.presentation.colors = previous.presentation.colors.copy()
             current_map[widget_id] = widget
             schema.widgets = [
                 current_map[item.id] for item in plan.widgets if item.id in current_map
@@ -1128,6 +1257,8 @@ class DashboardPlannerService:
                 ),
                 expected_empty=_expects_empty_table(schema, widget),
             )
+            result = _reject_invalid_line_axis(result, widget)
+            result = _reject_null_table_period(result, widget)
             results[widget.id] = result
             widget.query.last_execution = LastExecution(
                 status="failed" if result.error else "succeeded",

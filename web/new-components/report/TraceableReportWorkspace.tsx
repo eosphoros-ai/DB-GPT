@@ -163,7 +163,6 @@ const EvidenceDrawer: React.FC<{
 }> = ({ artifact, block, onClose, knowledgeNames }) => {
   const { t } = useTranslation();
   if (!artifact) return null;
-  const result = tableData(artifact);
   const code = artifact.sql || artifact.code || artifact.excerpt;
   const timing = artifactTiming(artifact);
   return (
@@ -236,38 +235,6 @@ const EvidenceDrawer: React.FC<{
               content={display(code)}
               sql={Boolean(artifact.sql)}
             />
-          )}
-          {result.columns.length > 0 && (
-            <section>
-              <p className='mb-2 text-xs font-semibold text-slate-500'>{t('evidence_result_snapshot')}</p>
-              <div className='overflow-auto rounded-lg border border-emerald-100'>
-                <p className='bg-emerald-50 px-3 py-2 text-xs text-emerald-800'>
-                  {artifact.row_count ?? result.rows.length} rows
-                </p>
-                <table className='min-w-full text-left text-xs'>
-                  <thead>
-                    <tr>
-                      {result.columns.map(column => (
-                        <th className='border-t bg-slate-50 px-2 py-2 font-medium' key={column}>
-                          {column}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.rows.map((row, index) => (
-                      <tr key={index}>
-                        {row.map((cell, cellIndex) => (
-                          <td className='border-t px-2 py-2' key={cellIndex}>
-                            {display(cell)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
           )}
         </div>
       </aside>
@@ -404,7 +371,7 @@ const ReportBlockCard: React.FC<{
             </table>
           </div>
         ) : (
-          <p className='mt-4 text-sm text-slate-500'>{t('evidence_no_snapshot')}</p>
+          <p className='mt-4 text-sm text-slate-500'>{t('evidence_no_result')}</p>
         ))}
       {block.type === 'chart' && (
         <NativeChartBlock

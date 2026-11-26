@@ -115,19 +115,29 @@ async def space_list(request: KnowledgeSpaceRequest):
 def space_delete(request: KnowledgeSpaceRequest):
     logger.info(f"/space/delete params: {request}")
     try:
+        name = request.name
+        # Reject any name that could escape the upload root.
+        if (
+            not name
+            or name in (".", "..")
+            or "/" in name
+            or "\\" in name
+            or "\0" in name
+        ):
+            return Result.failed(code="E000X", msg=f"invalid space name:{name}")
+        upload_root = os.path.realpath(KNOWLEDGE_UPLOAD_ROOT_PATH)
+        space_dir = os.path.realpath(os.path.join(upload_root, name))
+        if not space_dir.startswith(upload_root + os.sep):
+            return Result.failed(code="E000X", msg=f"invalid space name:{name}")
+        # Validate the space before touching the filesystem.
+        result = knowledge_space_service.delete_space(name)
         # delete Files in 'pilot/data/
-        safe_space_name = os.path.basename(request.name)
-
-        # obtain absolute paths of uploaded space-docfiles
-        space_dir = os.path.abspath(
-            os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
-        )
         try:
             if os.path.exists(space_dir):
                 shutil.rmtree(space_dir)
         except Exception as e:
-            logger.error(f"Failed to remove {safe_space_name}: {str(e)}")
-        return Result.succ(knowledge_space_service.delete_space(request.name))
+            logger.error(f"Failed to remove {space_dir}: {str(e)}")
+        return Result.succ(result)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space delete error {e}")
 

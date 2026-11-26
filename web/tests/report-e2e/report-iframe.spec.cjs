@@ -112,7 +112,7 @@ test.beforeAll(async () => {
     }
     res.setHeader('Content-Type', 'text/html');
     res.end(
-      '<!doctype html><html><head><style>iframe{width:100%;border:0;display:block}</style></head><body><div id="root"></div><script>window.process={env:{NODE_ENV:"development",API_BASE_URL:""},browser:true};</script><script src="/browser.js"></script></body></html>',
+      '<!doctype html><html><head><meta charset="utf-8"><style>iframe{width:100%;border:0;display:block}</style></head><body><div id="root"></div><script>window.process={env:{NODE_ENV:"development",API_BASE_URL:""},browser:true};</script><script src="/browser.js"></script></body></html>',
     );
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

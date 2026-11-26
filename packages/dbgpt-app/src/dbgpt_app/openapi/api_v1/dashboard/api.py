@@ -60,6 +60,7 @@ from .collaboration import (
 )
 from .covers import CoverService, DashboardCoverRequest
 from .folders import FolderService
+from .gallery_templates import resolve_gallery_selection
 from .identity import (
     DashboardIdentityError,
     DashboardIdentityProvider,
@@ -707,6 +708,10 @@ async def resolve_dashboard_annotation_intents(
         service._authorized_entity(dashboard_id, _user_id(user), DashboardAction.EDIT)
         record = service.get_dashboard(dashboard_id, _user_id(user))
         schema = record.schema_payload
+        if not request.model and schema.metadata.agent.model_name:
+            request = request.model_copy(
+                update={"model": schema.metadata.agent.model_name}
+            )
         context = {
             "dashboard": schema.dashboard.model_dump(mode="json"),
             "filters": [item.model_dump(mode="json") for item in schema.filters],
@@ -1848,8 +1853,20 @@ class CatalogGenerateRequest(BaseModel):
     schema_payload: Optional[DashboardSchemaV1] = Field(default=None, alias="schema")
 
 
+def _require_active_catalog_template(template_id: str):
+    # Retired definitions remain available for historical schemas, but cannot
+    # be used to start new work through legacy catalog endpoints.
+    try:
+        resolve_gallery_selection(f"catalog:{template_id}")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404, detail="Dashboard template is unavailable."
+        ) from exc
+
+
 @router.get("/dashboard-catalog/{template_id}/features")
 def inspect_catalog_features(template_id: str):
+    _require_active_catalog_template(template_id)
     return _feedback_call(lambda: template_features(template_id))
 
 
@@ -1860,6 +1877,7 @@ async def adapt_catalog_dashboard(
     user: UserRequest = Depends(get_user_from_headers),
     service: DashboardService = Depends(get_dashboard_service),
 ):
+    _require_active_catalog_template(template_id)
     try:
         return Result.succ(
             await adapt_template(service, template_id, _user_id(user), request)
@@ -1879,6 +1897,7 @@ def inspect_catalog_source(
     user: UserRequest = Depends(get_user_from_headers),
     service: DashboardService = Depends(get_dashboard_service),
 ):
+    _require_active_catalog_template(template_id)
     return _feedback_call(
         lambda: inspect_source(
             service, data_source_id, _user_id(user), template_id, allow_any_dialect=True
@@ -1893,6 +1912,7 @@ def preview_catalog_dashboard(
     user: UserRequest = Depends(get_user_from_headers),
     service: DashboardService = Depends(get_dashboard_service),
 ):
+    _require_active_catalog_template(template_id)
     return _feedback_call(
         lambda: preview_template(
             service,
@@ -1913,6 +1933,7 @@ def generate_catalog_dashboard(
     user: UserRequest = Depends(get_user_from_headers),
     service: DashboardService = Depends(get_dashboard_service),
 ):
+    _require_active_catalog_template(template_id)
     if request.schema_payload is not None:
         return _feedback_call(
             lambda: create_adapted_template(

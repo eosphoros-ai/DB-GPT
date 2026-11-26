@@ -15,7 +15,7 @@ cors_allowed_origins = "${env:DBGPT_CORS_ALLOWED_ORIGINS:-*}"
 [service.web.agent_context]
 # Agent context-window budget. Set max_context_tokens to 0 to auto-detect from
 # the selected model's metadata. The effective budget shown in the UI is
-# max_context_tokens - reserved_tokens.
+# window - max(reserved_tokens, requested output tokens).
 max_context_tokens = 0
 reserved_tokens = 4096
 warning_threshold = 0.70
@@ -28,6 +28,8 @@ min_keep_tokens = 10000
 max_compact_failures = 3
 # Per dispatch_parallel_tasks call. DBGPT_MAX_PARALLEL_SUBAGENTS overrides it.
 max_parallel_subagents = 3
+# Agentic flow completion budget; DBGPT_AGENTIC_MAX_NEW_TOKENS overrides it.
+max_new_tokens = 16384
 
 # Session file upload limits
 [dbgpt.serve.session_file]

@@ -78,7 +78,8 @@ async def test_use_example_file_accepts_plain_name(tmp_path, monkeypatch):
 
     target_path = tmp_path / "python_uploads" / "alice" / "report.csv"
     assert result.success is True
-    assert result.data == str(target_path)
+    # The endpoint returns a POSIX-normalized path on every OS.
+    assert result.data == target_path.as_posix()
     assert target_path.read_text(encoding="utf-8") == "value\n1\n"
 
 

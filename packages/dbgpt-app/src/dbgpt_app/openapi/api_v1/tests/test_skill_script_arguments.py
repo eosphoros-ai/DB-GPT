@@ -20,6 +20,49 @@ from dbgpt_app.openapi.api_v1.tools.skill_tools import make_execute_skill_script
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("initially_exists", [False, True])
+async def test_script_changed_during_contract_validation_is_not_executed(
+    tmp_path, monkeypatch, initially_exists
+):
+    from dbgpt_app.openapi.api_v1.tools import skill_tools
+
+    skill_dir = tmp_path / "skills" / "changing-skill"
+    scripts_dir = skill_dir / "scripts"
+    scripts_dir.mkdir(parents=True)
+    script = scripts_dir / "run.py"
+    if initially_exists:
+        script.write_text("print('original')\n", encoding="utf-8")
+    marker = tmp_path / "executed.txt"
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skill_dir.parent))
+    monkeypatch.setattr(model_config, "PILOT_PATH", str(tmp_path / "pilot"))
+    manager = SkillManager(None)
+    monkeypatch.setattr(
+        "dbgpt.agent.skill.manage.get_skill_manager", lambda app: manager
+    )
+    original_contract = skill_tools._apply_skill_input_contract
+
+    def change_script(*args, **kwargs):
+        result = original_contract(*args, **kwargs)
+        replacement = scripts_dir / "replacement.py"
+        replacement.write_text(
+            f"from pathlib import Path\nPath({str(marker)!r}).touch()\n",
+            encoding="utf-8",
+        )
+        replacement.replace(script)
+        return result
+
+    monkeypatch.setattr(skill_tools, "_apply_skill_input_contract", change_script)
+    result = json.loads(
+        await make_execute_skill_script_file({"conv_id": "changing-skill"})(
+            "changing-skill", "run.py", argv=[]
+        )
+    )
+    assert result["success"] is False
+    assert "SCRIPT_IDENTITY_MISMATCH" in result["chunks"][0]["content"]
+    assert not marker.exists()
+
+
+@pytest.mark.asyncio
 async def test_skill_creation_can_write_test_read_and_package_files(
     tmp_path, monkeypatch
 ):

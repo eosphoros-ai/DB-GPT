@@ -1,4 +1,5 @@
 import { getDashboardQueryLogic } from '@/client/api/dashboard';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardFilter, DashboardQueryLogic, DashboardWidget } from '@/types/dashboard';
 import { CopyOutlined } from '@ant-design/icons';
 import { App, Button, Spin } from 'antd';
@@ -44,6 +45,7 @@ export default function DashboardQueryLogicPanel({
   filters: DashboardFilter[];
   values: Record<string, unknown>;
 }) {
+  useDashboardTranslation();
   const { message } = App.useApp();
   const sql = widget.query.sql || '';
   const source = widget.query.data_source_id;
@@ -56,10 +58,10 @@ export default function DashboardQueryLogicPanel({
     const timer = setTimeout(async () => {
       try {
         const response = await getDashboardQueryLogic(dashboardId, sql, source);
-        if (!response.data.success || !response.data.data) throw new Error('无法解析');
+        if (!response.data.success || !response.data.data) throw new Error(dt('无法解析'));
         if (active) setResult({ key, logic: response.data.data });
       } catch {
-        if (active) setResult({ key, error: '暂时无法解析计算步骤，可直接查看下方原始 SQL。' });
+        if (active) setResult({ key, error: dt('暂时无法解析计算步骤，可直接查看下方原始 SQL。') });
       }
     }, 180);
     return () => {
@@ -78,13 +80,13 @@ export default function DashboardQueryLogicPanel({
   return (
     <div className='space-y-4 text-xs' data-testid='dashboard-query-logic'>
       <section className='space-y-3 rounded-lg border border-[var(--app-border)] p-3'>
-        <h3 className='text-sm font-semibold'>计算口径</h3>
+        <h3 className='text-sm font-semibold'>{dt('计算口径')}</h3>
         <p>
-          <span className='text-[var(--app-muted)]'>数据源：</span>
+          <span className='text-[var(--app-muted)]'>{dt('数据源：')}</span>
           {dashboardSourceLabel(source)}
         </p>
         {!sql.trim() ? (
-          <p className='text-[var(--app-muted)]'>尚未配置 SQL，可在高级数据设置中添加。</p>
+          <p className='text-[var(--app-muted)]'>{dt('尚未配置 SQL，可在高级数据设置中添加。')}</p>
         ) : !current ? (
           <Spin size='small' />
         ) : current.error ? (
@@ -93,15 +95,20 @@ export default function DashboardQueryLogicPanel({
           current.logic && (
             <>
               <p className='break-words'>
-                <span className='text-[var(--app-muted)]'>数据表：</span>
-                {current.logic.tables.join('、') || '查询常量或派生结果'}
+                <span className='text-[var(--app-muted)]'>{dt('数据表：')}</span>
+                {current.logic.tables.join('、') || dt('查询常量或派生结果')}
               </p>
-              {!!current.logic.set_operations.length && <p>合并方式：{current.logic.set_operations.join(' → ')}</p>}
+              {!!current.logic.set_operations.length && (
+                <p>
+                  {dt('合并方式：')}
+                  {current.logic.set_operations.join(' → ')}
+                </p>
+              )}
               {current.logic.stages.map((stage, index) => (
                 <details key={index} open={index === 0} className='space-y-2 border-t border-[var(--app-border)] pt-3'>
                   <summary className='cursor-pointer font-medium'>{stage.label}</summary>
                   <div>
-                    <div className='mb-1 text-[var(--app-muted)]'>输出与计算表达式</div>
+                    <div className='mb-1 text-[var(--app-muted)]'>{dt('输出与计算表达式')}</div>
                     {stage.expressions.map((expression, i) => (
                       <code
                         key={i}
@@ -113,43 +120,51 @@ export default function DashboardQueryLogicPanel({
                   </div>
                   {!!stage.group_by.length && (
                     <p className='break-words'>
-                      分组维度：<code>{stage.group_by.join('、')}</code>
+                      {dt('分组维度：')}
+                      <code>{stage.group_by.join('、')}</code>
                     </p>
                   )}
                   {stage.where && (
                     <p className='break-words'>
-                      数据筛选：<code>{stage.where}</code>
+                      {dt('数据筛选：')}
+                      <code>{stage.where}</code>
                     </p>
                   )}
                   {stage.having && (
                     <p className='break-words'>
-                      汇总后筛选：<code>{stage.having}</code>
+                      {dt('汇总后筛选：')}
+                      <code>{stage.having}</code>
                     </p>
                   )}
                   {!!stage.joins.length && (
                     <p className='break-words'>
-                      关联条件：<code>{stage.joins.join('; ')}</code>
+                      {dt('关联条件：')}
+                      <code>{stage.joins.join('; ')}</code>
                     </p>
                   )}
                   {stage.order_by && (
                     <p className='break-words'>
-                      排序：<code>{stage.order_by}</code>
+                      {dt('排序：')}
+                      <code>{stage.order_by}</code>
                     </p>
                   )}
                   {stage.limit && (
                     <p>
-                      查询条数：<code>{stage.limit}</code>
+                      {dt('查询条数：')}
+                      <code>{stage.limit}</code>
                     </p>
                   )}
                 </details>
               ))}
-              <p className='text-[var(--app-muted)]'>以上步骤来自当前 SQL；展开子查询可核对指标的完整计算过程。</p>
+              <p className='text-[var(--app-muted)]'>
+                {dt('以上步骤来自当前 SQL；展开子查询可核对指标的完整计算过程。')}
+              </p>
             </>
           )
         )}
       </section>
       <details className='rounded-lg border border-[var(--app-border)] p-3'>
-        <summary className='cursor-pointer text-sm font-semibold'>实际 SQL</summary>
+        <summary className='cursor-pointer text-sm font-semibold'>{dt('实际 SQL')}</summary>
         <div className='mb-2 flex items-center justify-between gap-2'>
           <Button
             size='small'
@@ -158,25 +173,25 @@ export default function DashboardQueryLogicPanel({
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(sql);
-                message.success('SQL 已复制');
+                message.success(dt('SQL 已复制'));
               } catch {
-                message.error('复制失败，请选中 SQL 手动复制');
+                message.error(dt('复制失败，请选中 SQL 手动复制'));
               }
             }}
           >
-            复制 SQL
+            {dt('复制 SQL')}
           </Button>
         </div>
         <pre
           tabIndex={0}
-          aria-label='图表实际 SQL'
+          aria-label={dt('图表实际 SQL')}
           className='max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3 font-mono text-xs leading-5'
         >
-          {formattedSql || '尚未配置 SQL'}
+          {formattedSql || dt('尚未配置 SQL')}
         </pre>
       </details>
       <details className='space-y-2 rounded-lg border border-[var(--app-border)] p-3'>
-        <summary className='cursor-pointer text-sm font-semibold'>当前筛选参数</summary>
+        <summary className='cursor-pointer text-sm font-semibold'>{dt('当前筛选参数')}</summary>
         {Object.keys(parameters).length ? (
           <dl className='space-y-1'>
             {Object.entries(parameters).map(([name, value]) => (
@@ -186,15 +201,21 @@ export default function DashboardQueryLogicPanel({
               >
                 <dt className='break-all font-mono'>{name}</dt>
                 <dd className='break-all'>
-                  {value == null ? '未设置' : typeof value === 'string' ? value || '空字符串' : JSON.stringify(value)}
+                  {value == null
+                    ? dt('未设置')
+                    : typeof value === 'string'
+                      ? value || dt('空字符串')
+                      : JSON.stringify(value)}
                 </dd>
               </div>
             ))}
           </dl>
         ) : (
-          <p className='text-[var(--app-muted)]'>这条查询没有绑定筛选参数。</p>
+          <p className='text-[var(--app-muted)]'>{dt('这条查询没有绑定筛选参数。')}</p>
         )}
-        <p className='text-[var(--app-muted)]'>当前查询最多返回 {widget.query.max_rows} 行。</p>
+        <p className='text-[var(--app-muted)]'>
+          {dt('当前查询最多返回')} {widget.query.max_rows} {dt('行。')}
+        </p>
       </details>
     </div>
   );

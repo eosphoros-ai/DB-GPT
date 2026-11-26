@@ -15,7 +15,7 @@ def _identifier(kind: str, index: int) -> str:
     return hashlib.sha256(f"olist-demo:{kind}:{index}".encode()).hexdigest()[:32]
 
 
-def build_demo(output: Path) -> None:
+def _build_full_demo(output: Path) -> None:
     """Use the real importer and schema with deterministic, invented observations."""
     rows = {spec.table_name: [] for spec in TABLES}
     regions = (
@@ -145,6 +145,81 @@ def build_demo(output: Path) -> None:
         )
 
 
+def build_simple_demo(source: Path, output: Path) -> None:
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite existing database: {output}")
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    source_db = sqlite3.connect(f"file:{source.resolve().as_posix()}?mode=ro", uri=True)
+    output_db = sqlite3.connect(output)
+    try:
+        orders = source_db.execute(
+            """SELECT o.order_id, substr(o.order_purchase_timestamp,1,10),
+                   c.customer_state, SUM(i.price), SUM(i.freight_value),
+                   julianday(o.order_delivered_customer_date)
+                       - julianday(o.order_purchase_timestamp),
+                   CASE WHEN o.order_delivered_customer_date IS NULL
+                             OR o.order_estimated_delivery_date IS NULL
+                        THEN NULL WHEN o.order_delivered_customer_date
+                             <= o.order_estimated_delivery_date
+                        THEN 1 ELSE 0 END,
+                   (SELECT AVG(r.review_score) FROM order_reviews r
+                    WHERE r.order_id=o.order_id)
+               FROM orders o JOIN customers c ON c.customer_id=o.customer_id
+               JOIN order_items i ON i.order_id=o.order_id
+               WHERE o.order_status='delivered'
+                 AND o.order_purchase_timestamp >= '2017-01-01'
+                 AND o.order_purchase_timestamp < '2018-09-01'
+               GROUP BY o.order_id"""
+        ).fetchall()
+        items = source_db.execute(
+            """SELECT i.order_id,
+                      COALESCE(t.product_category_name_english,
+                               p.product_category_name,'unmapped'), i.price
+               FROM order_items i JOIN orders o ON o.order_id=i.order_id
+               LEFT JOIN products p ON p.product_id=i.product_id
+               LEFT JOIN product_category_translation t
+                   ON t.product_category_name=p.product_category_name
+               WHERE o.order_status='delivered'
+                 AND o.order_purchase_timestamp >= '2017-01-01'
+                 AND o.order_purchase_timestamp < '2018-09-01'"""
+        ).fetchall()
+        output_db.executescript(
+            """CREATE TABLE demo_orders(order_id TEXT PRIMARY KEY,
+               purchase_date TEXT NOT NULL,
+               customer_state TEXT, product_gmv REAL NOT NULL, freight REAL NOT NULL,
+               delivery_days REAL, on_time INTEGER, review_score REAL);
+               CREATE TABLE demo_items(order_id TEXT NOT NULL,
+               category TEXT NOT NULL, price REAL NOT NULL,
+               FOREIGN KEY(order_id) REFERENCES demo_orders(order_id));
+               CREATE INDEX demo_items_order ON demo_items(order_id);"""
+        )
+        output_db.executemany(
+            "INSERT INTO demo_orders VALUES (?,?,?,?,?,?,?,?)", orders
+        )
+        output_db.executemany("INSERT INTO demo_items VALUES (?,?,?)", items)
+        output_db.commit()
+    finally:
+        source_db.close()
+        output_db.close()
+
+
+def build_demo(output: Path, source: Path | None = None) -> None:
+    """Build the two-table demo, optionally from an existing Olist database."""
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite existing database: {output}")
+    if source is not None:
+        if source.resolve() == output.resolve():
+            raise ValueError("Source and output must be different paths")
+        build_simple_demo(source, output)
+        return
+    with tempfile.TemporaryDirectory(prefix="olist-demo-source-") as temporary:
+        generated_source = Path(temporary) / "olist.db"
+        _build_full_demo(generated_source)
+        build_simple_demo(generated_source, output)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -152,4 +227,10 @@ if __name__ == "__main__":
         type=Path,
         default=Path(__file__).parents[2] / "pilot/examples/Olist_Ecommerce.db",
     )
-    build_demo(parser.parse_args().output)
+    parser.add_argument(
+        "--source",
+        type=Path,
+        help="Optional existing Olist SQLite source; the source is never modified",
+    )
+    args = parser.parse_args()
+    build_demo(args.output, args.source)

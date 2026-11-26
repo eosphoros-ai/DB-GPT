@@ -70,18 +70,30 @@ class LiveShareService:
         datasets = self.service.publication_service.materialize(
             schema, self.service.query_executor
         )
+        widgets = {}
+        unbound = [widget for widget in schema.widgets if widget.publication is None]
+        if unbound and not schema.filters:
+            # No public filters need a frozen-data binding. Refresh these widgets
+            # with the granted revision's read-only queries, never the live draft
+            # or visitor input. Keep the executor's row, timeout and batch bounds.
+            query_schema = schema.model_copy(update={"widgets": unbound})
+            widgets = self.service.query_executor.execute_dashboard(query_schema, {})
+            if any(result.error for result in widgets.values()):
+                raise DashboardPublicationError(
+                    "看板数据查询失败，请检查组件查询和数据源后重试。"
+                )
         snapshot = DashboardSnapshot(
             dashboard_id=dashboard_id,
             refreshed_at=datetime.now(),
             filters={},
-            widgets={},
+            widgets=widgets,
             publication_datasets=datasets,
         )
         # Validate every widget and default filter before issuing a public grant.
         response = self.service.publication_service.filter_snapshot(
             schema, snapshot, {}
         )
-        if response.unsupported_widget_ids:
+        if schema.filters and response.unsupported_widget_ids:
             raise DashboardPublicationError("请先为所有组件配置分享筛选字段。")
         return snapshot
 

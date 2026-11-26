@@ -3,7 +3,7 @@ name: dashboard-builder
 description: Plan, generate, repair, and safely revise reusable dashboards from a selected database or registered multi-file tabular dataset through the DB-GPT Dashboard tools.
 version: 1.1.2
 author: DB-GPT Dashboard Lab
-allowed-tools: sql_query load_dashboard_draft resolve_dashboard_reference plan_dashboard revise_dashboard_plan create_dashboard_draft repair_dashboard_draft modify_dashboard_draft propose_dashboard_change question terminate
+allowed-tools: sql_query load_dashboard_style load_dashboard_draft resolve_dashboard_reference plan_dashboard revise_dashboard_plan create_dashboard_draft repair_dashboard_draft modify_dashboard_draft propose_dashboard_change question terminate
 ---
 
 # Dashboard Builder
@@ -27,6 +27,17 @@ reimplement those responsibilities in free-form reasoning or scripts.
 
 ## New dashboard: plan first
 
+Visual styles are owned by the internal
+[dashboard-design skill](internal/dashboard-design/SKILL.md). Gallery selections
+load only that skill and the chosen reference automatically. Keep its layout and
+palette while adapting the analytical content to actual data. When a user asks
+for a style without choosing a gallery item, pass its exact name to
+`load_dashboard_style` before planning; list styles only when you need to find
+an appropriate reference. No style selection is needed
+for a small dashboard with no requested visual preference. Internal chart, filter,
+collaboration and design guidance lives under `internal/`; these are not separate
+homepage skills.
+
 1. Use `sql_query` only for the minimum read-only discovery needed to learn:
    table relationships, field types, data grain, date range, and useful category
    values. Use at most eight discovery queries in a planning turn. If validation
@@ -38,6 +49,14 @@ reimplement those responsibilities in free-form reasoning or scripts.
    observed format to choose dialect-appropriate parsing, keeping the full year;
    do not assume a text date is accepted by a native date function. Ambiguous,
    mixed, unavailable or sampled evidence is not an exact source-wide fact.
+   Reuse already observed facts instead of querying the same counts or date
+   coverage again. Combine independent aggregates at the same table/grain in
+   one discovery SELECT where possible. Stop discovery once the metric fields,
+   grain, relationships and required filter values are understood. Do not run
+   each future widget's ranking or trend query merely to preview its numbers;
+   those queries will be generated and validated after confirmation. Still
+   investigate unknown semantics, join cardinality, missing data and chart point
+   counts when they affect the plan; this is not permission to guess.
 2. When the selected source came from multiple uploaded files, inventory every
    source table before planning:
    - record its source file/sheet, row count, columns, likely grain, nulls, and
@@ -64,10 +83,13 @@ reimplement those responsibilities in free-form reasoning or scripts.
    - filters with real default values and options discovered from the data;
    - widgets with stable ids, type, title, business question, metric, and
      dimensions.
-   Layout template families are deferred and are not part of this release.
-   Do not include `layout_template` in a new or revised plan. Use individual
-   widget width/height hints and business layout rationale instead. Business
-   templates still define analytical questions, not a layout or visual theme.
+   If a visual reference is selected, use its slot ids exactly once; the tools
+   preserve its layout and palette. Omit repeated layout hints, visual rationale
+   and unused default fields. Keep metric definitions concise while retaining
+   the requested population, time period, grain and data limitations. Otherwise
+   use individual widget width/height hints and business layout rationale.
+   Do not add `layout_template` to the plan;
+   visual references are loaded separately from the SQL-free plan contract.
 4. Stop the turn with `terminate`. The user must see and confirm the plan before
    component SQL is generated.
 
@@ -80,7 +102,10 @@ When the message contains an authoritative `[[confirm-dashboard:ID]]` marker:
 
 1. Use the persisted plan contract and its widget ids exactly.
 2. Call `create_dashboard_draft` with the supplied dashboard id and expected
-   revision. Submit at most two widgets per call. The server stages these bounded
+   revision. Without global filters, submit up to four widgets per call, using
+   fewer for long queries. With filters, submit at most two because each widget
+   also needs a frozen publication query and bindings. Follow the batch limit
+   reported by the tool after a retry. The server stages these bounded
    batches and creates the draft atomically after every planned widget is present;
    when it reports missing widget ids, send only those missing widgets next.
 3. Generate one parameterized, read-only query per widget.

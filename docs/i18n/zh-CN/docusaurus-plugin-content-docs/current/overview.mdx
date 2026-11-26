@@ -6,6 +6,7 @@ title: DB-GPT
 import CommandCopyCard from "@site/src/components/mdx/CommandCopyCard";
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import ProductFilm from "@site/src/components/mdx/ProductFilm";
 
 # DB-GPT
 
@@ -14,7 +15,7 @@ import TabItem from "@theme/TabItem";
 </p>
 
 <div style={{textAlign: 'center'}}>
-  <strong>一个开源的 AI 数据助手，能够连接你的数据、编写 SQL 和代码、在沙箱环境中运行技能，并将分析过程转化为报告、洞察与行动。</strong><br />
+  <strong>安全受控的开源数据智能体平台：连接数据、建立业务上下文，在已配置的工具与运行边界内执行 SQL 和代码，交付可复用的报告与看板。</strong><br />
   DB-GPT 也是一个用于构建 AI Native 数据 Agent、工作流与应用的平台，支持 Agents、AWEL、RAG 和多模型能力。
 </div>
 
@@ -23,6 +24,10 @@ import TabItem from "@theme/TabItem";
   <a href="https://github.com/eosphoros-ai/DB-GPT/releases">Releases</a> ·
   <a href="https://github.com/orgs/eosphoros-ai/discussions">Community</a>
 </div>
+
+## 看 DB-GPT 真正跑起来
+
+<ProductFilm locale="zh-CN" platform="bilibili" />
 
 ## 快速开始
 
@@ -89,7 +94,7 @@ DB-GPT 是一个面向下一代 **AI + Data** 产品的开源 **Agentic AI 数�
 - 运行 **Python / 代码驱动** 的分析流程
 - 加载并执行可复用的 **skills** 以完成领域任务
 - 生成 **图表、仪表盘、HTML 报告与分析摘要**
-- 在 **沙箱环境** 中安全执行任务
+- 选择 **本地或容器运行时**，按部署要求配置隔离与工具访问边界
 
 ## 为什么选择 DB-GPT？
 
@@ -133,7 +138,7 @@ DB-GPT 是一个面向下一代 **AI + Data** 产品的开源 **Agentic AI 数�
     <div className="overview-card-icon">🛡️</div>
     <div className="overview-card-content">
       <h3 className="overview-card-title">沙箱执行</h3>
-      <p className="overview-card-description">在隔离环境中运行代码和工具，让分析过程更加安全、可靠。</p>
+      <p className="overview-card-description">选择本地或容器运行时，并配置工具访问、凭证和隔离；本地执行不等同于容器隔离。</p>
     </div>
   </div>
 </div>
@@ -212,7 +217,7 @@ DB-GPT 是一个面向下一代 **AI + Data** 产品的开源 **Agentic AI 数�
   <div className="overview-card overview-card--static">
     <div className="overview-card-icon">🔐</div>
     <div className="overview-card-content">
-      <h3 className="overview-card-title">Safe Execution</h3>
+      <h3 className="overview-card-title">Controlled Execution</h3>
       <p className="overview-card-description">沙箱代码执行、受控工具调用，以及可复现的输出与产物。</p>
     </div>
   </div>

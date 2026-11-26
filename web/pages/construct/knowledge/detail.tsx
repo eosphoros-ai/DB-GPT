@@ -446,7 +446,6 @@ export default function KnowledgeDetailPage() {
         <>
           <DocPanel
             space={currentSpace}
-            hideRecallTest
             hideSearchTools
             refreshKey={refreshKey}
             onAddDoc={() => {

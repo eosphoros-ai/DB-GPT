@@ -2595,6 +2595,12 @@ async def test_confirmation_turn_preloads_the_authoritative_plan_contract(
     assert confirmation_state["dashboard_confirmation_contract"] == {
         "dashboard_id": dashboard_id,
         "expected_revision": 1,
+        "business_scope": {
+            "title": "Authoritative plan",
+            "business_theme": "Retail",
+            "metrics": ["sales"],
+            "dimensions": ["store"],
+        },
         "widgets": [
             {
                 "widget_id": "sales_by_store",
@@ -2602,6 +2608,7 @@ async def test_confirmation_turn_preloads_the_authoritative_plan_contract(
                 "title": "Sales by store",
                 "metric": "sales",
                 "dimensions": ["store"],
+                "business_question": "How do stores compare?",
             }
         ],
         "filters": [
@@ -2609,6 +2616,8 @@ async def test_confirmation_turn_preloads_the_authoritative_plan_contract(
                 "filter_id": "store_filter",
                 "type": "multi_select",
                 "field": "store",
+                "default": None,
+                "options": [{"label": "Store 1", "value": 1}],
             }
         ],
     }
