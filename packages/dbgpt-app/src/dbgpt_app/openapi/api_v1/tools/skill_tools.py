@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -9,6 +10,13 @@ from typing import Any, Dict
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.skill.manage import normalize_script_file_name
 from dbgpt_serve.session_file.domain import SessionFileStatus
+
+_YAML_FRONTMATTER_RE = re.compile(r"\A---\s*\r?\n.*?\r?\n---\s*(?:\r?\n|$)", re.S)
+
+
+def _strip_yaml_frontmatter(text: str) -> str:
+    """Strip leading YAML frontmatter metadata from SKILL.md."""
+    return _YAML_FRONTMATTER_RE.sub("", text, count=1).lstrip("\r\n")
 
 
 def _capture_script_identity(script_path):
@@ -273,6 +281,91 @@ def make_load_skill(react_state: Dict[str, Any]):
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
     return load_skill
+
+
+def mount_suite_skills(
+    pack,
+    binding,
+    resources,
+    state,
+    *,
+    fallback=None,
+    eager_skills: tuple[str, ...] = (),
+) -> str:
+    """Advertise suite skills and optionally pre-mount tools for explicit shortcuts."""
+    from ..suite_binder import read_suite_skill
+
+    if binding.violation("load_skill") is not None:
+        return ""
+    commands = {
+        cmd["skill"]: cmd
+        for cmd in binding.commands
+        if cmd.get("agent_tools")
+        and all(
+            name in resources and binding.violation(name) is None
+            for name in cmd["agent_tools"]
+        )
+    }
+    if not commands:
+        return ""
+
+    preloaded: list[str] = []
+    for skill_name in eager_skills:
+        command = commands.get(skill_name)
+        if command is None:
+            continue
+        try:
+            documents = read_suite_skill(binding, skill_name)
+        except (OSError, ValueError):
+            continue
+        for name in command["agent_tools"]:
+            pack.append(resources[name]._tool, overwrite=True)
+        body = "\n\n".join(
+            cleaned
+            for doc in documents
+            if doc.get("content")
+            and (cleaned := _strip_yaml_frontmatter(doc["content"]))
+        )
+        if body:
+            preloaded.append(
+                f"### Preloaded skill: {skill_name}\n"
+                "Its tools are already active for this turn; call them directly "
+                "when needed without calling load_skill again.\n\n" + body
+            )
+
+    @tool(
+        description="Load a named skill when its capability is needed for this "
+        "question. Its tools become available after the instructions are read."
+    )
+    def load_skill(skill_name: str, file_path: str = "") -> str:
+        check_skill_scope(state, skill_name)
+        command = commands.get(skill_name)
+        if command is None:
+            if fallback is not None:
+                return fallback(skill_name, file_path)
+            raise ValueError(f"Skill '{skill_name}' unavailable in {binding.name}")
+        documents = read_suite_skill(binding, skill_name)
+        for name in command["agent_tools"]:
+            pack.append(resources[name]._tool, overwrite=True)
+        return json.dumps(
+            {
+                "chunks": [
+                    {
+                        "output_type": "markdown",
+                        "content": _strip_yaml_frontmatter(doc["content"]),
+                    }
+                    for doc in documents
+                    if doc.get("content")
+                ]
+            },
+            ensure_ascii=False,
+        )
+
+    pack.append(load_skill._tool, overwrite=True)
+    summary = "\n".join(
+        f"- {name}: {cmd.get('description', '')}" for name, cmd in commands.items()
+    )
+    return summary + ("\n\n" + "\n\n".join(preloaded) if preloaded else "")
 
 
 def make_execute_skill_script_file(react_state: Dict[str, Any]):

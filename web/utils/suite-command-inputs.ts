@@ -8,6 +8,31 @@ export interface SuiteInputFile {
 
 export type SuiteInputProblem = 'missing_files' | 'too_many_files' | 'unsupported_file_type';
 
+export function isTurnScopedSuite(name?: string, scenario?: string): boolean {
+  return name === 'financial-analysis' || scenario === 'financial';
+}
+
+export function isStockQuoteCommand(suite?: string, command?: string): boolean {
+  return suite === 'financial-analysis' && command === '/查股票';
+}
+
+/** Files attached before the last switch to quotes remain on their original messages. */
+export function filesUsedBeforeStockQuote(
+  messages: readonly {
+    attachedSuite?: { name: string; command?: string };
+    attachedFiles?: readonly { file_id: string }[];
+  }[],
+): Set<string> {
+  const ids = new Set<string>();
+  let beforeQuote = false;
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const { attachedSuite, attachedFiles } = messages[index];
+    if (isStockQuoteCommand(attachedSuite?.name, attachedSuite?.command)) beforeQuote = true;
+    if (beforeQuote) attachedFiles?.forEach(file => ids.add(file.file_id));
+  }
+  return ids;
+}
+
 /** Validate the materials selected for this send, never unrelated files from history. */
 export function validateSuiteCommandFiles(
   command: SuiteCommand | undefined,

@@ -1575,18 +1575,37 @@ class ConversableAgent(Role, Agent):
         if historical_dialogues:
             # Always pass the full prior Q&A dialogue to the model (multi-turn
             # follow-ups need the earlier turns), independent of whether memory
-            # fragments were also read. Even index = user, odd index = AI.
-            for i in range(len(historical_dialogues)):
-                if i % 2 == 0:
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.HUMAN
-                    agent_messages.append(message)
-                else:
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.AI
-                    agent_messages.append(message)
+            # fragments were also read. Preserve explicit roles when supplied;
+            # fall back to alternating human/AI for legacy callers.
+            for i, message in enumerate(historical_dialogues):
+                if not message.role:
+                    message.role = (
+                        ModelMessageRoleType.HUMAN
+                        if i % 2 == 0
+                        else ModelMessageRoleType.AI
+                    )
+                agent_messages.append(message)
 
         if memory_list:
+            # Keep the objective before its tool results, even after the first
+            # action fragment expires. Repeating a bare question after a result
+            # can make a completed lookup look like a new user request.
+            question_forms = (question, f"Question: {question}")
+            if current_retry_counter and (
+                not user_prompt or user_prompt in question_forms
+            ):
+                if not any(
+                    msg.role == ModelMessageRoleType.HUMAN
+                    and msg.content in question_forms
+                    for msg in memory_list
+                ):
+                    agent_messages.append(
+                        AgentMessage(
+                            content=user_prompt or question,
+                            role=ModelMessageRoleType.HUMAN,
+                        )
+                    )
+                user_prompt = ""
             agent_messages.extend(memory_list)
 
         # Current user input information

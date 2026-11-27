@@ -17,6 +17,11 @@ import ManusRightPanel, {
   ExecutionOutput as ManusExecutionOutput,
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
+import StockQuoteCard from '@/new-components/financial-analysis/StockQuoteCard';
+import {
+  isStockQuoteSnapshot,
+  type StockQuoteSnapshot,
+} from '@/new-components/financial-analysis/stock-quote-types';
 import { buildActionDisplayText } from '@/utils/action-display';
 import { decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import {
@@ -31,6 +36,7 @@ import { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Types mirroring index.tsx
@@ -58,6 +64,7 @@ interface RawPayload {
   /** v2 only: display-safe input file snapshots (share payloads use display_key). */
   input_files?: unknown;
   citations?: AgentCitation[];
+  stock_quote_snapshot?: unknown;
 }
 
 interface _ParsedMessage {
@@ -78,6 +85,7 @@ interface ReplayRound {
   artifacts: ArtifactItem[];
   /** Read-only v2 input_files snapshots (share payloads key them by display_key). */
   attachedFiles: readonly SessionFileSnapshot[];
+  stockQuoteSnapshot?: StockQuoteSnapshot;
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +266,9 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
         citations: finalAnswer.citations,
         artifacts,
         attachedFiles: displayOnlySnapshots(payload.input_files),
+        stockQuoteSnapshot: isStockQuoteSnapshot(payload.stock_quote_snapshot)
+          ? payload.stock_quote_snapshot
+          : undefined,
       });
       pendingHuman = null;
     }
@@ -483,6 +494,7 @@ function useReplayEngine(rounds: ReplayRound[], speed: number, autoPlay = false)
 
 const SharePage: NextPage = () => {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { token } = router.query as { token?: string };
 
   const [loading, setLoading] = useState(true);
@@ -784,6 +796,15 @@ const SharePage: NextPage = () => {
                   isWorking={isCurrentRound && playing && !state.showFinalForRound}
                   userQuery={data.round.humanText}
                   attachedFiles={data.round.attachedFiles}
+                  stockQuoteSlot={
+                    data.showFinal && data.round.stockQuoteSnapshot ? (
+                      <StockQuoteCard
+                        snapshot={data.round.stockQuoteSnapshot}
+                        language={i18n.language}
+                        interactive={false}
+                      />
+                    ) : undefined
+                  }
                   assistantText={data.showFinal ? data.round.finalContent : undefined}
                   citationIndexes={data.showFinal ? data.round.citations.map(citation => citation.index) : []}
                   onReferencesClick={

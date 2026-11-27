@@ -23,10 +23,12 @@ def test_partial_react_intention_never_includes_private_fields():
 def test_progress_snapshot_updates_keep_order_and_close_on_interrupt():
     history = []
     stream = PublicProgressStream(history)
-    first = stream.update(1, "先分析", streaming=True)
+    first = stream.update(1, "先分析", streaming=True, tool_confirmed=True)
     history.append({"id": "tool-1"})
     last = stream.update(1, "先分析数据，再比较趋势。", streaming=False)
     assert first["id"] == last["id"]
+    assert first["tool_confirmed"] and last["tool_confirmed"]
+    assert history[0]["tool_confirmed"]
     assert [item["id"] for item in history] == ["progress-1", "tool-1"]
     stream.update(2, "继续", streaming=True)
     assert stream.finish_all()[0]["streaming"] is False

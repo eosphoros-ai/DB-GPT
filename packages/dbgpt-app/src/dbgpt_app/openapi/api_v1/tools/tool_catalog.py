@@ -113,8 +113,12 @@ def make_tool_search(
                     "source": "turn_catalog",
                 },
             )
-        return json.dumps(
-            {"tools": results, "available_next_round": True}, ensure_ascii=False
-        )
+        response = {"tools": results, "available_next_round": bool(results)}
+        if not results and "load_skill" in pack._resources:
+            response["message"] = (
+                "No matching tool was activated. For a capability provided by a "
+                "listed skill, call load_skill with that skill's name."
+            )
+        return json.dumps(response, ensure_ascii=False)
 
     return tool_search

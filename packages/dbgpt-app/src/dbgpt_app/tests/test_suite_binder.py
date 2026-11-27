@@ -181,7 +181,9 @@ class SuiteCommandTest(unittest.TestCase):
         with (
             patch(
                 "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
-                return_value=SimpleNamespace(get=lambda _: row),
+                return_value=SimpleNamespace(
+                    registry=SimpleNamespace(get=lambda _: row)
+                ),
             ),
             patch(
                 "dbgpt_app.openapi.api_v1.suite_binder._probe_semantic_status",
@@ -208,7 +210,9 @@ class SuiteCommandTest(unittest.TestCase):
         with (
             patch(
                 "dbgpt_app.openapi.api_v1.suite_binder._plugins_service",
-                return_value=SimpleNamespace(get=lambda _: row),
+                return_value=SimpleNamespace(
+                    registry=SimpleNamespace(get=lambda _: row)
+                ),
             ),
             patch(
                 "dbgpt_app.openapi.api_v1.suite_binder._probe_semantic_status",
@@ -279,13 +283,15 @@ class SuiteConfigurationTest(unittest.TestCase):
             status="enabled",
             package_path=package.path,
             manifest_snapshot={
-                **package.snapshot,
+                **{k: v for k, v in package.snapshot.items() if k != "skill_paths"},
                 "context_defaults": {"harness_engine": "pi"},
             },
         )
         self.service = SimpleNamespace(
-            get=lambda name: self.row if name == "db-query" else None,
-            registry=SimpleNamespace(current_pin=lambda _: ("db-query", "1.1.0")),
+            registry=SimpleNamespace(
+                get=lambda name: self.row if name == "db-query" else None,
+                current_pin=lambda _: ("db-query", "1.1.0"),
+            ),
         )
         self.service.registry.record_unpin = Mock(
             side_effect=lambda *args, **kwargs: setattr(

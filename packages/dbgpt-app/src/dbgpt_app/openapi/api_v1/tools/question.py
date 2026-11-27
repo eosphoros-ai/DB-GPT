@@ -182,6 +182,7 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
             )
         finally:
             question_manager.remove(pq.request_id)
+            react_state["_stock_quote_needs_question"] = False
 
         await stream_callback(
             "question.rejected" if pq.rejected else "question.replied",
@@ -217,6 +218,9 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
 
         # 5. Format answers for the LLM
         answers = pq.answers or []
+        react_state.setdefault("user_clarifications", []).extend(
+            value for group in answers for value in group if value
+        )
         parts = []
         for i, q in enumerate(parsed_questions):
             q_text = q.get("question", "")

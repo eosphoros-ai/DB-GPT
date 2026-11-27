@@ -66,10 +66,14 @@ export interface UseSessionFiles {
   stageLegacyForSend: (file: LegacyServerFile, sessionId: string) => StageLegacyForSendResult;
   /** Unstage the legacy example file without touching drafts. */
   clearLegacyFile: () => void;
+  detachSentFiles: (ids: ReadonlySet<string>) => void;
   /** Wait for in-flight uploads and return the frozen, ordered send payload. */
   prepare: (sessionId: string) => Promise<SessionFilesSendSnapshot>;
   /** Rebuild drafts from the server list for a conversation (switch-resilient). */
-  rehydrateFromServer: (sessionId: string) => Promise<SessionFileSnapshot[]>;
+  rehydrateFromServer: (
+    sessionId: string,
+    excludedIds?: Promise<ReadonlySet<string> | void>,
+  ) => Promise<SessionFileSnapshot[]>;
   /** Clear the current turn's drafts while keeping the session scope. */
   clearTurn: () => void;
   /** Clear task-local files and detach the current session scope. */
@@ -315,6 +319,16 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     dispatch({ type: 'clear_legacy' });
   }, [dispatch]);
 
+  const detachSentFiles = useCallback((ids: ReadonlySet<string>) => {
+    const { files, legacyFile } = stateRef.current;
+    for (const draft of files) {
+      if (draft.snapshot && ids.has(draft.snapshot.file_id)) {
+        dispatch({ type: 'remove', clientId: draft.clientId });
+      }
+    }
+    if (legacyFile && ids.has(`legacy:${legacyFile.name}`)) dispatch({ type: 'clear_legacy' });
+  }, [dispatch]);
+
   const remove = useCallback(
     (clientId: string) => {
       queueRef.current!.cancel(clientId);
@@ -361,11 +375,12 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
   }, []);
 
   const rehydrateFromServer = useCallback(
-    async (sessionId: string): Promise<SessionFileSnapshot[]> => {
+    async (sessionId: string, excludedIds?: Promise<ReadonlySet<string> | void>): Promise<SessionFileSnapshot[]> => {
       const generation = ++scopeGenerationRef.current;
       queueRef.current!.cancelAll();
       attemptsRef.current.clear();
-      const snapshots = await apiRef.current.listFiles(sessionId);
+      const [files, excluded] = await Promise.all([apiRef.current.listFiles(sessionId), excludedIds]);
+      const snapshots = excluded && excluded.size ? files.filter(file => !excluded.has(file.file_id)) : files;
       if (scopeGenerationRef.current !== generation) return snapshots;
       const action = { type: 'rehydrate' as const, sessionId, snapshots };
       dispatch(action);
@@ -375,6 +390,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
   );
 
   const clearTurn = useCallback(() => {
+    scopeGenerationRef.current += 1;
     queueRef.current!.cancelAll();
     attemptsRef.current.clear();
     dispatch({ type: 'clear_turn' });
@@ -399,6 +415,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     addFiles,
     stageLegacyForSend,
     clearLegacyFile,
+    detachSentFiles,
     remove,
     cancel,
     retryFailed,

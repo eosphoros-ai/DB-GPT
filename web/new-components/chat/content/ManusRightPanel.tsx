@@ -3010,13 +3010,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'summary' && summaryContent ? (
           <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-            {isSummaryStreaming ? (
-              <span className='whitespace-pre-wrap break-words'>{summaryContent}</span>
-            ) : (
-              <MarkDownContext onFinancialCitationClick={onFinancialCitationClick}>
-                {fixSquishedTables(summaryContent)}
-              </MarkDownContext>
-            )}
+            <MarkDownContext onFinancialCitationClick={onFinancialCitationClick}>
+              {fixSquishedTables(summaryContent)}
+            </MarkDownContext>
             {isSummaryStreaming && (
               <span className='inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-text-bottom' />
             )}

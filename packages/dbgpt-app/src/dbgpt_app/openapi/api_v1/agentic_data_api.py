@@ -11,8 +11,9 @@ import sqlite3
 import tempfile
 import uuid
 import zipfile
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from threading import BoundedSemaphore
@@ -1443,6 +1444,34 @@ def _thought_safe_prefix(buffer: str) -> str:
     return safe[: holdback.start()] if holdback else safe
 
 
+@dataclass
+class _RoundModelText:
+    text: str = ""
+    _reasoning: str = ""
+    _emitted_reasoning: int = 0
+
+    def append(self, event: Dict[str, Any]) -> Tuple[str, str]:
+        """Return the explicit ReAct intention and newly received reasoning."""
+        delta_text = event.get("delta_text") or ""
+        self.text += delta_text
+        # Native text might be the answer. action.start publishes its preamble
+        # once the provider has confirmed a tool call.
+        intention = ""
+        if delta_text and not event.get("public_text_stream"):
+            intention = react_public_intention(self.text)
+
+        delta_reasoning = event.get("delta_thinking")
+        if not delta_reasoning:
+            return intention, ""
+        self._reasoning += delta_reasoning
+        if "Thought:".startswith(self._reasoning):
+            return intention, ""
+        safe = _thought_safe_prefix(re.sub(r"^Thought:\s*", "", self._reasoning))
+        chunk = safe[self._emitted_reasoning :]
+        self._emitted_reasoning += len(chunk)
+        return intention, chunk
+
+
 def _extract_partial_json_string_value(buffer: str, key: str) -> str:
     """Incrementally decode ``key``'s string value from a partial JSON object.
 
@@ -1580,6 +1609,7 @@ def _build_react_history_payload(
     dashboard_generation_failure: Optional[Dict[str, Any]] = None,
     execution_status: Optional[str] = None,
     financial_report: Optional[Dict[str, Any]] = None,
+    stock_quote_snapshot: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1615,6 +1645,8 @@ def _build_react_history_payload(
         value["execution_status"] = execution_status
     if financial_report:
         value["financial_report"] = financial_report
+    if stock_quote_snapshot:
+        value["stock_quote_snapshot"] = stock_quote_snapshot
     return json.dumps(value, ensure_ascii=False)
 
 
@@ -2324,6 +2356,7 @@ async def _react_agent_stream_impl(
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
     from dbgpt.core import StorageConversation
+    from dbgpt.core.interface.message import ModelMessageRoleType
     from dbgpt.model.cluster.client import DefaultLLMClient
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
@@ -3444,11 +3477,6 @@ async def _react_agent_stream_impl(
     financial_enabled = (
         suite_binding is not None and suite_binding.name == "financial-analysis"
     )
-    financial_tools = (
-        make_financial_tools(react_state, stream_callback=stream_callback)
-        if financial_enabled
-        else []
-    )
 
     _todo_action_history: Dict[int, List[str]] = {}
 
@@ -3752,6 +3780,17 @@ async def _react_agent_stream_impl(
         conv_storage=conv_serve.conv_storage,
         message_storage=conv_serve.message_storage,
     )
+    if (storage_conv.user_name or "") != (dialogue.user_name or ""):
+        # StorageConversation loads persisted ownership along with the messages.
+        # Only the current owner's reports and quote snapshots belong in this turn.
+        unavailable = (
+            "当前会话不可用。"
+            if report_language == "zh"
+            else "Conversation unavailable."
+        )
+        yield _sse_event({"type": "final", "content": unavailable})
+        yield _sse_event({"type": "done"})
+        return
     storage_conv.save_to_storage()
     storage_conv.start_new_round()
     # Load the full conversation history (user question + agent final answer)
@@ -3759,6 +3798,9 @@ async def _react_agent_stream_impl(
     # so multi-turn follow-ups see the previous Q&A (mirrors hermes'
     # conversation_history passed into the loop).
     historical_dialogues: List[AgentMessage] = []
+    has_saved_financial_report = False
+    has_saved_quote = False
+    saved_quote_symbols: List[str] = []
     # A recovery checkpoint already carries the original objective and real
     # artifacts. Old failed replies add stale errors and repeated reasoning.
     history_messages = (
@@ -3768,9 +3810,13 @@ async def _react_agent_stream_impl(
     )
     for _msg in history_messages:
         if _msg.type == "human":
-            historical_dialogues.append(AgentMessage(content=_msg.content))
+            historical_dialogues.append(
+                AgentMessage(content=_msg.content, role=ModelMessageRoleType.HUMAN)
+            )
         elif _msg.type == "ai":
-            historical_dialogues.append(AgentMessage(content=_msg.content))
+            historical_dialogues.append(
+                AgentMessage(content=_msg.content, role=ModelMessageRoleType.AI)
+            )
         elif _msg.type == "view":
             # view 消息存的是 history_payload(JSON)，提取 final_content 作为 AI 回答
             _content = _msg.content
@@ -3779,11 +3825,66 @@ async def _react_agent_stream_impl(
                     json.loads(_content) if isinstance(_content, str) else _content
                 )
                 if isinstance(_payload, dict):
+                    if _payload.get("financial_report"):
+                        has_saved_financial_report = True
+                    _quote_snap = _payload.get("stock_quote_snapshot")
+                    if isinstance(_quote_snap, dict) and any(
+                        isinstance(_r, dict) and _r.get("outcome") != "unavailable"
+                        for _r in (_quote_snap.get("rows") or [])
+                    ):
+                        has_saved_quote = True
+                        _labels: List[str] = []
+                        for _row in _quote_snap.get("rows") or []:
+                            if (
+                                not isinstance(_row, dict)
+                                or _row.get("outcome") == "unavailable"
+                            ):
+                                continue
+                            _q = _row.get("quote")
+                            _listing = (
+                                _q.get("listing") if isinstance(_q, dict) else None
+                            )
+                            _sector = _row.get("sector")
+                            _name = (
+                                (
+                                    _listing.get("name")
+                                    if isinstance(_listing, dict)
+                                    else None
+                                )
+                                or (
+                                    _sector.get("name")
+                                    if isinstance(_sector, dict)
+                                    else None
+                                )
+                                or _row.get("requested")
+                            )
+                            if _name and str(_name) not in _labels:
+                                _labels.append(str(_name))
+                        if _labels:
+                            saved_quote_symbols = _labels[:8]
                     _content = _payload.get("final_content") or ""
             except Exception:
                 pass
             if _content:
-                historical_dialogues.append(AgentMessage(content=_content))
+                historical_dialogues.append(
+                    AgentMessage(content=_content, role=ModelMessageRoleType.AI)
+                )
+    financial_report_active = bool(
+        file_paths
+        or input_files_snapshot
+        or has_saved_financial_report
+        or react_state.get("financial_suite_command")
+        or react_state.get("session_files")
+        or react_state.get("file_path")
+        or react_state.get("_report_checkpoint_path")
+        or react_state.get("financial_report_context")
+        or react_state.get("financial_pending")
+    )
+    financial_tools = (
+        make_financial_tools(react_state, stream_callback=stream_callback)
+        if financial_enabled and financial_report_active
+        else []
+    )
     storage_conv.add_user_message(user_input)
     if history_checkpoint is not None:
         history_checkpoint.bind(
@@ -3839,7 +3940,7 @@ async def _react_agent_stream_impl(
         gpts_app_code="react_agent",
         gpts_app_name="ReAct",
         language=react_state["_report_language"],
-        temperature=dialogue.temperature or 0.2,
+        temperature=dialogue.temperature if dialogue.temperature is not None else 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
         max_new_tokens=context_budget.max_output_tokens,
@@ -4630,7 +4731,18 @@ After partial results, finish only missing requested deliverables, then report.
     # --- Suite binder (T3): resolve the scenario-suite pin and prepend SOP ---
     try:
         if suite_binding is not None:
-            workflow_prompt = build_sop_block(suite_binding) + workflow_prompt
+            _preloaded_suite_skills = (
+                ("stock-quote",)
+                if suite_binding.name == "financial-analysis"
+                and (
+                    suite_binding.command_skill == "stock-quote" or has_saved_quote
+                )
+                else ()
+            )
+            suite_prompt = build_sop_block(
+                suite_binding, preloaded_skills=_preloaded_suite_skills
+            )
+            workflow_prompt = suite_prompt + workflow_prompt
             suite_binding_snapshot = command_binding_event(suite_binding)
             yield _sse_event(suite_binding_snapshot)
     except Exception:
@@ -4693,6 +4805,7 @@ After partial results, finish only missing requested deliverables, then report.
                 resource
                 for resource in tool_pack.sub_resources
                 if suite_binding.violation(resource.name) is None
+                and not (financial_enabled and resource.name == "load_skill")
             ]
             + suite_tools
         )
@@ -4714,6 +4827,7 @@ Do not inspect suite configuration or repeat completed analysis. Do not write HT
 or substitute a textual summary for a requested report.
 """
 
+    is_bare_greeting = False
     if (
         suite_binding is None
         and not dashboard_agent_mode
@@ -4747,6 +4861,7 @@ or substitute a textual summary for a requested report.
         greeting = re.fullmatch(
             r"\s*(?:hi|hello|hey|你好|您好|嗨)[!！。.\s]*", user_input, re.I
         )
+        is_bare_greeting = bool(greeting)
         if greeting:
             initial_names = {"terminate"}
         tool_pack = ToolPack(
@@ -4766,9 +4881,83 @@ or substitute a textual summary for a requested report.
                 "Do not start analysis, retrieve sources, or create a task plan."
             )
 
+    model_request = user_input
+    if (
+        not is_bare_greeting
+        and not dashboard_agent_mode
+        and not pre_matched_skill
+        and creation_mode != "expert_suite"
+        and tool_mode != "knowledge"
+    ):
+        from .suite_binder import load_binding, resolve_suite_ref, skill_request_text
+        from .tools.skill_tools import mount_suite_skills
+        from .tools.stock_quotes import make_stock_quote_tool
+
+        skill_suite = suite_binding
+        if skill_suite is None and not resolve_suite_ref(dialogue.ext_info):
+            skill_suite = load_binding("financial-analysis", catalog_only=True)
+        if skill_suite and skill_suite.name == "financial-analysis":
+            eager_quote = bool(
+                (suite_binding and suite_binding.command_skill == "stock-quote")
+                or has_saved_quote
+            )
+            available_skills = mount_suite_skills(
+                tool_pack,
+                skill_suite,
+                {
+                    "query_stock_quotes": make_stock_quote_tool(
+                        react_state, history=history_messages
+                    )
+                },
+                react_state,
+                fallback=None if suite_binding else load_skill_tool,
+                eager_skills=("stock-quote",) if eager_quote else (),
+            )
+            if available_skills:
+                model_request = skill_request_text(user_input, skill_suite)
+                if financial_enabled:
+                    workflow_prompt = "\n\n".join(
+                        (
+                            "你是金融分析助手。根据用户的提问与前文决定直接回答、"
+                            "读取证据或澄清，最后回答用户的完整问题。",
+                            language_instruction,
+                            suite_prompt,
+                            file_context,
+                            knowledge_context,
+                            database_context,
+                        )
+                    )
+                workflow_prompt += (
+                    "\n\n## Skills available on demand\n"
+                    + available_skills
+                    + "\n结合本轮提问及前文判断用户要解决的问题。未预加载的技能只在"
+                    "用户询问的事实需要相应能力时调用 load_skill(skill_name)；"
+                    "已预加载的技能可直接调用其工具。直接回答概念或"
+                    "长期观点，切勿自行追加当日数据充当论据。追问过去的数值或排名时"
+                    "用对应技能核对原快照。工具返回后继续解答其余问题，保留引用数据"
+                    "的来源和时间。使判断的确定性与证据相称。"
+                )
+                if has_saved_quote:
+                    saved_desc = (
+                        f"（最近一次快照标的：{'、'.join(saved_quote_symbols)}）"
+                        if saved_quote_symbols
+                        else ""
+                    )
+                    workflow_prompt += (
+                        f"\n本会话保存了结构化行情快照{saved_desc}。"
+                        "请先结合紧邻上一轮对话判断本轮目标："
+                        "若用户承接上一轮刚提到的新公司或新标的（如回复"
+                        "“查询一下吧”“查吧”“看看”），必须传入该新标的的名称或代码"
+                        "调用 latest，切勿沿用更早的旧快照标的；"
+                        "仅当用户明确要求核对上述旧快照数值时通过 recall 读取，"
+                        "明确要求刷新上述旧标的时通过 latest 查询（传空 stocks 数组可沿用上次标的）。"
+                    )
+
     workflow_prompt_template = build_react_prompt_template(
         workflow_prompt,
-        financial_enabled=financial_enabled and not dashboard_agent_mode,
+        financial_enabled=financial_enabled
+        and not dashboard_agent_mode
+        and financial_report_active,
     )
 
     from .financial_agent import FinancialWorkflowAgent
@@ -4784,6 +4973,17 @@ or substitute a textual summary for a requested report.
                 and message.action_report.terminate
                 and tool_mode != "knowledge"
             ):
+                if react_state.get(
+                    "_stock_quote_needs_question"
+                ) and not react_state.get("_stock_quote_question_nudged"):
+                    react_state["_stock_quote_question_nudged"] = True
+                    return (
+                        False,
+                        "仍有待用户选择的候选标的或板块。请先调用 `question` 工具"
+                        "在输入框上方弹出候选项让用户在本轮直接选择，收到回复后再"
+                        "调用 `query_stock_quotes(operation='select', stocks=[...])`，"
+                        "不要直接结束本轮对话。",
+                    )
                 error = await financial_completion_error(react_state)
                 if error:
                     return False, error
@@ -4793,7 +4993,9 @@ or substitute a textual summary for a requested report.
         DashboardConfirmationAgent(dashboard_state=react_state, max_retry_count=30)
         if dashboard_agent_mode
         else ReportAwareAgent(
-            report_repair_state=react_state, max_retry_count=60, max_timeout=900
+            report_repair_state=react_state,
+            max_retry_count=60,
+            max_timeout=900,
         )
     )
     agent_builder = (
@@ -4805,9 +5007,15 @@ or substitute a textual summary for a requested report.
     )
 
     agent = await agent_builder.build()
+    if financial_enabled or has_saved_quote:
+        # Multi-turn Q&A history is passed chronologically via historical_dialogues.
+        # Clear ShortTermMemory recovered from gpts_messages for financial/quote turns,
+        # otherwise earlier quote tool trajectories get replayed *after* newer Q&A
+        # turns and hijack short follow-ups (e.g. "查询一下吧").
+        await agent.memory.clear()
 
     parser = ReActOutputParser()
-    received = AgentMessage(content=user_input)
+    received = AgentMessage(content=model_request)
     if react_state.get("_report_pending_html"):
         received.content += (
             "\n已恢复待渲染 HTML 与原始产物。报告由专职报告子代理独占生成："
@@ -4928,7 +5136,8 @@ or substitute a textual summary for a requested report.
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     public_progress = PublicProgressStream(history_steps)
-    public_text_buffers: Dict[int, str] = {}
+    last_emitted_quote_snapshot: Optional[Dict[str, Any]] = None
+    started_actions: Dict[int, str] = {}
     current_history_step: Optional[Dict[str, Any]] = None
     financial_execution = FinancialExecutionStream(history_steps)
     subagent_history: Dict[str, Dict[str, Any]] = {}
@@ -4940,10 +5149,8 @@ or substitute a textual summary for a requested report.
     native_args_buffers: Dict[Tuple[int, int], str] = {}
     native_args_names: Dict[Tuple[int, int], str] = {}
     streamed_final_text: Dict[int, str] = {}
-    # Text-mode ReAct: per-round raw model text buffer (for cross-chunk
-    # thought cleaning) and incremental terminate-answer streaming state.
-    round_text_buffers: Dict[int, str] = {}
-    emitted_thought_len: Dict[int, int] = {}
+    # Only the text channel can contain executable text-mode ReAct fields.
+    round_text: Dict[int, _RoundModelText] = defaultdict(_RoundModelText)
     text_terminate_emitted: Dict[int, str] = {}
 
     def checkpoint_payload(status: str) -> str:
@@ -4982,6 +5189,7 @@ or substitute a textual summary for a requested report.
             dashboard_refs=react_state.get("dashboard_refs", []),
             execution_status=status,
             financial_report=financial_report,
+            stock_quote_snapshot=react_state.get("stock_quote_snapshot"),
             suite_reference=suite_reference,
             suite_binding=suite_binding_snapshot,
         )
@@ -5026,6 +5234,7 @@ or substitute a textual summary for a requested report.
         elif event_type == "financial.execution":
             round_num = event["round"]
             action = event["action"]
+            started_actions[round_num] = action
             if round_num in round_step_map:
                 live_id = round_step_map[round_num]
             else:
@@ -5102,11 +5311,13 @@ or substitute a textual summary for a requested report.
                     round_num,
                     text,
                     streaming=False,
+                    tool_confirmed=True,
                     before_step_id=round_step_map.get(round_num),
                 )
                 if progress_event:
                     yield _sse_event(progress_event)
             action_title = ", ".join(names)
+            started_actions[round_num] = action_title
             if round_num not in round_step_map:
                 step_id, start_event = build_step(action_title, "Tool execution")
                 round_step_map[round_num] = step_id
@@ -5154,10 +5365,12 @@ or substitute a textual summary for a requested report.
             if reason_text:
                 pending_action_reasons[round_num] = reason_text
             if intention_text and action and action.lower() != "terminate":
+                started_actions[round_num] = action
                 progress_event = public_progress.update(
                     round_num,
                     intention_text,
                     streaming=False,
+                    tool_confirmed=True,
                     before_step_id=round_step_map.get(round_num),
                 )
                 if progress_event:
@@ -5181,67 +5394,29 @@ or substitute a textual summary for a requested report.
             if react_state.get("financial_plan"):
                 continue
             round_num = int(event.get("round") or (len(round_step_map) + 1))
-            delta_thinking = event.get("delta_thinking") or ""
-            delta_text = event.get("delta_text") or ""
-            if delta_text:
-                public_text_buffers[round_num] = (
-                    public_text_buffers.get(round_num, "") + delta_text
-                )
-                public_text = public_text_buffers[round_num]
-                if not event.get("public_text_stream"):
-                    public_text = react_public_intention(public_text)
+            model_text = round_text[round_num]
+            intention, reasoning_delta = model_text.append(event)
+            if intention:
                 progress_event = public_progress.update(
                     round_num,
-                    public_text,
+                    intention,
                     streaming=True,
                     before_step_id=round_step_map.get(round_num),
                 )
                 if progress_event:
                     yield _sse_event(progress_event)
-
-            chunk = delta_thinking or delta_text
-            if chunk:
-                # Accumulate raw model text per round: glm-style text ReAct
-                # writes bare Action-Input JSON blobs (no ``Action Input:``
-                # label) that per-chunk regexes cannot strip, so cleaning
-                # must see across chunk boundaries. The safe prefix is
-                # monotonic, so diffing it yields clean thought deltas.
-                buffer = round_text_buffers.get(round_num, "") + chunk
-                round_text_buffers[round_num] = buffer
-                # Wait until it is decided whether the round opens with a
-                # "Thought:" marker; emitting raw marker characters before
-                # the strip kicks in would corrupt the diff offsets.
-                if (
-                    buffer
-                    and not buffer.startswith("Thought:")
-                    and "Thought:".startswith(buffer)
-                ):
-                    safe = ""
-                else:
-                    start_off = 0
-                    if buffer.startswith("Thought:"):
-                        start_off = re.match(r"Thought:\s*", buffer).end()
-                    safe = _thought_safe_prefix(buffer[start_off:])
-                prev_len = emitted_thought_len.get(round_num, 0)
-                clean_chunk = safe[prev_len:]
-                if clean_chunk:
-                    emitted_thought_len[round_num] = len(safe)
-                    if round_num not in pending_thoughts:
-                        pending_thoughts[round_num] = []
-                    pending_thoughts[round_num].append(clean_chunk)
-                    if round_num not in round_step_map:
-                        pending_step_id, pending_step_event = build_step(
-                            "Thinking"
-                            if react_state.get("_report_language") == "en"
-                            else "思考中",
-                            "Thought/Action/Observation",
-                        )
-                        round_step_map[round_num] = pending_step_id
-                        yield pending_step_event
-                    # Stream EVERY thinking delta (not just the one
-                    # that created the step) so the step card grows
-                    # live — matches the pi branch's behavior.
-                    yield step_chunk(round_step_map[round_num], "thought", clean_chunk)
+            if reasoning_delta:
+                pending_thoughts.setdefault(round_num, []).append(reasoning_delta)
+                if round_num not in round_step_map:
+                    pending_step_id, pending_step_event = build_step(
+                        "Thinking"
+                        if react_state.get("_report_language") == "en"
+                        else "思考中",
+                        "Model reasoning",
+                    )
+                    round_step_map[round_num] = pending_step_id
+                    yield pending_step_event
+                yield step_chunk(round_step_map[round_num], "thought", reasoning_delta)
 
             # ── Native function calling: stream the terminate answer ──
             # The final answer travels inside tool_calls[].function.arguments
@@ -5264,18 +5439,22 @@ or substitute a textual summary for a requested report.
                     if native_args_names.get(buf_key) != "terminate":
                         intention_parts = []
                         for key, args_text in native_args_buffers.items():
-                            if key[0] != round_num:
+                            if key[0] != round_num or native_args_names.get(key) in (
+                                None,
+                                "terminate",
+                            ):
                                 continue
                             intention = _extract_partial_json_string_value(
                                 args_text, "intention"
                             ) or _extract_partial_json_string_value(args_text, "intent")
                             if intention:
                                 intention_parts.append(intention)
-                        if intention_parts and not public_text_buffers.get(round_num):
+                        if intention_parts and not model_text.text:
                             progress_event = public_progress.update(
                                 round_num,
                                 "\n".join(intention_parts),
                                 streaming=True,
+                                tool_confirmed=True,
                                 before_step_id=round_step_map.get(round_num),
                             )
                             if progress_event:
@@ -5299,8 +5478,8 @@ or substitute a textual summary for a requested report.
             # Models that ignore native tools write ``Action: terminate`` +
             # ``Action Input: <answer>`` in plain text; stream the input
             # suffix incrementally so these models get real streaming too.
-            if round_num not in streamed_final_text:
-                buffer = round_text_buffers.get(round_num, "")
+            if event.get("delta_text") and round_num not in streamed_final_text:
+                buffer = model_text.text
                 marker = re.search(r"Action\s*:\s*terminate\b", buffer, re.IGNORECASE)
                 if marker:
                     input_marker = re.search(
@@ -5457,8 +5636,20 @@ or substitute a textual summary for a requested report.
                 yield step_done(round_step_map[round_num])
                 continue
 
-            # Collect buffered thoughts for history persistence
-            # (already streamed to frontend via thinking_chunk handler)
+            if not action:
+                # Discard a protocol retry's narration and provisional step.
+                removed = public_progress.remove(round_num)
+                if removed:
+                    yield _sse_event(removed)
+                pending_thoughts.pop(round_num, None)
+                pending_action_intentions.pop(round_num, None)
+                pending_action_reasons.pop(round_num, None)
+                if round_num in round_step_map:
+                    stale_id = round_step_map.pop(round_num)
+                    yield _sse_event({"type": "step.remove", "id": stale_id})
+                continue
+
+            # Collect buffered thoughts for history persistence.
             buffered_thoughts = pending_thoughts.pop(round_num, [])
             thought_text = None
             if buffered_thoughts:
@@ -5493,18 +5684,6 @@ or substitute a textual summary for a requested report.
             display_thought = (
                 normalize_display_text(thoughts or thought_text) or action_intention
             )
-
-            # 解析失败轮次（如 native tool_calls 退回 XML 导致 "No valid ReAct
-            # step found"）：action 为空、无有效工具，跳过 step 展示（derisk 参考：
-            # 无效 action 不展示为噪音 step），仅清理提前创建的「思考中」占位。
-            if not action:
-                pending_thoughts.pop(round_num, [])
-                pending_action_intentions.pop(round_num, None)
-                pending_action_reasons.pop(round_num, None)
-                if round_num in round_step_map:
-                    _stale_id = round_step_map.pop(round_num)
-                    yield _sse_event({"type": "step.remove", "id": _stale_id})
-                continue
 
             # Use the actual action name as the step title (Manus-style UI)
             action_title = action or f"ReAct Round {round_num}"
@@ -5642,6 +5821,12 @@ or substitute a textual summary for a requested report.
 
             # Mark step as done and track as last completed
             yield step_done(react_step_id, status)
+            latest_quote = react_state.get("stock_quote_snapshot")
+            if latest_quote and latest_quote != last_emitted_quote_snapshot:
+                last_emitted_quote_snapshot = latest_quote
+                yield _sse_event(
+                    {"type": "stock_quote.snapshot", "snapshot": latest_quote}
+                )
             report_task_completed = False
             action_names = {name.strip().lower() for name in (action or "").split(",")}
             if "generate_report" in action_names:
@@ -5681,14 +5866,19 @@ or substitute a textual summary for a requested report.
         recorded_step_ids.add(current_history_step["id"])
         yield step_done(current_history_step["id"], "failed")
         current_history_step = None
-    for pending_id in round_step_map.values():
+    for round_num, pending_id in round_step_map.items():
         if pending_id not in recorded_step_ids:
+            action = started_actions.get(round_num)
             history_steps.append(
                 {
                     "id": pending_id,
-                    "title": "Thinking"
-                    if react_state.get("_report_language") == "en"
-                    else "思考中",
+                    "action": action,
+                    "title": action
+                    or (
+                        "Thinking"
+                        if react_state.get("_report_language") == "en"
+                        else "思考中"
+                    ),
                     "detail": "Execution ended before the tool reported a result"
                     if react_state.get("_report_language") == "en"
                     else "执行提前结束，未收到工具完成结果",
@@ -5750,6 +5940,7 @@ or substitute a textual summary for a requested report.
             report_id=error_answer.report_id,
             report_run_id=error_answer.report_run_id,
             report_status=error_answer.report_status,
+            stock_quote_snapshot=react_state.get("stock_quote_snapshot"),
             dashboard_refs=react_state.get("dashboard_refs", []),
             dashboard_generation_failure=incomplete,
         )
@@ -5941,6 +6132,7 @@ or substitute a textual summary for a requested report.
         report_status=final_answer.report_status,
         dashboard_refs=react_state.get("dashboard_refs", []),
         dashboard_generation_failure=incomplete,
+        stock_quote_snapshot=react_state.get("stock_quote_snapshot"),
     )
     terminal_events = _react_terminal_events(
         storage_conv,

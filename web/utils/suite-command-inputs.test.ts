@@ -1,6 +1,12 @@
 import type { SuiteCommand } from '@/types/suite';
 import { describe, expect, it } from 'vitest';
-import { suiteCommandFileHint, suiteCommandPrompt, validateSuiteCommandFiles } from './suite-command-inputs';
+import {
+  filesUsedBeforeStockQuote,
+  isTurnScopedSuite,
+  suiteCommandFileHint,
+  suiteCommandPrompt,
+  validateSuiteCommandFiles,
+} from './suite-command-inputs';
 
 const readReport: SuiteCommand = {
   name: '/读年报',
@@ -54,6 +60,27 @@ describe('suite command materials', () => {
 });
 
 describe('suite command prompt', () => {
+  it('prefills a quote without attachments and preserves explicit slash arguments', () => {
+    const quote = { name: '/查股票', prefill: '帮我查查今天科技股和贵州茅台涨了多少？' };
+    expect(suiteCommandPrompt(quote, '/查股')).toBe(quote.prefill);
+    expect(suiteCommandPrompt(quote, '/stock-quote 000001.SZ 和 00700.HK')).toBe('000001.SZ 和 00700.HK');
+    expect(validateSuiteCommandFiles(quote, [])).toBeNull();
+    expect(suiteCommandFileHint(quote)).toBe('');
+    expect(isTurnScopedSuite('financial-analysis')).toBe(true);
+    expect(isTurnScopedSuite(undefined, 'financial')).toBe(true);
+    expect(isTurnScopedSuite('db-analysis', 'database')).toBe(false);
+  });
+
+  it('keeps newer files available after restoring an earlier switch to stock quotes', () => {
+    const report = (id: string) => ({
+      attachedSuite: { name: 'financial-analysis', command: '/读年报' },
+      attachedFiles: [{ file_id: id }],
+    });
+    expect(filesUsedBeforeStockQuote([report('first')]).size).toBe(0);
+    const quote = { attachedSuite: { name: 'financial-analysis', command: '/查股票' } };
+    expect([...filesUsedBeforeStockQuote([report('first'), quote, report('second')])]).toEqual(['first']);
+  });
+
   it('prefills a selected command without leaking an unrelated previous draft', () => {
     expect(suiteCommandPrompt(readReport, '/读')).toBe(readReport.prefill);
     expect(suiteCommandPrompt(readReport, '查询生产数据库')).toBe(readReport.prefill);

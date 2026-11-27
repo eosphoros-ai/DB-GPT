@@ -1,16 +1,17 @@
 {
   "name": "financial-analysis",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "displayNameCn": "财报分析",
   "displayName": "Financial Report Analysis",
-  "descriptionZh": "上传年度报告 PDF，解读经营表现、利润质量、现金流与资产负债；支持同年多公司或同公司跨年比较。分析结果关联原文依据，保留缺失数据与未完成专题。",
-  "descriptionEn": "Upload annual-report PDFs to analyze operating performance, earnings quality, cash flow and the balance sheet, or compare peers and reporting years. Findings link to source evidence and retain data gaps and unfinished topics.",
+  "descriptionZh": "解读和比较年度报告 PDF，查询沪深京 A 股、ETF、港股、主要中港指数和 A 股行业或概念板块行情。年报附原文依据，行情注明来源和时间。",
+  "descriptionEn": "Analyze and compare annual reports, look up CN/HK shares, ETFs, major CN/HK indices, or check A-share sector performance and constituent rankings.",
   "author": { "name": "@DB-GPT 官方" },
   "category": "finance",
   "tags": ["财报", "年报", "财务分析", "财报对比", "官方内置"],
   "skills": [
     "skills/annual-report",
     "skills/compare-reports",
+    "skills/stock-quote",
     "skills/financial-workflow"
   ],
   "dbgpt": {
@@ -25,6 +26,7 @@
     },
     "tools": {
       "allow": [
+        "load_skill",
         "prepare_financial_report",
         "prepare_financial_comparison",
         "resolve_financial_comparison",
@@ -32,7 +34,8 @@
         "save_financial_topic",
         "review_financial_report",
         "publish_financial_report",
-        "read_financial_report"
+        "read_financial_report",
+        "query_stock_quotes"
       ],
       "deny": [
         "ddl",
@@ -47,7 +50,7 @@
     },
     "artifacts": ["financial_report", "citation"],
     "routing": {
-      "keywords": ["财报", "年报", "年度报告", "财报对比", "financial report", "annual report"],
+      "keywords": ["财报", "年报", "年度报告", "财报对比", "查股票", "/stock-quote", "股价", "大盘", "上证指数", "恒生指数", "板块行情", "领涨", "领跌", "financial report", "annual report", "stock quote", "sector performance"],
       "specificity": 1
     },
     "recommended_questions": [
@@ -68,8 +71,17 @@
         "command": "/财报对比",
         "hint": "上传两到五份 PDF，说明同年多公司或同公司跨年比较",
         "hint_en": "Upload two to five PDFs and specify peer or multi-year comparison"
+      },
+      {
+        "title": "查股票",
+        "title_en": "Look up stocks",
+        "text": "帮我查查今天科技股和贵州茅台涨了多少？",
+        "text_en": "How much have tech stocks and Kweichow Moutai (600519.SH) moved today?",
+        "command": "/查股票",
+        "hint": "输入股票、行业或概念，如半导体、光模块，查看整体涨跌和领涨领跌个股",
+        "hint_en": "Enter a stock, industry or theme to see a quote or the sector’s change, gainers and decliners"
       }
     ],
-    "output_contract": "financial_report+citations"
+    "output_contract": "financial_report+citations | stock_quote_snapshot"
   }
 }

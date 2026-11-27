@@ -15,6 +15,31 @@ def _decode_sse_event(event: str):
     return json.loads(event.removeprefix("data: ").strip())
 
 
+@pytest.mark.parametrize("native", [True, False])
+def test_markdown_answer_chunks_are_neither_reasoning_nor_progress(native):
+    stream = agentic_data_api._RoundModelText()
+    answer = "### 使用场景\n\n**上证指数** · [东方财富](https://quote.eastmoney.com/)"
+    for chunk in answer:
+        assert stream.append({"delta_text": chunk, "public_text_stream": native}) == (
+            "",
+            "",
+        )
+    assert stream.text == answer
+
+
+def test_reasoning_and_text_protocol_are_independent_even_in_the_same_chunk():
+    stream = agentic_data_api._RoundModelText()
+    assert stream.append({"delta_thinking": "Thou"}) == ("", "")
+    mixed = {
+        "delta_thinking": "ght: 处理中\nAction: terminate",
+        "delta_text": "Action Inten",
+    }
+    assert stream.append(mixed) == ("", "处理中")
+    text = {"delta_text": "tion: 查询行情\nAction: query_stock_quotes"}
+    assert stream.append(text) == ("查询行情", "")
+    assert "terminate" not in stream.text
+
+
 @pytest.mark.parametrize(
     ("prompt", "expected"),
     [

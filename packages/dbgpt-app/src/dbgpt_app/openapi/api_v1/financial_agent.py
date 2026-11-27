@@ -3,6 +3,7 @@
 import asyncio
 import copy
 import json
+import re
 import time
 
 from dbgpt.agent import ActionOutput
@@ -21,6 +22,10 @@ from .tools.financial_tools import (
 
 FINANCIAL_COMPLETION_MAX_ATTEMPTS = 3
 FINANCIAL_COMPLETION_TIMEOUT = 45
+_PROTOCOL_FRAGMENT_RE = re.compile(
+    r"(?:^|\n)\s*(?:Thought|Action|Action\s+Input|Observation)\s*:|<tool_call\b",
+    re.IGNORECASE,
+)
 
 
 class FinancialWorkflowAgent(ToolCallingReActAgent):
@@ -311,6 +316,28 @@ class FinancialWorkflowAgent(ToolCallingReActAgent):
                         ),
                     )
                     break
+        if (
+            output is None
+            and not before
+            and state.get("_stock_quote_tool_ran")
+            and not state.get("_report_html_error")
+            and not state.get("_report_render_phase")
+            and self.agent_context is not None
+            and self.agent_context.enable_native_function_calling
+            and not kwargs.get("tool_calls")
+            and not getattr(self, "_pending_native_tool_calls", None)
+        ):
+            raw_text = (message.content or "").strip()
+            if raw_text and not calls and not _PROTOCOL_FRAGMENT_RE.search(raw_text):
+                payload = json.dumps({"output": raw_text}, ensure_ascii=False)
+                output = ActionOutput(
+                    is_exe_success=True,
+                    terminate=True,
+                    have_retry=False,
+                    action="terminate",
+                    action_input=payload,
+                    content=payload,
+                )
         if output is None:
             output = await super().act(message, sender, **kwargs)
         if output.is_exe_success and any(

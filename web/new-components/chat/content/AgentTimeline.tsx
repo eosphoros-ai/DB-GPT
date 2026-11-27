@@ -24,6 +24,7 @@ import {
   Loading3QuartersOutlined,
   ReadOutlined,
   SearchOutlined,
+  StockOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import cls from 'classnames';
@@ -91,6 +92,7 @@ function toolIcon(tool?: string, title?: string) {
   if (key.includes('code') || key.includes('python') || key.includes('interpreter')) return <CodeOutlined />;
   if (key.includes('search') || key.includes('grep') || key.includes('knowledge')) return <SearchOutlined />;
   if (key.includes('read') || key.includes('file')) return <ReadOutlined />;
+  if (key.includes('stock_quote') || key.includes('stock_quotes')) return <StockOutlined />;
   if (key.includes('report') || key.includes('html') || key.includes('visual')) return <FileTextOutlined />;
   if (key.includes('web') || key.includes('http') || key.includes('crawl')) return <GlobalOutlined />;
   return <ThunderboltOutlined />;
@@ -459,8 +461,8 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
 
 function TextBlock({ block }: { block: TimelineBlock }) {
   return (
-    <div className='text-sm leading-7 text-[#1c1c1a] dark:text-[#e6e4df] whitespace-pre-wrap mb-2'>
-      {block.content}
+    <div className='text-sm leading-7 text-[#1c1c1a] dark:text-[#e6e4df] break-words mb-2'>
+      <MarkdownContext>{block.content || ''}</MarkdownContext>
       {block.streaming && <span className='inline-block w-2 h-4 bg-blue-500 align-[-2px] ml-0.5 animate-pulse' />}
     </div>
   );
@@ -611,7 +613,7 @@ export function stepsToTimelineBlocks(
       } as TimelineBlock;
     }
     const thought = stepThoughts?.[step.id] || '';
-    const isThinking = !step.action && (step.title === '思考中' || (step.title || '').includes('思考'));
+    const isThinking = !step.action && (step.title === 'Thinking' || (step.title || '').includes('思考'));
     const rawOutputs = expanded.outputs[step.id] || [];
     const outputText = rawOutputs
       .filter(o => (o.output_type === 'text' || o.output_type === 'markdown') && o.content != null)

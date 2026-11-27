@@ -669,14 +669,11 @@ export default function SemanticProvenance({
           </div>
         </section>
       )}
-      {mode === 'answer' &&
-        (streaming ? (
-          <span className='whitespace-pre-wrap break-words'>{content}</span>
-        ) : (
-          <MarkdownContext components={components} onFinancialCitationClick={onFinancialCitationClick}>
-            {answer}
-          </MarkdownContext>
-        ))}
+      {mode === 'answer' && (
+        <MarkdownContext components={components} onFinancialCitationClick={onFinancialCitationClick}>
+          {answer}
+        </MarkdownContext>
+      )}
       <Drawer
         open={!!selected || !!selectedQuery}
         onClose={() => {

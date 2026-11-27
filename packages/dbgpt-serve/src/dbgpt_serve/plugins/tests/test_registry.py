@@ -1,12 +1,13 @@
 import textwrap
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
 from dbgpt.storage.metadata import db
 from dbgpt_serve.plugins.loader import load_suite_dir
-from dbgpt_serve.plugins.models.models import SuiteDao, SuiteEventDao
+from dbgpt_serve.plugins.models.models import SuiteDao, SuiteEventDao, SuiteEventEntity
 from dbgpt_serve.plugins.registry import (
     STATUS_DISABLED,
     STATUS_ENABLED,
@@ -150,6 +151,11 @@ def test_unpin_clears_only_current_conversation_and_allows_reselection(
     registry.record_pin("conv-1", "demo-query", "1.0.0")
     registry.record_pin("conv-2", "demo-query", "1.0.0")
     registry.record_unpin("conv-1", user_name="owner")
+    # Events can share a timestamp on a fast pin/unpin sequence.
+    with registry._event_dao.session() as session:
+        session.query(SuiteEventEntity).update(
+            {SuiteEventEntity.gmt_created: datetime(2020, 1, 1)}
+        )
     assert registry.current_pin("conv-1") is None
     assert registry.current_pin("conv-2") == ("demo-query", "1.0.0")
     event = registry.list_events("demo-query")[0]

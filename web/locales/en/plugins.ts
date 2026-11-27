@@ -72,7 +72,8 @@ export const PluginsEn = {
   plugins_name_sql: 'SQL Optimization',
   plugins_desc_analysis: 'Explore business changes, explain their drivers, and deliver reports and dashboards.',
   plugins_desc_query: 'Ask in natural language, inspect the SQL, and export your query results.',
-  plugins_desc_financial: 'Read financial reports and compare performance, cash flow, and earnings quality.',
+  plugins_desc_financial:
+    'Read and compare annual reports, look up stocks and see A-share sector performance, gainers and decliners.',
   plugins_desc_metadata: 'Understand schemas and prepare data dictionaries, ER diagrams, and modeling proposals.',
   plugins_desc_sql: 'Inspect query bottlenecks and execution plans, with recommendations to review.',
 };

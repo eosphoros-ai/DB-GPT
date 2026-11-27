@@ -165,7 +165,7 @@ export interface ManusLeftPanelProps {
   userQuery?: string;
   assistantText?: string;
   onFinancialCitationClick?: (citation: FinancialCitation) => void;
-  /** Render incremental answer text without reparsing Markdown on every frame. */
+  /** The answer is still arriving or being presented incrementally. */
   isAssistantStreaming?: boolean;
   stepThoughts?: Record<string, string>;
   /** Optional slot rendered above the execution sections (sub-agent card). */
@@ -176,6 +176,8 @@ export interface ManusLeftPanelProps {
   timelineSlot?: React.ReactNode;
   /** Dashboard planning and generation controls attached to this answer. */
   dashboardSlot?: React.ReactNode;
+  /** Structured stock/index/sector quote snapshot card rendered above the prose answer. */
+  stockQuoteSlot?: React.ReactNode;
   /** Final deliverable entry follows the answer, apart from execution steps. */
   artifactSlot?: React.ReactNode;
   /** Draw a hairline separator above the answer text (timeline mode). */
@@ -1070,6 +1072,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   subAgentSlot,
   timelineSlot,
   dashboardSlot,
+  stockQuoteSlot,
   artifactSlot,
   answerSeparated,
   artifacts,
@@ -1261,6 +1264,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
 
   // Collapsed mode: show compact summary of the round
   if (isCollapsed) {
+    const preview = markdownToPlainText(displayAssistantText || '');
     return (
       <div
         onClick={onExpand}
@@ -1282,8 +1286,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {/* Truncated assistant response */}
         {(displayAssistantText || semanticSources.length > 0) && (
           <div className='text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed'>
-            {displayAssistantText?.slice(0, 150)}
-            {(displayAssistantText?.length || 0) > 150 ? '...' : ''}
+            {preview.slice(0, 150)}
+            {preview.length > 150 ? '...' : ''}
           </div>
         )}
         {/* Completed indicator */}
@@ -1470,17 +1474,13 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               ))
             )}
           </div>
-        ) : timelineSlot ? null : (
+        ) : timelineSlot || displayAssistantText || !isWorking ? null : (
           <div className='px-4 py-6 text-gray-400 space-y-2'>
-            {isWorking ? (
-              <div className='flex items-center gap-2'>
-                <LoadingOutlined spin className='text-blue-500' />
-                <span className='text-sm text-blue-600 dark:text-blue-400'>{t('db_gpt_thinking')}</span>
-              </div>
-            ) : (
-              <span className='text-sm'>{t('waiting_to_start')}</span>
-            )}
-            {isWorking && stepThoughts?.[activeStepId || 'initial'] && (
+            <div className='flex items-center gap-2' role='status'>
+              <LoadingOutlined spin className='text-blue-500' />
+              <span className='text-sm text-blue-600 dark:text-blue-400'>{t('generating_reply')}</span>
+            </div>
+            {stepThoughts?.[activeStepId || 'initial'] && (
               <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
             )}
           </div>
@@ -1490,11 +1490,11 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           <FinancialProgressUpdates updates={financialUpdates} published={reportPublished} />
         )}
 
-        {isWorking && sections.length > 0 && financialTasks.length === 0 && (
+        {isWorking && !displayAssistantText && sections.length > 0 && financialTasks.length === 0 && (
           <div className='px-4 py-3 mt-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 space-y-2'>
             <div className='flex items-center gap-2'>
               <LoadingOutlined spin className='text-blue-500' />
-              <span className='text-sm text-blue-600 dark:text-blue-400'>{t('db_gpt_thinking')}</span>
+              <span className='text-sm text-blue-600 dark:text-blue-400'>{t('generating_reply')}</span>
             </div>
             {stepThoughts?.[activeStepId || 'initial'] && (
               <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
@@ -1512,6 +1512,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>
         )}
+
+        {stockQuoteSlot}
 
         {displayAssistantText && (
           <div

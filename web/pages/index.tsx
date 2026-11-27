@@ -90,6 +90,8 @@ import {
   artifactIdentity,
   mergeArtifacts,
 } from '@/new-components/financial-analysis/report-delivery';
+import StockQuoteCard from '@/new-components/financial-analysis/StockQuoteCard';
+import { isStockQuoteSnapshot, type StockQuoteSnapshot } from '@/new-components/financial-analysis/stock-quote-types';
 import { dashboardText as dt } from '@/new-components/dashboard/dashboard-i18n';
 import { DASHBOARD_INTERNAL_SKILLS, dashboardTemplateEntry } from '@/new-components/dashboard/dashboard-template-entry';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
@@ -99,7 +101,7 @@ import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import type { SuiteCommand, SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
 import type { ITaskflowRef } from '@/types/taskflow';
-import { buildActionDisplayText } from '@/utils/action-display';
+import { buildActionDisplayText, chatDisplaySteps } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { executionStatus } from '@/utils/execution-status';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
@@ -120,6 +122,9 @@ import {
   suiteDisplayName,
 } from '@/utils/suite-routing';
 import {
+  filesUsedBeforeStockQuote,
+  isStockQuoteCommand,
+  isTurnScopedSuite,
   suiteCommandFileError,
   suiteCommandFileHint,
   suiteCommandPrompt,
@@ -445,6 +450,20 @@ const synthesizeIntention = (
       return t('intent_todo');
     case 'question':
       return t('intent_question');
+    case 'query_stock_quotes': {
+      let parsed: any = input;
+      if (typeof input === 'string') {
+        try {
+          parsed = JSON.parse(input);
+        } catch {
+          parsed = null;
+        }
+      }
+      const list = Array.isArray(parsed?.stocks) ? parsed.stocks.filter(Boolean).join('、') : '';
+      return list
+        ? (t('intent_stock_quotes', { q: clip(list, 48) }) as string)
+        : (t('intent_stock_quotes_plain') as string);
+    }
     default:
       if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
       if (/^(load_skill|get_skill|execute_skill)/.test(action)) {
@@ -500,6 +519,7 @@ interface ChatMessage {
   reportId?: string;
   reportRunId?: string;
   dashboardGenerations?: DashboardGenerationState[];
+  stockQuoteSnapshot?: StockQuoteSnapshot;
 }
 
 interface ExecutionStep {
@@ -516,6 +536,7 @@ interface ExecutionStep {
   /** User-facing intent line from step.meta (action_intention). */
   actionIntention?: string;
   progressContent?: string;
+  toolConfirmed?: boolean;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -1181,11 +1202,16 @@ const Playground: NextPage = () => {
     return <AttachmentPreview snapshot={sessionFilePreview.snapshot} size={sessionFilePreview.size} />;
   };
 
+  const clearSessionFileTurn = sessionFiles.clearTurn;
+  const detachSentFiles = sessionFiles.detachSentFiles;
+  const detachPreviousAttachments = useCallback(() => {
+    detachSentFiles(new Set(messages.flatMap(msg => msg.attachedFiles?.map(file => file.file_id) ?? [])));
+  }, [detachSentFiles, messages]);
   const clearComposerAttachments = useCallback(() => {
-    sessionFiles.clearTurn();
+    clearSessionFileTurn();
     closeSessionFilePreview();
     setQueuedSendAfterUpload(false);
-  }, [closeSessionFilePreview, sessionFiles]);
+  }, [clearSessionFileTurn, closeSessionFilePreview]);
 
   const [executionMap, setExecutionMap] = useState<
     Record<
@@ -1268,13 +1294,14 @@ const Playground: NextPage = () => {
         return;
       }
       selectSuiteContext(suite);
+      if (isStockQuoteCommand(suite.name, command.name)) detachPreviousAttachments();
       setSelectedSuiteCommand({ suite: suite.name, name: command.name });
       const nextQuery = prompt ?? command.prefill ?? '';
       setQuery(nextQuery);
       setComposerCaret(nextQuery.length);
       setSuiteMenuDismissed(true);
     },
-    [selectSuiteContext],
+    [detachPreviousAttachments, selectSuiteContext],
   );
 
   useEffect(() => {
@@ -1504,14 +1531,30 @@ const Playground: NextPage = () => {
     [t],
   );
 
+  const displayExecutionMap = useMemo(() => {
+    const result = { ...executionMap };
+    for (const msg of messages) {
+      if (msg.role !== 'view' || !msg.id) continue;
+      const execution = executionMap[msg.id];
+      if (!execution) continue;
+      const steps = chatDisplaySteps(execution.steps, msg.executionStatus);
+      if (steps.length === execution.steps.length) continue;
+      const activeStepId = steps.some(step => step.id === execution.activeStepId)
+        ? execution.activeStepId
+        : steps[steps.length - 1]?.id ?? null;
+      result[msg.id] = { ...execution, steps, activeStepId };
+    }
+    return result;
+  }, [executionMap, messages]);
+
   // Global turn status line (Codex-style): one summary line at the end
   // of the stream instead of per-panel spinners/badges.
   const streamStatus = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role !== 'view' || !msg.id) continue;
-      const exec = executionMap[msg.id];
-      if (!exec || exec.steps.length === 0) continue;
+      const exec = displayExecutionMap[msg.id];
+      if (!exec || exec.steps.length === 0) return null;
       const toolCalls = exec.steps.filter(
         s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
       ).length;
@@ -1540,7 +1583,7 @@ const Playground: NextPage = () => {
       };
     }
     return null;
-  }, [messages, executionMap, t]);
+  }, [messages, displayExecutionMap, t]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -1616,7 +1659,7 @@ const Playground: NextPage = () => {
    *  a running conversation can re-inject the live human/view pair — history
    *  only holds flushed rounds and New Task clears the messages state. */
   const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
-  const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
+  const loadConversationRef = useRef<(convUid: string) => Promise<ReadonlySet<string> | void>>(async () => undefined);
 
   const abortInFlightChat = useCallback(() => {
     chatAbortControllerRef.current?.abort();
@@ -1921,10 +1964,10 @@ const Playground: NextPage = () => {
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
       const transitionEpoch = taskEpochRef.current;
-      void loadConversationRef.current(convId);
+      const excludedFiles = loadConversationRef.current(convId);
       // Rebuild the composer rail from the server-owned session files so a
       // conversation switch never leaks drafts from another session scope.
-      void rehydrateSessionFiles(convId).catch(error => {
+      void rehydrateSessionFiles(convId, excludedFiles).catch(error => {
         if (taskEpochRef.current !== transitionEpoch) return;
         console.error('Failed to restore conversation files', error);
       });
@@ -2988,6 +3031,14 @@ const Playground: NextPage = () => {
       message.error(dt('暂无可用模型，请检查模型服务后重试。'));
       return;
     }
+    const quoteCardFollowup =
+      overrideExtInfo?.suite === 'financial-analysis' && overrideExtInfo?.suite_command === '';
+    const runSuite = quoteCardFollowup
+      ? (effectiveSuite?.name === 'financial-analysis'
+          ? effectiveSuite
+          : (suites.find(s => s.name === 'financial-analysis') ?? effectiveSuite))
+      : effectiveSuite;
+    const runSuiteCommand = quoteCardFollowup ? undefined : effectiveSuiteCommand;
     const draftInputFiles = explicitLegacyFile
       ? [explicitLegacyFile]
       : sessionFiles.legacyFile
@@ -2996,9 +3047,9 @@ const Playground: NextPage = () => {
             name: draft.identity.name,
             media_type: draft.snapshot?.media_type || draft.file?.type || '',
           }));
-    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles);
-    if (materialProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(materialProblem, effectiveSuiteCommand, i18n.language));
+    const materialProblem = validateSuiteCommandFiles(runSuiteCommand, draftInputFiles);
+    if (materialProblem && runSuiteCommand) {
+      message.warning(suiteCommandFileError(materialProblem, runSuiteCommand, i18n.language));
       return;
     }
     if (
@@ -3058,6 +3109,8 @@ const Playground: NextPage = () => {
     // explicit value, so the first auto-send never waits for React to commit
     // the attachment-rail state. Manual uploads keep the existing queued
     // file_ids flow below; the session-files module rejects protocol mixing.
+    const quoteCommand = isStockQuoteCommand(runSuite?.name, runSuiteCommand?.name);
+    if (quoteCommand) detachPreviousAttachments();
     if (explicitLegacyFile) {
       const staged = sessionFiles.stageLegacyForSend(explicitLegacyFile, currentConvId);
       if (!staged.ok) {
@@ -3065,7 +3118,7 @@ const Playground: NextPage = () => {
         return;
       }
       sendSnapshot = staged.snapshot;
-    } else if (hasSessionFileDrafts || hasLegacyFile) {
+    } else if (!quoteCardFollowup && (hasSessionFileDrafts || hasLegacyFile)) {
       if (sessionFiles.files.some(draft => draft.validation.status !== 'ok')) {
         message.error('存在未通过校验的附件，请先移除后再发送');
         return;
@@ -3092,9 +3145,9 @@ const Playground: NextPage = () => {
     const preparedFiles = sendSnapshot?.legacyFile
       ? [sendSnapshot.legacyFile]
       : (sendSnapshot?.fileIds ?? []).map(fileId => sendSnapshot!.snapshotById[fileId]);
-    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles);
-    if (preparedProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(preparedProblem, effectiveSuiteCommand, i18n.language));
+    const preparedProblem = validateSuiteCommandFiles(runSuiteCommand, preparedFiles);
+    if (preparedProblem && runSuiteCommand) {
+      message.warning(suiteCommandFileError(preparedProblem, runSuiteCommand, i18n.language));
       return;
     }
     // Shallow-write the conversation id into the URL once the send is
@@ -3144,11 +3197,11 @@ const Playground: NextPage = () => {
       attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
       attachedKnowledge: effectiveKnowledge ?? undefined,
       attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
-      attachedSuite: effectiveSuite
+      attachedSuite: runSuite
         ? {
-            name: effectiveSuite.name,
-            display: suiteDisplayName(effectiveSuite, i18n.language),
-            command: effectiveSuiteCommand?.name,
+            name: runSuite.name,
+            display: suiteDisplayName(runSuite, i18n.language),
+            command: runSuiteCommand?.name,
           }
         : undefined,
       attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
@@ -3173,7 +3226,8 @@ const Playground: NextPage = () => {
     setLoading(true);
     setQuery(''); // Clear input
     // Analysis commands apply to this send; ordinary follow-ups reuse saved data.
-    if (effectiveSuite?.scenario_id === 'financial') setSelectedSuiteCommand(null);
+    if (isTurnScopedSuite(effectiveSuite?.name, effectiveSuite?.scenario_id)) setSelectedSuiteCommand(null);
+    if (quoteCommand) clearComposerAttachments();
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
@@ -3216,17 +3270,20 @@ const Playground: NextPage = () => {
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
       // Suite pin: explicit tab selection wins over keyword routing; the
       // backend binder records the pin and keeps it sticky for the conv.
-      ...(effectiveSuite
-        ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
+      ...(runSuite
+        ? { suite: runSuite.name, suite_display: suiteDisplayName(runSuite, i18n.language) }
         : {}),
-      ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
+      ...(runSuiteCommand ? { suite_command: runSuiteCommand.name } : {}),
       ...(suiteResetRequested && !overrideExtInfo?.suite ? { suite_reset: true } : {}),
-      ...(effectiveSuite?.manifest_snapshot?.context_defaults?.harness_engine
-        ? { harness_engine: effectiveSuite.manifest_snapshot.context_defaults.harness_engine }
+      ...(runSuite?.manifest_snapshot?.context_defaults?.harness_engine
+        ? { harness_engine: runSuite.manifest_snapshot.context_defaults.harness_engine }
         : {}),
       ...(suiteCreationMode ? { creation_mode: 'expert_suite' } : {}),
       ...overrideExtInfo,
     };
+    if (baseExtInfo.suite_command === '') {
+      delete baseExtInfo.suite_command;
+    }
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
     const extInfo = extInfoForSend(baseExtInfo, filesAttachedThisSend);
@@ -3515,6 +3572,22 @@ const Playground: NextPage = () => {
           }
           return;
         }
+        if (payload.type === 'stock_quote.snapshot') {
+          if (isStockQuoteSnapshot(payload.snapshot)) {
+            const nextSnapshot = payload.snapshot;
+            setMessages(prev =>
+              prev.map(msg => {
+                if (msg.id !== responseId || msg.role !== 'view') return msg;
+                return { ...msg, stockQuoteSnapshot: nextSnapshot };
+              }),
+            );
+            const live = liveRoundRef.current[currentConvId];
+            if (live && live.view?.id === responseId) {
+              live.view = { ...live.view, stockQuoteSnapshot: nextSnapshot };
+            }
+          }
+          return;
+        }
         if (payload.type === 'progress.remove') {
           setExecutionMap(prev => {
             const current = prev[responseId];
@@ -3542,6 +3615,7 @@ const Playground: NextPage = () => {
               status: payload.streaming ? 'running' : 'done',
               action: '__progress__',
               progressContent: payload.content,
+              toolConfirmed: payload.tool_confirmed,
             };
             const exists = current.steps.some(step => step.id === payload.id);
             const placeholder = current.steps.findIndex(step => step.id === payload.before_step_id);
@@ -4363,6 +4437,7 @@ const Playground: NextPage = () => {
             status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
             progressContent: s.progress_content,
+            toolConfirmed: s.tool_confirmed,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
             actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
@@ -4545,6 +4620,9 @@ const Playground: NextPage = () => {
             dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
               .map(dashboardGenerationFromHistoryRef)
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
+            stockQuoteSnapshot: isStockQuoteSnapshot(payload.stock_quote_snapshot)
+              ? payload.stock_quote_snapshot
+              : undefined,
             order: msg.order,
             thinking: false,
             executionStatus: payload.execution_status,
@@ -4595,8 +4673,10 @@ const Playground: NextPage = () => {
       setActiveSuiteTab(latestSuite.name);
       setSuiteTabTouched(true);
       // History restores the suite, not a completed new-analysis command.
-      const financialCommand =
-        latestSuite.name === 'financial-analysis' && ['/读年报', '/财报对比'].includes(latestSuite.command || '');
+      const financialCommand = isTurnScopedSuite(
+        latestSuite.name,
+        suites.find(item => item.name === latestSuite.name)?.scenario_id,
+      );
       setSelectedSuiteCommand(
         latestSuite.command && !financialCommand ? { suite: latestSuite.name, name: latestSuite.command } : null,
       );
@@ -4627,6 +4707,7 @@ const Playground: NextPage = () => {
         setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
       }
     }
+    return filesUsedBeforeStockQuote(newMessages);
   };
 
   const loadConversation = async (convUid: string) => {
@@ -4692,7 +4773,7 @@ const Playground: NextPage = () => {
           (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
         );
         const liveTail = live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
-        restoreFromHistory(
+        return restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
             context: m.context,
@@ -5071,7 +5152,7 @@ const Playground: NextPage = () => {
                       const isSelected = round.viewMsg?.id === selectedViewMsgId;
                       const isCurrentRoundCollapsed = !isLastRound && !isSelected;
 
-                      const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
+                      const execution = round.viewMsg?.id ? displayExecutionMap[round.viewMsg.id] : undefined;
                       const {
                         sections,
                         activeStep: _activeStep,
@@ -5177,6 +5258,23 @@ const Playground: NextPage = () => {
                                 }}
                               />
                             ))}
+                            stockQuoteSlot={
+                              round.viewMsg?.stockQuoteSnapshot ? (
+                                <StockQuoteCard
+                                  snapshot={round.viewMsg.stockQuoteSnapshot}
+                                  language={i18n.language}
+                                  busy={loading}
+                                  interactive={isLastRound}
+                                  onRefresh={prompt =>
+                                    void performStart(prompt, null, null, null, null, {
+                                      suite: 'financial-analysis',
+                                      harness_engine: 'dbgpt',
+                                      suite_command: '',
+                                    })
+                                  }
+                                />
+                              ) : undefined
+                            }
                             sections={useTimelineView ? [] : sections}
                             flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
                             answerSeparated={
@@ -6009,7 +6107,7 @@ const Playground: NextPage = () => {
                 ) : (
                   (() => {
                     const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
-                    const rawExecution = activeViewMsg?.id ? executionMap[activeViewMsg.id] : undefined;
+                    const rawExecution = activeViewMsg?.id ? displayExecutionMap[activeViewMsg.id] : undefined;
                     // Respect user's manual step selection for the right panel
                     const execution =
                       rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;
