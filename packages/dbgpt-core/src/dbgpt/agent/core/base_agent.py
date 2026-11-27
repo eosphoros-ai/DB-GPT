@@ -1575,16 +1575,16 @@ class ConversableAgent(Role, Agent):
         if historical_dialogues:
             # Always pass the full prior Q&A dialogue to the model (multi-turn
             # follow-ups need the earlier turns), independent of whether memory
-            # fragments were also read. Even index = user, odd index = AI.
-            for i in range(len(historical_dialogues)):
-                if i % 2 == 0:
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.HUMAN
-                    agent_messages.append(message)
-                else:
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.AI
-                    agent_messages.append(message)
+            # fragments were also read. Preserve explicit roles when supplied;
+            # fall back to alternating human/AI for legacy callers.
+            for i, message in enumerate(historical_dialogues):
+                if not message.role:
+                    message.role = (
+                        ModelMessageRoleType.HUMAN
+                        if i % 2 == 0
+                        else ModelMessageRoleType.AI
+                    )
+                agent_messages.append(message)
 
         if memory_list:
             # Keep the objective before its tool results, even after the first
