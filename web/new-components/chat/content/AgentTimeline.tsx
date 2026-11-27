@@ -24,6 +24,7 @@ import {
   Loading3QuartersOutlined,
   ReadOutlined,
   SearchOutlined,
+  StockOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import cls from 'classnames';
@@ -91,6 +92,7 @@ function toolIcon(tool?: string, title?: string) {
   if (key.includes('code') || key.includes('python') || key.includes('interpreter')) return <CodeOutlined />;
   if (key.includes('search') || key.includes('grep') || key.includes('knowledge')) return <SearchOutlined />;
   if (key.includes('read') || key.includes('file')) return <ReadOutlined />;
+  if (key.includes('stock_quote') || key.includes('stock_quotes')) return <StockOutlined />;
   if (key.includes('report') || key.includes('html') || key.includes('visual')) return <FileTextOutlined />;
   if (key.includes('web') || key.includes('http') || key.includes('crawl')) return <GlobalOutlined />;
   return <ThunderboltOutlined />;

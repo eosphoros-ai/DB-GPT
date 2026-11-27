@@ -460,7 +460,9 @@ const synthesizeIntention = (
         }
       }
       const list = Array.isArray(parsed?.stocks) ? parsed.stocks.filter(Boolean).join('、') : '';
-      return list ? `查询行情：${clip(list, 48)}` : '查询实时行情';
+      return list
+        ? (t('intent_stock_quotes', { q: clip(list, 48) }) as string)
+        : (t('intent_stock_quotes_plain') as string);
     }
     default:
       if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
@@ -3029,6 +3031,14 @@ const Playground: NextPage = () => {
       message.error(dt('暂无可用模型，请检查模型服务后重试。'));
       return;
     }
+    const quoteCardFollowup =
+      overrideExtInfo?.suite === 'financial-analysis' && overrideExtInfo?.suite_command === '';
+    const runSuite = quoteCardFollowup
+      ? (effectiveSuite?.name === 'financial-analysis'
+          ? effectiveSuite
+          : (suites.find(s => s.name === 'financial-analysis') ?? effectiveSuite))
+      : effectiveSuite;
+    const runSuiteCommand = quoteCardFollowup ? undefined : effectiveSuiteCommand;
     const draftInputFiles = explicitLegacyFile
       ? [explicitLegacyFile]
       : sessionFiles.legacyFile
@@ -3037,9 +3047,9 @@ const Playground: NextPage = () => {
             name: draft.identity.name,
             media_type: draft.snapshot?.media_type || draft.file?.type || '',
           }));
-    const materialProblem = validateSuiteCommandFiles(effectiveSuiteCommand, draftInputFiles);
-    if (materialProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(materialProblem, effectiveSuiteCommand, i18n.language));
+    const materialProblem = validateSuiteCommandFiles(runSuiteCommand, draftInputFiles);
+    if (materialProblem && runSuiteCommand) {
+      message.warning(suiteCommandFileError(materialProblem, runSuiteCommand, i18n.language));
       return;
     }
     if (
@@ -3099,7 +3109,7 @@ const Playground: NextPage = () => {
     // explicit value, so the first auto-send never waits for React to commit
     // the attachment-rail state. Manual uploads keep the existing queued
     // file_ids flow below; the session-files module rejects protocol mixing.
-    const quoteCommand = isStockQuoteCommand(effectiveSuite?.name, effectiveSuiteCommand?.name);
+    const quoteCommand = isStockQuoteCommand(runSuite?.name, runSuiteCommand?.name);
     if (quoteCommand) detachPreviousAttachments();
     if (explicitLegacyFile) {
       const staged = sessionFiles.stageLegacyForSend(explicitLegacyFile, currentConvId);
@@ -3108,7 +3118,7 @@ const Playground: NextPage = () => {
         return;
       }
       sendSnapshot = staged.snapshot;
-    } else if (hasSessionFileDrafts || hasLegacyFile) {
+    } else if (!quoteCardFollowup && (hasSessionFileDrafts || hasLegacyFile)) {
       if (sessionFiles.files.some(draft => draft.validation.status !== 'ok')) {
         message.error('存在未通过校验的附件，请先移除后再发送');
         return;
@@ -3135,9 +3145,9 @@ const Playground: NextPage = () => {
     const preparedFiles = sendSnapshot?.legacyFile
       ? [sendSnapshot.legacyFile]
       : (sendSnapshot?.fileIds ?? []).map(fileId => sendSnapshot!.snapshotById[fileId]);
-    const preparedProblem = validateSuiteCommandFiles(effectiveSuiteCommand, preparedFiles);
-    if (preparedProblem && effectiveSuiteCommand) {
-      message.warning(suiteCommandFileError(preparedProblem, effectiveSuiteCommand, i18n.language));
+    const preparedProblem = validateSuiteCommandFiles(runSuiteCommand, preparedFiles);
+    if (preparedProblem && runSuiteCommand) {
+      message.warning(suiteCommandFileError(preparedProblem, runSuiteCommand, i18n.language));
       return;
     }
     // Shallow-write the conversation id into the URL once the send is
@@ -3187,11 +3197,11 @@ const Playground: NextPage = () => {
       attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
       attachedKnowledge: effectiveKnowledge ?? undefined,
       attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
-      attachedSuite: effectiveSuite
+      attachedSuite: runSuite
         ? {
-            name: effectiveSuite.name,
-            display: suiteDisplayName(effectiveSuite, i18n.language),
-            command: effectiveSuiteCommand?.name,
+            name: runSuite.name,
+            display: suiteDisplayName(runSuite, i18n.language),
+            command: runSuiteCommand?.name,
           }
         : undefined,
       attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
@@ -3260,17 +3270,20 @@ const Playground: NextPage = () => {
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
       // Suite pin: explicit tab selection wins over keyword routing; the
       // backend binder records the pin and keeps it sticky for the conv.
-      ...(effectiveSuite
-        ? { suite: effectiveSuite.name, suite_display: suiteDisplayName(effectiveSuite, i18n.language) }
+      ...(runSuite
+        ? { suite: runSuite.name, suite_display: suiteDisplayName(runSuite, i18n.language) }
         : {}),
-      ...(effectiveSuiteCommand ? { suite_command: effectiveSuiteCommand.name } : {}),
+      ...(runSuiteCommand ? { suite_command: runSuiteCommand.name } : {}),
       ...(suiteResetRequested && !overrideExtInfo?.suite ? { suite_reset: true } : {}),
-      ...(effectiveSuite?.manifest_snapshot?.context_defaults?.harness_engine
-        ? { harness_engine: effectiveSuite.manifest_snapshot.context_defaults.harness_engine }
+      ...(runSuite?.manifest_snapshot?.context_defaults?.harness_engine
+        ? { harness_engine: runSuite.manifest_snapshot.context_defaults.harness_engine }
         : {}),
       ...(suiteCreationMode ? { creation_mode: 'expert_suite' } : {}),
       ...overrideExtInfo,
     };
+    if (baseExtInfo.suite_command === '') {
+      delete baseExtInfo.suite_command;
+    }
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
     const extInfo = extInfoForSend(baseExtInfo, filesAttachedThisSend);
@@ -5252,8 +5265,13 @@ const Playground: NextPage = () => {
                                   language={i18n.language}
                                   busy={loading}
                                   interactive={isLastRound}
-                                  onSelectCandidate={choice => void performStart(choice)}
-                                  onRefresh={prompt => void performStart(prompt)}
+                                  onRefresh={prompt =>
+                                    void performStart(prompt, null, null, null, null, {
+                                      suite: 'financial-analysis',
+                                      harness_engine: 'dbgpt',
+                                      suite_command: '',
+                                    })
+                                  }
                                 />
                               ) : undefined
                             }

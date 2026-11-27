@@ -573,6 +573,8 @@ export const ChatZh: Resources['translation'] = {
   intent_edit: '编辑 {{p}}',
   intent_todo: '更新任务计划',
   intent_question: '向用户提问',
+  intent_stock_quotes: '查询行情：{{q}}',
+  intent_stock_quotes_plain: '查询实时行情',
   intent_kb: '检索知识库',
   intent_skill: '加载技能 {{n}}',
   intent_web_search_plain: '网络搜索',

@@ -90,6 +90,9 @@ export interface StockQuoteSnapshot {
   version?: number;
   queried_at: string;
   rows: StockQuoteRow[];
+  display_mode?: 'full' | 'compact';
+  recall_detail?: string | null;
+  recall_indices?: number[] | null;
 }
 
 export function isStockQuoteSnapshot(value: unknown): value is StockQuoteSnapshot {
@@ -104,24 +107,57 @@ export function toFiniteNumber(value: string | number | null | undefined): numbe
   return Number.isFinite(n) ? n : null;
 }
 
-/** A-share market convention: red for positive gains, green for declines. */
-export function changeTone(value: string | number | null | undefined): 'up' | 'down' | 'flat' {
+export type QuoteTone = 'up' | 'down' | 'flat';
+
+export function changeTone(value: string | number | null | undefined): QuoteTone {
   const n = toFiniteNumber(value);
   if (n === null || n === 0) return 'flat';
   return n > 0 ? 'up' : 'down';
 }
 
-export function formatNumber(value: string | number | null | undefined, digits = 2): string {
+const RED_STYLE = {
+  text: 'text-[#dc2626] dark:text-[#f87171]',
+  pill: 'bg-red-50 text-[#dc2626] border-red-200/80 dark:bg-red-950/40 dark:text-[#f87171] dark:border-red-900/60',
+  bar: 'bg-[#dc2626] dark:bg-[#f87171]',
+};
+
+const GREEN_STYLE = {
+  text: 'text-[#16a34a] dark:text-[#4ade80]',
+  pill: 'bg-emerald-50 text-[#16a34a] border-emerald-200/80 dark:bg-emerald-950/40 dark:text-[#4ade80] dark:border-emerald-900/60',
+  bar: 'bg-[#16a34a] dark:bg-[#4ade80]',
+};
+
+const FLAT_STYLE = {
+  text: 'text-gray-600 dark:text-gray-400',
+  pill: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/70 dark:text-gray-300 dark:border-gray-700',
+  bar: 'bg-gray-400 dark:bg-gray-500',
+};
+
+/** Locale-aware market convention: ZH uses red-up/green-down; EN uses green-up/red-down. */
+export function toneStyle(tone: QuoteTone, en: boolean) {
+  if (tone === 'flat') return FLAT_STYLE;
+  if (en) return tone === 'up' ? GREEN_STYLE : RED_STYLE;
+  return tone === 'up' ? RED_STYLE : GREEN_STYLE;
+}
+
+function needsThreeDecimals(n: number): boolean {
+  return Math.abs(Math.round(n * 100) - n * 100) > 1e-6;
+}
+
+export function formatNumber(value: string | number | null | undefined, digits?: number): string {
   const n = toFiniteNumber(value);
   if (n === null) return '—';
-  return n.toFixed(digits);
+  const precision = digits ?? (needsThreeDecimals(n) ? 3 : 2);
+  return n.toFixed(precision);
 }
 
 export function formatSigned(value: string | number | null | undefined, percent = false): string {
   const n = toFiniteNumber(value);
   if (n === null) return '—';
-  const sign = n < 0 ? '−' : n > 0 ? '+' : '';
-  return `${sign}${Math.abs(n).toFixed(2)}${percent ? '%' : ''}`;
+  const precision = percent ? 2 : needsThreeDecimals(n) ? 3 : 2;
+  const rounded = Number(n.toFixed(precision));
+  const sign = rounded < 0 ? '−' : rounded > 0 ? '+' : '';
+  return `${sign}${Math.abs(rounded).toFixed(precision)}${percent ? '%' : ''}`;
 }
 
 export function formatTurnover(value: string | number | null | undefined, currency: string, en: boolean): string {
@@ -151,6 +187,27 @@ export function listingLabel(listing: StockListing): string {
 
 export function sectorUrl(code: string): string {
   return `https://quote.eastmoney.com/bk/90.${code}.html`;
+}
+
+/** Upgrade legacy raw API URLs (e.g. qt.gtimg.cn) to human-readable quote pages. */
+export function displayQuoteUrl(url: string | null | undefined, listing?: StockListing): string {
+  const raw = (url || '').trim();
+  const tencentApi = raw.match(/^https?:\/\/qt\.gtimg\.cn\/q=([a-z]{2}[A-Za-z0-9]+)/i);
+  if (tencentApi) {
+    return `https://gu.qq.com/${tencentApi[1]}`;
+  }
+  if (/^https?:\/\/yunhq\.sse\.com\.cn/i.test(raw) && listing?.code) {
+    return listing.asset_type === 'etf'
+      ? `https://www.sse.com.cn/assortment/fund/list/etfinfo/basic/index.shtml?FUNDID=${listing.code}`
+      : `https://www.sse.com.cn/assortment/stock/list/info/company/index.shtml?COMPANY_CODE=${listing.code}`;
+  }
+  if (/^https?:\/\/www\.szse\.cn\/api\/market\/ssjjhq/i.test(raw) && listing?.code) {
+    return `https://www.szse.cn/market/trend/index.html?code=${listing.code}`;
+  }
+  if (/^https?:\/\/www\.hkex\.com\.hk\/eng\/stat\/smstat\/dayquot\//i.test(raw) && listing?.code && /^\d+$/.test(listing.code)) {
+    return `https://www.hkex.com.hk/Market-Data/Securities-Prices/Equities/Equities-Quote?sym=${Number(listing.code)}&sc_lang=zh-HK`;
+  }
+  return raw;
 }
 
 export function unitLabel(currency: string | undefined, assetType: string | undefined, en: boolean): string {
@@ -197,6 +254,11 @@ const REASON_MAP: Record<string, [string, string]> = {
   lookup_failed: ['名称检索源暂不可用', 'Symbol lookup unavailable'],
   timeout: ['查询超时', 'Request timed out'],
   missing_quote: ['行情源未返回有效报价', 'No valid quote returned'],
+  daily_unavailable: ['当日港交所主板日报未发布或未覆盖', 'HKEX daily bulletin unavailable'],
+  different_close: ['交易所快照与日线收盘价不一致', 'Exchange snapshot and daily close differ'],
+  close_pending: ['交易所收盘记录待核对', 'Exchange close pending'],
+  close_unsupported: ['该品种无交易所收盘复核，展示最新报价', 'No exchange close check; showing latest quote'],
+  market_open: ['当前尚未收盘，展示盘中最新报价', 'Market open; showing latest quote'],
 };
 
 export function reasonLabel(reason: string | undefined, en: boolean): string {
@@ -204,8 +266,32 @@ export function reasonLabel(reason: string | undefined, en: boolean): string {
   return en ? pair[1] : pair[0];
 }
 
-export function buildRefreshPrompt(snapshot: StockQuoteSnapshot, en: boolean): string {
-  const subjects = snapshot.rows
+const DETAIL_MAP: Record<string, [string, string]> = {
+  last: ['最新价', 'Last'],
+  close: ['收盘价', 'Close'],
+  previous: ['前收', 'Prev close'],
+  opening: ['今开', 'Open'],
+  high: ['最高', 'High'],
+  low: ['最低', 'Low'],
+  turnover: ['成交额', 'Turnover'],
+  amplitude: ['振幅', 'Amplitude'],
+  gainers: ['领涨个股', 'Top gainers'],
+  losers: ['领跌个股', 'Top decliners'],
+};
+
+export function detailLabel(detail: string | null | undefined, en: boolean): string {
+  if (!detail) return '';
+  const pair = DETAIL_MAP[detail];
+  return pair ? (en ? pair[1] : pair[0]) : detail;
+}
+
+export function buildRefreshPrompt(
+  snapshot: StockQuoteSnapshot,
+  en: boolean,
+  targetRows?: StockQuoteRow[],
+): string {
+  const sourceRows = targetRows && targetRows.length > 0 ? targetRows : snapshot.rows;
+  const subjects = sourceRows
     .map(row => {
       if (row.sector) return `${row.sector.name}（${row.sector.code}）`;
       if (row.quote) return `${row.quote.listing.name}（${listingLabel(row.quote.listing)}）`;

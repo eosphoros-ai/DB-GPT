@@ -571,6 +571,8 @@ export const ChatEn = {
   intent_edit: 'Edit {{p}}',
   intent_todo: 'Update task plan',
   intent_question: 'Ask the user',
+  intent_stock_quotes: 'Look up quotes: {{q}}',
+  intent_stock_quotes_plain: 'Look up market quotes',
   intent_kb: 'Search knowledge base',
   intent_skill: 'Load skill {{n}}',
   intent_web_search_plain: 'Web search',
