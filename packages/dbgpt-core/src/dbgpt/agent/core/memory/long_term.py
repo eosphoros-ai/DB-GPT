@@ -205,6 +205,7 @@ class LongTermMemory(Memory, Generic[T]):
         )
         self._default_importance = _default_importance
         self._metadata: Dict[str, Any] = metadata or {"memory_type": "long_term"}
+        self._chunk_ids: List[str] = []
 
     @immutable
     def structure_clone(
@@ -252,12 +253,13 @@ class LongTermMemory(Memory, Generic[T]):
             content="[{}] ".format(memory_idx) + str(memory_fragment.raw_observation),
             metadata=metadata,
         )
-        await blocking_func_to_async(
+        chunk_ids = await blocking_func_to_async(
             self.executor,
             self.memory_retriever.load_document,
             [document],
             current_time=now,
         )
+        self._chunk_ids.extend(chunk_ids)
 
         return None
 
@@ -323,6 +325,22 @@ class LongTermMemory(Memory, Generic[T]):
     async def clear(self) -> List[T]:
         """Clear the memory.
 
-        TODO: Implement this method.
+        Delete the memory fragments written by this memory from the vector store.
         """
-        return []
+        chunks = self.memory_retriever.memory_stream
+        if self._chunk_ids:
+            await blocking_func_to_async(
+                self.executor,
+                self._vector_store.delete_by_ids,
+                ",".join(self._chunk_ids),
+            )
+        self._chunk_ids = []
+        self.memory_retriever.memory_stream = []
+        self.aggregate_importance = 0.0
+        return [
+            self.real_memory_fragment_class.build_from(
+                observation=chunk.content,
+                importance=chunk.metadata[_METADAT_IMPORTANCE],
+            )
+            for chunk in chunks
+        ]

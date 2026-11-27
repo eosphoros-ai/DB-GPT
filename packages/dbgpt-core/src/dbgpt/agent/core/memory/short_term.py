@@ -101,6 +101,14 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
             return discard_memories
 
     @mutable
+    async def clear(self) -> List[T]:
+        """Clear all memory fragments and their embeddings."""
+        self.short_embeddings = []
+        self.enhance_cnt = [0 for _ in range(self._buffer_size)]
+        self.enhance_memories = [[] for _ in range(self._buffer_size)]
+        return await super().clear()
+
+    @mutable
     async def transfer_to_long_term(
         self, memory_fragment: T
     ) -> Optional[DiscardedMemoryFragments[T]]:
