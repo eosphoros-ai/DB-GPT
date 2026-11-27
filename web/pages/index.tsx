@@ -90,6 +90,8 @@ import {
   artifactIdentity,
   mergeArtifacts,
 } from '@/new-components/financial-analysis/report-delivery';
+import StockQuoteCard from '@/new-components/financial-analysis/StockQuoteCard';
+import { isStockQuoteSnapshot, type StockQuoteSnapshot } from '@/new-components/financial-analysis/stock-quote-types';
 import { dashboardText as dt } from '@/new-components/dashboard/dashboard-i18n';
 import { DASHBOARD_INTERNAL_SKILLS, dashboardTemplateEntry } from '@/new-components/dashboard/dashboard-template-entry';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
@@ -448,6 +450,18 @@ const synthesizeIntention = (
       return t('intent_todo');
     case 'question':
       return t('intent_question');
+    case 'query_stock_quotes': {
+      let parsed: any = input;
+      if (typeof input === 'string') {
+        try {
+          parsed = JSON.parse(input);
+        } catch {
+          parsed = null;
+        }
+      }
+      const list = Array.isArray(parsed?.stocks) ? parsed.stocks.filter(Boolean).join('、') : '';
+      return list ? `查询行情：${clip(list, 48)}` : '查询实时行情';
+    }
     default:
       if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
       if (/^(load_skill|get_skill|execute_skill)/.test(action)) {
@@ -503,6 +517,7 @@ interface ChatMessage {
   reportId?: string;
   reportRunId?: string;
   dashboardGenerations?: DashboardGenerationState[];
+  stockQuoteSnapshot?: StockQuoteSnapshot;
 }
 
 interface ExecutionStep {
@@ -3544,6 +3559,22 @@ const Playground: NextPage = () => {
           }
           return;
         }
+        if (payload.type === 'stock_quote.snapshot') {
+          if (isStockQuoteSnapshot(payload.snapshot)) {
+            const nextSnapshot = payload.snapshot;
+            setMessages(prev =>
+              prev.map(msg => {
+                if (msg.id !== responseId || msg.role !== 'view') return msg;
+                return { ...msg, stockQuoteSnapshot: nextSnapshot };
+              }),
+            );
+            const live = liveRoundRef.current[currentConvId];
+            if (live && live.view?.id === responseId) {
+              live.view = { ...live.view, stockQuoteSnapshot: nextSnapshot };
+            }
+          }
+          return;
+        }
         if (payload.type === 'progress.remove') {
           setExecutionMap(prev => {
             const current = prev[responseId];
@@ -4576,6 +4607,9 @@ const Playground: NextPage = () => {
             dashboardGenerations: (Array.isArray(payload.dashboard_refs) ? payload.dashboard_refs : [])
               .map(dashboardGenerationFromHistoryRef)
               .filter((state: DashboardGenerationState | null): state is DashboardGenerationState => state !== null),
+            stockQuoteSnapshot: isStockQuoteSnapshot(payload.stock_quote_snapshot)
+              ? payload.stock_quote_snapshot
+              : undefined,
             order: msg.order,
             thinking: false,
             executionStatus: payload.execution_status,
@@ -5211,6 +5245,18 @@ const Playground: NextPage = () => {
                                 }}
                               />
                             ))}
+                            stockQuoteSlot={
+                              round.viewMsg?.stockQuoteSnapshot ? (
+                                <StockQuoteCard
+                                  snapshot={round.viewMsg.stockQuoteSnapshot}
+                                  language={i18n.language}
+                                  busy={loading}
+                                  interactive={isLastRound}
+                                  onSelectCandidate={choice => void performStart(choice)}
+                                  onRefresh={prompt => void performStart(prompt)}
+                                />
+                              ) : undefined
+                            }
                             sections={useTimelineView ? [] : sections}
                             flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
                             answerSeparated={

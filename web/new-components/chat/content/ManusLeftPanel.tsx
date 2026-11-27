@@ -176,6 +176,8 @@ export interface ManusLeftPanelProps {
   timelineSlot?: React.ReactNode;
   /** Dashboard planning and generation controls attached to this answer. */
   dashboardSlot?: React.ReactNode;
+  /** Structured stock/index/sector quote snapshot card rendered above the prose answer. */
+  stockQuoteSlot?: React.ReactNode;
   /** Final deliverable entry follows the answer, apart from execution steps. */
   artifactSlot?: React.ReactNode;
   /** Draw a hairline separator above the answer text (timeline mode). */
@@ -1070,6 +1072,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   subAgentSlot,
   timelineSlot,
   dashboardSlot,
+  stockQuoteSlot,
   artifactSlot,
   answerSeparated,
   artifacts,
@@ -1509,6 +1512,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>
         )}
+
+        {stockQuoteSlot}
 
         {displayAssistantText && (
           <div
