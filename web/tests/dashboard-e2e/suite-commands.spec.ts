@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { SuiteItem } from '../../types/suite';
 
+const defaultQuote = '帮我查查今天科技股和贵州茅台涨了多少？';
 const financialSuite: SuiteItem = {
   id: 4,
   name: 'financial-analysis',
   display: '财报分析',
   scenario_id: 'financial',
-  version: '1.0.0',
+  version: '1.1.0',
   source: 'official',
   status: 'enabled',
   manifest_snapshot: {
@@ -26,10 +27,12 @@ const financialSuite: SuiteItem = {
         prefill: '请比较这些财报的经营表现。',
         input_files: { min: 2, max: 5, types: ['application/pdf'] },
       },
+      { name: '/查股票', aliases: ['/stock-quote'], description: '查询沪深港行情', prefill: defaultQuote },
     ],
     recommended_questions: [
       { text: '解读这份年报的现金流', command: '/读年报' },
       { text: '比较多份财报', command: '/财报对比' },
+      { title: '查股票', text: defaultQuote, command: '/查股票' },
     ],
   },
 };
@@ -119,6 +122,7 @@ async function setup(page: Page) {
             type: 'react-agent',
             final_content: '已收到测试请求。',
             steps: [],
+            input_files: send.ext_info.input_files || [],
             suite_reference:
               !send.ext_info.suite_reset && send.ext_info.suite
                 ? {
@@ -144,6 +148,74 @@ async function uploadPdf(page: Page, name: string) {
   await page.getByText('从本地文件添加', { exact: true }).click();
   await (await chooser).setFiles(pdf(name));
 }
+
+test('stock quotes preserve slash arguments and restore the suite for an ordinary follow-up', async ({ page }) => {
+  const { sends } = await setup(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: '财报分析', exact: true }).click();
+  await page.getByRole('button', { name: '查股票', exact: true }).click();
+  const input = page.locator('textarea').first();
+  await expect(input).toHaveValue(defaultQuote);
+  await expect(page.getByTestId('suite-material-guide')).toHaveCount(0);
+  expect(sends).toHaveLength(0);
+  await input.fill('/stock-quote 00700.HK');
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  expect(sends[0].ext_info).toMatchObject({ suite: 'financial-analysis', suite_command: '/查股票' });
+  expect(sends[0].user_input).toContain('00700.HK');
+  expect(sends[0].ext_info.file_ids || []).toHaveLength(0);
+  await expect(page.getByText('已收到测试请求。', { exact: true }).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('suite-composer-prefix')).toContainText('财报分析');
+  await expect(page.getByTestId('suite-composer-prefix')).not.toContainText('/查股票');
+  await input.fill('刚才的成交额呢');
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(2);
+  expect(sends[1].ext_info.suite).toBe('financial-analysis');
+  expect(sends[1].ext_info.suite_command).toBeUndefined();
+});
+
+test('a report PDF stays on its original message when switching to quotes and reloading', async ({ page }) => {
+  const { sends, files } = await setup(page);
+  await page.goto('/?suite=financial-analysis&suite_command=%2Fannual-report');
+  await uploadPdf(page, 'annual.pdf');
+  await expect.poll(() => files.length).toBe(1);
+  const input = page.locator('textarea').first();
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  await input.fill('/查股票');
+  await page.getByRole('option', { name: /查股票/ }).click();
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(2);
+  expect(sends[1].ext_info.file_ids || []).toHaveLength(0);
+  await expect(page.getByText('已收到测试请求。', { exact: true }).last()).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('suite-composer-prefix')).toContainText('财报分析');
+  await input.fill('刚才的成交额呢');
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(3);
+  expect(sends[2].ext_info.file_ids || []).toHaveLength(0);
+  await input.fill('/读年报');
+  await page.getByRole('option', { name: /读年报/ }).click();
+  await input.press('Enter');
+  await expect(page.getByText('请先上传 1 份 PDF 文件，再开始任务。')).toBeVisible();
+  expect(sends).toHaveLength(3);
+});
+
+test('the stock shortcut sends a newly attached PDF with the whole question', async ({ page }) => {
+  const { sends, files } = await setup(page);
+  await page.goto('/?suite=financial-analysis');
+  await uploadPdf(page, 'optical-modules.pdf');
+  await expect.poll(() => files.length).toBe(1);
+  const input = page.locator('textarea').first();
+  await input.fill('/查股票');
+  await page.getByRole('option', { name: /查股票/ }).click();
+  await input.fill('结合附件解释光模块的长期需求，别查行情。');
+  await input.press('Enter');
+  await expect.poll(() => sends.length).toBe(1);
+  expect(sends[0].user_input).toContain('结合附件解释光模块的长期需求，别查行情。');
+  expect(sends[0].ext_info.file_ids).toEqual(['file-1']);
+});
 
 test('home and conversation slash menus bind financial commands and preserve uploaded materials', async ({ page }) => {
   const { sends, files } = await setup(page);

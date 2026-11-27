@@ -1,4 +1,4 @@
-import { buildActionDisplayText, publicAssistantText } from '@/utils/action-display';
+import { buildActionDisplayText, chatDisplaySteps, publicAssistantText } from '@/utils/action-display';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import AgentTimeline, { stepsToTimelineBlocks } from './AgentTimeline';
@@ -392,6 +392,19 @@ describe('public progress and tool phases', () => {
     title: action,
     status: 'running',
   }));
+
+  it('displays confirmed tool preambles and suppresses answer drafts from legacy streams and history', () => {
+    const draft = progress('progress-1', '### 使用场景\n\n**上证指数**');
+    const provisional = { id: 's1', title: '思考中', detail: 'Thought/Action/Observation' };
+    const reasoning = { ...provisional, detail: 'Model reasoning' };
+    const preamble = progress('progress-2', '查询行情。');
+    expect(chatDisplaySteps([draft, provisional])).toEqual([]);
+    expect(chatDisplaySteps([draft, reasoning])).toEqual([reasoning]);
+    const liveIntention = { ...preamble, status: 'running', toolConfirmed: true };
+    expect(chatDisplaySteps([liveIntention])).toEqual([liveIntention]);
+    expect(chatDisplaySteps([draft, preamble, tools[0], draft], 'completed')).toEqual([preamble, tools[0]]);
+    expect(chatDisplaySteps([preamble], 'interrupted')).toEqual([preamble]);
+  });
 
   it('keeps narration between tool phases in persisted step order', () => {
     const blocks = stepsToTimelineBlocks(

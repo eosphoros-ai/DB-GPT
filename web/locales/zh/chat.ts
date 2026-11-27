@@ -289,7 +289,7 @@ export const ChatZh: Resources['translation'] = {
   task_completed: '任务已完成',
   steps_completed_count: '已完成 {{count}} 个步骤',
   view_all_task_files: '查看此任务中的所有文件',
-  db_gpt_thinking: 'DB-GPT 正在思考 ···',
+  generating_reply: '正在生成回复…',
   replay_badge: '回放',
   replay_page_title: 'DB-GPT 对话回放',
   replay_page_title_with_question: '{{question}} · DB-GPT 回放',

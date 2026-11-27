@@ -99,7 +99,7 @@ import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import type { SuiteCommand, SuiteItem, SuiteMessageReference, SuiteRecommendedQuestion } from '@/types/suite';
 import type { ITaskflowRef } from '@/types/taskflow';
-import { buildActionDisplayText } from '@/utils/action-display';
+import { buildActionDisplayText, chatDisplaySteps } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { executionStatus } from '@/utils/execution-status';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
@@ -120,6 +120,9 @@ import {
   suiteDisplayName,
 } from '@/utils/suite-routing';
 import {
+  filesUsedBeforeStockQuote,
+  isStockQuoteCommand,
+  isTurnScopedSuite,
   suiteCommandFileError,
   suiteCommandFileHint,
   suiteCommandPrompt,
@@ -516,6 +519,7 @@ interface ExecutionStep {
   /** User-facing intent line from step.meta (action_intention). */
   actionIntention?: string;
   progressContent?: string;
+  toolConfirmed?: boolean;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -1181,11 +1185,16 @@ const Playground: NextPage = () => {
     return <AttachmentPreview snapshot={sessionFilePreview.snapshot} size={sessionFilePreview.size} />;
   };
 
+  const clearSessionFileTurn = sessionFiles.clearTurn;
+  const detachSentFiles = sessionFiles.detachSentFiles;
+  const detachPreviousAttachments = useCallback(() => {
+    detachSentFiles(new Set(messages.flatMap(msg => msg.attachedFiles?.map(file => file.file_id) ?? [])));
+  }, [detachSentFiles, messages]);
   const clearComposerAttachments = useCallback(() => {
-    sessionFiles.clearTurn();
+    clearSessionFileTurn();
     closeSessionFilePreview();
     setQueuedSendAfterUpload(false);
-  }, [closeSessionFilePreview, sessionFiles]);
+  }, [clearSessionFileTurn, closeSessionFilePreview]);
 
   const [executionMap, setExecutionMap] = useState<
     Record<
@@ -1268,13 +1277,14 @@ const Playground: NextPage = () => {
         return;
       }
       selectSuiteContext(suite);
+      if (isStockQuoteCommand(suite.name, command.name)) detachPreviousAttachments();
       setSelectedSuiteCommand({ suite: suite.name, name: command.name });
       const nextQuery = prompt ?? command.prefill ?? '';
       setQuery(nextQuery);
       setComposerCaret(nextQuery.length);
       setSuiteMenuDismissed(true);
     },
-    [selectSuiteContext],
+    [detachPreviousAttachments, selectSuiteContext],
   );
 
   useEffect(() => {
@@ -1504,14 +1514,30 @@ const Playground: NextPage = () => {
     [t],
   );
 
+  const displayExecutionMap = useMemo(() => {
+    const result = { ...executionMap };
+    for (const msg of messages) {
+      if (msg.role !== 'view' || !msg.id) continue;
+      const execution = executionMap[msg.id];
+      if (!execution) continue;
+      const steps = chatDisplaySteps(execution.steps, msg.executionStatus);
+      if (steps.length === execution.steps.length) continue;
+      const activeStepId = steps.some(step => step.id === execution.activeStepId)
+        ? execution.activeStepId
+        : steps[steps.length - 1]?.id ?? null;
+      result[msg.id] = { ...execution, steps, activeStepId };
+    }
+    return result;
+  }, [executionMap, messages]);
+
   // Global turn status line (Codex-style): one summary line at the end
   // of the stream instead of per-panel spinners/badges.
   const streamStatus = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role !== 'view' || !msg.id) continue;
-      const exec = executionMap[msg.id];
-      if (!exec || exec.steps.length === 0) continue;
+      const exec = displayExecutionMap[msg.id];
+      if (!exec || exec.steps.length === 0) return null;
       const toolCalls = exec.steps.filter(
         s => s.action && s.action !== '__progress__' && s.action.toLowerCase() !== 'terminate',
       ).length;
@@ -1540,7 +1566,7 @@ const Playground: NextPage = () => {
       };
     }
     return null;
-  }, [messages, executionMap, t]);
+  }, [messages, displayExecutionMap, t]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -1616,7 +1642,7 @@ const Playground: NextPage = () => {
    *  a running conversation can re-inject the live human/view pair — history
    *  only holds flushed rounds and New Task clears the messages state. */
   const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
-  const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
+  const loadConversationRef = useRef<(convUid: string) => Promise<ReadonlySet<string> | void>>(async () => undefined);
 
   const abortInFlightChat = useCallback(() => {
     chatAbortControllerRef.current?.abort();
@@ -1921,10 +1947,10 @@ const Playground: NextPage = () => {
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
       const transitionEpoch = taskEpochRef.current;
-      void loadConversationRef.current(convId);
+      const excludedFiles = loadConversationRef.current(convId);
       // Rebuild the composer rail from the server-owned session files so a
       // conversation switch never leaks drafts from another session scope.
-      void rehydrateSessionFiles(convId).catch(error => {
+      void rehydrateSessionFiles(convId, excludedFiles).catch(error => {
         if (taskEpochRef.current !== transitionEpoch) return;
         console.error('Failed to restore conversation files', error);
       });
@@ -3058,6 +3084,8 @@ const Playground: NextPage = () => {
     // explicit value, so the first auto-send never waits for React to commit
     // the attachment-rail state. Manual uploads keep the existing queued
     // file_ids flow below; the session-files module rejects protocol mixing.
+    const quoteCommand = isStockQuoteCommand(effectiveSuite?.name, effectiveSuiteCommand?.name);
+    if (quoteCommand) detachPreviousAttachments();
     if (explicitLegacyFile) {
       const staged = sessionFiles.stageLegacyForSend(explicitLegacyFile, currentConvId);
       if (!staged.ok) {
@@ -3173,7 +3201,8 @@ const Playground: NextPage = () => {
     setLoading(true);
     setQuery(''); // Clear input
     // Analysis commands apply to this send; ordinary follow-ups reuse saved data.
-    if (effectiveSuite?.scenario_id === 'financial') setSelectedSuiteCommand(null);
+    if (isTurnScopedSuite(effectiveSuite?.name, effectiveSuite?.scenario_id)) setSelectedSuiteCommand(null);
+    if (quoteCommand) clearComposerAttachments();
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
@@ -3542,6 +3571,7 @@ const Playground: NextPage = () => {
               status: payload.streaming ? 'running' : 'done',
               action: '__progress__',
               progressContent: payload.content,
+              toolConfirmed: payload.tool_confirmed,
             };
             const exists = current.steps.some(step => step.id === payload.id);
             const placeholder = current.steps.findIndex(step => step.id === payload.before_step_id);
@@ -4363,6 +4393,7 @@ const Playground: NextPage = () => {
             status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
             progressContent: s.progress_content,
+            toolConfirmed: s.tool_confirmed,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
             actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
@@ -4595,8 +4626,10 @@ const Playground: NextPage = () => {
       setActiveSuiteTab(latestSuite.name);
       setSuiteTabTouched(true);
       // History restores the suite, not a completed new-analysis command.
-      const financialCommand =
-        latestSuite.name === 'financial-analysis' && ['/读年报', '/财报对比'].includes(latestSuite.command || '');
+      const financialCommand = isTurnScopedSuite(
+        latestSuite.name,
+        suites.find(item => item.name === latestSuite.name)?.scenario_id,
+      );
       setSelectedSuiteCommand(
         latestSuite.command && !financialCommand ? { suite: latestSuite.name, name: latestSuite.command } : null,
       );
@@ -4627,6 +4660,7 @@ const Playground: NextPage = () => {
         setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
       }
     }
+    return filesUsedBeforeStockQuote(newMessages);
   };
 
   const loadConversation = async (convUid: string) => {
@@ -4692,7 +4726,7 @@ const Playground: NextPage = () => {
           (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
         );
         const liveTail = live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
-        restoreFromHistory(
+        return restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
             context: m.context,
@@ -5071,7 +5105,7 @@ const Playground: NextPage = () => {
                       const isSelected = round.viewMsg?.id === selectedViewMsgId;
                       const isCurrentRoundCollapsed = !isLastRound && !isSelected;
 
-                      const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
+                      const execution = round.viewMsg?.id ? displayExecutionMap[round.viewMsg.id] : undefined;
                       const {
                         sections,
                         activeStep: _activeStep,
@@ -6009,7 +6043,7 @@ const Playground: NextPage = () => {
                 ) : (
                   (() => {
                     const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
-                    const rawExecution = activeViewMsg?.id ? executionMap[activeViewMsg.id] : undefined;
+                    const rawExecution = activeViewMsg?.id ? displayExecutionMap[activeViewMsg.id] : undefined;
                     // Respect user's manual step selection for the right panel
                     const execution =
                       rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;

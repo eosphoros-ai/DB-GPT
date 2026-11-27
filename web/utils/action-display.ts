@@ -4,6 +4,35 @@ export interface ActionDisplayFields {
   thought?: unknown;
 }
 
+/** Older ReAct streams included answer drafts among the execution steps. */
+export function chatDisplaySteps<
+  T extends { action?: string; title?: string; detail?: string; toolConfirmed?: boolean },
+>(steps: T[], executionStatus?: string): T[] {
+  const keepUnfinishedProgress = !!executionStatus && !['completed', 'done'].includes(executionStatus);
+  const visible: T[] = [];
+  let toolFollows = false;
+  for (let index = steps.length - 1; index >= 0; index--) {
+    const step = steps[index];
+    if (step.action === '__progress__') {
+      if (step.toolConfirmed || toolFollows || keepUnfinishedProgress) visible.push(step);
+      toolFollows = false;
+      continue;
+    }
+    // Older servers opened this provisional step for ordinary text as well
+    // as reasoning. A real tool subsequently updates the same step with its action.
+    if (
+      !step.action &&
+      step.detail === 'Thought/Action/Observation' &&
+      (step.title === 'Thinking' || step.title === '思考中')
+    ) {
+      continue;
+    }
+    visible.push(step);
+    if (step.action) toolFollows = true;
+  }
+  return visible.reverse();
+}
+
 const reactFields = ['Thought', 'Action Intention', 'Action Reason', 'Action Input', 'Action', 'Observation', 'Phase'];
 
 /** Defence for saved conversations and older backends, including split labels. */

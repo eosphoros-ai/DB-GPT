@@ -70,7 +70,7 @@ export const PluginsZh = {
   plugins_name_sql: 'SQL 优化',
   plugins_desc_analysis: '从业务数据中发现变化，解释原因，交付分析报告与看板。',
   plugins_desc_query: '用自然语言获取数据，生成可检查的 SQL，导出查询结果。',
-  plugins_desc_financial: '阅读财务报告，比较经营表现，梳理现金流与盈利质量。',
+  plugins_desc_financial: '阅读和对比年报，查询个股行情、A 股板块涨跌和领涨领跌个股。',
   plugins_desc_metadata: '理解数据结构，整理数据字典、ER 图与建模建议。',
   plugins_desc_sql: '诊断查询瓶颈，检查执行计划，提出可复核的优化建议。',
 };

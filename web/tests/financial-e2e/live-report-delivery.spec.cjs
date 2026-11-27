@@ -157,6 +157,68 @@ test('keeps a published report visible when the connection closes without a fina
   await expect(page.getByRole('status').filter({ hasText: '正在整理回复' })).toHaveCount(0);
 });
 
+test('renders one Markdown answer while streaming and when replaying a legacy answer draft', async ({ page }) => {
+  const question = '大盘和上证指数有啥区别？';
+  const first = '### 使用场景\n\n**上证指数**';
+  const answer = first + ' · [行情来源](https://quote.eastmoney.com/)';
+  const draft = answer.replace(/\*\*/g, '');
+  const history = [
+    { role: 'human', context: question, order: 1 },
+    {
+      role: 'view',
+      order: 1,
+      context: JSON.stringify({
+        type: 'react-agent',
+        version: 2,
+        protocol_version: 2,
+        final_content: answer,
+        steps: [{ id: 'progress-1', action: '__progress__', progress_content: draft, status: 'done' }],
+      }),
+    },
+  ];
+  await setup(page, history);
+  await page.goto(baseURL);
+  const composer = page.locator('textarea:visible').first();
+  await composer.fill(question);
+  await composer.press('Enter');
+  await expect.poll(() => page.evaluate(() => !!window.financialTestStream)).toBe(true);
+  const chat = page.getByTestId('conversation-content');
+  await emit(page, [
+    { type: 'progress', id: 'progress-1', streaming: true, content: draft },
+    { type: 'step.start', id: 's1', step: 1, title: '思考中', detail: 'Thought/Action/Observation' },
+    { type: 'step.chunk', id: 's1', output_type: 'thought', content: draft },
+  ]);
+  await expect(chat.getByRole('status').filter({ hasText: '正在生成回复' })).toBeVisible();
+  await expect(chat).not.toContainText('思考');
+  await expect(chat).not.toContainText('使用场景');
+  await emit(page, [
+    { type: 'step.remove', id: 's1' },
+    { type: 'final.chunk', content: first },
+  ]);
+  const heading = chat.getByRole('heading', { name: '使用场景' });
+  await expect(heading).toBeVisible();
+  await expect(chat.locator('strong')).toHaveText('上证指数');
+  await expect(chat).not.toContainText('正在生成回复');
+  await emit(page, [
+    { type: 'final.chunk', content: answer.slice(first.length) },
+    { type: 'final', content: answer },
+    { type: 'done' },
+  ]);
+  await page.evaluate(() => window.financialTestStream.close());
+  const checkAnswer = async () => {
+    await expect(heading).toHaveCount(1);
+    await expect(chat.getByRole('link', { name: '行情来源' })).toHaveAttribute('href', 'https://quote.eastmoney.com/');
+    await expect(chat).not.toContainText('###');
+    await expect(chat).not.toContainText('**');
+    await expect(chat).not.toContainText('思考');
+    await expect(chat).not.toContainText('等待开始');
+  };
+  await checkAnswer();
+  await expect(page).toHaveURL(/[?&]id=[^&]+/);
+  await page.reload();
+  await checkAnswer();
+});
+
 test('removes rejected thinking placeholders without losing the report or showing completed fake steps', async ({
   page,
 }) => {
@@ -386,10 +448,10 @@ test('conversation shows one draft card and a failed-step status after review fa
   await expect(status.locator('.text-emerald-500')).toHaveCount(0);
   await expect(conversation.getByText(`${title}.html`, { exact: true })).toHaveCount(1);
   await expect(page.getByText(/对话产物 ·/)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '下载', exact: true })).toHaveCount(1);
   await page.screenshot({ path: test.info().outputPath('conversation-failed-review.png'), fullPage: true });
   await openReport(page);
   await expect(page.getByLabel('报告状态')).toBeVisible();
+  await expect(page.getByTestId('conversation-artifact-panel').getByRole('button', { name: /下载$/ })).toHaveCount(1);
 });
 
 for (const withSteps of [true, false]) {

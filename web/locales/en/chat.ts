@@ -284,7 +284,7 @@ export const ChatEn = {
   task_completed: 'Task completed',
   steps_completed_count: '{{count}} steps completed',
   view_all_task_files: 'View all files in this task',
-  db_gpt_thinking: 'DB-GPT is thinking...',
+  generating_reply: 'Generating a reply…',
   replay_badge: 'Replay',
   replay_page_title: 'DB-GPT Conversation Replay',
   replay_page_title_with_question: '{{question}} · DB-GPT Replay',
