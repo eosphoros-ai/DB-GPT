@@ -65,6 +65,7 @@ class PublicProgressStream:
         content: str,
         *,
         streaming: bool,
+        tool_confirmed: bool = False,
         before_step_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         content = public_assistant_text(content, streaming=streaming)
@@ -80,13 +81,16 @@ class PublicProgressStream:
             self.records[round_no] = record
             self.history_steps.append(record)
         record.update(
-            progress_content=content, status="running" if streaming else "done"
+            progress_content=content,
+            status="running" if streaming else "done",
+            tool_confirmed=tool_confirmed or record.get("tool_confirmed", False),
         )
         return {
             "type": "progress",
             "id": record["id"],
             "content": content,
             "streaming": streaming,
+            "tool_confirmed": record["tool_confirmed"],
             "before_step_id": before_step_id,
         }
 

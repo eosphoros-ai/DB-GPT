@@ -8,10 +8,17 @@ Upload annual-report PDFs to inspect evidence-backed financial findings or compa
 | --- | --- | --- |
 | `/annual-report` | One annual-report PDF | Analyze operations, earnings quality, margins, expenses, cash flow and the balance sheet |
 | `/compare-reports` | Two to five annual-report PDFs | Compare companies in the same reporting year, or one company across reporting years |
+| `/stock-quote` | Stock names, codes, industries or themes | Look up mainland and Hong Kong shares, or check A-share sector performance, breadth, gainers and decliners |
 
-Type `/` in the home or conversation input, select a task, upload the documents and describe your question. The shortcuts on this page open the same workflow. Follow up in the original conversation to use the saved report without uploading or extracting it again.
+Type `/` in the home or conversation input or start from a shortcut on this page. For an annual-report task, attach the PDFs and describe your question. Follow up in the original conversation to use the saved report.
 
 ## Reports and evidence
+
+Stock quotes require no attachment, business database or market-data key. Asking for Tencent’s current price returns the provider’s latest quote and timestamp. Asking for its closing price checks the HKEX daily report and indicates when confirmation is pending. Mainland closing prices are checked against the listing exchange. A follow-up about turnover reads the saved quote.
+
+Ask how optical modules or semiconductors performed today to see the Eastmoney A-share board index and up to three gainers and decliners. For a broader theme such as tech stocks, select a sector by name or number. A follow-up about earlier rankings uses the saved snapshot.
+
+You can ask in ordinary chat or start with the stock shortcut. The agent considers the whole question before loading the skill. It can discuss a long-term investment thesis directly. If you ask for both today's performance and what it implies about demand, it retrieves the quote and then addresses the inference.
 
 Dedicated financial tools extract values, calculate metrics, analyze topics and review findings. Reports appear in the conversation with references to source pages and calculations. Valid findings remain available when another topic fails or lacks data; only published reports count as complete.
 

@@ -1540,7 +1540,9 @@ def _translate_event(
         text = public_assistant_text(ev.text or state.public_text)
         if ev.data.get("has_tool_calls") and text.strip():
             frames = state.close_thought_step()
-            event = state.progress.update(state.round_no, text, streaming=False)
+            event = state.progress.update(
+                state.round_no, text, streaming=False, tool_confirmed=True
+            )
             if event:
                 frames.append(_sse_event(event))
             return frames

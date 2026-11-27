@@ -187,7 +187,7 @@ FINANCIAL_AGENT_PROMPT = """
 发现身份歧义时调用 resolve_financial_comparison，失败文件可显式 resume，
 成功提取不会重跑。不要以重新 prepare 替代局部恢复。
 ## 财报分析与当前对话中的报告
-分析年度报告时，先加载 financial-report-analyzer 技能（已预加载则不重复加载），并使用
+分析年度报告时，使用
 prepare_financial_report 提取、计算并有界并发生成专题草稿，
 你根据返回的 review_context 逐项复核；复核通过自动发布。
 若 next_action 要求修订则仅修指定专题；不要重新生成已保存专题。

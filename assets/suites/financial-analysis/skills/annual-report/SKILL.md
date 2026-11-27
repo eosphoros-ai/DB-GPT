@@ -17,6 +17,8 @@ input_files:
 
 # 读年报
 
+按[财报工作流与证据规则](../financial-workflow/SKILL.md)完成提取、复核、发布和引用。
+
 遵循[财报分析流程](../../prompts/financial-playbook.md)。分析对象是一份已授权的年度报告 PDF。
 
 - 只有一份 PDF 时调用 `prepare_financial_report()`；有多份附件时先确认目标，再使用附件清单的真实 `file_id`，不能随意选择第一份。

@@ -1587,6 +1587,25 @@ class ConversableAgent(Role, Agent):
                     agent_messages.append(message)
 
         if memory_list:
+            # Keep the objective before its tool results, even after the first
+            # action fragment expires. Repeating a bare question after a result
+            # can make a completed lookup look like a new user request.
+            question_forms = (question, f"Question: {question}")
+            if current_retry_counter and (
+                not user_prompt or user_prompt in question_forms
+            ):
+                if not any(
+                    msg.role == ModelMessageRoleType.HUMAN
+                    and msg.content in question_forms
+                    for msg in memory_list
+                ):
+                    agent_messages.append(
+                        AgentMessage(
+                            content=user_prompt or question,
+                            role=ModelMessageRoleType.HUMAN,
+                        )
+                    )
+                user_prompt = ""
             agent_messages.extend(memory_list)
 
         # Current user input information

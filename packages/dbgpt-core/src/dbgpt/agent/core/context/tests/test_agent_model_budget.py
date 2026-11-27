@@ -37,6 +37,42 @@ def make_agent(agent_type, *, cap=0):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("first_fragment_retained", [True, False])
+@pytest.mark.parametrize("template", ["", "Question: {}"])
+async def test_current_question_survives_rolling_tool_memory(
+    monkeypatch, first_fragment_retained, template
+):
+    agent, _ = make_agent(ToolCallingReActAgent)
+    request = "刷新行情，然后解释长期需求。"
+    fragments = [AgentMessage(role="human", content="Observation: quoted prices")]
+    if first_fragment_retained:
+        fragments.insert(0, AgentMessage(role="human", content=f"Question: {request}"))
+    monkeypatch.setattr(type(agent), "read_memories", AsyncMock(return_value=fragments))
+    monkeypatch.setattr(type(agent), "load_resource", AsyncMock(return_value=("", {})))
+    monkeypatch.setattr(
+        type(agent), "generate_resource_variables", AsyncMock(return_value={})
+    )
+    monkeypatch.setattr(
+        type(agent), "build_system_prompt", AsyncMock(return_value="system")
+    )
+    monkeypatch.setattr(
+        type(agent), "build_prompt", AsyncMock(return_value=template.format(request))
+    )
+    messages, _ = await agent._load_thinking_messages(
+        AgentMessage(content=request),
+        agent,
+        current_retry_counter=6,
+        historical_dialogues=[
+            AgentMessage(content="old question"),
+            AgentMessage(content="old answer"),
+        ],
+    )
+    assert [m.content for m in messages[1:3]] == ["old question", "old answer"]
+    assert messages[3].role == "human" and request in messages[3].content
+    assert [m.content for m in messages[4:]] == ["Observation: quoted prices"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "agent_type", [ConversableAgent, ReActAgent, ToolCallingReActAgent]
 )
