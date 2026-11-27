@@ -1,8 +1,9 @@
 import logging
 from abc import ABC
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Body, File, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins
 from dbgpt.agent.resource.tool.pack import AutoGPTPluginToolPack
@@ -23,16 +24,19 @@ from .model.model import MyPluginVO, PluginHubVO
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+get_bearer_token = HTTPBearer(auto_error=False)
 
 
 class ModulePlugin(BaseComponent, ABC):
     name = ComponentType.PLUGIN_HUB
 
     def __init__(self):
+        self._system_app: Optional[SystemApp] = None
         # load plugins
         self.refresh_plugins()
 
     def init_app(self, system_app: SystemApp):
+        self._system_app = system_app
         system_app.app.include_router(router, prefix="/api", tags=["Agent"])
 
     def refresh_plugins(self):
@@ -44,7 +48,39 @@ class ModulePlugin(BaseComponent, ABC):
 module_plugin = ModulePlugin()
 
 
-@router.post("/v1/agent/hub/update", response_model=Result[str])
+async def check_api_key(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+) -> Optional[str]:
+    """Verify Bearer API key when global api_keys are configured."""
+    system_app = module_plugin._system_app
+    if system_app is None:
+        return None
+    global_api_keys = system_app.config.get("dbgpt.app.global.api_keys")
+    if global_api_keys:
+        api_keys = [
+            key.strip() for key in str(global_api_keys).split(",") if key.strip()
+        ]
+        if api_keys and (auth is None or auth.credentials not in api_keys):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": {
+                        "message": "",
+                        "type": "invalid_request_error",
+                        "param": None,
+                        "code": "invalid_api_key",
+                    }
+                },
+            )
+        return auth.credentials if auth else None
+    return None
+
+
+@router.post(
+    "/v1/agent/hub/update",
+    response_model=Result[str],
+    dependencies=[Depends(check_api_key)],
+)
 async def plugin_hub_update(update_param: PluginHubParam = Body()):
     logger.info(f"plugin_hub_update:{update_param.__dict__}")
     try:
@@ -55,7 +91,8 @@ async def plugin_hub_update(update_param: PluginHubParam = Body()):
         )
         authorization = (
             update_param.authorization
-            if update_param.branch is not None and len(update_param.branch) > 0
+            if update_param.authorization is not None
+            and len(update_param.authorization) > 0
             else None
         )
         # TODO change it to async
