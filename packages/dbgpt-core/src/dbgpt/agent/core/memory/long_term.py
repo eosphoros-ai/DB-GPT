@@ -321,8 +321,23 @@ class LongTermMemory(Memory, Generic[T]):
 
     @mutable
     async def clear(self) -> List[T]:
-        """Clear the memory.
-
-        TODO: Implement this method.
-        """
-        return []
+        """Clear all memory fragments, including those in the vector store."""
+        retriever = self.memory_retriever
+        chunks = retriever.memory_stream
+        fragments = [
+            self.real_memory_fragment_class.build_from(
+                observation=chunk.content,
+                importance=chunk.metadata.get(_METADAT_IMPORTANCE),
+            )
+            for chunk in chunks
+        ]
+        chunk_ids = [chunk.chunk_id for chunk in chunks]
+        if chunk_ids:
+            await blocking_func_to_async(
+                self.executor, self._vector_store.delete_by_ids, ",".join(chunk_ids)
+            )
+        retriever.memory_stream = []
+        if retriever._external_storage:
+            retriever._external_storage.save_documents([])
+        self.aggregate_importance = 0.0
+        return fragments

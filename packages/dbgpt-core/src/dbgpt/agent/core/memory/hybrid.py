@@ -320,8 +320,9 @@ class HybridMemory(Memory, Generic[T]):
         await self._long_term_memory.write_batch(all_memories, self.now)
 
     async def clear(self) -> List[T]:
-        """Clear the memory.
-
-        # TODO
-        """
-        return []
+        """Clear the sensory, short-term and long-term memory."""
+        fragments: List[T] = []
+        fragments.extend(await self._sensory_memory.clear())
+        fragments.extend(await self._short_term_memory.clear())
+        fragments.extend(await self._long_term_memory.clear())
+        return fragments
