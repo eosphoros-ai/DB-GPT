@@ -200,6 +200,9 @@ async def test_long_term_clear_can_be_retried_after_failed_delete():
         assert store.chunks == {}
 
 
+_TIMEOUT = 5
+
+
 class BlockingDeleteVectorStore(InMemoryVectorStore):
     """A vector store whose deletion waits until ``release`` is set."""
 
@@ -210,26 +213,42 @@ class BlockingDeleteVectorStore(InMemoryVectorStore):
 
     def delete_by_ids(self, ids: str) -> List[str]:
         self.deleting.set()
-        self.release.wait(timeout=5)
+        if not self.release.wait(timeout=_TIMEOUT):
+            raise TimeoutError("deletion was not released")
         return super().delete_by_ids(ids)
+
+
+async def _wait_event(event: threading.Event) -> None:
+    started = await asyncio.get_running_loop().run_in_executor(
+        None, event.wait, _TIMEOUT
+    )
+    if not started:
+        pytest.fail("timed out waiting for the vector store")
+
+
+def _long_term_memory(executor, store) -> LongTermMemory:
+    memory = LongTermMemory(executor, store)
+    memory.initialize(
+        name="assistant",
+        session_id="draft",
+        real_memory_fragment_class=AgentMemoryFragment,
+    )
+    return memory
 
 
 @pytest.mark.asyncio
 async def test_long_term_clear_keeps_fragments_written_during_delete():
     store = BlockingDeleteVectorStore()
     with ThreadPoolExecutor() as executor:
-        memory = LongTermMemory(executor, store)
-        memory.initialize(
-            name="assistant",
-            session_id="draft",
-            real_memory_fragment_class=AgentMemoryFragment,
-        )
+        memory = _long_term_memory(executor, store)
         await memory.write(_fragment("Our art workshop is at Cedar Studio."))
 
         clear_task = asyncio.create_task(memory.clear())
-        await asyncio.get_running_loop().run_in_executor(None, store.deleting.wait, 5)
-        await memory.write(_fragment("The workshop moved to Oak Hall."))
-        store.release.set()
+        try:
+            await _wait_event(store.deleting)
+            await memory.write(_fragment("The workshop moved to Oak Hall."))
+        finally:
+            store.release.set()
         cleared = await clear_task
 
         assert [f.raw_observation for f in cleared] == [
@@ -241,5 +260,72 @@ async def test_long_term_clear_keeps_fragments_written_during_delete():
         cleared = await memory.clear()
         assert [f.raw_observation for f in cleared] == [
             "The workshop moved to Oak Hall."
+        ]
+        assert store.chunks == {}
+
+
+@pytest.mark.asyncio
+async def test_long_term_concurrent_clears_keep_fragments_written_between():
+    store = BlockingDeleteVectorStore()
+    with ThreadPoolExecutor() as executor:
+        memory = _long_term_memory(executor, store)
+        await memory.write(_fragment("Our art workshop is at Cedar Studio."))
+
+        first_clear = asyncio.create_task(memory.clear())
+        try:
+            await _wait_event(store.deleting)
+            second_clear = asyncio.create_task(memory.clear())
+            # Let the second clear run up to its deletion, if it can.
+            await asyncio.sleep(0.05)
+            await memory.write(_fragment("The workshop moved to Oak Hall."))
+        finally:
+            store.release.set()
+        cleared = await first_clear + await second_clear
+
+        assert [f.raw_observation for f in cleared] == [
+            "Our art workshop is at Cedar Studio.",
+            "The workshop moved to Oak Hall.",
+        ]
+        assert store.chunks == {}
+        assert await memory.clear() == []
+
+
+class BlockingLoadVectorStore(InMemoryVectorStore):
+    """A vector store whose load waits until ``release`` is set."""
+
+    def __init__(self):
+        super().__init__()
+        self.loading = threading.Event()
+        self.release = threading.Event()
+
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
+        self.loading.set()
+        if not self.release.wait(timeout=_TIMEOUT):
+            raise TimeoutError("load was not released")
+        return super().load_document(chunks)
+
+
+@pytest.mark.asyncio
+async def test_long_term_clear_removes_chunk_of_cancelled_write():
+    store = BlockingLoadVectorStore()
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        memory = _long_term_memory(executor, store)
+
+        write_task = asyncio.create_task(
+            memory.write(_fragment("Our art workshop is at Cedar Studio."))
+        )
+        try:
+            await _wait_event(store.loading)
+            write_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await write_task
+        finally:
+            store.release.set()
+        # The executor has a single worker, so this waits for the load to finish.
+        await asyncio.get_running_loop().run_in_executor(executor, lambda: None)
+        cleared = await memory.clear()
+
+        assert [f.raw_observation for f in cleared] == [
+            "Our art workshop is at Cedar Studio."
         ]
         assert store.chunks == {}
