@@ -309,12 +309,17 @@ class ChromaStore(VectorStoreBase):
         Args:
             ids (str): Comma-separated string of IDs to delete.
             batch_size (int): Number of IDs per batch. Default is 1000.
+
+        Raises:
+            RuntimeError: If any batch failed to delete. The remaining batches
+                are still deleted before it is raised.
         """
         logger.info(f"begin delete chroma ids in batches (batch size: {batch_size})")
         id_list = ids.split(",")
         total = len(id_list)
         logger.info(f"Total IDs to delete: {total}")
 
+        first_error: Optional[Exception] = None
         for i in range(0, total, batch_size):
             batch_ids = id_list[i : i + batch_size]
             logger.info(f"Deleting batch {i // batch_size + 1}: {len(batch_ids)} IDs")
@@ -322,6 +327,10 @@ class ChromaStore(VectorStoreBase):
                 self._collection.delete(ids=batch_ids)
             except Exception as e:
                 logger.error(f"Failed to delete batch starting at index {i}: {e}")
+                if first_error is None:
+                    first_error = e
+        if first_error is not None:
+            raise RuntimeError("Failed to delete some chroma ids") from first_error
 
     def truncate(self) -> List[str]:
         """Truncate data index_name."""

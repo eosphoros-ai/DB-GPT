@@ -1,8 +1,10 @@
 """Long-term memory module."""
 
+import asyncio
+import threading
 from concurrent.futures import Executor
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Optional
+from typing import Any, Dict, Generic, List, Optional, Tuple
 
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.time_weighted import TimeWeightedEmbeddingRetriever
@@ -205,6 +207,14 @@ class LongTermMemory(Memory, Generic[T]):
         )
         self._default_importance = _default_importance
         self._metadata: Dict[str, Any] = metadata or {"memory_type": "long_term"}
+        # Chunk ids, raw observation and importance of each fragment written by
+        # this memory
+        self._written_fragments: List[Tuple[List[str], str, float]] = []
+        # Serializes clear calls; writes do not take it
+        self._clear_lock = asyncio.Lock()
+        # Guards the tracked fragments and the memory stream, which writes and
+        # clears change from executor threads
+        self._tracking_lock = threading.Lock()
 
     @immutable
     def structure_clone(
@@ -254,12 +264,50 @@ class LongTermMemory(Memory, Generic[T]):
         )
         await blocking_func_to_async(
             self.executor,
-            self.memory_retriever.load_document,
-            [document],
-            current_time=now,
+            self._load_and_track,
+            document,
+            memory_fragment.raw_observation,
+            importance,
+            now,
         )
 
         return None
+
+    def _load_and_track(
+        self,
+        document: Chunk,
+        observation: str,
+        importance: float,
+        now: Optional[datetime],
+    ) -> None:
+        # Record the chunk in the worker, so it is tracked even if the awaiting
+        # write is cancelled after the vector store has stored it.
+        chunk_ids = self.memory_retriever.load_document([document], current_time=now)
+        with self._tracking_lock:
+            self._written_fragments.append((chunk_ids, observation, importance))
+
+    def _delete_and_untrack(
+        self,
+        written_fragments: List[Tuple[List[str], str, float]],
+        stream_docs: List[Chunk],
+    ) -> None:
+        # Delete and untrack in the worker, so a cancelled or timed-out clear
+        # still untracks what the vector store has deleted.
+        chunk_ids = [chunk_id for ids, _, _ in written_fragments for chunk_id in ids]
+        if chunk_ids:
+            # If the deletion raises, the fragments stay tracked so it can be
+            # retried.
+            self._vector_store.delete_by_ids(",".join(chunk_ids))
+        # Remove by identity, so fragments written meanwhile stay tracked even
+        # when a cancelled clear's deletion overlaps with a later clear.
+        cleared_ids = {id(f) for f in written_fragments}
+        cleared_doc_ids = {id(d) for d in stream_docs}
+        with self._tracking_lock:
+            self._written_fragments[:] = [
+                f for f in self._written_fragments if id(f) not in cleared_ids
+            ]
+            stream = self.memory_retriever.memory_stream
+            stream[:] = [d for d in stream if id(d) not in cleared_doc_ids]
 
     @mutable
     async def write_batch(
@@ -323,6 +371,28 @@ class LongTermMemory(Memory, Generic[T]):
     async def clear(self) -> List[T]:
         """Clear the memory.
 
-        TODO: Implement this method.
+        Delete the memory fragments written by this memory from the vector store.
         """
-        return []
+        # Concurrent clears would snapshot and delete the same fragments.
+        async with self._clear_lock:
+            # Snapshot what is cleared now. Fragments written while the deletion
+            # is running stay tracked, so the next clear removes them.
+            with self._tracking_lock:
+                written_fragments = list(self._written_fragments)
+                stream_docs = list(self.memory_retriever.memory_stream)
+            # Build the returned fragments from the original observations (the
+            # stored content has an index prefix) before anything is removed.
+            cleared = [
+                self.real_memory_fragment_class.build_from(
+                    observation=observation, importance=importance
+                )
+                for _, observation, importance in written_fragments
+            ]
+            await blocking_func_to_async(
+                self.executor,
+                self._delete_and_untrack,
+                written_fragments,
+                stream_docs,
+            )
+            self.aggregate_importance = 0.0
+            return cleared
