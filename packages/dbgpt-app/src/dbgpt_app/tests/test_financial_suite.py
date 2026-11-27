@@ -179,6 +179,19 @@ def test_quote_shortcut_only_offers_the_skill_until_the_agent_loads_it(financial
     assert not binding.command_skill_text
 
 
+def test_quote_shortcut_eager_mount_activates_tool_on_round_one(financial_suite):
+    _, binding = financial_suite
+    state = {"financial_user_query": "今天茅台涨了多少？"}
+    bind_command(binding, "/查股票")
+    pack = ToolPack([])
+    resources = {"query_stock_quotes": make_stock_quote_tool(state)}
+    summary = mount_suite_skills(
+        pack, binding, resources, state, eager_skills=("stock-quote",)
+    )
+    assert "Preloaded skill: stock-quote" in summary
+    assert {r.name for r in pack.sub_resources} == {"load_skill", "query_stock_quotes"}
+
+
 @pytest.mark.parametrize("blocked", ["load_skill", "query_stock_quotes"])
 def test_suite_tool_deny_applies_before_skill_activation(financial_suite, blocked):
     _, binding = financial_suite

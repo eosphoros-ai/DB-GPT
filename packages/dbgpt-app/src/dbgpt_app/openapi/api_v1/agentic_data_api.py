@@ -4832,6 +4832,10 @@ or substitute a textual summary for a requested report.
         if skill_suite is None and not resolve_suite_ref(dialogue.ext_info):
             skill_suite = load_binding("financial-analysis", catalog_only=True)
         if skill_suite and skill_suite.name == "financial-analysis":
+            eager_quote = bool(
+                (suite_binding and suite_binding.command_skill == "stock-quote")
+                or has_saved_quote
+            )
             available_skills = mount_suite_skills(
                 tool_pack,
                 skill_suite,
@@ -4842,6 +4846,7 @@ or substitute a textual summary for a requested report.
                 },
                 react_state,
                 fallback=None if suite_binding else load_skill_tool,
+                eager_skills=("stock-quote",) if eager_quote else (),
             )
             if available_skills:
                 model_request = skill_request_text(user_input, skill_suite)
@@ -4860,8 +4865,9 @@ or substitute a textual summary for a requested report.
                 workflow_prompt += (
                     "\n\n## Skills available on demand\n"
                     + available_skills
-                    + "\n结合本轮提问及前文判断用户要解决的问题。只在用户询问的"
-                    "事实需要相应能力时调用 load_skill(skill_name)。直接回答概念或"
+                    + "\n结合本轮提问及前文判断用户要解决的问题。未预加载的技能只在"
+                    "用户询问的事实需要相应能力时调用 load_skill(skill_name)；"
+                    "已预加载的技能可直接调用其工具。直接回答概念或"
                     "长期观点，切勿自行追加当日数据充当论据。追问过去的数值或排名时"
                     "用对应技能核对原快照。工具返回后继续解答其余问题，保留引用数据"
                     "的来源和时间。使判断的确定性与证据相称。"
@@ -5044,6 +5050,7 @@ or substitute a textual summary for a requested report.
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     public_progress = PublicProgressStream(history_steps)
+    last_emitted_quote_snapshot: Optional[Dict[str, Any]] = None
     started_actions: Dict[int, str] = {}
     current_history_step: Optional[Dict[str, Any]] = None
     financial_execution = FinancialExecutionStream(history_steps)
@@ -5728,6 +5735,12 @@ or substitute a textual summary for a requested report.
 
             # Mark step as done and track as last completed
             yield step_done(react_step_id, status)
+            latest_quote = react_state.get("stock_quote_snapshot")
+            if latest_quote and latest_quote != last_emitted_quote_snapshot:
+                last_emitted_quote_snapshot = latest_quote
+                yield _sse_event(
+                    {"type": "stock_quote.snapshot", "snapshot": latest_quote}
+                )
             report_task_completed = False
             action_names = {name.strip().lower() for name in (action or "").split(",")}
             if "generate_report" in action_names:

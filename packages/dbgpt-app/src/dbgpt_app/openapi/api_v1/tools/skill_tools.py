@@ -275,8 +275,16 @@ def make_load_skill(react_state: Dict[str, Any]):
     return load_skill
 
 
-def mount_suite_skills(pack, binding, resources, state, *, fallback=None) -> str:
-    """Advertise skill summaries; a successful read activates its scoped tools."""
+def mount_suite_skills(
+    pack,
+    binding,
+    resources,
+    state,
+    *,
+    fallback=None,
+    eager_skills: tuple[str, ...] = (),
+) -> str:
+    """Advertise suite skills and optionally pre-mount tools for explicit shortcuts."""
     from ..suite_binder import read_suite_skill
 
     if binding.violation("load_skill") is not None:
@@ -292,6 +300,25 @@ def mount_suite_skills(pack, binding, resources, state, *, fallback=None) -> str
     }
     if not commands:
         return ""
+
+    preloaded: list[str] = []
+    for skill_name in eager_skills:
+        command = commands.get(skill_name)
+        if command is None:
+            continue
+        try:
+            documents = read_suite_skill(binding, skill_name)
+        except (OSError, ValueError):
+            continue
+        for name in command["agent_tools"]:
+            pack.append(resources[name]._tool, overwrite=True)
+        body = "\n\n".join(doc["content"] for doc in documents if doc.get("content"))
+        if body:
+            preloaded.append(
+                f"### Preloaded skill: {skill_name}\n"
+                "Its tools are already active for this turn; call them directly "
+                "when needed without calling load_skill again.\n\n" + body
+            )
 
     @tool(
         description="Load a named skill when its capability is needed for this "
@@ -318,9 +345,10 @@ def mount_suite_skills(pack, binding, resources, state, *, fallback=None) -> str
         )
 
     pack.append(load_skill._tool, overwrite=True)
-    return "\n".join(
+    summary = "\n".join(
         f"- {name}: {cmd.get('description', '')}" for name, cmd in commands.items()
     )
+    return summary + ("\n\n" + "\n\n".join(preloaded) if preloaded else "")
 
 
 def make_execute_skill_script_file(react_state: Dict[str, Any]):
