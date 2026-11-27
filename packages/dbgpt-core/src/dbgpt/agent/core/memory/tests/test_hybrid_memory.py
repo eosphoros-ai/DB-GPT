@@ -4,7 +4,11 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from dbgpt.agent.core.memory.agent_memory import AgentMemory, AgentMemoryFragment
+from dbgpt.agent.core.memory.agent_memory import (
+    AgentMemory,
+    AgentMemoryFragment,
+    StructuredAgentMemoryFragment,
+)
 from dbgpt.agent.core.memory.base import SensoryMemory, ShortTermMemory
 from dbgpt.agent.core.memory.hybrid import HybridMemory
 from dbgpt.agent.core.memory.long_term import LongTermMemory
@@ -92,7 +96,8 @@ async def test_clear_removes_fragments_from_all_hybrid_memories():
         short_term_memory = memory.memory._short_term_memory
         # Fragments are kept in both the short-term and the long-term memories.
         assert store.chunks and short_term_memory.short_term_memories
-        expected = [c.content for c in store.chunks.values()] + [
+        # Long-term fragments come back without the "[idx] " storage prefix.
+        expected = [c.content.split("] ", 1)[1] for c in store.chunks.values()] + [
             f.raw_observation for f in short_term_memory.short_term_memories
         ]
 
@@ -128,3 +133,66 @@ async def test_clear_resets_enhanced_short_term_memory():
         # The memory is still usable after being cleared.
         await memory.write(_fragment("Next week's workshop needs a venue."))
         assert len(await memory.read("workshop venue")) == 1
+
+
+class FailingDeleteVectorStore(InMemoryVectorStore):
+    """A vector store whose deletion fails until ``fail`` is reset."""
+
+    def __init__(self):
+        super().__init__()
+        self.fail = True
+
+    def delete_by_ids(self, ids: str) -> List[str]:
+        if self.fail:
+            raise RuntimeError("delete failed")
+        return super().delete_by_ids(ids)
+
+
+@pytest.mark.asyncio
+async def test_long_term_clear_returns_structured_fragments():
+    store = InMemoryVectorStore()
+    with ThreadPoolExecutor() as executor:
+        memory = LongTermMemory(executor, store)
+        memory.initialize(
+            name="assistant",
+            session_id="draft",
+            real_memory_fragment_class=StructuredAgentMemoryFragment,
+        )
+        observation = {"observation": "Cedar Studio"}
+        await memory.write(
+            StructuredAgentMemoryFragment(
+                observation, importance=0.5, last_accessed_time=datetime.now()
+            )
+        )
+
+        cleared = await memory.clear()
+
+        assert [f.raw_observation for f in cleared] == [
+            StructuredAgentMemoryFragment(observation).raw_observation
+        ]
+        assert store.chunks == {}
+
+
+@pytest.mark.asyncio
+async def test_long_term_clear_can_be_retried_after_failed_delete():
+    store = FailingDeleteVectorStore()
+    with ThreadPoolExecutor() as executor:
+        memory = LongTermMemory(executor, store)
+        memory.initialize(
+            name="assistant",
+            session_id="draft",
+            real_memory_fragment_class=AgentMemoryFragment,
+        )
+        await memory.write(_fragment("Our art workshop is at Cedar Studio."))
+
+        with pytest.raises(RuntimeError):
+            await memory.clear()
+        assert store.chunks
+
+        store.fail = False
+        cleared = await memory.clear()
+
+        assert [f.raw_observation for f in cleared] == [
+            "Our art workshop is at Cedar Studio."
+        ]
+        assert store.chunks == {}

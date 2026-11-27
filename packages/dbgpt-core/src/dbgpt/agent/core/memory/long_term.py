@@ -2,7 +2,7 @@
 
 from concurrent.futures import Executor
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Optional
+from typing import Any, Dict, Generic, List, Optional, Tuple
 
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.time_weighted import TimeWeightedEmbeddingRetriever
@@ -206,6 +206,8 @@ class LongTermMemory(Memory, Generic[T]):
         self._default_importance = _default_importance
         self._metadata: Dict[str, Any] = metadata or {"memory_type": "long_term"}
         self._chunk_ids: List[str] = []
+        # Raw observation and importance of each fragment written by this memory
+        self._written_fragments: List[Tuple[str, float]] = []
 
     @immutable
     def structure_clone(
@@ -260,6 +262,7 @@ class LongTermMemory(Memory, Generic[T]):
             current_time=now,
         )
         self._chunk_ids.extend(chunk_ids)
+        self._written_fragments.append((memory_fragment.raw_observation, importance))
 
         return None
 
@@ -327,20 +330,23 @@ class LongTermMemory(Memory, Generic[T]):
 
         Delete the memory fragments written by this memory from the vector store.
         """
-        chunks = self.memory_retriever.memory_stream
+        # Build the returned fragments from the original observations (the stored
+        # content has an index prefix) before anything is removed.
+        cleared = [
+            self.real_memory_fragment_class.build_from(
+                observation=observation, importance=importance
+            )
+            for observation, importance in self._written_fragments
+        ]
         if self._chunk_ids:
+            # If the deletion raises, the tracked ids are kept so it can be retried.
             await blocking_func_to_async(
                 self.executor,
                 self._vector_store.delete_by_ids,
                 ",".join(self._chunk_ids),
             )
         self._chunk_ids = []
+        self._written_fragments = []
         self.memory_retriever.memory_stream = []
         self.aggregate_importance = 0.0
-        return [
-            self.real_memory_fragment_class.build_from(
-                observation=chunk.content,
-                importance=chunk.metadata[_METADAT_IMPORTANCE],
-            )
-            for chunk in chunks
-        ]
+        return cleared
