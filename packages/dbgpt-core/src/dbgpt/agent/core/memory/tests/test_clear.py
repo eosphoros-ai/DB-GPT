@@ -78,7 +78,10 @@ async def test_hybrid_memory_clear_removes_long_term_fragments():
 
         cleared = await memory.clear()
 
-        assert cleared
+        observations = [fragment.raw_observation for fragment in cleared]
+        assert "Our art workshop is at Cedar Studio this Saturday." in observations
+        # Long-term memory stores its fragments with a "[idx] " prefix
+        assert "[0] The workshop moved to Oak Hall." in observations
         assert await memory.read("workshop venue") == []
         assert store.chunks == {}
         assert memory._short_term_memory.short_term_memories == []
