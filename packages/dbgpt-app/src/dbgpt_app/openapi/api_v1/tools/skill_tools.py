@@ -275,6 +275,54 @@ def make_load_skill(react_state: Dict[str, Any]):
     return load_skill
 
 
+def mount_suite_skills(pack, binding, resources, state, *, fallback=None) -> str:
+    """Advertise skill summaries; a successful read activates its scoped tools."""
+    from ..suite_binder import read_suite_skill
+
+    if binding.violation("load_skill") is not None:
+        return ""
+    commands = {
+        cmd["skill"]: cmd
+        for cmd in binding.commands
+        if cmd.get("agent_tools")
+        and all(
+            name in resources and binding.violation(name) is None
+            for name in cmd["agent_tools"]
+        )
+    }
+    if not commands:
+        return ""
+
+    @tool(
+        description="Load a named skill when its capability is needed for this "
+        "question. Its tools become available after the instructions are read."
+    )
+    def load_skill(skill_name: str, file_path: str = "") -> str:
+        check_skill_scope(state, skill_name)
+        command = commands.get(skill_name)
+        if command is None:
+            if fallback is not None:
+                return fallback(skill_name, file_path)
+            raise ValueError(f"Skill '{skill_name}' unavailable in {binding.name}")
+        documents = read_suite_skill(binding, skill_name)
+        for name in command["agent_tools"]:
+            pack.append(resources[name]._tool, overwrite=True)
+        return json.dumps(
+            {
+                "chunks": [
+                    {"output_type": "markdown", "content": doc["content"]}
+                    for doc in documents
+                ]
+            },
+            ensure_ascii=False,
+        )
+
+    pack.append(load_skill._tool, overwrite=True)
+    return "\n".join(
+        f"- {name}: {cmd.get('description', '')}" for name, cmd in commands.items()
+    )
+
+
 def make_execute_skill_script_file(react_state: Dict[str, Any]):
     """Return an ``execute_skill_script_file`` FunctionTool bound to react_state."""
 

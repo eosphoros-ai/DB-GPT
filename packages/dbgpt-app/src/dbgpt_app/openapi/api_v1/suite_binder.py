@@ -183,7 +183,11 @@ def _read_sop(package_path: Optional[str], manifest: Dict[str, Any]) -> str:
     rel = manifest.get("sop")
     if not package_path or not rel:
         return ""
-    sop_file = Path(package_path) / str(rel)
+    root = Path(package_path).resolve()
+    sop_file = (root / str(rel)).resolve()
+    if not sop_file.is_relative_to(root):
+        logger.warning("suite sop outside package: %s", sop_file)
+        return ""
     try:
         return sop_file.read_text(encoding="utf-8")
     except Exception:  # noqa: BLE001 - fail-soft: missing sop must not block turns
@@ -191,22 +195,40 @@ def _read_sop(package_path: Optional[str], manifest: Dict[str, Any]) -> str:
         return ""
 
 
-def load_binding(slug: str) -> Optional[SuiteBinding]:
+def load_binding(slug: str, *, catalog_only: bool = False) -> Optional[SuiteBinding]:
     """Build a binding from the registry row + the package on disk."""
     try:
         service = _plugins_service()
     except Exception:  # noqa: BLE001 - plugins serve not registered
         logger.debug("plugins service unavailable", exc_info=True)
         return None
-    row = service.get(slug)
+    try:
+        row = service.registry.get(slug)
+    except Exception:
+        logger.warning("suite registry unavailable: %s", slug, exc_info=True)
+        return None
     if row is None or row.status != "enabled":
         return None
     snapshot = row.manifest_snapshot or {}
-    from dbgpt_serve.plugins.loader import load_suite_dir
+    if catalog_only:
+        # The installed index suffices for discovery in an unpinned chat.
+        # Open the actual skill document only if the agent chooses it.
+        manifest = dict(snapshot)
+        skill_paths = snapshot.get("skill_paths", {})
+        manifest["skills"] = [
+            {"name": cmd["skill"], "path": skill_paths[cmd["skill"]]}
+            for cmd in snapshot.get("commands", [])
+            if cmd.get("agent_tools") and cmd.get("skill") in skill_paths
+        ]
+    else:
+        from dbgpt_serve.plugins.loader import load_binding_manifest
 
-    pkg = load_suite_dir(Path(row.package_path)) if row.package_path else None
-    manifest = pkg.manifest if pkg else {}
-    sop_text = _read_sop(row.package_path, manifest)
+        manifest = (
+            load_binding_manifest(Path(row.package_path), snapshot)
+            if row.package_path
+            else {}
+        )
+    sop_text = "" if catalog_only else _read_sop(row.package_path, manifest)
     tools = snapshot.get("tools") or {}
     allow_raw = tools.get("allow") or []
     deny_raw = tools.get("deny") or []
@@ -215,6 +237,7 @@ def load_binding(slug: str) -> Optional[SuiteBinding]:
     )
     deny = {canonical_suite_tool(t) for t in deny_raw}
     semantic = snapshot.get("semantic") or {}
+    defaults = manifest.get("context_defaults")
     binding = SuiteBinding(
         name=row.name,
         version=row.version,
@@ -223,7 +246,7 @@ def load_binding(slug: str) -> Optional[SuiteBinding]:
         deny=deny,
         artifacts=snapshot.get("artifacts") or [],
         semantic=semantic,
-        context_defaults=dict(manifest.get("context_defaults") or {}),
+        context_defaults=dict(defaults) if isinstance(defaults, dict) else {},
         package_path=row.package_path or "",
         commands=manifest.get("commands") or [],
         skills=manifest.get("skills") or [],
@@ -268,6 +291,21 @@ def bind_command(binding: SuiteBinding, command_name: str) -> None:
     if not skill_name:
         binding.command_error = f"快捷命令 {command_name} 未声明对应技能"
         return
+    binding.command_skill = str(skill_name)
+    if command.get("agent_tools"):
+        return
+    try:
+        documents = read_suite_skill(binding, skill_name)
+        binding.command_skill_text = documents[0]["content"]
+        binding.loaded_documents = documents
+    except (OSError, ValueError) as exc:
+        binding.command_error = (
+            f"快捷命令 {command_name} 的技能 {skill_name} 无法加载：{exc}"
+        )
+
+
+def read_suite_skill(binding: SuiteBinding, skill_name: str) -> list[dict]:
+    """Read a declared skill and its bounded in-package references."""
     skill = next(
         (
             item
@@ -276,39 +314,42 @@ def bind_command(binding: SuiteBinding, command_name: str) -> None:
         ),
         None,
     )
-    binding.command_skill = str(skill_name)
-    try:
-        if not skill or not skill.get("path") or not binding.package_path:
-            raise ValueError("技能未在套件清单中声明路径")
-        root = Path(binding.package_path).resolve()
-        skill_file = (root / skill["path"]).resolve()
-        if not skill_file.is_relative_to(root):
-            raise ValueError("技能路径不在套件目录内")
-        binding.command_skill_text = skill_file.read_text(encoding="utf-8").strip()
-        if not binding.command_skill_text:
-            raise ValueError("技能内容为空")
-        if len(binding.command_skill_text.encode("utf-8")) > 512 * 1024:
-            raise ValueError("套件技能与引用正文超过 512KB")
-        binding.loaded_documents = [
-            {
-                "path": skill_file.relative_to(root).as_posix(),
-                "sha256": hashlib.sha256(
-                    binding.command_skill_text.encode("utf-8")
-                ).hexdigest(),
-                "status": "loaded",
-            }
-        ]
-        # Native plugins reference shared knowledge and templates directly in
-        # their SKILL.md. Resolve those links within the installed package,
-        # never through the agent's unrestricted filesystem tools.
-        if binding.package_format in PLUGIN_PACKAGE_FORMATS:
-            binding.loaded_documents.extend(
-                _read_linked_documents(root, skill_file, binding.command_skill_text)
-            )
-    except (OSError, ValueError) as exc:
-        binding.command_error = (
-            f"快捷命令 {command_name} 的技能 {skill_name} 无法加载：{exc}"
-        )
+    if not skill or not skill.get("path") or not binding.package_path:
+        raise ValueError("技能未在套件清单中声明路径")
+    root = Path(binding.package_path).resolve()
+    skill_file = (root / skill["path"]).resolve()
+    if not skill_file.is_relative_to(root):
+        raise ValueError("技能路径不在套件目录内")
+    content = skill_file.read_text(encoding="utf-8").strip()
+    if not content:
+        raise ValueError("技能内容为空")
+    if len(content.encode("utf-8")) > 512 * 1024:
+        raise ValueError("套件技能与引用正文超过 512KB")
+    documents = [
+        {
+            "path": skill_file.relative_to(root).as_posix(),
+            "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            "status": "loaded",
+            "content": content,
+        }
+    ]
+    if binding.package_format in PLUGIN_PACKAGE_FORMATS:
+        documents.extend(_read_linked_documents(root, skill_file, content))
+    return documents
+
+
+def skill_request_text(text: str, binding: Optional[SuiteBinding]) -> str:
+    """A composer shortcut is metadata. Keep its full argument as the request."""
+    if not binding or binding.command_error:
+        return text
+    for cmd in binding.commands:
+        if not cmd.get("agent_tools"):
+            continue
+        for alias in (cmd["name"], *cmd.get("aliases", [])):
+            match = re.match(r"^\s*" + re.escape(alias) + r"(?:\s+|$)", text, re.I)
+            if match:
+                return text[match.end() :] or text
+    return text
 
 
 def _read_linked_documents(root: Path, source: Path, text: str) -> list:
@@ -567,6 +608,11 @@ def build_sop_block(binding: SuiteBinding) -> str:
         command_block = (
             f"\n\n## 快捷命令不可用\n{binding.command_error}\n"
             "停止业务执行，向用户说明原因并请其重新选择命令。"
+        )
+    elif binding.command and not binding.command_skill_text:
+        command_block = (
+            f"\n\n用户选择了快捷入口 {binding.command}。请结合本轮原话与上下文"
+            "判断用户想解决的问题。只在需要该技能的数据时调用 load_skill。"
         )
     elif binding.command:
         command_block = (

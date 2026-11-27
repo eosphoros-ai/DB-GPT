@@ -365,7 +365,9 @@ class SuiteEventDao(BaseDao[SuiteEventEntity, SuiteRequest, SuiteEventResponse])
             rows = (
                 session.query(SuiteEventEntity)
                 .filter(SuiteEventEntity.suite_name == suite_name)
-                .order_by(SuiteEventEntity.gmt_created.desc())
+                .order_by(
+                    SuiteEventEntity.gmt_created.desc(), SuiteEventEntity.id.desc()
+                )
                 .limit(limit)
                 .all()
             )
@@ -378,7 +380,7 @@ class SuiteEventDao(BaseDao[SuiteEventEntity, SuiteRequest, SuiteEventResponse])
             rows = (
                 session.query(SuiteEventEntity)
                 .filter(SuiteEventEntity.conv_uid == conv_uid)
-                .order_by(SuiteEventEntity.gmt_created.asc())
+                .order_by(SuiteEventEntity.gmt_created.asc(), SuiteEventEntity.id.asc())
                 .all()
             )
             for row in rows:

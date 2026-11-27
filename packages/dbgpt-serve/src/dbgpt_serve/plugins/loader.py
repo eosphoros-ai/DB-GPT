@@ -264,24 +264,7 @@ def _command_input_files(metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     }
 
 
-def _load_plugin_manifest(
-    dirpath: Path, manifest_filename: str = PLUGIN_MANIFEST_FILENAME
-) -> Dict[str, Any]:
-    """Project a DB-GPT or compatible plugin into the runtime suite index.
-
-    The JSON manifest and SKILL.md files stay authoritative and unmodified.
-    This projection is in memory only; no suite.yaml is generated.
-    """
-    root = dirpath.resolve()
-    raw = json.loads((root / manifest_filename).read_text(encoding="utf-8"))
-    if not isinstance(raw, dict):
-        raise ValueError("plugin.json must contain an object")
-    for key in ("name", "version"):
-        if not isinstance(raw.get(key), str) or not raw[key].strip():
-            raise ValueError(f"plugin.json must declare {key}")
-    paths = raw.get("skills")
-    if not isinstance(paths, list) or not paths:
-        raise ValueError("plugin.json must declare skill directories")
+def _index_plugin_skills(root: Path, paths: list) -> Tuple[list, list]:
     skills: List[Dict[str, Any]] = []
     commands: List[Dict[str, Any]] = []
     names = set()
@@ -341,6 +324,12 @@ def _load_plugin_manifest(
                     raise ValueError(f"skill command-en must start with /: {name}")
                 aliases.append(english_command)
             input_files = _command_input_files(metadata)
+            agent_tools = metadata.get("agent-tools", [])
+            if not isinstance(agent_tools, list) or any(
+                not isinstance(tool, str) or not re.fullmatch(r"\w+", tool)
+                for tool in agent_tools
+            ):
+                raise ValueError(f"agent-tools must list tool names: {name}")
             identifiers = set([command_name, *aliases])
             if identifiers & command_names:
                 raise ValueError(f"duplicate plugin command or alias: {name}")
@@ -372,8 +361,36 @@ def _load_plugin_manifest(
                     or metadata.get("argument-hint")
                     or "",
                     **({"input_files": input_files} if input_files is not None else {}),
+                    **({"agent_tools": agent_tools} if agent_tools else {}),
                 }
             )
+    return skills, commands
+
+
+def _load_plugin_manifest(
+    dirpath: Path,
+    manifest_filename: str = PLUGIN_MANIFEST_FILENAME,
+    installed_index: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Read native runtime defaults and build or reuse the installed skill index."""
+    root = dirpath.resolve()
+    raw = json.loads((root / manifest_filename).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("plugin.json must contain an object")
+    for key in ("name", "version"):
+        if not isinstance(raw.get(key), str) or not raw[key].strip():
+            raise ValueError(f"plugin.json must declare {key}")
+    paths = raw.get("skills")
+    if not isinstance(paths, list) or not paths:
+        raise ValueError("plugin.json must declare skill directories")
+    if installed_index is None:
+        skills, commands = _index_plugin_skills(root, paths)
+    else:
+        skills = [
+            {"name": name, "path": path}
+            for name, path in installed_index["skill_paths"].items()
+        ]
+        commands = installed_index.get("commands", [])
     author = raw.get("author")
     manifest = {
         "kind": "scenario-plugin",
@@ -512,6 +529,10 @@ def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
     skills = _collect_skills(dirpath, manifest, warnings)
     snapshot = {k: manifest[k] for k in SNAPSHOT_FIELDS if k in manifest}
     snapshot["skills"] = skills
+    if plugin_filename is not None:
+        snapshot["skill_paths"] = {
+            item["name"]: item["path"] for item in manifest["skills"]
+        }
     snapshot["skill_details"] = [
         {
             key: item[key]
@@ -538,6 +559,21 @@ def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
         skills=skills,
         warnings=warnings,
     )
+
+
+def load_binding_manifest(dirpath: Path, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+    """Use installed skill metadata per turn; still read live package defaults."""
+    if isinstance(snapshot.get("skill_paths"), dict):
+        for filename in PLUGIN_MANIFEST_FILENAMES:
+            if (dirpath / filename).is_file():
+                try:
+                    return _load_plugin_manifest(dirpath, filename, snapshot)
+                except (OSError, ValueError) as exc:
+                    logger.warning("suite manifest unreadable: %s (%s)", dirpath, exc)
+                    return {}
+    # Legacy packages and snapshots created before the skill index existed.
+    pkg = load_suite_dir(dirpath)
+    return pkg.manifest if pkg else {}
 
 
 def scan_suites(root: Optional[Path]) -> Tuple[List[SuitePackage], List[str]]:

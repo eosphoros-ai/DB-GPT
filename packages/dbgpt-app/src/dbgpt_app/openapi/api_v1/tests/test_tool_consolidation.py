@@ -55,7 +55,10 @@ async def test_discovery_changes_next_native_schema_without_widening_permissions
         "tool_search",
         "approved_data",
     ]
-    assert json.loads(await search("secret_data"))["tools"] == []
+    assert json.loads(await search("secret_data")) == {
+        "tools": [],
+        "available_next_round": False,
+    }
     emit.assert_awaited_once()
 
 

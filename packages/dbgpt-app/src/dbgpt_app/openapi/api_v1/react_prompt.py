@@ -61,8 +61,9 @@ def build_react_prompt_template(
     )
     sections = [workflow_prompt]
     sections.append(
-        "Use only supplied functions. If a needed capability is absent and "
-        "tool_search is available, discover it before calling it. Discovery "
+        "Use only supplied functions. For a capability provided by a listed "
+        "skill, call load_skill with its name to activate its tools for this turn. "
+        "Use tool_search to discover other available functions. Discovery "
         "is limited to this turn's authorized catalog.\n"
         "For Python report analysis, assign computed metrics/tables to "
         "REPORT_RESULT as JSON-compatible values; printed text is not a "
