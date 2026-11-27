@@ -52,7 +52,7 @@ def test_hub_update_requires_api_key_when_configured():
         )
 
 
-def test_hub_update_forwards_authorization_without_explicit_branch():
+def test_hub_update_forwards_authorization_with_null_branch():
     client = _make_client(api_keys=None)
     with patch(
         "dbgpt_serve.agent.hub.controller.plugin_hub.refresh_hub_from_git"
@@ -61,6 +61,7 @@ def test_hub_update_forwards_authorization_without_explicit_branch():
             "/api/v1/agent/hub/update",
             json={
                 "url": "https://github.com/owner/repo",
+                "branch": None,
                 "authorization": "Bearer abc",
             },
         )

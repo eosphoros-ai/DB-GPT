@@ -137,7 +137,7 @@ def scan_plugins(
 
 
 _GITHUB_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
-_BRANCH_NAME_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+_BRANCH_NAME_RE = re.compile(r"^[A-Za-z0-9._/+-]+$")
 _ALLOWED_GITHUB_HOSTS = frozenset({"github.com"})
 _ALLOWED_DOWNLOAD_HOSTS = frozenset({"github.com", "codeload.github.com"})
 _MAX_REDIRECTS = 5

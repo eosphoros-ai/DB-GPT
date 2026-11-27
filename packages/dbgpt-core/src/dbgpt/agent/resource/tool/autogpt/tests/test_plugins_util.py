@@ -1,26 +1,13 @@
-import http.server
-import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from dbgpt.agent.resource.tool.autogpt.plugins_util import (
+    _validate_branch_name,
     _validate_download_url,
     _validate_github_repo_url,
     update_from_git,
 )
-
-
-class _RecordingHandler(http.server.BaseHTTPRequestHandler):
-    requests_seen: list[str] = []
-
-    def do_GET(self):
-        type(self).requests_seen.append(self.path)
-        self.send_response(404)
-        self.end_headers()
-
-    def log_message(self, format, *args):
-        return
 
 
 @pytest.mark.parametrize(
@@ -50,24 +37,45 @@ def test_validate_github_repo_url_canonicalizes_valid_repo():
     assert repo == "my.repo"
 
 
-def test_ssrf_url_does_not_contact_local_listener(tmp_path):
-    _RecordingHandler.requests_seen = []
-    server = http.server.HTTPServer(("127.0.0.1", 0), _RecordingHandler)
-    port = server.server_address[1]
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    try:
+def test_ssrf_url_does_not_issue_http_request(tmp_path):
+    with (
+        patch("requests.Session") as mock_session,
+        patch("requests.get") as mock_get,
+    ):
         with pytest.raises(ValueError):
             update_from_git(
                 str(tmp_path),
-                github_repo=f"http://127.0.0.1:{port}/github.com",
+                github_repo="http://127.0.0.1:8163/github.com",
                 branch_name="main",
                 authorization="Bearer secret",
             )
-        assert _RecordingHandler.requests_seen == []
-    finally:
-        server.shutdown()
-        server.server_close()
+    mock_session.assert_not_called()
+    mock_get.assert_not_called()
+
+
+def test_validate_branch_name_allows_plus_character(tmp_path):
+    assert _validate_branch_name("release+hotfix") == "release+hotfix"
+
+    ok_resp = MagicMock(
+        status_code=200, is_redirect=False, content=b"PK\x05\x06" + b"\x00" * 18
+    )
+    session_instance = MagicMock()
+    session_instance.get.return_value = ok_resp
+
+    with patch("requests.Session", return_value=session_instance):
+        repo_name = update_from_git(
+            str(tmp_path),
+            github_repo="https://github.com/owner/repo",
+            branch_name="release+hotfix",
+        )
+
+    assert repo_name == "repo"
+    session_instance.get.assert_called_once()
+    assert (
+        session_instance.get.call_args.args[0]
+        == "https://github.com/owner/repo/archive/refs/heads/release+hotfix.zip"
+    )
+    assert list(tmp_path.glob("repo-release+hotfix-*.zip"))
 
 
 @pytest.mark.parametrize(
