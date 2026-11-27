@@ -1,3 +1,5 @@
+import asyncio
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -194,5 +196,50 @@ async def test_long_term_clear_can_be_retried_after_failed_delete():
 
         assert [f.raw_observation for f in cleared] == [
             "Our art workshop is at Cedar Studio."
+        ]
+        assert store.chunks == {}
+
+
+class BlockingDeleteVectorStore(InMemoryVectorStore):
+    """A vector store whose deletion waits until ``release`` is set."""
+
+    def __init__(self):
+        super().__init__()
+        self.deleting = threading.Event()
+        self.release = threading.Event()
+
+    def delete_by_ids(self, ids: str) -> List[str]:
+        self.deleting.set()
+        self.release.wait(timeout=5)
+        return super().delete_by_ids(ids)
+
+
+@pytest.mark.asyncio
+async def test_long_term_clear_keeps_fragments_written_during_delete():
+    store = BlockingDeleteVectorStore()
+    with ThreadPoolExecutor() as executor:
+        memory = LongTermMemory(executor, store)
+        memory.initialize(
+            name="assistant",
+            session_id="draft",
+            real_memory_fragment_class=AgentMemoryFragment,
+        )
+        await memory.write(_fragment("Our art workshop is at Cedar Studio."))
+
+        clear_task = asyncio.create_task(memory.clear())
+        await asyncio.get_running_loop().run_in_executor(None, store.deleting.wait, 5)
+        await memory.write(_fragment("The workshop moved to Oak Hall."))
+        store.release.set()
+        cleared = await clear_task
+
+        assert [f.raw_observation for f in cleared] == [
+            "Our art workshop is at Cedar Studio."
+        ]
+        (remaining,) = store.chunks.values()
+        assert remaining.content.endswith("The workshop moved to Oak Hall.")
+        # The fragment written during the first clear is still tracked.
+        cleared = await memory.clear()
+        assert [f.raw_observation for f in cleared] == [
+            "The workshop moved to Oak Hall."
         ]
         assert store.chunks == {}

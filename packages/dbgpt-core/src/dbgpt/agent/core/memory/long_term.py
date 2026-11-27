@@ -330,23 +330,28 @@ class LongTermMemory(Memory, Generic[T]):
 
         Delete the memory fragments written by this memory from the vector store.
         """
+        # Snapshot what is cleared now. Fragments written while the deletion is
+        # running stay tracked, so the next clear removes them.
+        chunk_ids = list(self._chunk_ids)
+        written_fragments = list(self._written_fragments)
+        stream_len = len(self.memory_retriever.memory_stream)
         # Build the returned fragments from the original observations (the stored
         # content has an index prefix) before anything is removed.
         cleared = [
             self.real_memory_fragment_class.build_from(
                 observation=observation, importance=importance
             )
-            for observation, importance in self._written_fragments
+            for observation, importance in written_fragments
         ]
-        if self._chunk_ids:
+        if chunk_ids:
             # If the deletion raises, the tracked ids are kept so it can be retried.
             await blocking_func_to_async(
                 self.executor,
                 self._vector_store.delete_by_ids,
-                ",".join(self._chunk_ids),
+                ",".join(chunk_ids),
             )
-        self._chunk_ids = []
-        self._written_fragments = []
-        self.memory_retriever.memory_stream = []
+        del self._chunk_ids[: len(chunk_ids)]
+        del self._written_fragments[: len(written_fragments)]
+        del self.memory_retriever.memory_stream[:stream_len]
         self.aggregate_importance = 0.0
         return cleared
