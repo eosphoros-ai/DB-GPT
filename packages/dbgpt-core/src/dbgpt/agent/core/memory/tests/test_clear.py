@@ -59,15 +59,18 @@ async def test_hybrid_memory_clear_removes_long_term_fragments():
     with ThreadPoolExecutor() as executor:
         memory = HybridMemory(
             now,
-            SensoryMemory(),
+            SensoryMemory(buffer_size=5),
             ShortTermMemory(buffer_size=20),
             LongTermMemory(executor, store, now=now),
         )
         memory.initialize(name="test", real_memory_fragment_class=AgentMemoryFragment)
-        await memory.write(
+        await memory._short_term_memory.write(
             AgentMemoryFragment(
                 "Our art workshop is at Cedar Studio this Saturday.", importance=0.9
             )
+        )
+        await memory.write(
+            AgentMemoryFragment("Bring your own brushes.", importance=0.9)
         )
         await memory._long_term_memory.write_batch(
             [AgentMemoryFragment("The workshop moved to Oak Hall.", importance=0.9)],
@@ -79,9 +82,11 @@ async def test_hybrid_memory_clear_removes_long_term_fragments():
         cleared = await memory.clear()
 
         observations = [fragment.raw_observation for fragment in cleared]
+        assert "Bring your own brushes." in observations
         assert "Our art workshop is at Cedar Studio this Saturday." in observations
         # Long-term memory stores its fragments with a "[idx] " prefix
         assert "[0] The workshop moved to Oak Hall." in observations
         assert await memory.read("workshop venue") == []
         assert store.chunks == {}
         assert memory._short_term_memory.short_term_memories == []
+        assert await memory._sensory_memory.read("workshop venue") == []
