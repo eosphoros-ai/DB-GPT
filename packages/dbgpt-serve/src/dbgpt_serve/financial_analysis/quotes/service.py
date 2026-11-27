@@ -7,6 +7,7 @@ from typing import Optional, TypeVar
 
 import httpx
 
+from .calendar import TRADING_CALENDAR, TradingCalendar
 from .exchanges import DAILY_REPORTS, DailyReports, daily_close, mainland_snapshot
 from .models import (
     BEIJING,
@@ -47,20 +48,31 @@ async def _select_quote(
     confirm_close: bool,
     reports: DailyReports,
     deadline: float,
+    calendar: TradingCalendar = TRADING_CALENDAR,
 ) -> tuple[Optional[Quote], Verification]:
-    verifiable = item.asset_type == "stock" and item.market in {"sh", "sz", "hk"}
+    eff_type = quote.listing.asset_type if quote else item.asset_type
+    verifiable = eff_type == "stock" and item.market in {"sh", "sz", "hk"}
     needs_fallback = verifiable and (
         quote is None
         or (item.market != "hk" and (quote.previous is None or "change" in quote.gaps))
     )
+    now = clock()
+    phase = session(item.market, now, calendar=calendar)
+    in_closing = phase in CLOSING_PHASES
     day = (
-        expected_day(item.market, clock().date())
-        if confirm_close
-        and verifiable
-        and session(item.market, clock()) in CLOSING_PHASES
+        expected_day(item.market, now.date(), calendar=calendar)
+        if confirm_close and verifiable and in_closing
         else None
     )
-    pending = Verification(reason="close_pending" if confirm_close else "", day=day)
+    if confirm_close and not verifiable:
+        pending_reason = "close_unsupported"
+    elif confirm_close and not in_closing:
+        pending_reason = "market_open"
+    elif confirm_close:
+        pending_reason = "close_pending"
+    else:
+        pending_reason = ""
+    pending = Verification(reason=pending_reason, day=day)
     if day is None and not needs_fallback:
         return quote, pending
 
@@ -70,6 +82,10 @@ async def _select_quote(
             quote = (retry or {}).get(item.symbol)
             if quote and _is_future(quote, clock()):
                 quote = None
+        if quote and quote.listing.asset_type != "stock":
+            return quote, Verification(
+                reason="close_unsupported" if confirm_close else ""
+            )
         if day is None:
             return quote, pending
         if quote is None and item.name == item.code:
@@ -100,8 +116,8 @@ async def _select_quote(
         ):
             return latest, pending
         bar = await _before(daily_close(client, item, day), deadline)
-        if not bar or bar[0] != official.last:
-            if bar:
+        if not bar or official.last is None or bar[0] != official.last:
+            if bar and official.last is not None:
                 pending.reason = "different_close"
             return latest, pending
         url = bar[1]
@@ -116,7 +132,15 @@ async def _select_quote(
 
 
 async def _fetch_listings(
-    client, listings, clock, start, timeout, confirm_close, reports
+    client,
+    listings,
+    clock,
+    start,
+    timeout,
+    confirm_close,
+    reports,
+    calendar: TradingCalendar = TRADING_CALENDAR,
+    cal_ready: Optional[asyncio.Future] = None,
 ) -> dict[str, tuple[Optional[Quote], Verification]]:
     if not listings:
         return {}
@@ -127,6 +151,8 @@ async def _fetch_listings(
     primary: dict[str, Quote] = {}
     for chunk in await asyncio.gather(*(_before(j, quote_deadline) for j in chunks)):
         primary.update(chunk or {})
+    if cal_ready is not None:
+        await cal_ready
     now = clock()
     quotes = {k: q for k, q in primary.items() if q.as_of and not _is_future(q, now)}
     selected = await asyncio.gather(
@@ -139,11 +165,24 @@ async def _fetch_listings(
                 confirm_close,
                 reports,
                 deadline,
+                calendar,
             )
             for item in listings
         )
     )
     return dict(zip((item.symbol for item in listings), selected))
+
+
+def _row_dedup_key(sym: Optional[str], row: QuoteRow) -> tuple:
+    if sym is not None:
+        return ("listing", sym)
+    if row.sector is not None:
+        return ("sector", row.sector.code)
+    if row.sector_candidates:
+        return ("sector_choose", tuple(s.code for s in row.sector_candidates))
+    if row.candidates:
+        return ("listing_choose", tuple(c.symbol for c in row.candidates))
+    return ("raw", row.requested.casefold())
 
 
 async def query_quotes(
@@ -153,6 +192,7 @@ async def query_quotes(
     client: Optional[httpx.AsyncClient] = None,
     now: Optional[datetime] = None,
     reports: DailyReports = DAILY_REPORTS,
+    calendar: TradingCalendar = TRADING_CALENDAR,
     timeout: float = 20,
 ) -> Snapshot:
     """Resolve requested subjects, batch quotes, and preserve input order."""
@@ -168,6 +208,7 @@ async def query_quotes(
                 client=own_client,
                 now=now,
                 reports=reports,
+                calendar=calendar,
                 timeout=timeout,
             )
 
@@ -223,6 +264,26 @@ async def query_quotes(
             row.outcome, row.candidates = "choose", candidates  # type: ignore[assignment]
         expanded[term] = [(None, row)]
 
+    cal_markets: set[str] = set()
+    for item in selected.values():
+        cal_markets.add("hk" if item.market == "hk" else "cn")
+    if sectors:
+        cal_markets.add("cn")
+    cal_task: Optional[asyncio.Task] = None
+    if cal_markets:
+        cal_deadline = min(deadline, start + min(timeout * 0.15, 2.5))
+        cal_day = clock().date()
+
+        async def _warm_calendars() -> None:
+            await asyncio.gather(
+                *(
+                    _before(calendar.ensure(client, mkt, cal_day), cal_deadline)
+                    for mkt in cal_markets
+                )
+            )
+
+        cal_task = asyncio.create_task(_warm_calendars())
+
     listing_values, sector_values = await asyncio.gather(
         _fetch_listings(
             client,
@@ -232,14 +293,34 @@ async def query_quotes(
             timeout,
             confirm_close,
             reports,
+            calendar,
+            cal_ready=cal_task,
         ),
         asyncio.gather(
-            *(sector_quote(client, s, clock, limit, deadline) for s in sectors.values())
+            *(
+                sector_quote(
+                    client,
+                    s,
+                    clock,
+                    limit,
+                    deadline,
+                    calendar=calendar,
+                    cal_ready=cal_task,
+                )
+                for s in sectors.values()
+            )
         ),
     )
+    if cal_task is not None:
+        await cal_task
     by_sector, stamp, final_rows = dict(zip(sectors, sector_values)), clock(), []
-    for term in cleaned:
+    seen: set[tuple] = set()
+    for term in unique_terms:
         for sym, row in expanded[term]:
+            key = _row_dedup_key(sym, row)
+            if key in seen:
+                continue
+            seen.add(key)
             if row.sector:
                 row.sector_quote = by_sector[row.sector.code]
                 row.outcome = "quoted" if row.sector_quote else "unavailable"
@@ -247,9 +328,13 @@ async def query_quotes(
                     row.reason = "sector_unavailable"
             elif sym is not None:
                 quote, row.verification = listing_values[sym]
-                row.phase = session(selected[sym].market, stamp)
+                row.phase = session(selected[sym].market, stamp, calendar=calendar)
                 if quote:
-                    row.quote, row.outcome = quote, "quoted"
+                    row.quote, row.outcome, row.kind = (
+                        quote,
+                        "quoted",
+                        quote.listing.asset_type,
+                    )
                 else:
                     row.reason = row.verification.reason or "missing_quote"
             final_rows.append(row.model_copy(deep=True))

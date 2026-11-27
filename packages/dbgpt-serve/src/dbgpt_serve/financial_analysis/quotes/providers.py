@@ -10,6 +10,7 @@ from typing import Literal, Optional
 
 import httpx
 
+from .calendar import TRADING_CALENDAR, TradingCalendar
 from .exchanges import SOURCE_ERRORS
 from .models import (
     BEIJING,
@@ -19,7 +20,7 @@ from .models import (
     Sector,
     SectorMover,
     SectorQuote,
-    expected_day,
+    latest_expected_day,
     number,
 )
 
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 SMARTBOX = "https://smartbox.gtimg.cn/s3/"
 EASTMONEY_SUGGEST = "https://searchapi.eastmoney.com/api/suggest/get"
 TENCENT_QUOTE = "https://qt.gtimg.cn/q="
+TENCENT_PAGE = "https://gu.qq.com/"
 EASTMONEY_MEMBERS = "https://datacenter.eastmoney.com/securities/api/data/v1/get"
 EASTMONEY_DAILY = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
 PAGE_SIZE = 500
@@ -67,6 +69,11 @@ MARKETS = {
     "A-share": "cn",
 }
 SH_ETF_PREFIXES = (
+    "501",
+    "502",
+    "505",
+    "506",
+    "508",
     "510",
     "511",
     "512",
@@ -79,6 +86,7 @@ SH_ETF_PREFIXES = (
     "562",
     "563",
     "588",
+    "589",
 )
 
 # (market, code, canonical_name, extra_aliases)
@@ -156,27 +164,39 @@ BROAD_TECH = {
 def mainland_security(code: str) -> tuple[Optional[str], Literal["stock", "etf"]]:
     if len(code) != 6:
         return None, "stock"
-    if code.startswith(("600", "601", "603", "605", "688")):
+    if code.startswith(("600", "601", "603", "605", "688", "689")):
         return "sh", "stock"
     if code.startswith(SH_ETF_PREFIXES):
         return "sh", "etf"
     if code.startswith(("000", "001", "002", "003", "300", "301")):
         return "sz", "stock"
-    if code.startswith("159"):
+    if code.startswith(("159", "16")):
         return "sz", "etf"
     if code.startswith(("430", "83", "87", "920")):
         return "bj", "stock"
     return None, "stock"
 
 
+def _qualifier_pattern(label: str) -> re.Pattern[str]:
+    if label.isascii() and label.replace(" ", "").replace("-", "").isalpha():
+        return re.compile(rf"(?<!\bof\s)\b{re.escape(label)}\b", re.I)
+    return re.compile(re.escape(label), re.I)
+
+
+_MARKET_PATTERNS = [
+    (label, code, _qualifier_pattern(label)) for label, code in MARKETS.items()
+]
+
+
 def qualifiers(term: str) -> tuple[str, str, str]:
     market = next(
-        (v for k, v in MARKETS.items() if k.casefold() in term.casefold()), ""
+        (code for _, code, pat in _MARKET_PATTERNS if pat.search(term)),
+        "",
     )
     currency = "CNY" if RMB_RE.search(term) else "HKD" if HKD_RE.search(term) else ""
     text = HKD_RE.sub("", RMB_RE.sub("", term))
-    for label in MARKETS:
-        text = re.sub(re.escape(label), "", text, flags=re.I)
+    for _, _, pat in _MARKET_PATTERNS:
+        text = pat.sub("", text)
     return text.strip(" ：:的()（）-"), market, currency
 
 
@@ -223,7 +243,9 @@ def direct_listing(
 
 
 def _name_key(name: str) -> str:
-    name = re.sub(r"(?:-|(?<=[\u3400-\u9fff]))(?:r|sw|w)$", "", name.casefold())
+    name = re.sub(
+        r"(?:-|(?<=[\u3400-\u9fff]))(?:swr|wr|sw|w|s|r)$", "", name.casefold()
+    )
     return re.sub(r"控股$|股份有限公司$", "", name).strip()
 
 
@@ -359,29 +381,46 @@ async def resolve(
     text, market, currency = qualifiers(term)
     text = re.sub(r"的?股票$", "", text)
     bracket = re.search(r"[(（]\s*([^()（）]+?)\s*[)）]", term)
-    if bracket and (
-        CODE_RE.fullmatch(bracket[1]) or bracket[1].casefold() in INDEX_ALIASES
-    ):
-        text = bracket[1]
+    if bracket:
+        before_bracket = qualifiers(term[: bracket.start()])[0].strip()
+        inner = bracket[1].strip()
+        if before_bracket.casefold() in INDEX_ALIASES:
+            item = direct_listing(before_bracket, market, currency)
+            return ([item], "") if item else ([], "unsupported")
+        if (
+            CODE_RE.fullmatch(inner)
+            or inner.casefold() in INDEX_ALIASES
+            or SECTOR_CODE_RE.fullmatch(inner)
+        ):
+            text = inner
     if text.casefold() in INDEX_ALIASES:
-        return [INDEX_ALIASES[text.casefold()]], ""
+        item = direct_listing(text, market, currency)
+        return ([item], "") if item else ([], "unsupported")
     if CODE_RE.fullmatch(text):
         item = direct_listing(text, market, currency)
         return ([item], "") if item else ([], "unsupported")
 
+    us_prefix = bool(re.match(r"^(?:美股|美国|美國)(?:的)?", text))
+    has_sector_suffix = bool(SECTOR_SUFFIX_RE.search(text))
     scope = re.sub(r"^(?:美股|美國|美国|沪深京?|中国内地|中国大陆)(?:的)?", "", text)
     scope = SECTOR_SUFFIX_RE.sub("", scope).strip(" 的").casefold()
     code_match = SECTOR_CODE_RE.fullmatch(scope)
+    if (
+        us_prefix
+        and not has_sector_suffix
+        and not code_match
+        and scope not in KNOWN_SECTORS
+        and scope not in BROAD_TECH
+    ):
+        return [], "unsupported"
     sector_only = (
-        scope != text.casefold()
+        has_sector_suffix
         or bool(code_match)
         or scope in KNOWN_SECTORS
         or scope in BROAD_TECH
     )
     if sector_only and (
-        market not in {"", "cn"}
-        or currency not in {"", "CNY"}
-        or text.startswith(("美股", "美国", "美國"))
+        market not in {"", "cn"} or currency not in {"", "CNY"} or us_prefix
     ):
         return [], "sector_market"
     if scope in BROAD_TECH:
@@ -464,10 +503,14 @@ def parse_tencent(body: bytes, requested: dict[str, Listing]) -> dict[str, Quote
                 continue
             kind = (f[63] if hk else f[61]) if len(f) > (63 if hk else 61) else ""
             ccy = (f[75] if hk else f[82]) if len(f) > (75 if hk else 82) else ""
-            if item.asset_type == "stock" and (
-                not kind.startswith("GP") or ccy != item.currency
-            ):
-                continue
+            effective_asset_type = item.asset_type
+            if item.asset_type == "stock":
+                if hk and kind.startswith(("JJ", "ETF")):
+                    effective_asset_type = "etf"
+                elif not kind.startswith("GP"):
+                    continue
+                if ccy != item.currency:
+                    continue
             if item.asset_type == "etf" and (
                 (kind and not kind.startswith(("JJ", "ETF", "GP")))
                 or (ccy and item.currency and ccy != item.currency)
@@ -492,15 +535,20 @@ def parse_tencent(body: bytes, requested: dict[str, Listing]) -> dict[str, Quote
                     "market_cap": number(f[45], positive=True),
                     "pb": number(f[46]),
                 }
-                if not hk and item.asset_type == "stock" and len(f) > 46
+                if not hk and effective_asset_type == "stock" and len(f) > 46
                 else {}
             )
             quote = Quote(
-                listing=item.model_copy(update={"name": f[1] or item.name}),
+                listing=item.model_copy(
+                    update={
+                        "name": f[1] or item.name,
+                        "asset_type": effective_asset_type,
+                    }
+                ),
                 day=stamp.date(),
                 as_of=stamp,
                 source="腾讯财经",
-                url=TENCENT_QUOTE + symbol,
+                url=TENCENT_PAGE + symbol,
                 last=number(f[3], positive=True),
                 previous=number(f[4], positive=True),
                 opening=number(f[5], positive=True),
@@ -605,6 +653,9 @@ async def sector_quote(
     clock: Callable[[], datetime],
     limit: asyncio.Semaphore,
     deadline: float,
+    *,
+    calendar: TradingCalendar = TRADING_CALENDAR,
+    cal_ready: Optional[asyncio.Future] = None,
 ) -> Optional[SectorQuote]:
     async def page(n: int, until: float) -> dict:
         payload = await _get_json(
@@ -652,10 +703,12 @@ async def sector_quote(
         if stamp
         else None
     )
+    if cal_ready is not None:
+        await cal_ready
     if (
         not quote
         or quote.percent is None
-        or quote.day < expected_day("sh", clock().date())
+        or quote.day < latest_expected_day("sh", clock(), calendar=calendar)
     ):
         quote = await _sector_daily_fallback(
             client, sector, quote, clock(), limit, deadline

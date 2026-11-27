@@ -1,5 +1,6 @@
 """Domain service for A-share, Hong Kong stock, index, and sector quotes."""
 
+from .calendar import TRADING_CALENDAR, TradingCalendar
 from .exchanges import DAILY_REPORTS, DailyReports
 from .models import (
     BEIJING,
@@ -13,6 +14,7 @@ from .models import (
     Snapshot,
     Verification,
     expected_day,
+    latest_expected_day,
     number,
     session,
     trading_day,
@@ -33,9 +35,12 @@ __all__ = [
     "SectorMover",
     "SectorQuote",
     "Snapshot",
+    "TRADING_CALENDAR",
+    "TradingCalendar",
     "Verification",
     "direct_listing",
     "expected_day",
+    "latest_expected_day",
     "number",
     "qualifiers",
     "query_quotes",

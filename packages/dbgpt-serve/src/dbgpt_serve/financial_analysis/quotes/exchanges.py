@@ -22,6 +22,30 @@ SZSE_API = "https://www.szse.cn/api/market/ssjjhq"
 HKEX_DIR = "https://www.hkex.com.hk/eng/stat/smstat/dayquot/"
 SNAP_FIELDS = "code,name,date,time,open,high,low,last,prev_close,volume,amount"
 DAY_FIELDS = "date,open,high,low,close,volume,amount"
+
+
+def exchange_page_url(item: Listing, fallback: str = "") -> str:
+    """Return a human-readable exchange quote web page URL for a listing."""
+    if item.market == "sh":
+        if item.asset_type == "etf":
+            return (
+                "https://www.sse.com.cn/assortment/fund/list/etfinfo/basic/"
+                f"index.shtml?FUNDID={item.code}"
+            )
+        return (
+            "https://www.sse.com.cn/assortment/stock/list/info/company/"
+            f"index.shtml?COMPANY_CODE={item.code}"
+        )
+    if item.market == "sz":
+        return f"https://www.szse.cn/market/trend/index.html?code={item.code}"
+    if item.market == "hk" and item.code.isdigit():
+        return (
+            "https://www.hkex.com.hk/Market-Data/Securities-Prices/Equities/"
+            f"Equities-Quote?sym={int(item.code)}&sc_lang=zh-HK"
+        )
+    return fallback
+
+
 SOURCE_ERRORS = (
     httpx.HTTPError,
     ValueError,
@@ -69,7 +93,7 @@ async def mainland_snapshot(
             day=stamp.date(),
             as_of=stamp.replace(tzinfo=BEIJING),
             source="上交所" if item.market == "sh" else "深交所",
-            url=str(r.url),
+            url=exchange_page_url(item, str(r.url)),
             last=number(last, positive=True),
             previous=number(previous, positive=True),
             opening=number(opening, positive=True),
@@ -114,7 +138,11 @@ async def daily_close(client: httpx.AsyncClient, item: Listing, day: date):
         for row in reversed(rows):
             if str(row[0]) == key:
                 close = number(row[col], positive=True)
-                return (close, str(resp.url)) if close is not None else None
+                return (
+                    (close, exchange_page_url(item, str(resp.url)))
+                    if close is not None
+                    else None
+                )
     except SOURCE_ERRORS as exc:
         logger.debug("Daily close failed for %s: %s", item.symbol, exc)
     return None
@@ -193,7 +221,7 @@ class DailyReports:
             listing=item.model_copy(update={"name": html.unescape(row.name)}),
             day=day,
             source="港交所",
-            url=HKEX_DIR + day.strftime("d%y%m%de.htm"),
+            url=exchange_page_url(item, HKEX_DIR + day.strftime("d%y%m%de.htm")),
             last=last,
             previous=number(row.previous, positive=True),
             high=number(row.high, positive=True),

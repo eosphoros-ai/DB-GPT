@@ -1,27 +1,23 @@
 """Quote data models, decimal calculations, and CN/HK trading calendar."""
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from .calendar import (
+    _SEED_CLOSURES,
+    _SEED_HK_HALF_DAYS,
+    TRADING_CALENDAR,
+    TradingCalendar,
+)
+
 BEIJING = timezone(timedelta(hours=8))
 CENT = Decimal("0.01")
 CLOCK_SKEW_TOLERANCE = timedelta(minutes=2)
-
-# Official 2026 SSE/SZSE and HKEX closures; other years fall back to Mon-Fri.
-CLOSURES = {
-    ("cn", 2026): set(
-        "01-01 01-02 02-16 02-17 02-18 02-19 02-20 02-23 04-06 "
-        "05-01 05-04 05-05 06-19 09-25 10-01 10-02 10-05 10-06 10-07".split()
-    ),
-    ("hk", 2026): set(
-        "01-01 02-17 02-18 02-19 04-03 04-06 04-07 05-01 05-25 "
-        "06-19 07-01 10-01 10-19 12-25".split()
-    ),
-}
-HK_HALF_DAYS = {date(2026, 2, 16), date(2026, 12, 24), date(2026, 12, 31)}
+CLOSURES = _SEED_CLOSURES
+HK_HALF_DAYS = _SEED_HK_HALF_DAYS[2026]
 
 
 def number(value: object, *, positive: bool = False) -> Optional[Decimal]:
@@ -34,52 +30,29 @@ def number(value: object, *, positive: bool = False) -> Optional[Decimal]:
     return amount
 
 
-def trading_day(market: str, day: date) -> bool:
-    if day.weekday() >= 5:
-        return False
-    days = CLOSURES.get(("hk" if market == "hk" else "cn", day.year))
-    return True if days is None else day.strftime("%m-%d") not in days
+def trading_day(
+    market: str, day: date, *, calendar: TradingCalendar = TRADING_CALENDAR
+) -> bool:
+    return calendar.is_trading_day(market, day)
 
 
-def expected_day(market: str, day: date) -> date:
-    while not trading_day(market, day):
-        day -= timedelta(days=1)
-    return day
+def expected_day(
+    market: str, day: date, *, calendar: TradingCalendar = TRADING_CALENDAR
+) -> date:
+    return calendar.expected_day(market, day)
 
 
-def session(market: str, now: datetime) -> str:
+def latest_expected_day(
+    market: str, now: datetime, *, calendar: TradingCalendar = TRADING_CALENDAR
+) -> date:
+    return calendar.latest_expected_day(market, now)
+
+
+def session(
+    market: str, now: datetime, *, calendar: TradingCalendar = TRADING_CALENDAR
+) -> str:
     """Return the exchange session phase at a Beijing timestamp."""
-    if not trading_day(market, now.date()):
-        return "holiday"
-    t = now.time()
-    if market == "hk":
-        half = now.date() in HK_HALF_DAYS
-        end = time(12) if half else time(16)
-        bounds = (
-            (time(9), "preopen"),
-            (time(9, 30), "opening_auction"),
-            (time(12), "trading"),
-            (time(13) if not half else end, "lunch"),
-            (end, "trading"),
-            (time(end.hour, 8), "closing_auction"),
-            (time(end.hour, 10), "random_close"),
-        )
-    else:
-        bounds = (
-            (time(9, 15), "preopen"),
-            (time(9, 25), "opening_auction"),
-            (time(9, 30), "preopen"),
-            (time(11, 30), "trading"),
-            (time(13), "lunch"),
-            (time(14, 57), "trading"),
-            (time(15), "closing_auction"),
-            (time(15, 5), "auction_ended"),
-            (time(15, 30), "after_hours"),
-        )
-    for cutoff, phase in bounds:
-        if t < cutoff:
-            return phase
-    return "closed"
+    return calendar.session(market, now)
 
 
 class Listing(BaseModel):
@@ -210,3 +183,6 @@ class Snapshot(BaseModel):
     version: Literal[1] = 1
     queried_at: datetime
     rows: list[QuoteRow]
+    display_mode: Literal["full", "compact"] = "full"
+    recall_detail: Optional[str] = None
+    recall_indices: Optional[list[int]] = None

@@ -4,7 +4,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from itertools import groupby
 from typing import Optional
 
-from .models import CENT, QuoteRow, Snapshot, expected_day
+from .models import CENT, QuoteRow, Snapshot, latest_expected_day
 
 PHASES = {
     "preopen": ("开盘前", "before open"),
@@ -50,6 +50,14 @@ REASONS = {
         "snapshot and daily close differ",
     ),
     "close_pending": ("交易所收盘记录待核对", "exchange close pending"),
+    "close_unsupported": (
+        "该品种无交易所收盘日报复核，展示行情源最新报价",
+        "no exchange close check for this security; showing latest feed quote",
+    ),
+    "market_open": (
+        "当前尚未收盘，展示行情源最新报价",
+        "market not yet closed; showing latest feed quote",
+    ),
 }
 LABELS = {
     "last": ("最新价", "last"),
@@ -157,7 +165,7 @@ def _render_sector(
     as_of = q.as_of.strftime("%Y-%m-%d %H:%M:%S") if q.as_of else q.day.isoformat()
     age = ""
     if q.day < snapshot.queried_at.date():
-        stale = expected_day("sh", snapshot.queried_at.date()) != q.day
+        stale = latest_expected_day("sh", snapshot.queried_at) != q.day
         age = (
             _t(en, " · 较早交易日行情", " · older trading day")
             if stale
@@ -320,9 +328,36 @@ def _render_listings(
 
         if detail:
             if detail == "close" and v.status != "confirmed":
-                pending = _t(en, "收盘价待确认", "Exchange close pending")
-                latest_lbl = _t(en, "最近报价", "latest quote")
-                notes.append(f"- {label} · {pending} · {latest_lbl} {asof} · {links}")
+                val = fields["last"]
+                if val != "—":
+                    val += f" {unit}"
+                else:
+                    val += _t(en, "（原快照缺少该字段）", " (source field unavailable)")
+                if v.reason == "close_unsupported":
+                    status_lbl = _t(
+                        en,
+                        "无交易所收盘复核，最新报价",
+                        "no exchange close check, latest quote",
+                    )
+                elif v.reason == "market_open":
+                    status_lbl = _t(
+                        en,
+                        "尚未收盘，盘中最新报价",
+                        "market open, latest quote",
+                    )
+                elif v.reason == "different_close":
+                    status_lbl = _t(
+                        en,
+                        "收盘价待确认（交易所快照与日线不一致），最近报价",
+                        "close pending (snapshot/daily close differ), latest quote",
+                    )
+                else:
+                    status_lbl = _t(
+                        en,
+                        "收盘价待确认，最近报价",
+                        "close pending, latest quote",
+                    )
+                notes.append(f"- {label} · {status_lbl} **{val}** · {asof} · {links}")
                 continue
             val = fields["last" if detail == "close" else detail]
             if (
@@ -342,7 +377,11 @@ def _render_listings(
             state += " · " + _t(en, "个股停牌", "suspended")
         if v.status == "confirmed":
             state += " · " + _t(en, "收盘价已确认", "confirmed close")
-        elif q.listing.asset_type == "stock" and row.phase in CLOSED_LIKE:
+        elif (
+            q.listing.asset_type == "stock"
+            and q.listing.market in {"sh", "sz", "hk"}
+            and row.phase in CLOSED_LIKE
+        ):
             state += " · " + _t(
                 en, "最近报价，收盘价待确认", "latest quote, close pending"
             )
