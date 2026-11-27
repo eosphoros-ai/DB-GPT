@@ -18,6 +18,7 @@ class _FakeVectorStore(VectorStoreBase):
     """A dict backed vector store that returns every stored chunk."""
 
     def __init__(self):
+        super().__init__()
         self.chunks: Dict[str, Chunk] = {}
 
     def get_config(self) -> VectorStoreConfig:
@@ -68,6 +69,11 @@ async def test_hybrid_memory_clear_removes_long_term_fragments():
                 "Our art workshop is at Cedar Studio this Saturday.", importance=0.9
             )
         )
+        await memory._long_term_memory.write_batch(
+            [AgentMemoryFragment("The workshop moved to Oak Hall.", importance=0.9)],
+            now,
+        )
+        assert len(store.chunks) == 1
         assert await memory.read("workshop venue")
 
         cleared = await memory.clear()
