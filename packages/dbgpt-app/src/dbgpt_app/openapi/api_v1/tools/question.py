@@ -182,6 +182,7 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
             )
         finally:
             question_manager.remove(pq.request_id)
+            react_state["_stock_quote_needs_question"] = False
 
         await stream_callback(
             "question.rejected" if pq.rejected else "question.replied",

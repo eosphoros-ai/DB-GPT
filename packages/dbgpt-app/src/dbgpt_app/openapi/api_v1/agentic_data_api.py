@@ -2356,6 +2356,7 @@ async def _react_agent_stream_impl(
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
     from dbgpt.core import StorageConversation
+    from dbgpt.core.interface.message import ModelMessageRoleType
     from dbgpt.model.cluster.client import DefaultLLMClient
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
@@ -3799,6 +3800,7 @@ async def _react_agent_stream_impl(
     historical_dialogues: List[AgentMessage] = []
     has_saved_financial_report = False
     has_saved_quote = False
+    saved_quote_symbols: List[str] = []
     # A recovery checkpoint already carries the original objective and real
     # artifacts. Old failed replies add stale errors and repeated reasoning.
     history_messages = (
@@ -3806,16 +3808,15 @@ async def _react_agent_stream_impl(
         if react_state.get("_report_checkpoint_path")
         else storage_conv.get_history_message()
     )
-    financial_tools = (
-        make_financial_tools(react_state, stream_callback=stream_callback)
-        if financial_enabled
-        else []
-    )
     for _msg in history_messages:
         if _msg.type == "human":
-            historical_dialogues.append(AgentMessage(content=_msg.content))
+            historical_dialogues.append(
+                AgentMessage(content=_msg.content, role=ModelMessageRoleType.HUMAN)
+            )
         elif _msg.type == "ai":
-            historical_dialogues.append(AgentMessage(content=_msg.content))
+            historical_dialogues.append(
+                AgentMessage(content=_msg.content, role=ModelMessageRoleType.AI)
+            )
         elif _msg.type == "view":
             # view 消息存的是 history_payload(JSON)，提取 final_content 作为 AI 回答
             _content = _msg.content
@@ -3826,13 +3827,64 @@ async def _react_agent_stream_impl(
                 if isinstance(_payload, dict):
                     if _payload.get("financial_report"):
                         has_saved_financial_report = True
-                    if _payload.get("stock_quote_snapshot"):
+                    _quote_snap = _payload.get("stock_quote_snapshot")
+                    if isinstance(_quote_snap, dict) and any(
+                        isinstance(_r, dict) and _r.get("outcome") != "unavailable"
+                        for _r in (_quote_snap.get("rows") or [])
+                    ):
                         has_saved_quote = True
+                        _labels: List[str] = []
+                        for _row in _quote_snap.get("rows") or []:
+                            if (
+                                not isinstance(_row, dict)
+                                or _row.get("outcome") == "unavailable"
+                            ):
+                                continue
+                            _q = _row.get("quote")
+                            _listing = (
+                                _q.get("listing") if isinstance(_q, dict) else None
+                            )
+                            _sector = _row.get("sector")
+                            _name = (
+                                (
+                                    _listing.get("name")
+                                    if isinstance(_listing, dict)
+                                    else None
+                                )
+                                or (
+                                    _sector.get("name")
+                                    if isinstance(_sector, dict)
+                                    else None
+                                )
+                                or _row.get("requested")
+                            )
+                            if _name and str(_name) not in _labels:
+                                _labels.append(str(_name))
+                        if _labels:
+                            saved_quote_symbols = _labels[:8]
                     _content = _payload.get("final_content") or ""
             except Exception:
                 pass
             if _content:
-                historical_dialogues.append(AgentMessage(content=_content))
+                historical_dialogues.append(
+                    AgentMessage(content=_content, role=ModelMessageRoleType.AI)
+                )
+    financial_report_active = bool(
+        file_paths
+        or input_files_snapshot
+        or has_saved_financial_report
+        or react_state.get("financial_suite_command")
+        or react_state.get("session_files")
+        or react_state.get("file_path")
+        or react_state.get("_report_checkpoint_path")
+        or react_state.get("financial_report_context")
+        or react_state.get("financial_pending")
+    )
+    financial_tools = (
+        make_financial_tools(react_state, stream_callback=stream_callback)
+        if financial_enabled and financial_report_active
+        else []
+    )
     storage_conv.add_user_message(user_input)
     if history_checkpoint is not None:
         history_checkpoint.bind(
@@ -4679,7 +4731,17 @@ After partial results, finish only missing requested deliverables, then report.
     # --- Suite binder (T3): resolve the scenario-suite pin and prepend SOP ---
     try:
         if suite_binding is not None:
-            suite_prompt = build_sop_block(suite_binding)
+            _preloaded_suite_skills = (
+                ("stock-quote",)
+                if suite_binding.name == "financial-analysis"
+                and (
+                    suite_binding.command_skill == "stock-quote" or has_saved_quote
+                )
+                else ()
+            )
+            suite_prompt = build_sop_block(
+                suite_binding, preloaded_skills=_preloaded_suite_skills
+            )
             workflow_prompt = suite_prompt + workflow_prompt
             suite_binding_snapshot = command_binding_event(suite_binding)
             yield _sse_event(suite_binding_snapshot)
@@ -4765,6 +4827,7 @@ Do not inspect suite configuration or repeat completed analysis. Do not write HT
 or substitute a textual summary for a requested report.
 """
 
+    is_bare_greeting = False
     if (
         suite_binding is None
         and not dashboard_agent_mode
@@ -4798,6 +4861,7 @@ or substitute a textual summary for a requested report.
         greeting = re.fullmatch(
             r"\s*(?:hi|hello|hey|你好|您好|嗨)[!！。.\s]*", user_input, re.I
         )
+        is_bare_greeting = bool(greeting)
         if greeting:
             initial_names = {"terminate"}
         tool_pack = ToolPack(
@@ -4819,7 +4883,8 @@ or substitute a textual summary for a requested report.
 
     model_request = user_input
     if (
-        not dashboard_agent_mode
+        not is_bare_greeting
+        and not dashboard_agent_mode
         and not pre_matched_skill
         and creation_mode != "expert_suite"
         and tool_mode != "knowledge"
@@ -4873,22 +4938,26 @@ or substitute a textual summary for a requested report.
                     "的来源和时间。使判断的确定性与证据相称。"
                 )
                 if has_saved_quote:
+                    saved_desc = (
+                        f"（最近一次快照标的：{'、'.join(saved_quote_symbols)}）"
+                        if saved_quote_symbols
+                        else ""
+                    )
                     workflow_prompt += (
-                        "\n本会话保存了结构化行情快照。用户要求核对上次行情时，"
-                        "通过 stock-quote 的 recall 读取字段。用户要求刷新时，"
-                        "通过 latest 取得本轮数据。用空的 stocks 数组可沿用上次标的。"
+                        f"\n本会话保存了结构化行情快照{saved_desc}。"
+                        "请先结合紧邻上一轮对话判断本轮目标："
+                        "若用户承接上一轮刚提到的新公司或新标的（如回复"
+                        "“查询一下吧”“查吧”“看看”），必须传入该新标的的名称或代码"
+                        "调用 latest，切勿沿用更早的旧快照标的；"
+                        "仅当用户明确要求核对上述旧快照数值时通过 recall 读取，"
+                        "明确要求刷新上述旧标的时通过 latest 查询（传空 stocks 数组可沿用上次标的）。"
                     )
 
     workflow_prompt_template = build_react_prompt_template(
         workflow_prompt,
         financial_enabled=financial_enabled
         and not dashboard_agent_mode
-        and bool(
-            file_paths
-            or input_files_snapshot
-            or has_saved_financial_report
-            or react_state.get("financial_suite_command")
-        ),
+        and financial_report_active,
     )
 
     from .financial_agent import FinancialWorkflowAgent
@@ -4904,6 +4973,17 @@ or substitute a textual summary for a requested report.
                 and message.action_report.terminate
                 and tool_mode != "knowledge"
             ):
+                if react_state.get(
+                    "_stock_quote_needs_question"
+                ) and not react_state.get("_stock_quote_question_nudged"):
+                    react_state["_stock_quote_question_nudged"] = True
+                    return (
+                        False,
+                        "仍有待用户选择的候选标的或板块。请先调用 `question` 工具"
+                        "在输入框上方弹出候选项让用户在本轮直接选择，收到回复后再"
+                        "调用 `query_stock_quotes(operation='select', stocks=[...])`，"
+                        "不要直接结束本轮对话。",
+                    )
                 error = await financial_completion_error(react_state)
                 if error:
                     return False, error
@@ -4927,6 +5007,12 @@ or substitute a textual summary for a requested report.
     )
 
     agent = await agent_builder.build()
+    if financial_enabled or has_saved_quote:
+        # Multi-turn Q&A history is passed chronologically via historical_dialogues.
+        # Clear ShortTermMemory recovered from gpts_messages for financial/quote turns,
+        # otherwise earlier quote tool trajectories get replayed *after* newer Q&A
+        # turns and hijack short follow-ups (e.g. "查询一下吧").
+        await agent.memory.clear()
 
     parser = ReActOutputParser()
     received = AgentMessage(content=model_request)

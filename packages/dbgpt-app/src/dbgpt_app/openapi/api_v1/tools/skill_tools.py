@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -9,6 +10,13 @@ from typing import Any, Dict
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.skill.manage import normalize_script_file_name
 from dbgpt_serve.session_file.domain import SessionFileStatus
+
+_YAML_FRONTMATTER_RE = re.compile(r"\A---\s*\r?\n.*?\r?\n---\s*(?:\r?\n|$)", re.S)
+
+
+def _strip_yaml_frontmatter(text: str) -> str:
+    """Strip leading YAML frontmatter metadata from SKILL.md."""
+    return _YAML_FRONTMATTER_RE.sub("", text, count=1).lstrip("\r\n")
 
 
 def _capture_script_identity(script_path):
@@ -312,7 +320,12 @@ def mount_suite_skills(
             continue
         for name in command["agent_tools"]:
             pack.append(resources[name]._tool, overwrite=True)
-        body = "\n\n".join(doc["content"] for doc in documents if doc.get("content"))
+        body = "\n\n".join(
+            cleaned
+            for doc in documents
+            if doc.get("content")
+            and (cleaned := _strip_yaml_frontmatter(doc["content"]))
+        )
         if body:
             preloaded.append(
                 f"### Preloaded skill: {skill_name}\n"
@@ -337,8 +350,12 @@ def mount_suite_skills(
         return json.dumps(
             {
                 "chunks": [
-                    {"output_type": "markdown", "content": doc["content"]}
+                    {
+                        "output_type": "markdown",
+                        "content": _strip_yaml_frontmatter(doc["content"]),
+                    }
                     for doc in documents
+                    if doc.get("content")
                 ]
             },
             ensure_ascii=False,

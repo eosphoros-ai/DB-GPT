@@ -8,7 +8,7 @@ Upload annual-report PDFs to inspect evidence-backed financial findings or compa
 | --- | --- | --- |
 | `/annual-report` | One annual-report PDF | Analyze operations, earnings quality, margins, expenses, cash flow and the balance sheet |
 | `/compare-reports` | Two to five annual-report PDFs | Compare companies in the same reporting year, or one company across reporting years |
-| `/stock-quote` | Stock names, codes, industries or themes | Look up mainland and Hong Kong shares, or check A-share sector performance, breadth, gainers and decliners |
+| `/stock-quote` | Stock names, codes, indices, industries or themes | Look up CN/BJ A-shares, ETFs, HK shares, major CN/HK indices, or check A-share sector performance, breadth, gainers and decliners |
 
 Type `/` in the home or conversation input or start from a shortcut on this page. For an annual-report task, attach the PDFs and describe your question. Follow up in the original conversation to use the saved report.
 

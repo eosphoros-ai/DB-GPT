@@ -582,7 +582,9 @@ def resolve_binding_for_turn(dialogue: Any) -> Optional[SuiteBinding]:
         return None
 
 
-def build_sop_block(binding: SuiteBinding) -> str:
+def build_sop_block(
+    binding: SuiteBinding, *, preloaded_skills: tuple[str, ...] = ()
+) -> str:
     """SOP section prepended to the system prompt (dbgpt) / turn prompt (pi)."""
     header = (
         f"\n\n## 场景套件 SOP（{binding.name}@{binding.version}）\n"
@@ -610,10 +612,18 @@ def build_sop_block(binding: SuiteBinding) -> str:
             "停止业务执行，向用户说明原因并请其重新选择命令。"
         )
     elif binding.command and not binding.command_skill_text:
-        command_block = (
-            f"\n\n用户选择了快捷入口 {binding.command}。请结合本轮原话与上下文"
-            "判断用户想解决的问题。只在需要该技能的数据时调用 load_skill。"
-        )
+        if binding.command_skill and binding.command_skill in preloaded_skills:
+            command_block = (
+                f"\n\n用户选择了快捷入口 {binding.command}。技能 "
+                f"{binding.command_skill} 及其工具已在本轮预加载，请结合本轮原话"
+                "与上下文判断是否需要查询数据；需要时直接调用其工具，"
+                "无需再调用 load_skill。"
+            )
+        else:
+            command_block = (
+                f"\n\n用户选择了快捷入口 {binding.command}。请结合本轮原话与上下文"
+                "判断用户想解决的问题。只在需要该技能的数据时调用 load_skill。"
+            )
     elif binding.command:
         command_block = (
             f"\n\n## 本轮快捷命令：{binding.command}\n"

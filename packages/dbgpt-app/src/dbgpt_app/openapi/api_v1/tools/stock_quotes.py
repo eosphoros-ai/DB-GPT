@@ -15,8 +15,10 @@ from dbgpt_serve.financial_analysis.quotes import (
     query_quotes,
     render,
 )
+from dbgpt_serve.financial_analysis.quotes.providers import _name_key
 
 MAX_CONSECUTIVE_FAILURES = 2
+_CONTEXT_PREFIX_RE = re.compile(r"^(?:\[(?:Database|Knowledge): [^\]]+\]\s*)+")
 
 
 class QuoteRequest(BaseModel):
@@ -62,7 +64,10 @@ def previous_quote_snapshot(history) -> Optional[Snapshot]:
             ):
                 continue
             if payload.get("stock_quote_snapshot"):
-                return Snapshot.model_validate(payload["stock_quote_snapshot"])
+                snap = Snapshot.model_validate(payload["stock_quote_snapshot"])
+                if any(r.outcome != "unavailable" for r in snap.rows):
+                    return snap
+                continue
             if ref.get("command") == "/查股票" and ref.get("skill_loaded") is not False:
                 return None
         except ValidationError:
@@ -78,8 +83,56 @@ def _row_names(row: QuoteRow) -> set[str]:
         names.update((row.sector.name, row.sector.code))
     if row.quote:
         lst = row.quote.listing
-        names.update((lst.name, lst.code, lst.label))
-    return {n.casefold() for n in names}
+        names.update((lst.name, _name_key(lst.name), lst.code, lst.label, lst.symbol))
+        if lst.market == "hk" and lst.code.isdigit():
+            stripped = lst.code.lstrip("0") or "0"
+            names.update((stripped, f"{stripped}.hk", f"hk{stripped}"))
+    return {n.casefold() for n in names if n}
+
+
+def _term_variants(term: str) -> set[str]:
+    raw = term.strip()
+    variants = {raw.casefold()}
+    bracket = re.search(r"[(（]\s*([^()（）]+?)\s*[)）]", raw)
+    if bracket:
+        variants.add(bracket[1].strip().casefold())
+        prefix = raw[: bracket.start()].strip()
+        if prefix:
+            variants.add(prefix.casefold())
+            variants.add(_name_key(prefix))
+    bare, _, _ = qualifiers(raw)
+    if bare:
+        variants.add(bare.casefold())
+        variants.add(_name_key(bare))
+    return {v for v in variants if v}
+
+
+def _match_recall_indices(snapshot: Snapshot, terms: list[str]) -> Optional[list[int]]:
+    """Match requested recall terms to snapshot row indices in snapshot order."""
+    if not terms:
+        return list(range(len(snapshot.rows)))
+    row_name_sets = [_row_names(r) for r in snapshot.rows]
+    matched: set[int] = set()
+    for term in terms:
+        variants = _term_variants(term)
+        hits = [idx for idx, r_names in enumerate(row_name_sets) if variants & r_names]
+        if not hits:
+            # Allow unambiguous substring match (e.g. "茅台" -> "贵州茅台").
+            sub_hits = [
+                idx
+                for idx, r_names in enumerate(row_name_sets)
+                if any(len(v) >= 2 and any(v in rn for rn in r_names) for v in variants)
+            ]
+            if len(sub_hits) == 1:
+                hits = sub_hits
+        if not hits:
+            return None
+        matched.update(hits)
+    return sorted(matched)
+
+
+def _strip_context_prefix(text: str) -> str:
+    return _CONTEXT_PREFIX_RE.sub("", (text or "").strip()).strip()
 
 
 def _resolved_term(row: QuoteRow) -> str:
@@ -93,6 +146,7 @@ def _match_candidate(snapshot: Snapshot, selection: str) -> Optional[tuple[int, 
     choice = re.sub(
         r"^(?:我选|选择|选|那就|那|option)\s*", "", selection.strip(), flags=re.I
     )
+    choice = re.sub(r"\s*(?:\(recommended\)|（推荐）)\s*$", "", choice, flags=re.I)
     key = choice.strip(" 。呢吧？?").removesuffix("板块").casefold()
     ordinal = re.fullmatch(r"第?([1-9一二三四五六七八九])(?:个|项)?", key)
     pos = (
@@ -133,17 +187,43 @@ def _envelope(
     *,
     needs_selection: bool = False,
     stop_retrying: bool = False,
+    card_rendered: bool = False,
 ) -> str:
-    instr = (
-        "Answer using only observed data. Keep source links, timestamps, and units. "
-        "Never label '收盘价待确认'/'close pending' as an official closing price."
-    )
-    if needs_selection:
-        instr += (
-            " Present candidates and wait for the user's choice before calling select."
+    if needs_selection and not stop_retrying:
+        instr = (
+            "Multiple candidates require user disambiguation IN THIS SAME TURN. "
+            "Immediately call the `question` tool NOW (do NOT call `terminate` "
+            "yet) with each candidate as an option (label with name and code, "
+            "e.g. '半导体（BK1036）' or '中芯国际 688981.SH'; set multiple=true "
+            "for sector choices). After `question` returns the user's pick, "
+            "call `query_stock_quotes(operation='select', stocks=[...])` in the "
+            "same turn, then deliver one unified final answer. If the user "
+            "dismisses the question, answer with the already-quoted results."
         )
-    if stop_retrying:
-        instr += " Stop retrying unavailable/out-of-scope queries and explain directly."
+    else:
+        instr = (
+            "Answer using only observed data. Keep units and necessary caveats. "
+            "Never label '收盘价待确认'/'close pending' as an official closing price."
+        )
+        if card_rendered:
+            instr += (
+                " A structured quote card is already rendered above your reply; lead "
+                "with a concise takeaway and answer the user's extended questions "
+                "without repeating the full raw Markdown table."
+            )
+        else:
+            instr += " Keep source links and timestamps."
+        if needs_selection:
+            instr += (
+                " Call `question` to ask the user to pick a candidate before "
+                "calling `select`."
+            )
+        if stop_retrying:
+            instr += (
+                " Stop retrying unavailable/out-of-scope queries and explain directly."
+            )
+        if not needs_selection:
+            instr += " Deliver your final answer via the `terminate(output=...)` tool."
     return json.dumps(
         {
             "chunks": [{"output_type": "markdown", "content": content}],
@@ -152,6 +232,7 @@ def _envelope(
                 "operation": operation,
                 "needs_selection": needs_selection,
                 "stop_retrying": stop_retrying,
+                "card_rendered": card_rendered,
                 "instructions": instr,
             },
         },
@@ -170,25 +251,33 @@ def _handle_recall(
             else "这次会话未保存可回看的行情快照。"
         )
         return _envelope(msg, user_query, "recall", stop_retrying=True)
-    selected = snapshot.rows
-    if terms:
-        wanted = {t.casefold() for t in terms}
-        selected = [r for r in snapshot.rows if wanted & _row_names(r)]
-        if not wanted <= {n for r in selected for n in _row_names(r)}:
-            msg = (
-                "Requested subject absent from saved quote."
-                if en
-                else "上次报价未包含所选标的。"
-            )
-            return _envelope(msg, user_query, "recall", stop_retrying=True)
+    matched_indices = _match_recall_indices(snapshot, terms)
+    if matched_indices is None:
+        msg = (
+            "Requested subject absent from saved quote."
+            if en
+            else "上次报价未包含所选标的。"
+        )
+        return _envelope(msg, user_query, "recall", stop_retrying=True)
+    selected = [snapshot.rows[i] for i in matched_indices]
     recalled = snapshot.model_copy(update={"rows": selected})
-    if any(r.quote or r.sector_quote for r in recalled.rows):
+    has_quoted = any(r.quote or r.sector_quote for r in recalled.rows)
+    if has_quoted:
         state["financial_other_source_used"] = True
+        compact = snapshot.model_copy(
+            update={
+                "display_mode": "compact",
+                "recall_detail": detail or None,
+                "recall_indices": matched_indices,
+            }
+        )
+        state["stock_quote_snapshot"] = compact.model_dump(mode="json")
     return _envelope(
         render(recalled, language=language, detail=detail or None),
         user_query,
         "recall",
         needs_selection=any(r.outcome == "choose" for r in recalled.rows),
+        card_rendered=has_quoted,
     )
 
 
@@ -219,6 +308,7 @@ def make_stock_quote_tool(state, *, history=(), query=None):
             clarification_count, \
             consecutive_failures
         QuoteRequest(stocks=stocks, operation=operation, detail=detail)
+        state["_stock_quote_tool_ran"] = True
         terms = [t.strip() for t in stocks if t.strip()]
         language = state.get("_report_language", "zh")
         en = language == "en"
@@ -241,11 +331,20 @@ def make_stock_quote_tool(state, *, history=(), query=None):
                     else "当前没有待选择的候选标的或板块。"
                 )
                 return _envelope(msg, user_query, "select", stop_retrying=True)
+            clean_query = _strip_context_prefix(user_query)
             if current is not None:
-                choices = clarifications[clarification_count:]
-            elif _match_candidate(snapshot, user_query):
-                choices = [user_query]
-            elif terms and all(t.casefold() in user_query.casefold() for t in terms):
+                new_replies = clarifications[clarification_count:]
+                if not new_replies:
+                    choices = []
+                elif all(_match_candidate(snapshot, c) for c in new_replies):
+                    choices = new_replies
+                elif terms and all(_match_candidate(snapshot, t) for t in terms):
+                    choices = terms
+                else:
+                    choices = []
+            elif _match_candidate(snapshot, clean_query):
+                choices = [clean_query]
+            elif terms and all(_match_candidate(snapshot, t) for t in terms):
                 choices = terms
             else:
                 choices = []
@@ -260,28 +359,47 @@ def make_stock_quote_tool(state, *, history=(), query=None):
                     needs_selection=True,
                     stop_retrying=True,
                 )
-            pairs = [m for m in matched if m is not None]
+            pairs = list(dict.fromkeys(m for m in matched if m is not None))
             fetched = (
                 await lookup([code for _, code in pairs], confirm_close=True)
                 if want_close
                 else await lookup([code for _, code in pairs])
             )
-            # Merge resolved candidate(s) in-place, preserving other turn stocks.
-            merged_rows = list(snapshot.rows)
+            # Merge resolved candidate(s) in-place, supporting multi-pick from one group
+            # while preserving other turn stocks.
+            replacements: dict[int, list[QuoteRow]] = {}
             for (row_idx, _), new_row in zip(pairs, fetched.rows):
-                merged_rows[row_idx] = new_row
-            current = fetched.model_copy(update={"rows": merged_rows})
+                replacements.setdefault(row_idx, []).append(new_row)
+            merged_rows: list[QuoteRow] = []
+            for idx, old_row in enumerate(snapshot.rows):
+                if idx in replacements:
+                    merged_rows.extend(replacements[idx])
+                else:
+                    merged_rows.append(old_row)
+            current = fetched.model_copy(
+                update={
+                    "rows": merged_rows,
+                    "display_mode": "full",
+                    "recall_detail": None,
+                    "recall_indices": None,
+                }
+            )
             current_includes_close = want_close
             clarification_count = len(clarifications)
             consecutive_failures = 0
-            state["stock_quote_snapshot"] = current.model_dump(mode="json")
+            has_visible = any(r.outcome != "unavailable" for r in current.rows)
+            if has_visible:
+                state["stock_quote_snapshot"] = current.model_dump(mode="json")
             if any(r.quote or r.sector_quote for r in current.rows):
                 state["financial_other_source_used"] = True
+            still_choose = any(r.outcome == "choose" for r in current.rows)
+            state["_stock_quote_needs_question"] = still_choose
             return _envelope(
                 render(fetched, language=language, detail=detail or None),
                 user_query,
                 "select",
-                needs_selection=any(r.outcome == "choose" for r in current.rows),
+                needs_selection=still_choose,
+                card_rendered=has_visible and not still_choose,
             )
 
         terms = terms or [r.requested for r in rows]
@@ -328,19 +446,21 @@ def make_stock_quote_tool(state, *, history=(), query=None):
                 if want_close
                 else await lookup(lookups)
             )
-            if len(result.rows) == len(terms):
+            orig_by_lookup: dict[str, str] = {}
+            for orig, lk in zip(terms, lookups):
+                if orig != lk:
+                    orig_by_lookup.setdefault(lk.casefold(), orig)
+            if orig_by_lookup:
                 result = result.model_copy(
                     update={
                         "rows": [
-                            r.model_copy(update={"requested": t})
-                            for r, t in zip(result.rows, terms)
+                            r.model_copy(update={"requested": orig})
+                            if (orig := orig_by_lookup.get(r.requested.casefold()))
+                            else r
+                            for r in result.rows
                         ]
                     }
                 )
-            current, current_includes_close = result, want_close
-            clarification_count = len(clarifications)
-            state["stock_quote_snapshot"] = result.model_dump(mode="json")
-
         all_bad = bool(result.rows) and all(
             r.outcome == "unavailable" for r in result.rows
         )
@@ -348,15 +468,21 @@ def make_stock_quote_tool(state, *, history=(), query=None):
             consecutive_failures += 1
             failed_queries.add(sig)
         else:
+            current, current_includes_close = result, want_close
+            clarification_count = len(clarifications)
             consecutive_failures = 0
+            state["stock_quote_snapshot"] = result.model_dump(mode="json")
         if any(r.quote or r.sector_quote for r in result.rows):
             state["financial_other_source_used"] = True
+        needs_sel = any(r.outcome == "choose" for r in result.rows)
+        state["_stock_quote_needs_question"] = needs_sel
         return _envelope(
             render(result, language=language, detail=detail or None),
             user_query,
             "latest",
-            needs_selection=any(r.outcome == "choose" for r in result.rows),
+            needs_selection=needs_sel,
             stop_retrying=all_bad and consecutive_failures >= MAX_CONSECUTIVE_FAILURES,
+            card_rendered=not all_bad and bool(result.rows) and not needs_sel,
         )
 
     return query_stock_quotes

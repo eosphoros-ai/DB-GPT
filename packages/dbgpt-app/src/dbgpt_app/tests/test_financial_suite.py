@@ -174,21 +174,29 @@ def test_quote_shortcut_only_offers_the_skill_until_the_agent_loads_it(financial
         pack.execute(resource_name="load_skill", skill_name="unrelated")
     result = pack.execute(resource_name="load_skill", skill_name="stock-quote")
     assert "query_stock_quotes" in result
+    assert "argument-hint-en:" not in result
     assert {r.name for r in pack.sub_resources} == {"load_skill", "query_stock_quotes"}
     assert "stock_quote_snapshot" not in state
     assert not binding.command_skill_text
 
 
 def test_quote_shortcut_eager_mount_activates_tool_on_round_one(financial_suite):
-    _, binding = financial_suite
+    package, binding = financial_suite
+    assert "/stock-quote" in package.snapshot["routing"]["keywords"]
     state = {"financial_user_query": "今天茅台涨了多少？"}
     bind_command(binding, "/查股票")
+    sop = build_sop_block(binding, preloaded_skills=("stock-quote",))
+    assert "无需再调用 load_skill" in sop
+    assert "只在需要该技能的数据时调用 load_skill" not in sop
     pack = ToolPack([])
     resources = {"query_stock_quotes": make_stock_quote_tool(state)}
     summary = mount_suite_skills(
         pack, binding, resources, state, eager_skills=("stock-quote",)
     )
     assert "Preloaded skill: stock-quote" in summary
+    assert "# 查股票" in summary
+    assert "argument-hint-en:" not in summary
+    assert "name_zh:" not in summary
     assert {r.name for r in pack.sub_resources} == {"load_skill", "query_stock_quotes"}
 
 

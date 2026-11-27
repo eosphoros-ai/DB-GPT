@@ -50,7 +50,7 @@
     },
     "artifacts": ["financial_report", "citation"],
     "routing": {
-      "keywords": ["财报", "年报", "年度报告", "财报对比", "查股票", "股价", "大盘", "上证指数", "恒生指数", "板块行情", "领涨", "领跌", "financial report", "annual report", "stock quote", "sector performance"],
+      "keywords": ["财报", "年报", "年度报告", "财报对比", "查股票", "/stock-quote", "股价", "大盘", "上证指数", "恒生指数", "板块行情", "领涨", "领跌", "financial report", "annual report", "stock quote", "sector performance"],
       "specificity": 1
     },
     "recommended_questions": [
