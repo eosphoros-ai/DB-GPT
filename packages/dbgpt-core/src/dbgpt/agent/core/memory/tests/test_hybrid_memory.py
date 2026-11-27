@@ -329,3 +329,27 @@ async def test_long_term_clear_removes_chunk_of_cancelled_write():
             "Our art workshop is at Cedar Studio."
         ]
         assert store.chunks == {}
+
+
+@pytest.mark.asyncio
+async def test_long_term_cancelled_clear_untracks_deleted_fragments():
+    store = BlockingDeleteVectorStore()
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        memory = _long_term_memory(executor, store)
+        await memory.write(_fragment("Our art workshop is at Cedar Studio."))
+
+        clear_task = asyncio.create_task(memory.clear())
+        try:
+            await _wait_event(store.deleting)
+            clear_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await clear_task
+        finally:
+            store.release.set()
+        # The executor has a single worker, so this waits for the deletion.
+        await asyncio.get_running_loop().run_in_executor(executor, lambda: None)
+
+        assert store.chunks == {}
+        # The deleted fragment is no longer tracked or read back.
+        assert await memory.read("workshop venue") == []
+        assert await memory.clear() == []
