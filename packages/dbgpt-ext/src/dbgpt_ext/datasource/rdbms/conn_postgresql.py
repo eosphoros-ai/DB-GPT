@@ -287,6 +287,7 @@ class PostgreSQLConnector(RDBMSConnector):
 
     def table_simple_info(self):
         """Get table simple info."""
+        schema = self._schema or "public"
         _sql = """
             SELECT table_name, string_agg(column_name, ', ') AS schema_info
             FROM (
@@ -297,14 +298,13 @@ class PostgreSQLConnector(RDBMSConnector):
                 WHERE c.relkind = 'r'
                 AND a.attnum > 0
                 AND NOT a.attisdropped
-                AND n.nspname NOT LIKE 'pg_%'
-                AND n.nspname != 'information_schema'
+                AND n.nspname = :schema
                 ORDER BY c.relname, a.attnum
             ) sub
             GROUP BY table_name;
             """
         with self.session_scope() as session:
-            cursor = session.execute(text(_sql))
+            cursor = session.execute(text(_sql), {"schema": schema})
             results = cursor.fetchall()
             results_str = []
             for result in results:
