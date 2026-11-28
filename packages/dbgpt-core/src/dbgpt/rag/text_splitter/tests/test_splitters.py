@@ -100,7 +100,4 @@ def test_separator_text_splitter_enable_merge() -> None:
     splitter = SeparatorTextSplitter(
         separator="|", enable_merge=True, chunk_size=5, chunk_overlap=0
     )
-    chunks = splitter.split_text("ab|cd|ef|gh")
-    assert chunks
-    assert all(len(chunk) <= 5 for chunk in chunks)
-    assert "|".join(chunks).replace("|", "") == "abcdefgh"
+    assert splitter.split_text("ab|cd|ef|gh") == ["ab|cd", "ef|gh"]
