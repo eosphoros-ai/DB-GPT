@@ -2,6 +2,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.text_splitter.text_splitter import (
     CharacterTextSplitter,
     MarkdownHeaderTextSplitter,
+    SeparatorTextSplitter,
 )
 
 
@@ -82,3 +83,24 @@ def test_character_text_splitter_empty_doc() -> None:
     output = splitter.split_text(text)
     expected_output = ["db", "gpt"]
     assert output == expected_output
+
+
+def test_separator_text_splitter_defaults_enable_merge() -> None:
+    """The splitter can be created with only a separator, merging off by default."""
+    splitter = SeparatorTextSplitter(separator="|")
+    assert splitter.split_text("a|b|c") == ["a", "b", "c"]
+    # ChunkStrategy.match passes enable_merge=None when it is left unset
+    assert SeparatorTextSplitter(separator="|", enable_merge=None).split_text(
+        "a|b||c"
+    ) == ["a", "b", "c"]
+
+
+def test_separator_text_splitter_enable_merge() -> None:
+    """An explicit enable_merge=True still merges the splits."""
+    splitter = SeparatorTextSplitter(
+        separator="|", enable_merge=True, chunk_size=5, chunk_overlap=0
+    )
+    chunks = splitter.split_text("ab|cd|ef|gh")
+    assert chunks
+    assert all(len(chunk) <= 5 for chunk in chunks)
+    assert "|".join(chunks).replace("|", "") == "abcdefgh"
