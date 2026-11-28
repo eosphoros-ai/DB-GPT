@@ -1,18 +1,31 @@
 # MartLLM
 
-### [MartLLM](https://martllm.com) serves chat models from OpenAI, Anthropic, Google, DeepSeek, Qwen, Z.ai and others behind a single OpenAI-compatible endpoint and one prepaid API key.
+### [MartLLM](https://martllm.com) serves chat models from Anthropic, Google, DeepSeek, Qwen, Z.ai and others behind a single OpenAI-compatible endpoint and one prepaid API key.
 
 ### This section describes how to use the MartLLM provider with DB-GPT.
 
 1. Sign up at [MartLLM](https://martllm.com/signup) and create an API key.
 2. Set the environment variable `MARTLLM_API_KEY` with your key.
-3. Use the `configs/dbgpt-proxy-martllm.toml` configuration when starting DB-GPT. Set `LLM_MODEL_NAME` to pick another model, for example `deepseek/deepseek-v4-flash` or `anthropic/claude-sonnet-4.6`.
+3. Use the `configs/dbgpt-proxy-martllm.toml` configuration when starting DB-GPT. Set `LLM_MODEL_NAME` to pick another model, for example `anthropic/claude-sonnet-4.6` or `qwen/qwen3.7-max` (the default is `deepseek/deepseek-v4-flash`).
 
 ### You can look up models and per-model prices at [https://martllm.com/models](https://martllm.com/models)
 
 ### Knowledge base (RAG)
 
-MartLLM serves chat models only, so `configs/dbgpt-proxy-martllm.toml` registers no embedding model. Chat works as is. To index and search a knowledge base, uncomment the `[[models.embeddings]]` block at the end of that file (a local Hugging Face model) or add any other embedding provider DB-GPT supports. With `name` and `provider` only, the model is downloaded from the Hugging Face model hub on first start. Uncomment `path` as well only after you have downloaded the model to that directory.
+MartLLM serves chat models only, so `configs/dbgpt-proxy-martllm.toml` registers no embedding model. Chat works as is. To index and search a knowledge base, uncomment the `[[models.embeddings]]` block at the end of that file (a local Hugging Face model) or add any other embedding provider DB-GPT supports. The Hugging Face block also needs the `hf` extra (and `cpu` on a machine without a GPU), as in the [quick start](../../quickstart.md):
+
+```bash
+uv sync --all-packages \
+--extra "base" \
+--extra "proxy_openai" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts" \
+--extra "hf" \
+--extra "cpu"
+```
+
+With `name` and `provider` only, the model is downloaded from the Hugging Face model hub on first start. Uncomment `path` as well only after you have downloaded the model to that directory.
 
 ### Or you can use docker/base/Dockerfile to run DB-GPT with MartLLM:
 
@@ -31,7 +44,7 @@ bash docker/base/build_image.sh --image-name dbgpt:latest
 
 docker run -it --rm -p 5670:5670 \
   -e MARTLLM_API_KEY="your_martllm_api_key" \
-  -e LLM_MODEL_NAME="deepseek/deepseek-v4-flash" \
+  -e LLM_MODEL_NAME="anthropic/claude-sonnet-4.6" \
   -v "$(pwd)/pilot/meta_data:/app/pilot/meta_data" \
   -v "$(pwd)/pilot/data:/app/pilot/data" \
   dbgpt:latest

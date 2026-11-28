@@ -18,7 +18,7 @@ persist_path = "pilot/data"
 
 [models]
 [[models.llms]]
-name = "${env:LLM_MODEL_NAME:-openai/gpt-4o}"
+name = "${env:LLM_MODEL_NAME:-deepseek/deepseek-v4-flash}"
 provider = "proxy/martllm"
 api_key = "${env:MARTLLM_API_KEY}"
 

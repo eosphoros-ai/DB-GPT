@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 
-_MARTLLM_DEFAULT_MODEL = "openai/gpt-4o"
+_MARTLLM_DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 
 
 @auto_register_resource(
@@ -65,11 +65,11 @@ async def martllm_generate_stream(
 class MartLLMClient(OpenAILLMClient):
     """MartLLM LLM Client using OpenAI-compatible endpoints.
 
-    MartLLM serves chat models from OpenAI, Anthropic, Google, DeepSeek, Qwen,
-    Z.ai and others behind one OpenAI compatible endpoint and one prepaid API
-    key. Model ids keep their vendor prefix, for example ``openai/gpt-4o``,
-    ``anthropic/claude-sonnet-4.6`` or ``deepseek/deepseek-v4-flash``; the live
-    list is at https://api.martllm.com/v1/models.
+    MartLLM serves chat models from Anthropic, Google, DeepSeek, Qwen, Z.ai and
+    others behind one OpenAI compatible endpoint and one prepaid API key. Model
+    ids keep their vendor prefix, for example ``deepseek/deepseek-v4-flash`` or
+    ``anthropic/claude-sonnet-4.6``; the live list is at
+    https://api.martllm.com/v1/models.
     """
 
     def __init__(
@@ -92,6 +92,10 @@ class MartLLMClient(OpenAILLMClient):
         )
         api_key = api_key or os.getenv("MARTLLM_API_KEY")
         model = model or _MARTLLM_DEFAULT_MODEL
+        # MartLLM is never an Azure endpoint. Without an explicit type the SDK
+        # builder falls back to OPENAI_API_TYPE, which another integration in
+        # the same process may set to "azure".
+        api_type = api_type or "open_ai"
         if not context_length:
             context_length = 128 * 1024
 
@@ -163,25 +167,15 @@ register_proxy_model_adapter(
     MartLLMClient,
     supported_models=[
         ModelMetadata(
-            model=["openai/gpt-4o", "openai/gpt-4o-mini"],
-            context_length=128_000,
-            max_output_length=16_384,
-            description="OpenAI GPT-4o family models via MartLLM",
-            link="https://martllm.com/models",
-            function_calling=True,
-        ),
-        ModelMetadata(
-            model=["openai/gpt-5.5", "openai/gpt-5.4", "openai/gpt-5.4-mini"],
-            context_length=400_000,
-            max_output_length=128_000,
-            description="OpenAI GPT-5 family models via MartLLM",
+            model=["anthropic/claude-opus-4.8", "anthropic/claude-sonnet-4.6"],
+            context_length=1_000_000,
+            max_output_length=64_000,
+            description="Anthropic Claude Opus and Sonnet models via MartLLM",
             link="https://martllm.com/models",
             function_calling=True,
         ),
         ModelMetadata(
             model=[
-                "anthropic/claude-opus-4.8",
-                "anthropic/claude-sonnet-4.6",
                 "anthropic/claude-haiku-4.5",
             ],
             context_length=200_000,
@@ -205,7 +199,6 @@ register_proxy_model_adapter(
         ModelMetadata(
             model=[
                 "google/gemini-2.5-flash",
-                "google/gemini-2.5-pro",
                 "google/gemini-3.5-flash",
             ],
             context_length=1_000_000,
