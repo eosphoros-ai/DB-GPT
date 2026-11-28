@@ -179,6 +179,7 @@ _PROVIDER_NAME_OVERRIDES = {
     "tongyi": "Tongyi Qwen",
     "zhipu": "Zhipu AI",
     "orcarouter": "OrcaRouter",
+    "martllm": "MartLLM",
 }
 
 
@@ -189,6 +190,8 @@ def _provider_display_name(provider: Optional[str]) -> str:
     if provider in _PROVIDER_NAME_OVERRIDES:
         return _PROVIDER_NAME_OVERRIDES[provider]
     name = provider.rsplit("/", 1)[-1]
+    if name in _PROVIDER_NAME_OVERRIDES:
+        return _PROVIDER_NAME_OVERRIDES[name]
     return name[:1].upper() + name[1:] if name else provider
 
 
